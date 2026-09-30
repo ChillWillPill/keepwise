@@ -855,6 +855,8 @@ OUT.dropCard = () => {
     <div class="linkrow"><button class="link" data-go="subs" type="button">Review subscriptions</button></div>
     ${toggle}${UI.compare ? compareChart(now, now + C.flaggedSave, "After cuts") : ""}</section>`;
 };
+// What is typed in "Add a line" is kept here until it is added, so redrawing the list (after tapping away or closing the keyboard) never wipes it.
+const LINE_DRAFT = {};
 OUT.envelopes = () => {
   const C = compute();
   const rows = [
@@ -888,7 +890,7 @@ function envDetail(k, C){
     ${exp.map(e => { const w = swapFor("expense", e.id); return `<div class="line" data-exp="${e.id}"><div><div>${esc(e.name)}</div><div class="muted small">${w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
     ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Subscription · ${fmt(sb.price)}/yr` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subMonthly(sb))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
     ${!exp.length && !subs.length ? `<p class="muted">Nothing here yet.</p>` : ""}
-    <div class="inline add-line" data-add-line="${k}"><input data-new-name placeholder="Add a line" aria-label="New line name" enterkeyhint="next" style="flex:2 1 140px"><input data-new-amt inputmode="decimal" placeholder="0" aria-label="Amount per month" enterkeyhint="done" style="flex:1 1 80px"><button class="btn" type="button" data-add-line-btn>Add</button></div>
+    <div class="inline add-line" data-add-line="${k}"><input data-new-name placeholder="Add a line" aria-label="New line name" enterkeyhint="next" value="${esc((LINE_DRAFT[k]||{}).n||"")}" style="flex:2 1 140px"><input data-new-amt inputmode="decimal" placeholder="0" aria-label="Amount per month" enterkeyhint="done" value="${esc((LINE_DRAFT[k]||{}).a||"")}" style="flex:1 1 80px"><button class="btn" type="button" data-add-line-btn>Add</button></div>
   </div>`;
 }
 OUT.howto = () => {
@@ -1320,6 +1322,8 @@ $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; if (UI.inbox) 
 
 view.addEventListener("input", e => {
   const t = e.target;
+  const lineBox = t.closest("[data-add-line]");
+  if (lineBox){ const d = LINE_DRAFT[lineBox.dataset.addLine] = LINE_DRAFT[lineBox.dataset.addLine] || {}; if (t.hasAttribute("data-new-name")) d.n = t.value; if (t.hasAttribute("data-new-amt")) d.a = t.value; return; }
   if (t.dataset.bind){
     const k = t.dataset.bind; S[k] = t.hasAttribute("data-num") ? numv(t.value) : t.value;
     if (k === "cur"){ save(); render(true); return; }
@@ -1368,7 +1372,7 @@ view.addEventListener("click", async e => {
     S.deposits = S.deposits.filter(d => d !== x); S.efSaved = r2(Math.max(0, S.efSaved - x.amount)); save(); refreshOuts(); toast(`Undid ${fmt(x.amount)}.`); return; }
   if (b.hasAttribute("data-add-line-btn")){ const box = b.closest("[data-add-line]"), name = box.querySelector("[data-new-name]").value.trim(), amt = numv(box.querySelector("[data-new-amt]").value);
     if (!name){ toast("Give the line a name."); box.querySelector("[data-new-name]").focus(); return; }
-    S.expenses.push({id:uid(), name, amount:amt, env:box.dataset.addLine}); save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Added ${name}.`); return; }
+    S.expenses.push({id:uid(), name, amount:amt, env:box.dataset.addLine}); delete LINE_DRAFT[box.dataset.addLine]; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Added ${name}.`); return; }
   if (b.hasAttribute("data-import-open")){ $("stmt").click(); return; }
   if (b.hasAttribute("data-import-cancel")){ STMT.result = null; render(false); return; }
   if (b.dataset.importApply){ const R = STMT.result; applyStatement(R, b.dataset.importApply); STMT.result = null; S.tab = "month"; save(); render(false); toast(`Plan updated from ${R.fileName}: ${R.subs.length} subscriptions, ${fmt(R.monthlyIncome)} coming in.`); return; }

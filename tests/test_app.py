@@ -635,6 +635,46 @@ async def subscription_check_in(ctx):
     await pg.click("[data-out=reviewCard] [data-review=later]"); await pg.wait_for_timeout(120)
     assert await pg.locator("[data-out=reviewCard] .review").count() == 0
 
+# ---------------- add a line keeps what was typed ----------------
+@test
+async def add_line_survives_tapping_away(ctx):
+    pg = await open_app(ctx)
+    await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
+    box = pg.locator("[data-add-line=needs]")
+    await box.locator("[data-new-name]").click(); await pg.keyboard.type("Tax")
+    await box.locator("[data-new-amt]").click(); await pg.keyboard.type("1500")
+    # tap somewhere empty (or close the phone keyboard): the list redraws
+    await pg.evaluate("document.activeElement.blur()"); await pg.wait_for_timeout(250)
+    assert await box.locator("[data-new-name]").input_value() == "Tax", "typed name was wiped by a redraw"
+    assert await box.locator("[data-new-amt]").input_value() == "1500", "typed amount was wiped by a redraw"
+    await box.locator("[data-add-line-btn]").click(); await pg.wait_for_timeout(250)
+    tax = [e for e in (await state(pg))["expenses"] if e["name"] == "Tax"]
+    assert tax and tax[0]["amount"] == 1500 and tax[0]["env"] == "needs"
+    assert "Tax" in await pg.locator("[data-out=envelopes]").inner_text()
+    assert await box.locator("[data-new-name]").input_value() == "", "box clears after adding"
+    await pg.reload(); await pg.wait_for_timeout(400)
+    await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
+    assert "Tax" in await pg.locator("[data-out=envelopes]").inner_text(), "Tax is still there after reload"
+
+# ---------------- legal ----------------
+@test
+async def legal_links_and_pages(ctx):
+    pg = await open_app(ctx)
+    await tab(pg, "plan")
+    hrefs = await pg.eval_on_selector_all(".legal-links a", "as => as.map(a => a.href)")
+    assert any(h.endswith("/privacy.html") for h in hrefs) and any(h.endswith("/terms.html") for h in hrefs), hrefs
+    legal = os.path.join(HERE, "..", "src", "legal")
+    for f, must in [("privacy.html", "Privacy Policy"), ("terms.html", "Terms of Use")]:
+        body = open(os.path.join(legal, f), encoding="utf-8").read()
+        assert must in body and "\u2014" not in body and "\u2013" not in body, f
+        lp = await ctx.new_page(); await lp.goto("file://" + os.path.abspath(os.path.join(legal, f)))
+        assert must in await lp.inner_text("h1")
+        w = await lp.evaluate("[document.documentElement.scrollWidth, innerWidth]")
+        await lp.set_viewport_size({"width": 320, "height": 640}); await lp.wait_for_timeout(100)
+        w = await lp.evaluate("[document.documentElement.scrollWidth, innerWidth]")
+        assert w[0] <= w[1], f"{f} scrolls sideways at 320px"
+        await lp.close()
+
 # ---------------- persistence ----------------
 @test
 async def data_persists_across_reload(ctx):
