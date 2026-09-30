@@ -182,7 +182,7 @@ async def month_currency_switch(ctx):
     assert "£" in await text(pg, ".big")
     assert (await state(pg))["cur"] == "GBP"
 
-CHECK_MONEY = """(()=>{const bad=[];document.querySelectorAll('.money-in').forEach(box=>{const em=box.querySelector('em'),i=box.querySelector('input');if(!em||!i)return;const e=em.getBoundingClientRect(),r=i.getBoundingClientRect(),b=box.getBoundingClientRect();const txt=r.left+parseFloat(getComputedStyle(i).paddingLeft);if(txt<e.right+4||r.right>b.right+0.5)bad.push(em.textContent+' '+i.value)});return {n:document.querySelectorAll('.money-in').length,bad}})()"""
+CHECK_MONEY = """(()=>{const bad=[];document.querySelectorAll('.money-in').forEach(box=>{const em=box.querySelector('em'),i=box.querySelector('input');if(!em||!i)return;const e=em.getBoundingClientRect(),r=i.getBoundingClientRect(),b=box.getBoundingClientRect();const after=em.compareDocumentPosition(i)&Node.DOCUMENT_POSITION_PRECEDING;const txt=r.left+parseFloat(getComputedStyle(i).paddingLeft);if((after?r.right>e.left+0.5:txt<e.right+4)||r.right>b.right+0.5||e.right>b.right+0.5)bad.push(em.textContent+' '+i.value)});return {n:document.querySelectorAll('.money-in').length,bad}})()"""
 
 @test
 async def currency_label_never_overlaps_amount_anywhere(ctx):
@@ -915,6 +915,100 @@ async def split_edit_in_place_and_icon(ctx):
     assert await pg.evaluate("document.getElementById('main').scrollTop") > 200, "stays near the card after saving"
     assert await pg.locator(f"[data-split='{sid}'] .ico path").count() == 2, "card shows the chosen icon"
 
+
+@test
+async def removals_can_be_undone(ctx):
+    pg = await open_app(ctx)
+    # subscription
+    await tab(pg, "subs"); n = len((await state(pg))["subs"])
+    await pg.click("[data-sub=s1] [data-del-sub]"); await pg.wait_for_timeout(120)
+    assert len((await state(pg))["subs"]) == n - 1 and "Removed Netflix." in await pg.inner_text("#toast")
+    await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(150)
+    st = await state(pg); assert len(st["subs"]) == n and any(w["link"] == "sub:s1" for w in st["swaps"]), "sub and its swap come back"
+    assert await pg.locator("[data-sub=s1]").count() == 1 and st["tab"] == "subs"
+    # split
+    await tab(pg, "split"); m = len((await state(pg))["splits"])
+    await pg.locator("[data-split]").first.locator("[data-del-split]").click(); await pg.wait_for_timeout(120)
+    assert len((await state(pg))["splits"]) == m - 1
+    await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(150)
+    assert len((await state(pg))["splits"]) == m
+    # plan line, code, swap
+    await tab(pg, "plan"); k = len((await state(pg))["expenses"])
+    await pg.locator("[data-exp]").first.locator("[data-del-exp]").click(); await pg.wait_for_timeout(120)
+    await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(150)
+    assert len((await state(pg))["expenses"]) == k
+    await tab(pg, "codes"); await pg.click("text=Add a code you found")
+    f = pg.locator("form[data-form=addCode]"); await f.locator("[name=store]").fill("Zara"); await f.locator("[name=code]").fill("ZARA15")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(120)
+    c = len((await state(pg))["codes"])
+    await pg.locator("[data-del-code]").first.click(); await pg.wait_for_timeout(120)
+    assert len((await state(pg))["codes"]) == c - 1
+    await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(150)
+    assert len((await state(pg))["codes"]) == c
+    await tab(pg, "cheaper"); w = len((await state(pg))["swaps"])
+    await pg.locator("[data-del-swap]").first.click(); await pg.wait_for_timeout(120)
+    await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(150)
+    assert len((await state(pg))["swaps"]) == w
+
+@test
+async def amounts_are_never_negative(ctx):
+    pg = await open_app(ctx)
+    await pg.fill("#m-income", "-4000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(200)
+    assert (await state(pg))["income"] == 4000
+    await tab(pg, "plan")
+    amt = pg.locator("[data-exp-amt]").first; await amt.fill("-50"); await amt.blur(); await pg.wait_for_timeout(200)
+    assert (await state(pg))["expenses"][0]["amount"] == 50
+    await tab(pg, "split"); await pg.click("[data-new-split]")
+    await pg.fill("[data-d=title]", "Refund trick"); await pg.fill("[data-d=amount]", "100")
+    await pg.select_option("[data-d=method]", "exact"); await pg.wait_for_timeout(100)
+    await pg.fill("[data-part-search]", "Alex"); await pg.keyboard.press("Enter"); await pg.wait_for_timeout(120)
+    await pg.fill("[data-part-val=me]", "-20"); await pg.fill("[data-part-val=p1]", "120")
+    await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(150)
+    assert "add up to" in await text(pg, "form[data-form=split] .err"), "a negative share cannot balance the total"
+
+@test
+async def borrow_never_owes_yourself(ctx):
+    pg = await open_app(ctx); await tab(pg, "split"); await pg.click("[data-new-split]")
+    await pg.fill("[data-d=title]", "Loan"); await pg.fill("[data-d=amount]", "40")
+    await pg.select_option("[data-d=method]", "borrow"); await pg.wait_for_timeout(100)
+    await pg.select_option("[data-d=borrower]", "p1"); await pg.wait_for_timeout(80)
+    await pg.select_option("[data-d=paidBy]", "p1"); await pg.wait_for_timeout(120)   # Alex paid, so Alex cannot be the one who owes
+    shown = await pg.eval_on_selector("[data-d=borrower]", "e=>e.value")
+    await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(150)
+    x = [s for s in (await state(pg))["splits"] if s["title"] == "Loan"][0]
+    assert x["paidBy"] == "p1" and list(x["parts"]) == [shown] and shown != "p1", x
+
+@test
+async def icon_picker_grid_and_tag_default(ctx):
+    pg = await open_app(ctx, w=320, h=640); await tab(pg, "split"); await pg.click("[data-new-split]")
+    assert await pg.get_attribute(".icon-auto", "aria-pressed") == "true"
+    assert await pg.locator(".icon-pick .icon-opt").count() == 12
+    tops = await pg.eval_on_selector_all(".icon-pick .icon-opt", "els=>[...new Set(els.map(e=>Math.round(e.getBoundingClientRect().top)))].length")
+    assert tops == 2, f"12 icons sit in two even rows, got {tops}"
+    sizes = await pg.eval_on_selector_all(".icon-pick .icon-opt", "els=>els.map(e=>e.getBoundingClientRect().width)")
+    assert min(sizes) >= 34, sizes
+    before = await pg.inner_html(".icon-auto svg")
+    await pg.select_option("[data-d=tag]", "Movie"); await pg.wait_for_timeout(120)
+    assert await pg.inner_html(".icon-auto svg") != before, "Match the tag shows the tag's icon"
+    await pg.click("[data-icon=gift]"); await pg.wait_for_timeout(80)
+    assert await pg.get_attribute(".icon-auto", "aria-pressed") == "false"
+    await pg.click(".icon-auto"); await pg.wait_for_timeout(80)
+    assert await pg.get_attribute(".icon-auto", "aria-pressed") == "true"
+
+
+@test
+async def empty_start_says_true_things(ctx):
+    pg = await open_app(ctx); await tab(pg, "plan")
+    await pg.click("[data-reset=blank]"); await pg.click("[data-reset-yes]"); await pg.wait_for_timeout(200)
+    await tab(pg, "month"); v = await text(pg, "#view")
+    assert "Sample month" not in v and "Start with the money coming in" in v
+    assert "Every subscription was opened" not in v and "No subscriptions yet" in v
+    assert "already using every swap" not in v and "shortfall" not in v
+    await tab(pg, "codes"); assert "No codes yet." in await text(pg, "[data-out=codeList]") and "“”" not in await text(pg, "#view")
+    await tab(pg, "cheaper"); await pg.click("text=Add your own comparison")
+    assert "First add something you pay for" in await text(pg, "#view") and await pg.locator("form[data-form=addSwap]").count() == 0
+    await tab(pg, "split"); assert "Just you" in await text(pg, "#view")
+
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")
 SEED = {
@@ -986,7 +1080,7 @@ async def main():
     passed, failed = 0, []
     async with async_playwright() as p:
         b = await p.chromium.launch()
-        for fn in TESTS:
+        for fn in [t for t in TESTS if not os.environ.get('ONLY') or t.__name__ in os.environ['ONLY'].split(',')]:
             ctx = await b.new_context(is_mobile=False)
             try:
                 await fn(ctx)

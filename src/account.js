@@ -174,7 +174,7 @@ function shrinkPhoto(file){
     img.src = url;
   });
 }
-const photoIn = document.createElement("input"); photoIn.type = "file"; photoIn.accept = "image/*"; photoIn.className = "sr"; photoIn.id = "acc-photo-in"; photoIn.tabIndex = -1; document.body.appendChild(photoIn);
+const photoIn = document.createElement("input"); photoIn.type = "file"; photoIn.accept = "image/*"; photoIn.className = "sr"; photoIn.id = "acc-photo-in"; photoIn.tabIndex = -1; photoIn.setAttribute("aria-hidden", "true"); photoIn.setAttribute("aria-label", "Profile photo"); document.body.appendChild(photoIn);
 photoIn.addEventListener("change", async () => {
   const f = photoIn.files[0]; photoIn.value = ""; if (!f) return;
   try { ACC.draft.photo = await shrinkPhoto(f); render(true); toast("Photo ready. Tap Save changes to keep it."); }

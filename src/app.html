@@ -26,7 +26,7 @@ html,body{margin:0;overflow:hidden;overscroll-behavior:none}
 body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-text-size-adjust:100%}
 .app{position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100%);display:flex;flex-direction:column;background:var(--bg)}
 .app-header{flex:none;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);position:relative;z-index:3}
-.brand{display:flex;align-items:center;gap:12px;max-width:720px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:12px;max-width:688px;margin:0 auto}
 .logo{width:40px;height:40px;border-radius:50%;background:#fff;display:block;flex:none;box-shadow:0 0 0 1px var(--line)}
 .brand b{font:600 1.25rem/1.1 var(--display);letter-spacing:-.025em;display:block}
 .wordmark{color:var(--brand-teal)} .wordmark span{color:var(--brand-gold)}
@@ -103,9 +103,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-o
 .btn:focus-visible,.link:focus-visible,.chip:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .btn.primary{background:var(--green);border-color:var(--green);color:#f3faf6;width:100%;padding:14px;font-size:1rem;border-radius:16px}
 a.btn{display:block;text-decoration:none}
-.btn.small{padding:6px 10px;font-size:.84rem;border-radius:10px}
+.btn.small{padding:8px 12px;min-height:36px;font-size:.84rem;border-radius:10px}
 .btn.danger{color:var(--rust)}
-.link{appearance:none;background:none;border:0;padding:0;font:600 1rem var(--body);color:var(--green);cursor:pointer;text-align:left}
+.link{appearance:none;background:none;border:0;padding:9px 0;margin:-9px 0;font:600 1rem var(--body);color:var(--green);cursor:pointer;text-align:left}
 .link.plain{color:var(--ink);font-weight:500}
 .linkrow{border-top:1px solid var(--line);padding-top:12px}
 
@@ -123,7 +123,7 @@ a.btn{display:block;text-decoration:none}
 .pill.gold{background:var(--gold-soft);color:var(--gold)}
 .pill.grey{background:var(--chip);color:var(--muted)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;flex:none}
-.seg button{appearance:none;border:0;background:none;font:600 .85rem var(--body);color:var(--muted);padding:7px 12px;cursor:pointer}
+.seg button{appearance:none;border:0;background:none;font:600 .85rem var(--body);color:var(--muted);padding:7px 12px;min-height:36px;cursor:pointer}
 .seg button+button{border-left:1px solid var(--line)}
 .seg button[aria-pressed="true"]{background:var(--green-soft);color:var(--green)}
 .seg button[aria-pressed="true"].drop{background:var(--rust-soft);color:var(--rust)}
@@ -146,7 +146,9 @@ a.btn{display:block;text-decoration:none}
 .note{background:var(--chip);color:var(--ink);border-radius:16px;padding:14px 16px;font-size:.95rem}
 .err{color:var(--rust);font-size:.9rem;font-weight:600}
 .empty{color:var(--muted);padding:6px 0}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:.92rem;z-index:30;max-width:calc(100% - 32px);text-align:center}
+.toast-undo{pointer-events:auto;appearance:none;border:0;background:none;color:inherit;font:700 .92rem var(--body);text-decoration:underline;text-underline-offset:3px;margin-left:12px;padding:6px 4px;cursor:pointer}
+.toast{pointer-events:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:.92rem;z-index:30;max-width:calc(100% - 32px);text-align:center}
+details.card:not([open]){gap:0}
 details summary{cursor:pointer;font-weight:600;color:var(--green);list-style:none}
 details summary::-webkit-details-marker{display:none}
 .cmp-wrap{display:flex;flex-direction:column;gap:8px}
@@ -207,11 +209,14 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .check{display:flex;gap:12px;align-items:flex-start;font-size:.93rem;line-height:1.45;cursor:pointer}
 .check input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--green)}
 .acc-legal{text-align:center}
-.icon-pick{display:flex;flex-wrap:wrap;gap:8px}
-.icon-opt{appearance:none;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.icon-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.icon-pick{display:grid;grid-template-columns:repeat(6,minmax(0,48px));gap:8px;margin-top:6px}
+.icon-opt{appearance:none;width:100%;aspect-ratio:1;min-height:38px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
 .icon-opt svg{width:22px;height:22px}
 .icon-opt[aria-pressed="true"]{border-color:var(--green);background:var(--green-soft);color:var(--green);box-shadow:0 0 0 1px var(--green)}
-.icon-opt:first-child{border-style:dashed}
+.icon-opt.icon-auto{width:auto;aspect-ratio:auto;min-height:34px;padding:0 12px;border-style:dashed;font:600 .8125rem/1 var(--body);display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.icon-opt.icon-auto svg{width:16px;height:16px}
+.icon-opt.icon-auto[aria-pressed="true"]{border-style:solid;color:var(--green)}
 .part-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
 .part-list > p{padding:12px 14px}
 .part-row{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 12px;border-top:1px solid var(--line);min-height:52px}
@@ -334,7 +339,14 @@ function fmt(v){
   catch(e){ return n.toFixed(2); }
 }
 const sym = () => { try { return new Intl.NumberFormat("en-US",{style:"currency",currency:S.cur,maximumFractionDigits:0}).formatToParts(0).find(p=>p.type==="currency").value; } catch(e){ return "$"; } };
-function toast(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2600); }
+function toast(msg, undo){
+  const t = $("toast"); t.textContent = msg;
+  if (undo){ const b = document.createElement("button"); b.type = "button"; b.className = "toast-undo"; b.textContent = "Undo";
+    b.addEventListener("click", () => { t.hidden = true; undo(); }); t.append(b); }
+  t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, undo ? 6000 : 2600);
+}
+// Removing something can be taken back for a few seconds: keep a copy of everything, and put it back on Undo.
+const undoable = () => { const snap = JSON.stringify(S); return () => { const keepTab = S.tab; S = JSON.parse(snap); S.tab = keepTab; save(); render(true); toast("Put back."); }; };
 
 /* ================= example data ================= */
 function example(){
@@ -364,7 +376,7 @@ function example(){
       {id:"s7", name:"iCloud+ 200 GB", price:2.99, cycle:"mo", last:isoDaysAgo(0), group:"Storage", env:"misc", keep:"auto"},
       {id:"s8", name:"Adobe Photoshop", price:22.99, cycle:"mo", last:isoDaysAgo(61), group:"Apps", env:"misc", keep:"auto"},
       {id:"s9", name:"Audible", price:14.95, cycle:"mo", last:isoDaysAgo(6), group:"Books",     env:"misc", keep:"auto"},
-      {id:"s10",name:"Duolingo Super", price:83.99, cycle:"yr", last:isoDaysAgo(49), group:"Apps", env:"misc", keep:"auto"}
+      {id:"s10",name:"Duolingo Super", price:83.99, cycle:"yr", last:isoDaysAgo(49), group:"Learning", env:"misc", keep:"auto"}
     ],
     swaps:[
       {id:"w1", link:"expense:kit", title:"Meal kit", alt:"Cook those 12 dinners", altCost:50, note:"Same recipes from your grocery run, about $4 a plate", on:false},
@@ -823,7 +835,7 @@ V.importReview = () => {
     <div class="big tnum" style="${fitSize(fmt(left), 3, 88)}${left < 0 ? ";color:var(--rust)" : ""}">${fmt(left)}</div>
     <p class="muted">${fmt(R.monthlyIncome)} comes in, ${fmt(R.monthlyOut)} goes out${R.taxMonthly ? `, including ${fmt(R.taxMonthly)} of tax payments` : ""}.</p></section>
   <section class="card"><h2>Money coming in</h2>
-    ${R.income.length ? R.income.map(s => row(s.name, fmt(s.monthly) + "/mo", `${s.cadence === "irregular" ? "Irregular" : s.cadence[0].toUpperCase() + s.cadence.slice(1)}${s.payday ? ` · usually on the ${ordinal(s.payday)}` : ""} · ${s.count} deposits`)).join("") : `<p class="muted">No regular salary found. You can type your income on the Month tab.</p>`}
+    ${R.income.length ? R.income.map(s => row(s.name, fmt(s.monthly) + "/mo", s.count === 1 ? `One deposit${s.payday ? `, on the ${ordinal(s.payday)}` : ""}` : `${s.cadence === "irregular" ? "Irregular" : s.cadence[0].toUpperCase() + s.cadence.slice(1)}${s.payday ? ` · usually on the ${ordinal(s.payday)}` : ""} · ${s.count} deposits`)).join("") : `<p class="muted">No regular salary found. You can type your income on the Month tab.</p>`}
     ${R.otherIn ? `<p class="muted small">Plus about ${fmt(R.otherIn)}/mo of transfers and refunds, left out of the plan.</p>` : ""}</section>
   <section class="card"><h2>Subscriptions <span class="muted small">(${R.subs.length})</span></h2>
     ${R.subs.length ? R.subs.map(s => row(s.name, fmt(s.price) + (s.cycle === "yr" ? "/yr" : "/mo"), paidFor(s))).join("") : `<p class="muted">No subscriptions found.</p>`}
@@ -899,7 +911,7 @@ function bizPreview(){
 V.month = () => {
   if (UI.biz) return spaceSwitch() + bizPreview();
   const C = compute();
-  return `${spaceSwitch()}${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap"><p>Sample month for one person, stored only on this device. Change the income and the list. The month-end number follows.</p><button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
+  return `${spaceSwitch()}${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap"><p>${S.expenses.length || S.subs.length || +S.income ? "Sample month for one person, stored only on this device. Change the income and the list. The month-end number follows." : "Start with the money coming in below, then add your bills on the Plan tab, or import a bank statement. Everything stays on this device."}</p><button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>
   <div data-out="reviewCard">${OUT.reviewCard()}</div>
@@ -954,10 +966,10 @@ OUT.dropCard = () => {
   const toggle = `<div class="linkrow"><button class="link plain" data-compare type="button" aria-expanded="${UI.compare}">${UI.compare ? "Hide the comparison" : "Compare the close"}</button></div>`;
   if (!C.flagged.length){
     const swapSave = C.inactiveSwaps.reduce((a, x) => a + x.save, 0);
-    return `<section class="card"><p class="label">Your rules</p><p>Nothing is flagged right now. Every subscription was opened in the last ${S.ruleDays} days and none overlap.</p>
+    return `<section class="card"><p class="label">Your rules</p><p>${C.liveSubs.length ? `Nothing is flagged right now. Every subscription was opened in the last ${S.ruleDays} days and none overlap.` : "No subscriptions yet. Add them on the Subs tab or import a bank statement, and your rules will flag the ones you do not use."}</p>
       ${toggle}${UI.compare ? compareChart(now, now + swapSave, "With swaps") + `<button class="link" data-go="cheaper" type="button">See the swaps</button>` : ""}</section>`;
   }
-  return `<section class="card"><p class="muted">If you drop what your rules flag</p>
+  return `<section class="card"><p class="muted">If you drop what your rules flag, ${esc(C.planMonth)} ends with</p>
     <div style="font:600 1.875rem/1.1 var(--display);letter-spacing:-.025em;${fitSize(fmt(now + C.flaggedSave), 1.875, 110)}" class="tnum bigsoft">${fmt(now + C.flaggedSave)}</div>
     <p>Savings finishes ${fmt(C.flaggedSave)} higher. The unused list is ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year.</p>
     <div class="linkrow"><button class="link" data-go="subs" type="button">Review subscriptions</button></div>
@@ -1007,9 +1019,9 @@ OUT.howto = () => {
   const list = names.length > 4 ? names.slice(0,4).join(", ") + ` and ${names.length-4} more` : names.join(", ");
   return `<ol class="steps">
     <li><div><h3>Where ${C.planMonth} ends</h3><p class="muted">Money coming in is ${fmt(C.income)}. Needs take ${fmt(C.needs)} and misc ${fmt(C.misc)}, so ${fmt(C.savings)} is left.${C.savings > 0 ? (S.priority === "ef" ? ` It goes to your emergency fund first: ${fmt(S.efSaved)} of ${fmt(C.efTarget)} so far.` : S.priority === "goal" ? ` It goes to ${esc(S.goalName || "your goal")} first.` : " Half goes to your emergency fund, half to your goal.") : ""}${C.misc < C.envMisc && C.savings > 0 ? ` Miscellaneous still has ${fmt(C.envMisc - C.misc)} of room if you choose to use it. That comes out of savings.` : ""}</p></div></li>
-    <li><div><h3>Drop what you don’t use</h3><p class="muted">${names.length ? `${esc(list)}. Rule: unused after ${S.ruleDays} days, or a duplicate of something you opened more recently. Dropping them keeps ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year. After the drop, savings can finish at ${fmt(C.endSaved + C.flaggedSave)}.` : `Nothing flagged. The rule is unused after ${S.ruleDays} days, or a duplicate of something you opened more recently.`}</p></div></li>
-    <li><div><h3>The cheapest real swap</h3><p class="muted">${best ? `${esc(best.w.title)} → ${esc(best.w.alt)} keeps about ${fmt(best.save)} a month.` : "You’re already using every swap on the Cheaper tab."}</p></div></li>
-    <li><div><h3>On payday</h3><p class="muted">${C.savings > 0 ? `Move ${fmt(C.savings)} to savings on payday and do not borrow it back.${S.priority !== "goal" && C.efGap > 0 ? ` Target: ${S.efMonths} months of needs (${fmt(C.efTarget)})${C.efMonthsLeft ? `, reached in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}` : ""}.` : ""} You have ${fmt(S.efSaved)} now; this month lands at ${fmt(C.endSaved)}.` : "Fix the shortfall first: nothing is left to move this month."}</p></div></li>
+    <li><div><h3>Drop what you don’t use</h3><p class="muted">${names.length ? `${esc(list)}. Rule: unused after ${S.ruleDays} days, or a duplicate of something you opened more recently. Dropping them keeps ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year. After the drop, savings can finish at ${fmt(C.endSaved + C.flaggedSave)}.` : (C.liveSubs.length ? `Nothing flagged. The rule is unused after ${S.ruleDays} days, or a duplicate of something you opened more recently.` : "No subscriptions yet. Once you add some, anything unused goes here.")}</p></div></li>
+    <li><div><h3>The cheapest real swap</h3><p class="muted">${best ? `${esc(best.w.title)} → ${esc(best.w.alt)} keeps about ${fmt(best.save)} a month.` : (S.swaps.length ? "You’re already using every swap on the Cheaper tab." : "No swaps yet. Add a cheaper option for something you pay for on the Cheaper tab.")}</p></div></li>
+    <li><div><h3>On payday</h3><p class="muted">${C.savings > 0 ? `Move ${fmt(C.savings)} to savings on payday and do not borrow it back.${S.priority !== "goal" && C.efGap > 0 ? ` Target: ${S.efMonths} months of needs (${fmt(C.efTarget)})${C.efMonthsLeft ? `, reached in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}` : ""}.` : ""} You have ${fmt(S.efSaved)} now; this month lands at ${fmt(C.endSaved)}.` : (C.savings < 0 ? "Fix the shortfall first: nothing is left to move this month." : "Nothing is left over yet. Add the money coming in and your costs, and this shows what to move.")}</p></div></li>
   </ol>`;
 };
 
@@ -1041,14 +1053,14 @@ function answer(q){
     return b.map(x => x.net > 0 ? `${x.p.name} owes you ${fmt(x.net)}` : `You owe ${x.p.name} ${fmt(-x.net)}`).join("\n");
   }
   if (/cancel|drop|unused|subscri/.test(t)){
-    return C.flagged.length ? `Your rules flag ${C.flagged.length}:\n${C.flagged.map(s => `${s.name}, ${fmt(subMonthly(s))}/mo (${C.flags[s.id].join("; ")})`).join("\n")}\nTogether: ${fmt(C.flaggedSave)} a month.` : `Nothing is flagged. Every subscription was opened in the last ${S.ruleDays} days.`;
+    return C.flagged.length ? `Your rules flag ${C.flagged.length}:\n${C.flagged.map(s => `${s.name}, ${fmt(subMonthly(s))}/mo (${C.flags[s.id].join("; ")})`).join("\n")}\nTogether: ${fmt(C.flaggedSave)} a month.` : C.liveSubs.length ? `Nothing is flagged. Every subscription was opened in the last ${S.ruleDays} days.` : "You have no subscriptions on your list yet.";
   }
   if (/emergency|fund|cushion/.test(t)){
     if (C.efGap <= 0) return `Your emergency fund is full: ${fmt(S.efSaved)} covers ${S.efMonths} months of needs.`;
     return C.efMonthsLeft ? `You have ${fmt(S.efSaved)} of ${fmt(C.efTarget)}. At ${fmt(C.toEF)} a month it’s full in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}.` : `You have ${fmt(S.efSaved)} of ${fmt(C.efTarget)}, but nothing is going to it right now. Set leftover money to emergency fund first on the Plan tab.`;
   }
   if (/cheap|swap|save more|cut/.test(t)){
-    const b = C.inactiveSwaps.slice(0,3); return b.length ? `Biggest swaps you’re not using:\n${b.map(x => `${x.w.title} → ${x.w.alt}: keeps ${fmt(x.save)}/mo`).join("\n")}` : "You’re already using every swap on the Cheaper tab.";
+    const b = C.inactiveSwaps.slice(0,3); return b.length ? `Biggest swaps you’re not using:\n${b.map(x => `${x.w.title} → ${x.w.alt}: keeps ${fmt(x.save)}/mo`).join("\n")}` : S.swaps.length ? "You’re already using every swap on the Cheaper tab." : "There are no swaps on your Cheaper tab yet.";
   }
   if (/envelope|over|needs|budget/.test(t)){
     const o = C.needs - C.envNeeds, m = C.misc - C.envMisc;
@@ -1108,12 +1120,12 @@ V.cheaper = () => `
   <div data-out="cheapSummary">${OUT.cheapSummary()}</div>
   <div data-out="cheapList">${OUT.cheapList()}</div>
   <details class="card"><summary>Add your own comparison</summary>
-    <form data-form="addSwap" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+    ${!S.expenses.length && !S.subs.some(s => s.keep !== "drop") ? `<p class="muted" style="margin-top:12px">First add something you pay for: a bill on the Plan tab or a subscription on Subs. Then compare it with a cheaper option here.</p>` : `<form data-form="addSwap" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
       <label class="field"><span>What you pay for now</span><select name="link">${[...S.expenses.map(e => `<option value="expense:${e.id}">${esc(e.name)} (${fmt(e.amount)})</option>`), ...S.subs.filter(s => s.keep !== "drop").map(s => `<option value="sub:${s.id}">${esc(s.name)} (${fmt(subMonthly(s))})</option>`)].join("")}</select></label>
       <label class="field"><span>Cheaper option</span><input name="alt" required placeholder="e.g. Library card"></label>
       <label class="field"><span>It costs per month</span><input name="altCost" required inputmode="decimal" placeholder="0"></label>
       <button class="btn primary" type="submit">Add comparison</button>
-    </form></details>`;
+    </form>`}</details>`;
 OUT.cheapSummary = () => {
   const on = S.swaps.filter(w => w.on), sOn = on.reduce((a,w) => a + swapSaving(w), 0), sAll = S.swaps.reduce((a,w) => a + swapSaving(w), 0);
   return `<div class="card"><div class="summary3" style="grid-template-columns:repeat(2,minmax(0,1fr))">
@@ -1154,7 +1166,7 @@ OUT.codeList = () => {
   const q = codeQ.trim().toLowerCase();
   const list = S.codes.filter(c => !q || c.store.toLowerCase().includes(q) || (c.offer||"").toLowerCase().includes(q))
     .sort((a,b) => { const r = x => ({Likely:0,"Check first":1,"Probably dead":2})[codeStatus(x)[0]]; return r(a) - r(b) || daysSince(a.last) - daysSince(b.last); });
-  if (!list.length) return `<p class="empty">No codes for “${esc(codeQ)}” yet. Add one you found below.</p>`;
+  if (!list.length) return `<p class="empty">${codeQ.trim() ? `No codes for “${esc(codeQ.trim())}” yet.` : "No codes yet."} Add one you found below.</p>`;
   return `<div class="rows">${list.map(c => { const [st, cls] = codeStatus(c), d = daysSince(c.last);
     return `<div class="row" data-code="${c.id}"><div class="row-top"><div><div class="name">${esc(c.store)}</div><div class="muted small">${esc(c.offer || "")}</div></div><div><span class="pill ${cls}">${st}</span></div></div>
     <div class="inline" style="justify-content:space-between"><button class="code" type="button" data-copy="${esc(c.code)}" aria-label="Copy code ${esc(c.code)}">${esc(c.code)}</button>
@@ -1169,9 +1181,9 @@ V.plan = () => `
     <label class="field"><span>Money coming in</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}"></span></label>
     <label class="field"><span>Currency</span><select data-bind="cur">${CURRENCIES.map(([c,n]) => `<option value="${c}" ${c===S.cur?"selected":""}>${c} · ${n}</option>`).join("")}</select></label>
   </div>
-  <section class="card"><h2>Envelopes</h2><p class="muted small">Share of money coming in each envelope should hold.</p>
+  <section class="card"><h2>Envelopes</h2><p class="muted small">Percent of money coming in each envelope should hold.</p>
     <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr));align-items:end">
-      ${[["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => `<label class="field"><span>${n} %</span><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"></label>`).join("")}
+      ${[["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => `<label class="field"><span>${n}</span><span class="money-in"><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"><em>%</em></span></label>`).join("")}
     </div><div data-out="envCheck">${OUT.envCheck()}</div></section>
   <section class="card"><h2>What goes out each month</h2>
     <div data-out="expTotal">${OUT.expTotal()}</div>
@@ -1274,7 +1286,7 @@ V.split = () => {
     <p class="muted">Everyone who opened this page and joined. Invite more people from the Share menu.</p>
     ${peopleList(c)}</section>` : `
   <section style="display:flex;flex-direction:column;gap:12px">
-    <div class="inline" style="justify-content:space-between"><h2>People</h2><span class="muted small">${S.people.filter(p => !p.archived && p.id !== "me").length} people · stay on this phone</span></div>
+    <div class="inline" style="justify-content:space-between"><h2>People</h2><span class="muted small">${(n => n === 0 ? "Just you" : n === 1 ? "1 person" : n + " people")(S.people.filter(p => !p.archived && p.id !== "me").length)} · stay on this phone</span></div>
     ${peopleList(c)}
     ${UI.addPerson ? `<form class="card add-person" data-form="addPerson"><label class="field"><span>Name</span><input name="name" id="new-person" placeholder="e.g. Sara" enterkeyhint="done" autocomplete="off"></label>
       <div class="grid2"><button class="btn" type="button" data-add-person-cancel>Cancel</button><button class="btn primary" type="submit" style="padding:10px">Add person</button></div></form>`
@@ -1360,7 +1372,7 @@ function splitForm(){
     <label class="field"><span>Total</span><span class="money-in"><em>${esc(sym())}</em><input data-d="amount" type="text" inputmode="decimal" enterkeyhint="done" value="${d.amount}"></span></label></div>
     <div class="grid2"><label class="field"><span>Paid by</span><select data-d="paidBy">${others.map(p => `<option value="${esc(p.id)}" ${d.paidBy===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>
     <label class="field"><span>Tag</span><select data-d="tag">${S.tags.map(t => `<option ${d.tag===t?"selected":""}>${esc(t)}</option>`).join("")}</select></label></div>
-    <div class="field"><span>Icon</span><div class="icon-pick" role="group" aria-label="Icon for this split">${SPLIT_ICONS.map(([k, label]) => `<button type="button" class="icon-opt" data-icon="${k}" aria-pressed="${(d.icon || "") === k}" aria-label="${label}" title="${label}">${k ? I[k] : tagIcon(d.tag)}</button>`).join("")}</div></div>
+    <div class="field"><div class="icon-head"><span>Icon</span><button type="button" class="icon-opt icon-auto" data-icon="" aria-pressed="${!d.icon}" title="Use the icon for the tag">${tagIcon(d.tag)}Match the tag</button></div><div class="icon-pick" role="group" aria-label="Icon for this split">${SPLIT_ICONS.filter(([k]) => k).map(([k, label]) => `<button type="button" class="icon-opt" data-icon="${k}" aria-pressed="${d.icon === k}" aria-label="${label}" title="${label}">${I[k]}</button>`).join("")}</div></div>
     <label class="field"><span>How to split</span><select data-d="method">${Object.entries(METHOD_LABEL).map(([k,v]) => `<option value="${k}" ${d.method===k?"selected":""}>${v}</option>`).join("")}</select></label>
     ${partRows}
     ${receiptBlock()}
@@ -1485,7 +1497,7 @@ function refreshOuts(){
   });
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
 }
-const numv = v => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n) ? 0 : n; };
+const numv = v => { const n = parseFloat(String(v).replace(/[^0-9.]/g,"")); return isNaN(n) || !isFinite(n) ? 0 : n; };  // amounts are never negative
 
 // ================= accounts (optional; the profile lives in Firebase, money data never leaves this device) =================
 // The project's public web config (safe to ship; access is controlled by Firebase security rules).
@@ -1663,7 +1675,7 @@ function shrinkPhoto(file){
     img.src = url;
   });
 }
-const photoIn = document.createElement("input"); photoIn.type = "file"; photoIn.accept = "image/*"; photoIn.className = "sr"; photoIn.id = "acc-photo-in"; photoIn.tabIndex = -1; document.body.appendChild(photoIn);
+const photoIn = document.createElement("input"); photoIn.type = "file"; photoIn.accept = "image/*"; photoIn.className = "sr"; photoIn.id = "acc-photo-in"; photoIn.tabIndex = -1; photoIn.setAttribute("aria-hidden", "true"); photoIn.setAttribute("aria-label", "Profile photo"); document.body.appendChild(photoIn);
 photoIn.addEventListener("change", async () => {
   const f = photoIn.files[0]; photoIn.value = ""; if (!f) return;
   try { ACC.draft.photo = await shrinkPhoto(f); render(true); toast("Photo ready. Tap Save changes to keep it."); }
@@ -1812,7 +1824,8 @@ view.addEventListener("input", e => {
   if (pn && t.hasAttribute("data-person-name")){ const p = S.people.find(x => x.id === pn.dataset.person); if (p){ p.name = t.value; save(); refreshOuts(); } return; }
   if (splitDraft){
     if (t.dataset.d){ splitDraft[t.dataset.d] = t.value;
-      if (["paidBy","method"].includes(t.dataset.d)){ if (t.dataset.d === "method" && t.value !== "borrow") { for (const id in splitDraft.parts) splitDraft.parts[id] = t.value === "equal" ? 1 : ""; } splitErr = ""; render(true); }
+      if (t.dataset.d === "paidBy" && splitDraft.borrower === t.value) splitDraft.borrower = "";  // nobody can owe themselves
+      if (["paidBy","method","tag"].includes(t.dataset.d)){ if (t.dataset.d === "method" && t.value !== "borrow") { for (const id in splitDraft.parts) splitDraft.parts[id] = t.value === "equal" ? 1 : ""; } splitErr = ""; render(true); }
       return; }
     if (t.dataset.partVal){ splitDraft.parts[t.dataset.partVal] = t.value; return; }
   }
@@ -1861,12 +1874,12 @@ view.addEventListener("click", async e => {
   if (subRow){ const s = S.subs.find(x => x.id === subRow.dataset.sub); if (!s) return;
     if (b.dataset.keep){ s.keep = b.dataset.keep; save(); render(true); if (s.keep === "drop") toast(`${s.name} marked to drop. Your month updated.`); return; }
     if (b.hasAttribute("data-used")){ s.last = isoDaysAgo(0); save(); render(true); toast(`${s.name} marked as used today.`); return; }
-    if (b.hasAttribute("data-del-sub")){ S.subs = S.subs.filter(x => x !== s); S.swaps = S.swaps.filter(w => w.link !== `sub:${s.id}`); save(); render(true); toast(`Removed ${s.name}.`); return; }
+    if (b.hasAttribute("data-del-sub")){ const u = undoable(); S.subs = S.subs.filter(x => x !== s); S.swaps = S.swaps.filter(w => w.link !== `sub:${s.id}`); save(); render(true); toast(`Removed ${s.name}.`, u); return; }
   }
   const sw = b.closest("[data-swap]");
   if (sw){ const w = S.swaps.find(x => x.id === sw.dataset.swap); if (!w) return;
     if (b.hasAttribute("data-swap-on")){ w.on = !w.on; save(); render(true); toast(w.on ? `Using ${w.alt}. Your month updated.` : "Swap turned off."); return; }
-    if (b.hasAttribute("data-del-swap")){ S.swaps = S.swaps.filter(x => x !== w); save(); render(true); return; }
+    if (b.hasAttribute("data-del-swap")){ const u = undoable(); S.swaps = S.swaps.filter(x => x !== w); save(); render(true); toast(`Removed ${w.alt}.`, u); return; }
   }
   if (b.dataset.copy){ const c = b.dataset.copy;
     const fallback = () => { const r = document.createRange(); r.selectNodeContents(b); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Code selected. Copy it from the menu."); };
@@ -1874,10 +1887,10 @@ view.addEventListener("click", async e => {
   const cr = b.closest("[data-code]");
   if (cr){ const c = S.codes.find(x => x.id === cr.dataset.code); if (!c) return;
     if (b.dataset.vote){ c[b.dataset.vote]++; if (b.dataset.vote === "worked") c.last = isoDaysAgo(0); save(); refreshOuts(); toast("Thanks. That helps rank this code."); return; }
-    if (b.hasAttribute("data-del-code")){ S.codes = S.codes.filter(x => x !== c); save(); refreshOuts(); return; }
+    if (b.hasAttribute("data-del-code")){ const u = undoable(); S.codes = S.codes.filter(x => x !== c); save(); refreshOuts(); toast(`Removed the ${c.store} code.`, u); return; }
   }
   const er = b.closest("[data-exp]");
-  if (er && b.hasAttribute("data-del-exp")){ S.expenses = S.expenses.filter(x => x.id !== er.dataset.exp); S.swaps = S.swaps.filter(w => w.link !== `expense:${er.dataset.exp}`); save(); render(true); return; }
+  if (er && b.hasAttribute("data-del-exp")){ const u = undoable(), gone = S.expenses.find(x => x.id === er.dataset.exp); S.expenses = S.expenses.filter(x => x.id !== er.dataset.exp); S.swaps = S.swaps.filter(w => w.link !== `expense:${er.dataset.exp}`); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; }
   if (b.hasAttribute("data-add-exp")){ S.expenses.push({id:uid(), name:"New line", amount:0, env:"needs"}); save(); render(true);
     const rows = view.querySelectorAll("[data-exp-name]"); const last = rows[rows.length-1]; if (last){ last.focus(); last.select(); } return; }
   if (b.dataset.reset){ const kind = b.dataset.reset;
@@ -1907,8 +1920,8 @@ view.addEventListener("click", async e => {
   if (sp && b.hasAttribute("data-del-split")){
     if (shared()){ const x = SH.splits.find(y => y.id === sp.dataset.split); if (!x) return;
       await shWrite(() => SH.db.doc("splits/" + x.id).update({deleted:true, updatedBy:SH.me, updatedAt:Date.now()}), `Deleted ${x.title}. Your circle was notified.`); return; }
-    const x = S.splits.find(y => y.id === sp.dataset.split);
-    S.splits = S.splits.filter(y => y !== x); save(); render(true); toast(`Deleted ${x ? x.title : "split"}.`); return; }
+    const x = S.splits.find(y => y.id === sp.dataset.split), u = undoable();
+    S.splits = S.splits.filter(y => y !== x); save(); render(true); toast(`Deleted ${x ? x.title : "split"}.`, u); return; }
   const st = b.closest("[data-settle]");
   if (st && b.hasAttribute("data-settle-btn")){ const pid = st.dataset.settle, amt = +st.dataset.amt, bal = myBalances().find(x => x.p.id === pid);
     if (!bal) return;
@@ -1977,7 +1990,7 @@ view.addEventListener("submit", async e => {
     if (!d.title.trim()){ splitErr = "Say what the split is for."; render(true); return; }
     if (amount <= 0){ splitErr = "Enter a total above zero."; render(true); return; }
     let parts = {};
-    if (d.method === "borrow"){ const who = d.borrower || (CTX().people.find(p => p.id !== d.paidBy) || {}).id; if (!who){ splitErr = "Add another person first."; render(true); return; } parts[who] = amount; }
+    if (d.method === "borrow"){ const who = (d.borrower && d.borrower !== d.paidBy ? d.borrower : "") || (CTX().people.find(p => p.id !== d.paidBy && !p.archived) || {}).id; if (!who){ splitErr = "Add another person first."; render(true); return; } parts[who] = amount; }
     else {
       const ids = Object.keys(d.parts); if (ids.length < 2){ splitErr = "Pick at least two people."; render(true); return; }
       if (d.method === "equal") ids.forEach(id => parts[id] = 1);
