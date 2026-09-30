@@ -818,6 +818,24 @@ async def logo_goes_back_to_month(ctx):
     assert await pg.locator("[data-tab=month][aria-current=page]").count() == 1 and await pg.locator("#m-income").count() == 1
     assert (await state(pg))["tab"] == "month"
 
+@test
+async def receipt_photo_is_a_plus_feature(ctx):
+    pg = await open_app(ctx)
+    await tab(pg, "split")
+    if await pg.locator("[data-mode=local]").count(): await pg.click("[data-mode=local]"); await pg.wait_for_timeout(120)
+    await pg.click("[data-new-split]"); await pg.wait_for_timeout(150)
+    b = pg.locator("[data-receipt-plus]")
+    assert await b.count() == 1 and "Plus" in await b.inner_text()
+    await pg.fill("[data-d=title]", "Dinner")
+    await b.click(); await pg.wait_for_timeout(150)
+    note = await text(pg, ".receipt-note")
+    assert "Receipt photos come with KeepWise Plus" in note and "Sign in to join the waitlist" in note
+    assert await pg.input_value("[data-d=title]") == "Dinner", "typed split kept"
+    await pg.click("[data-receipt-close]"); await pg.wait_for_timeout(150)
+    assert await pg.locator(".receipt-note").count() == 0 and await pg.locator("[data-receipt-plus]").count() == 1
+    await pg.click("[data-receipt-plus]"); await pg.click("[data-open-account]"); await pg.wait_for_timeout(200)
+    assert "Account" in await text(pg, "#view")
+
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")
 SEED = {
