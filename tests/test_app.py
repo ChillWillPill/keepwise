@@ -836,6 +836,21 @@ async def receipt_photo_is_a_plus_feature(ctx):
     await pg.click("[data-receipt-plus]"); await pg.click("[data-open-account]"); await pg.wait_for_timeout(200)
     assert "Account" in await text(pg, "#view")
 
+@test
+async def business_space_is_a_plus_preview(ctx):
+    pg = await open_app(ctx)
+    await pg.click("[data-space=business]"); await pg.wait_for_timeout(150)
+    v = await text(pg, "#view")
+    assert "Keep business and personal money apart" in v and "Tax set-aside" in v and "Sign in to join the waitlist" in v
+    assert await pg.locator("#m-income").count() == 0, "personal month is hidden"
+    assert await pg.get_attribute(".biz-demo", "aria-hidden") == "true", "example content is not read out as real data"
+    sw = await pg.evaluate("[document.querySelector('#main').scrollWidth, document.querySelector('#main').clientWidth]")
+    assert sw[0] <= sw[1]
+    await pg.click(".biz-panel [data-space=personal]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("#m-income").count() == 1
+    await pg.click("[data-space=business]"); await tab(pg, "subs"); await tab(pg, "month")
+    assert await pg.locator("#m-income").count() == 1, "leaving the tab returns to Personal"
+
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")
 SEED = {

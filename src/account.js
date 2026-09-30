@@ -150,7 +150,7 @@ function accProfile(){
   <section class="card"><h2>Profile</h2>
     <form data-form="acc-profile" class="acc-form" novalidate>${accFields(false)}${accErrBox()}<button class="btn primary" type="submit" ${ACC.busy ? "disabled" : ""}>Save changes</button></form></section>
   <section class="card plus-card"><div class="inline" style="justify-content:space-between"><h2>KeepWise Plus</h2><span class="pill gold">Coming soon</span></div>
-    <p class="small">Back up your budget with end-to-end encryption and use it on all your devices. Only you can read your data.</p>
+    <p class="small">Back up your budget with end-to-end encryption and use it on all your devices. Add receipt photos to splits, and keep business money in its own space. Only you can read your data.</p>
     ${ACC.profile && ACC.profile.plusInterest ? `<p class="small"><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p><button class="link small" type="button" data-acc-plus-off style="align-self:flex-start">Leave the waitlist</button>`
       : `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`}
   </section>

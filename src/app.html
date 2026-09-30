@@ -206,6 +206,22 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .check{display:flex;gap:12px;align-items:flex-start;font-size:.93rem;line-height:1.45;cursor:pointer}
 .check input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--green)}
 .acc-legal{text-align:center}
+.space-switch{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
+.space-switch button{appearance:none;border:0;background:none;font:600 .95rem var(--body);color:var(--muted);padding:11px 12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.space-switch button+button{border-left:1px solid var(--line)}
+.space-switch button[aria-pressed="true"]{background:var(--green-soft);color:var(--green)}
+.biz-wrap{position:relative;display:grid}
+.biz-demo{grid-area:1/1;display:flex;flex-direction:column;gap:18px;filter:blur(3px) saturate(.9);opacity:.55;pointer-events:none;user-select:none}
+.biz-panel{grid-area:1/1;align-self:start;margin-top:40px;box-shadow:0 20px 50px -24px rgba(0,0,0,.45);border-color:color-mix(in srgb,var(--gold) 40%,var(--line));position:relative;z-index:1}
+.biz-panel h2{font-size:1.45rem}
+.biz-feats{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.biz-feats li{line-height:1.45}
+.biz-list{list-style:none;margin:0;padding:0}
+.biz-list li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.biz-list li:first-child{border-top:0}
+.biz-list li div{display:flex;flex-direction:column}
+.biz-bar{height:10px;border-radius:99px;background:var(--chip);overflow:hidden}
+.biz-bar span{display:block;height:100%;background:var(--gold);border-radius:99px}
 .receipt-btn{display:flex;align-items:center;justify-content:center;gap:2px;border-style:dashed}
 .receipt-btn .pill{margin-left:8px}
 .receipt-note p{margin-bottom:10px}
@@ -805,9 +821,41 @@ function handleReview(kind, id){
 }
 
 // ---- Month ----
+// Personal / Business switch. Business is a KeepWise Plus preview: an example space with the waitlist on top.
+function spaceSwitch(){
+  return `<div class="space-switch" role="group" aria-label="Which money"><button type="button" data-space="personal" aria-pressed="${!UI.biz}">Personal</button><button type="button" data-space="business" aria-pressed="${!!UI.biz}">Business <span class="pill gold">Plus</span></button></div>`;
+}
+function bizPreview(){
+  const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
+  const row = (n, sub, v) => `<li><div><b>${n}</b><span class="muted small">${sub}</span></div><span class="tnum">${v}</span></li>`;
+  return `<div class="biz-wrap">
+    <div class="biz-demo" aria-hidden="true" inert>
+      <section class="hero"><p class="muted small">Example business month</p><div class="big">${fmt(2060)}</div><p class="muted">${fmt(3240)} came in, ${fmt(1180)} went out.</p></section>
+      <section class="card"><h2>Tax set-aside</h2><p>Put aside 25% of business income: <b>${fmt(810)}</b> this month, <b>${fmt(6480)}</b> so far this year.</p><div class="biz-bar"><span style="width:62%"></span></div></section>
+      <section class="card"><h2>Business costs</h2><ul class="biz-list">${row("Design software", "Subscription, monthly", fmt(59.99))}${row("Website hosting", "Subscription, monthly", fmt(12))}${row("Phone", "Business share, 60%", fmt(40))}${row("Supplies", "From your statement", fmt(86.4))}</ul></section>
+      <section class="card"><h2>Sorted from your statement</h2><p>18 transactions marked as business, 94 as personal.</p><p class="muted small">Export the year for your accountant as a spreadsheet.</p></section>
+    </div>
+    <section class="biz-panel card" role="dialog" aria-labelledby="biz-h">
+      <span class="pill gold" style="align-self:flex-start">KeepWise Plus</span>
+      <h2 id="biz-h">Keep business and personal money apart</h2>
+      <ul class="biz-feats">
+        <li><b>A separate Business space</b> with its own income, costs and subscriptions.</li>
+        <li><b>Tax set-aside</b> that keeps a running total, so tax time is never a surprise.</li>
+        <li><b>Business costs tagged</b>, including the business share of your phone and software.</li>
+        <li><b>Statement import that sorts</b> each transaction into personal or business.</li>
+        <li><b>One-tap export</b> of the year’s business money for your accountant.</li>
+      </ul>
+      ${joined ? `<p><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p>`
+        : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`
+        : `<button class="btn primary" type="button" data-open-account>Sign in to join the waitlist</button>`}
+      <button class="link small" type="button" data-space="personal" style="align-self:center">Back to Personal</button>
+    </section>
+  </div>`;
+}
 V.month = () => {
+  if (UI.biz) return spaceSwitch() + bizPreview();
   const C = compute();
-  return `${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap"><p>Sample month for one person, stored only on this device. Change the income and the list. The month-end number follows.</p><button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
+  return `${spaceSwitch()}${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap"><p>Sample month for one person, stored only on this device. Change the income and the list. The month-end number follows.</p><button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>
   <div data-out="reviewCard">${OUT.reviewCard()}</div>
@@ -1491,7 +1539,7 @@ function accProfile(){
   <section class="card"><h2>Profile</h2>
     <form data-form="acc-profile" class="acc-form" novalidate>${accFields(false)}${accErrBox()}<button class="btn primary" type="submit" ${ACC.busy ? "disabled" : ""}>Save changes</button></form></section>
   <section class="card plus-card"><div class="inline" style="justify-content:space-between"><h2>KeepWise Plus</h2><span class="pill gold">Coming soon</span></div>
-    <p class="small">Back up your budget with end-to-end encryption and use it on all your devices. Only you can read your data.</p>
+    <p class="small">Back up your budget with end-to-end encryption and use it on all your devices. Add receipt photos to splits, and keep business money in its own space. Only you can read your data.</p>
     ${ACC.profile && ACC.profile.plusInterest ? `<p class="small"><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p><button class="link small" type="button" data-acc-plus-off style="align-self:flex-start">Leave the waitlist</button>`
       : `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`}
   </section>
@@ -1634,8 +1682,8 @@ renderAcctBtn();
 
 /* ================= events ================= */
 const view = $("view");
-$("home-link").addEventListener("click", e => { e.preventDefault(); UI.inbox = false; UI.account = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; S.tab = b.dataset.tab; save(); render(false); });
+$("home-link").addEventListener("click", e => { e.preventDefault(); UI.inbox = false; UI.account = false; UI.biz = false; STMT.result = null; S.tab = "month"; save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; UI.biz = false; S.tab = b.dataset.tab; save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; if (UI.inbox) markSeen(); render(false); });
 
@@ -1736,6 +1784,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.mode){ S.splitMode = b.dataset.mode; splitDraft = null; UI.editPay = null; save(); render(true); if (S.splitMode === "shared") joinCircle(); return; }
   if (b.hasAttribute("data-new-split")){ const me = CTX().me; splitDraft = {title:"", amount:"", paidBy:me, tag: S.filter !== "All" ? S.filter : S.tags[0], method:"equal", parts:{[me]:1}, borrower:""}; splitErr = ""; render(true); return; }
   if (b.hasAttribute("data-cancel-split")){ splitDraft = null; splitErr = ""; UI.receiptInfo = false; render(true); return; }
+  if (b.dataset.space){ UI.biz = b.dataset.space === "business"; render(false); return; }
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
   if (b.hasAttribute("data-receipt-close")){ UI.receiptInfo = false; render(true); return; }
   if (b.hasAttribute("data-open-account")){ UI.account = true; UI.inbox = false; if (typeof accInit === "function") accInit(); render(false); return; }
