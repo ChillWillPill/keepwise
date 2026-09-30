@@ -57,6 +57,7 @@ h3{font-size:1rem;font-weight:700}
 p{margin:0}
 .muted{color:var(--muted)}
 .small{font-size:.88rem}
+.legal-links{margin:0;color:var(--muted)} .legal-links a{color:var(--muted)}
 .label{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .tnum{font-variant-numeric:tabular-nums}
 .big{font:600 3rem/1 var(--display);color:var(--green);letter-spacing:-.025em;font-variant-numeric:tabular-nums}
@@ -223,9 +224,15 @@ if (vv){ vv.addEventListener("resize", refit); vv.addEventListener("scroll", ref
 ["resize","orientationchange","pageshow","load"].forEach(e => window.addEventListener(e, refit));
 const isField = el => !!(el && el.matches && el.matches("input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select"));
 document.addEventListener("focusin", e => { if (isField(e.target) && e.target.tagName !== "SELECT") appEl.classList.add("typing"); });
-document.addEventListener("focusout", () => setTimeout(() => {
-  if (!isField(document.activeElement)) { appEl.classList.remove("typing"); window.scrollTo(0,0); refit(); refreshOuts(); }
-}, 60));
+// Leaving a field redraws the numbers, but never in the middle of a tap: redrawing between press and release
+// would swap out the button being pressed (Add, Save) and the tap would be lost along with what was typed.
+let ptrDown = false, blurPending = false;
+const afterBlur = () => { if (!isField(document.activeElement)) { appEl.classList.remove("typing"); window.scrollTo(0,0); refit(); refreshOuts(); } };
+document.addEventListener("pointerdown", () => { ptrDown = true; }, true);
+const ptrEnd = () => setTimeout(() => { ptrDown = false; if (blurPending) { blurPending = false; afterBlur(); } }, 0);
+document.addEventListener("pointerup", ptrEnd, true);
+document.addEventListener("pointercancel", ptrEnd, true);
+document.addEventListener("focusout", () => setTimeout(() => { if (ptrDown) blurPending = true; else afterBlur(); }, 60));
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 window.scrollTo(0,0); fit(); [100,400,1000,2000].forEach(ms => setTimeout(fit, ms));
 
@@ -1056,10 +1063,11 @@ V.plan = () => `
     <label class="field"><span>Goal amount</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="goalAmt" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.goalAmt}"></span></label></div>
     <label class="field"><span>Leftover money goes to</span><select data-bind="priority"><option value="ef" ${S.priority==="ef"?"selected":""}>Emergency fund first</option><option value="goal" ${S.priority==="goal"?"selected":""}>My goal first</option><option value="split" ${S.priority==="split"?"selected":""}>Half and half</option></select></label>
     <div data-out="saveSplit">${OUT.saveSplit()}</div></section>
-  <section class="card"><h2>Your data</h2><p class="muted small">Everything stays on this device. Nothing is sent anywhere.</p>
+  <section class="card"><h2>Your data</h2><p class="muted small">Your money data stays on this device and is never uploaded. Keepwise gives estimates, not financial advice.</p>
     <button class="btn" type="button" data-import-open>Import a bank statement (CSV or PDF)</button>
     <div class="inline"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank">Start empty</button></div>
-    <div id="reset-confirm"></div></section>`;
+    <div id="reset-confirm"></div>
+    <p class="small legal-links"><a href="https://chillwillpill.github.io/keepwise/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://chillwillpill.github.io/keepwise/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`;
 OUT.envCheck = () => { const t = S.env.needs + S.env.misc + S.env.save; return t === 100 ? `<p class="muted small">Adds up to 100%.</p>` : `<p class="err">These add up to ${t}%. Make them total 100%.</p>`; };
 OUT.expTotal = () => { const C = compute(); return `<p class="small tnum">Expenditures ${fmt(C.needs)} · Misc ${fmt(C.misc)} (with subscriptions and swaps)</p>`; };
 OUT.saveSplit = () => { const C = compute(); return C.savings > 0 ? `<p class="small tnum">This month: ${fmt(C.toEF)} to emergency fund, ${fmt(C.toGoal)} to ${esc(S.goalName || "your goal")}.${C.efTarget ? ` Fund target ${fmt(C.efTarget)}.` : ""}</p>` : `<p class="err">Nothing is left to save this month.</p>`; };
@@ -1327,6 +1335,12 @@ view.addEventListener("change", e => {
   if (t.dataset.expEnv !== undefined || t.hasAttribute("data-exp-env") || t.dataset.alt || t.hasAttribute("data-exp-amt")) { refreshOuts(); }
 });
 
+view.addEventListener("keydown", e => {  // Enter in "Add a line" adds it, like tapping Add
+  if (e.key !== "Enter") return; const box = e.target.closest && e.target.closest("[data-add-line]"); if (!box) return;
+  e.preventDefault();
+  if (e.target.matches("[data-new-name]") && !box.querySelector("[data-new-amt]").value) { box.querySelector("[data-new-amt]").focus(); return; }
+  box.querySelector("[data-add-line-btn]").click();
+});
 view.addEventListener("click", async e => {
   const t = e.target, b = t.closest("button, a");
   if (!b) return;
@@ -1338,7 +1352,7 @@ view.addEventListener("click", async e => {
     S.deposits = S.deposits.filter(d => d !== x); S.efSaved = r2(Math.max(0, S.efSaved - x.amount)); save(); refreshOuts(); toast(`Undid ${fmt(x.amount)}.`); return; }
   if (b.hasAttribute("data-add-line-btn")){ const box = b.closest("[data-add-line]"), name = box.querySelector("[data-new-name]").value.trim(), amt = numv(box.querySelector("[data-new-amt]").value);
     if (!name){ toast("Give the line a name."); box.querySelector("[data-new-name]").focus(); return; }
-    S.expenses.push({id:uid(), name, amount:amt, env:box.dataset.addLine}); save(); refreshOuts(); toast(`Added ${name}.`); return; }
+    S.expenses.push({id:uid(), name, amount:amt, env:box.dataset.addLine}); save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Added ${name}.`); return; }
   if (b.hasAttribute("data-import-open")){ $("stmt").click(); return; }
   if (b.hasAttribute("data-import-cancel")){ STMT.result = null; render(false); return; }
   if (b.dataset.importApply){ const R = STMT.result; applyStatement(R, b.dataset.importApply); STMT.result = null; S.tab = "month"; save(); render(false); toast(`Plan updated from ${R.fileName}: ${R.subs.length} subscriptions, ${fmt(R.monthlyIncome)} coming in.`); return; }

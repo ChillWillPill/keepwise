@@ -254,6 +254,41 @@ async def month_envelope_add_and_remove_line(ctx):
     assert await pg.inner_text("#toast") == "Give the line a name."
     await pg.click("[data-env-open=needs]"); assert "Rent" in await text(pg, ".env-body")
 
+@test
+async def add_line_survives_a_slow_human_tap(ctx):
+    # A real tap holds the button for ~100-300 ms; the redraw that follows leaving a field must not eat it.
+    for w in (390, 1280):
+        pg = await open_app(ctx, w=w)
+        await pg.click("[data-env-open=needs]")
+        await pg.fill(".env-body [data-new-name]", "Tax"); await pg.fill(".env-body [data-new-amt]", "1500")
+        await pg.locator(".env-body [data-add-line-btn]").click(delay=250); await pg.wait_for_timeout(200)
+        assert "Tax" in await text(pg, ".env-body"), f"{w}px: Tax line not shown right after Add"
+        assert any(e["name"] == "Tax" and e["amount"] == 1500 and e["env"] == "needs" for e in (await state(pg))["expenses"])
+        await pg.reload(); await pg.wait_for_timeout(400)
+        await pg.click("[data-env-open=needs]"); assert "Tax" in await text(pg, ".env-body"), "Tax line lost after reload"
+        await pg.close()
+    pg = await open_app(ctx)  # Enter key adds too
+    await pg.click("[data-env-open=misc]")
+    await pg.fill(".env-body [data-new-name]", "Gym"); await pg.press(".env-body [data-new-name]", "Enter")
+    await pg.keyboard.type("40"); await pg.keyboard.press("Enter"); await pg.wait_for_timeout(200)
+    assert "Gym" in await text(pg, ".env-body")
+
+@test
+async def legal_links_present(ctx):
+    pg = await open_app(ctx)
+    await tab(pg, "plan")
+    hrefs = await pg.eval_on_selector_all(".legal-links a", "a => a.map(x => x.href)")
+    assert any(h.endswith("/privacy.html") for h in hrefs) and any(h.endswith("/terms.html") for h in hrefs)
+    root = os.path.join(HERE, "..", "src", "legal")
+    for f in ("privacy.html", "terms.html"):
+        body = open(os.path.join(root, f), encoding="utf-8").read()
+        assert "—" not in body and "–" not in body, f"{f} has a long dash"
+        p2 = await ctx.new_page(); await p2.goto("file://" + os.path.abspath(os.path.join(root, f)))
+        assert await p2.locator("h1").count() == 1
+        sw = await p2.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        assert sw, f"{f} scrolls sideways"
+        await p2.close()
+
 # ---------------- subs ----------------
 @test
 async def subs_flags_keep_drop_used(ctx):

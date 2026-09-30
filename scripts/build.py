@@ -61,4 +61,7 @@ self.addEventListener("fetch", e => {{
   }}
 }});
 """)
+import shutil
+for f in ("privacy.html", "terms.html", "legal.css"):
+    shutil.copy(os.path.join(ROOT, "src/legal", f), os.path.join(ROOT, "www", f))
 print("built www/ (version", version + ")")
