@@ -4,7 +4,7 @@ See what you keep at month end. Keepwise finds subscriptions you don't use, sugg
 
 ## Try it
 
-- **Any phone (free):** open the web app at `https://<your-username>.github.io/keepwise/`.
+- **Any phone (free):** open the web app at https://chillwillpill.github.io/keepwise/.
   - iPhone: open it in Safari → Share → **Add to Home Screen**.
   - Android: open it in Chrome → menu → **Install app**.
 - **Android app:** download `keepwise.apk` from the **Keepwise test build** release on this page, open it on your phone, and allow installs when asked.

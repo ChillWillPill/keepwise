@@ -81,6 +81,11 @@ p{margin:0}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field > span{font-weight:600;font-size:.95rem}
 input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 14px;width:100%;min-width:0}
+/* iPhone Safari draws date boxes natively and ignores width; make them behave like the other fields */
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;min-height:48px;line-height:1.5;text-align:left}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type=date]::-webkit-calendar-picker-indicator{margin:0;opacity:.6}
+.grid2 > *{min-width:0}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-offset:1px;border-color:transparent}
 .money-in{position:relative}
 .money-in em{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-style:normal;color:var(--muted);pointer-events:none}

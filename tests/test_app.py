@@ -338,6 +338,10 @@ async def split_settle_history_undo_edit(ctx):
     await pg.locator("[data-settle]", has_text="Jordan").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(100)
     assert "You owe Jordan" not in await text(pg, "[data-out=splitSum]")
     assert "You paid Jordan $37.50" in await text(pg, "#history")
+    await pg.click("#history [data-pay-edit]"); await pg.wait_for_timeout(80)
+    fit = await pg.evaluate("(()=>{const d=document.querySelector('[data-pay-date]').getBoundingClientRect(),row=document.querySelector('#history .row').getBoundingClientRect(),a=document.querySelector('[data-pay-amt]').getBoundingClientRect();return {dr:d.right,rr:row.right,dh:d.height,ah:a.height}})()")
+    assert fit["dr"] <= fit["rr"] + 0.5 and abs(fit["dh"] - fit["ah"]) <= 2, f"date box overflows or mismatched: {fit}"
+    await pg.click("#history [data-pay-cancel]"); await pg.wait_for_timeout(80)
     await pg.click("#history [data-pay-edit]"); await pg.fill("[data-pay-amt]", "10"); await pg.click("[data-pay-save]"); await pg.wait_for_timeout(100)
     assert "You owe Jordan $27.50" in await text(pg, "[data-out=splitSum]")
     await pg.click("#history [data-pay-edit]"); await pg.wait_for_timeout(80)
