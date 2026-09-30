@@ -23,7 +23,7 @@ def money(s):  # "$1,456.99" -> 1456.99 ; handles "−"
     v = float(m.group(2).replace(",", ""))
     return -v if m.group(1) else v
 
-async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False):
+async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False, preview=False):
     pg = await ctx.new_page()
     await pg.set_viewport_size({"width": w, "height": h})
     pg.errors = []
@@ -37,7 +37,7 @@ async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False):
         if os.path.exists(path): await route.fulfill(path=path, content_type="application/javascript")
         else: await route.abort()
     await pg.route("https://cdnjs.cloudflare.com/**", serve_vendor)
-    if not fb: await pg.add_init_script("window.KEEPWISE_FIREBASE = null;")  # no network sign-in in ordinary tests
+    if not fb and not preview: await pg.add_init_script("window.KEEPWISE_FIREBASE = null;")  # no network sign-in in ordinary tests
     if fb:  # sign-in tests: a project config plus an offline stand-in for the Firebase SDK
         await pg.add_init_script("window.KEEPWISE_FIREBASE = {apiKey: 'test', authDomain: 'test.firebaseapp.com', projectId: 'test'};")
         async def serve_fb(route):
@@ -695,6 +695,15 @@ async def account_coming_soon_without_project(ctx):
     assert "Accounts are coming soon" in await text(pg, "#view")
     await pg.click("[data-close-account]"); await pg.wait_for_timeout(120)
     assert await pg.locator("[data-out=hero]").count() + await pg.locator("#m-income").count() > 0, "Done returns to the tab"
+
+@test
+async def account_in_claude_preview_points_to_website(ctx):
+    pg = await open_app(ctx, mock=True, preview=True)
+    await open_account(pg)
+    v = await text(pg, "#view")
+    assert "Sign in on the Keepwise website" in v and "Continue with Google" not in v
+    assert await pg.get_attribute("#view a.btn.primary", "href") == "https://chillwillpill.github.io/keepwise/"
+    assert await pg.evaluate("typeof window.firebase") == "undefined", "no sign-in code loaded in the preview"
 
 @test
 async def account_email_signup_and_profile(ctx):

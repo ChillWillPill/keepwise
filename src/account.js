@@ -13,7 +13,10 @@ const FB_CONFIG = "KEEPWISE_FIREBASE" in window ? window.KEEPWISE_FIREBASE : FB_
 const FB_BASE = "https://cdn.jsdelivr.net/npm/firebase@10.14.1/";
 const TERMS_VERSION = "2026-09-30";
 const IN_APP = !!window.Capacitor; // Google blocks its sign-in page inside app web views
-const ACC = {state: FB_CONFIG ? "idle" : "off", user: null, profile: null, mode: "signin", err: "", email: "", draft: {}, del: false, busy: false};
+// Inside the Claude preview the page runs in a locked frame where sign-in windows cannot open.
+const PREVIEW = !!window.claude && !("KEEPWISE_FIREBASE" in window);
+const SITE_URL = "https://chillwillpill.github.io/keepwise/";
+const ACC = {state: PREVIEW ? "preview" : FB_CONFIG ? "idle" : "off", user: null, profile: null, mode: "signin", err: "", email: "", draft: {}, del: false, busy: false};
 I.user = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>';
 I.google = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px;margin-right:8px" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.7 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1A11 11 0 0 0 2.1 7.1l3.6 2.8C6.6 7.3 9.1 5.4 12 5.4z"/></svg>';
 
@@ -66,7 +69,7 @@ function accErrText(e){
     "auth/popup-blocked": "Your browser blocked the Google window. Allow pop-ups for this site and try again.",
     "auth/account-exists-with-different-credential": "This email already has an account. Sign in with email and password.",
     "auth/requires-recent-login": "For your security, sign out, sign in again, then try once more."
-  })[c] || "Something went wrong. Please try again.";
+  })[c] || `Sign-in didn’t work${c ? ` (${c.replace("auth/", "")})` : ""}. Please try again.`;
 }
 function renderAcctBtn(){
   const b = $("acct-btn"); if (!b) return;
@@ -81,6 +84,7 @@ const accErrBox = () => `<div data-out="accErr">${OUT.accErr()}</div>`;
 OUT.accErr = () => ACC.err ? `<p class="err" role="alert">${esc(ACC.err)}</p>` : "";
 const legalLinks = `<a href="https://chillwillpill.github.io/keepwise/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="https://chillwillpill.github.io/keepwise/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>`;
 V.account = () => {
+  if (ACC.state === "preview") return `${accHeader()}<section class="card"><h2>Sign in on the Keepwise website</h2><p class="muted">Accounts can’t open inside this preview. Open the website to sign in with Google or email. Everything else works here as normal.</p><a class="btn primary" href="${SITE_URL}" target="_blank" rel="noopener">Open Keepwise</a></section>`;
   if (ACC.state === "off") return `${accHeader()}<section class="card"><h2>Accounts are coming soon</h2><p class="muted">Keepwise works fully without an account. Everything you enter stays on this phone.</p></section>`;
   if (ACC.state === "idle" || ACC.state === "loading") return `${accHeader()}<section class="card"><p class="muted">Connecting…</p></section>`;
   if (ACC.state === "error") return `${accHeader()}<section class="card"><h2>Can’t reach sign-in</h2><p class="muted">Check your connection and try again. Keepwise still works on this phone without an account.</p><button class="btn" type="button" data-acc-retry>Try again</button></section>`;
