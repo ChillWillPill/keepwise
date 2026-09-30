@@ -39,15 +39,21 @@
       setUser(u); return {user: current};
     },
     async signInWithPopup(){
-      const email = "gina@example.com";
-      users[email] = users[email] || {uid: "g1", email, displayName: "Gina Park", photoURL: "", provider: "google.com", verified: true}; saveUsers();
+      const email = window.__mockGoogleEmail || "gina@example.com";
+      users[email] = users[email] || {uid: email === "gina@example.com" ? "g1" : "g" + Object.keys(users).length, email, displayName: "Gina Park", photoURL: "", provider: "google.com", verified: true}; saveUsers();
       setUser(users[email]); return {user: current};
     },
     async sendPasswordResetEmail(email){ window.__mockMail.push({to: email, type: "reset"}); },
     async signOut(){ setUser(null); }
   };
   const fs = {
-    collection(c){ return { doc(id){ const key = c + "/" + id; return {
+    collection(c){ return {
+      async get(){  // listing the whole collection: only the owner's verified Google account, like the real rules
+        if (!current || current.email !== (window.__mockOwner || "notartist04@gmail.com") || current.providerData[0].providerId !== "google.com") throw err("permission-denied");
+        const docs = Object.keys(store).filter(k => k.startsWith(c + "/")).map(k => ({id: k.slice(c.length + 1), data: () => JSON.parse(JSON.stringify(store[k]))}));
+        return {docs, size: docs.length};
+      },
+      doc(id){ const key = c + "/" + id; return {
       async get(){ if (!current || current.uid !== id) throw err("permission-denied"); const has = key in store; return {exists: has, data: () => has ? JSON.parse(JSON.stringify(store[key])) : undefined}; },
       async set(d, o){ if (!current || current.uid !== id) throw err("permission-denied"); store[key] = o && o.merge ? {...(store[key] || {}), ...d} : d; saveStore(); },
       async delete(){ if (!current || current.uid !== id) throw err("permission-denied"); delete store[key]; saveStore(); }

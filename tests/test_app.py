@@ -818,6 +818,64 @@ async def logo_goes_back_to_month(ctx):
     assert await pg.locator("[data-tab=month][aria-current=page]").count() == 1 and await pg.locator("#m-income").count() == 1
     assert (await state(pg))["tab"] == "month"
 
+# ---------------- owner dashboard ----------------
+ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")
+SEED = {
+  "users/u1": {"name": "Ada Brook", "email": "ada@example.com", "createdAt": 0, "plusInterest": True, "plusInterestAt": 0, "marketing": True, "marketingUpdatedAt": 0, "city": "Leeds", "provider": "password", "emailVerified": True},
+  "users/u2": {"name": "Ben, Jr.", "email": "ben@example.com", "createdAt": 0, "plusInterest": False, "marketing": True, "marketingUpdatedAt": 0, "provider": "google.com", "emailVerified": True},
+  "users/u3": {"name": "Cy Diaz", "email": "cy@example.com", "createdAt": 0, "plusInterest": True, "plusInterestAt": 0, "marketing": False, "provider": "google.com", "emailVerified": False},
+}
+async def open_admin(ctx, owner=True, w=1100, h=900):
+    pg = await ctx.new_page(); await pg.set_viewport_size({"width": w, "height": h})
+    pg.errors = []; pg.on("pageerror", lambda e: pg.errors.append("pageerror: " + str(e)))
+    now = "Date.now()"
+    seed = json.dumps(SEED)
+    await pg.add_init_script("window.KEEPWISE_FIREBASE = {apiKey:'t',projectId:'t'};" + f"window.__mockGoogleEmail = {json.dumps('notartist04@gmail.com' if owner else 'someone@example.com')};" +
+        f"if (!localStorage.getItem('__mock_fs')) {{ const s = {seed}; const n = Date.now(); Object.values(s).forEach((u,i) => {{ u.createdAt = n - i*2*86400000; if (u.plusInterestAt === 0) u.plusInterestAt = n - i*3600000; if (u.marketingUpdatedAt === 0) u.marketingUpdatedAt = n; }}); localStorage.setItem('__mock_fs', JSON.stringify(s)); }}")
+    async def serve_fb(route):
+        if route.request.url.endswith("firebase-app-compat.js"): await route.fulfill(path=os.path.join(HERE, "mock_firebase.js"), content_type="application/javascript")
+        else: await route.fulfill(body="", content_type="application/javascript")
+    await pg.route("https://cdn.jsdelivr.net/npm/firebase@*/**", serve_fb)
+    await pg.goto("file://" + ADMIN); await pg.wait_for_timeout(500)
+    return pg
+
+@test
+async def admin_owner_sees_dashboard_and_lists(ctx):
+    pg = await open_admin(ctx)
+    assert "Owner sign-in" in await text(pg, "#app")
+    await pg.click("[data-google]"); await pg.wait_for_timeout(500)
+    tiles = await text(pg, ".tiles")
+    assert "Accounts 3" in tiles and "Plus waitlist 2" in tiles and "67% of accounts" in tiles and "Email opt-ins 2" in tiles
+    assert "2 of 200" in await text(pg, "#app") and "198 more" in await text(pg, "#app")
+    assert await pg.locator("#chart .bar").count() == 30
+    rows = await pg.locator("#table tbody tr").all_inner_texts()
+    assert len(rows) == 2 and "Ada Brook" in "".join(rows) and "Ben" not in "".join(rows), "waitlist shows only people who joined"
+    await pg.click("[data-tab=email]"); await pg.wait_for_timeout(150)
+    rows = await pg.locator("#table tbody tr").all_inner_texts()
+    assert len(rows) == 2 and "Cy Diaz" not in "".join(rows), "email list is opted-in people only"
+    async with pg.expect_download() as dl: await pg.click("[data-export]")
+    d = await dl.value; csv = open(await d.path()).read()
+    assert csv.splitlines()[0].startswith("Name,Email,Opted in") and '"Ben, Jr."' in csv and len(csv.splitlines()) == 3
+    await pg.click("[data-tab=all]"); await pg.fill("#q", "leeds"); await pg.wait_for_timeout(150)
+    assert await pg.locator("#table tbody tr").count() == 1
+    assert pg.errors == [], pg.errors
+
+@test
+async def admin_blocks_other_accounts(ctx):
+    pg = await open_admin(ctx, owner=False)
+    await pg.click("[data-google]"); await pg.wait_for_timeout(500)
+    v = await text(pg, "#app")
+    assert "No admin access" in v and "Accounts" not in v
+    await pg.click("[data-signout]"); await pg.wait_for_timeout(300)
+    assert "Owner sign-in" in await text(pg, "#app")
+
+@test
+async def admin_fits_phone_width(ctx):
+    pg = await open_admin(ctx, w=360, h=780)
+    await pg.click("[data-google]"); await pg.wait_for_timeout(500)
+    sw = await pg.evaluate("[document.documentElement.scrollWidth, innerWidth]")
+    assert sw[0] <= sw[1], f"admin overflows at 360px: {sw}"
+
 # ---------------- persistence ----------------
 @test
 async def data_persists_across_reload(ctx):

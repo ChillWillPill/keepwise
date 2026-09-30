@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>KeepWise Admin</title>
+<link rel="icon" href="icons/favicon-64.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<style>
+:root{
+  --bg:#f3efe6; --card:#fbf8f2; --ink:#1c2420; --muted:#4d564e; --faint:#7a8078; --line:#e0d5c5; --chip:#efe4d4;
+  --teal:#0e8571; --teal-soft:#dcefe9; --gold:#a57d2c; --rust:#a84b34; --grid:#e8dfd1;
+  --display:"Fraunces", ui-serif, Georgia, serif; --body:"Figtree", ui-sans-serif, system-ui, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --faint:#7d7b72; --line:#343830; --chip:#2a2d27;
+  --teal:#3cc2a8; --teal-soft:#1b3530; --gold:#e0b75c; --rust:#e79075; --grid:#2c302a; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --faint:#7d7b72; --line:#343830; --chip:#2a2d27; --teal:#3cc2a8; --teal-soft:#1b3530; --gold:#e0b75c; --rust:#e79075; --grid:#2c302a; color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--body)}
+.wrap{max-width:1040px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 16px) 16px 48px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.logo{width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px var(--line);flex:none}
+.wordmark{font:600 1.2rem/1 var(--display);letter-spacing:-.02em;color:var(--teal)} .wordmark span{color:var(--gold)}
+.tag{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--chip);border-radius:99px;padding:3px 8px}
+.who{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.88rem;min-width:0}
+.who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+@media (max-width:560px){.who span{display:none}}
+h1{font:600 clamp(1.7rem,6vw,2.2rem)/1.1 var(--display);letter-spacing:-.025em;margin:0 0 4px}
+h2{font:600 1.15rem/1.2 var(--display);letter-spacing:-.01em;margin:0}
+p{margin:0}
+.muted{color:var(--muted)} .small{font-size:.85rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.btn{appearance:none;font:600 .9rem var(--body);border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+:root[data-theme="dark"] .btn.primary{color:#0d1b17}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary{color:#0d1b17}}
+.btn:focus-visible,input:focus-visible,[role=tab]:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+@media (max-width:760px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;min-width:0}
+.tile .k{font-size:.8rem;color:var(--muted);font-weight:600}
+.tile .v{font:600 2rem/1.1 var(--display);letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums}
+.tile .s{font-size:.8rem;color:var(--muted);margin-top:2px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:12px;margin-bottom:12px}
+@media (max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.meter{position:relative;height:14px;border-radius:99px;background:var(--chip);overflow:visible;margin:18px 0 26px}
+.meter .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--teal);min-width:4px}
+.meter .tick{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--gold);border-radius:2px}
+.meter .tl{position:absolute;top:22px;transform:translateX(-50%);font-size:.75rem;color:var(--muted);white-space:nowrap}
+.big{font:600 2.4rem/1 var(--display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:170px;overflow:visible}
+.chart{min-height:170px}
+.chart .axis{fill:var(--faint);font:500 11px var(--body)}
+.chart .gl{stroke:var(--grid);stroke-width:1}
+.chart .bar{fill:var(--teal)}
+.chart .hit{fill:transparent;cursor:default}
+.chart .hit:hover + .bar,.chart .bar.on{fill:var(--gold)}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:.8rem;font-weight:600;padding:6px 9px;border-radius:8px;white-space:nowrap;transform:translate(-50%,-110%)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+[role=tab]{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--muted);font:600 .88rem var(--body);padding:8px 12px;border-radius:99px;cursor:pointer}
+[role=tab][aria-selected=true]{background:var(--teal-soft);color:var(--teal);border-color:transparent}
+[role=tab] b{font-variant-numeric:tabular-nums;margin-left:4px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tools input{flex:1 1 200px;min-width:0;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.75rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:700;background:var(--card);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;border-radius:99px;padding:2px 8px;background:var(--chip);color:var(--muted)}
+.pill.ok{background:var(--teal-soft);color:var(--teal)}
+.empty{color:var(--muted);padding:18px;text-align:center}
+.center{max-width:440px;margin:10vh auto 0;text-align:center}
+.center .card{align-items:center}
+.err{color:var(--rust);font-weight:600;font-size:.9rem}
+.note{font-size:.8rem;color:var(--muted)}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><img class="logo" src="icons/favicon-64.png" alt="" width="36" height="36"><span class="wordmark">Keep<span>Wise</span></span><span class="tag">Admin</span></div>
+    <div class="who" id="who" hidden><span id="who-email"></span><button class="btn" type="button" id="signout">Sign out</button></div>
+  </header>
+  <main id="app"><div class="center"><p class="muted">Loading…</p></div></main>
+</div>
+
+<script>
+(() => {
+"use strict";
+const FB_PROJECT = {
+  apiKey: "AIzaSyD8vgylgp_MxETFmZrRaw3j-T01ruaYknM",
+  authDomain: "keepwise-c28c3.firebaseapp.com",
+  projectId: "keepwise-c28c3",
+  storageBucket: "keepwise-c28c3.firebasestorage.app",
+  messagingSenderId: "514732112999",
+  appId: "1:514732112999:web:bb670a443dd04d7b0668c2"
+};
+const FB_CONFIG = "KEEPWISE_FIREBASE" in window ? window.KEEPWISE_FIREBASE : FB_PROJECT;
+const FB_BASE = "https://cdn.jsdelivr.net/npm/firebase@10.14.1/";
+const GOAL_LOW = 200, GOAL_HIGH = 300;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtDate = t => t ? new Date(t).toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric"}) : "";
+const DAY = 864e5;
+const A = {user: null, users: [], tab: "waitlist", q: "", state: "loading", err: ""};
+
+function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => bad(new Error("load")); document.head.appendChild(s); }); }
+
+async function init(){
+  try {
+    for (const f of ["firebase-app-compat.js", "firebase-auth-compat.js", "firebase-firestore-compat.js"]) await loadScript(FB_BASE + f);
+    if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    A.auth = firebase.auth(); A.db = firebase.firestore();
+    A.auth.onAuthStateChanged(async u => {
+      A.user = u; $("who").hidden = !u; $("who-email").textContent = u ? (u.email || "") : "";
+      if (!u){ A.state = "signin"; render(); return; }
+      await loadUsers();
+    });
+  } catch(e){ A.state = "error"; A.err = "Couldn’t load sign-in. Check your connection and refresh."; render(); }
+}
+async function loadUsers(){
+  A.state = "loading"; render();
+  try {
+    const snap = await A.db.collection("users").get();
+    A.users = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    A.state = "ready";
+  } catch(e){
+    A.state = (e && e.code && String(e.code).includes("permission")) ? "denied" : "error";
+    A.err = "Couldn’t load accounts. Check your connection and try again.";
+  }
+  render();
+}
+
+// ---- derived lists ----
+const byNewest = key => (a, b) => (b[key] || 0) - (a[key] || 0);
+function lists(){
+  const u = A.users;
+  return {
+    waitlist: u.filter(x => x.plusInterest).sort(byNewest("plusInterestAt")),
+    email: u.filter(x => x.marketing).sort(byNewest("marketingUpdatedAt")),
+    all: u.slice().sort(byNewest("createdAt"))
+  };
+}
+const COLS = {
+  waitlist: [["Name", x => x.name], ["Email", x => x.email], ["Joined waitlist", x => fmtDate(x.plusInterestAt)], ["City", x => x.city], ["Email opt-in", x => x.marketing ? "Yes" : "No"]],
+  email: [["Name", x => x.name], ["Email", x => x.email], ["Opted in", x => fmtDate(x.marketingUpdatedAt)], ["City", x => x.city], ["Plus waitlist", x => x.plusInterest ? "Yes" : "No"]],
+  all: [["Name", x => x.name], ["Email", x => x.email], ["Created", x => fmtDate(x.createdAt)], ["Sign-in", x => x.provider === "google.com" ? "Google" : "Email"], ["Email verified", x => x.emailVerified ? "Yes" : "No"], ["City", x => x.city], ["Plus waitlist", x => x.plusInterest ? "Yes" : "No"], ["Email opt-in", x => x.marketing ? "Yes" : "No"]]
+};
+const TAB_LABEL = {waitlist: "Plus waitlist", email: "Email list", all: "All accounts"};
+function filtered(rows){
+  const q = A.q.trim().toLowerCase(); if (!q) return rows;
+  return rows.filter(x => [x.name, x.email, x.city].some(v => String(v || "").toLowerCase().includes(q)));
+}
+
+// ---- views ----
+function render(){
+  const app = $("app");
+  if (A.state === "loading"){ app.innerHTML = `<div class="center"><p class="muted">Loading…</p></div>`; return; }
+  if (A.state === "error"){ app.innerHTML = `<div class="center"><div class="card"><h2>Something went wrong</h2><p class="err">${esc(A.err)}</p><button class="btn" type="button" data-retry>Try again</button></div></div>`; return; }
+  if (A.state === "signin"){ app.innerHTML = `<div class="center"><div class="card"><h1>Owner sign-in</h1><p class="muted">This page is only for the KeepWise owner.</p><p class="err" id="signin-err" hidden></p><button class="btn primary" type="button" data-google>Continue with Google</button></div></div>`; return; }
+  if (A.state === "denied"){ app.innerHTML = `<div class="center"><div class="card"><h2>No admin access</h2><p class="muted">${esc(A.user && A.user.email)} isn’t allowed to view this page.</p><button class="btn" type="button" data-signout>Sign out</button></div></div>`; return; }
+  const L = lists(), now = Date.now(), total = A.users.length;
+  const week = A.users.filter(x => x.createdAt && now - x.createdAt < 7 * DAY).length;
+  const pct = total ? Math.round(L.waitlist.length / total * 100) : 0;
+  const rows = filtered(L[A.tab]), cols = COLS[A.tab];
+  app.innerHTML = `
+  <div class="head"><div><h1>Dashboard</h1><p class="muted small">Updated ${new Date().toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"})}. Account profiles only. Budgets and statements never leave users’ phones.</p></div>
+    <button class="btn" type="button" data-refresh>Refresh</button></div>
+  <section class="tiles" aria-label="Headline numbers">
+    ${tile("Accounts", total, "")}
+    ${tile("Plus waitlist", L.waitlist.length, total ? `${pct}% of accounts` : "")}
+    ${tile("Email opt-ins", L.email.length, "Can receive offers")}
+    ${tile("New this week", week, "Accounts created")}
+  </section>
+  <section class="grid2">
+    <div class="card"><h2>Plus demand</h2>
+      <p class="muted small">Goal before launching paid features: ${GOAL_LOW} to ${GOAL_HIGH} people ready to buy.</p>
+      <div><span class="big">${L.waitlist.length}</span> <span class="muted">of ${GOAL_LOW}</span></div>
+      ${meter(L.waitlist.length)}
+      <p class="small">${L.waitlist.length >= GOAL_LOW ? "You’ve reached the goal. Time to plan the Plus launch." : `${GOAL_LOW - L.waitlist.length} more to reach ${GOAL_LOW}.`}</p>
+    </div>
+    <div class="card"><h2>New accounts, last 30 days</h2>${chart()}</div>
+  </section>
+  <section class="card">
+    <div class="tabs" role="tablist" aria-label="Lists">${Object.keys(TAB_LABEL).map(k => `<button type="button" role="tab" aria-selected="${A.tab === k}" data-tab="${k}">${TAB_LABEL[k]}<b>${L[k].length}</b></button>`).join("")}</div>
+    <div class="tools"><label class="sr" for="q">Search</label><input id="q" type="search" placeholder="Search name, email or city" value="${esc(A.q)}"><button class="btn" type="button" data-export>Export CSV</button></div>
+    ${A.tab === "email" ? `<p class="note">Only people who ticked “Email me offers” appear here. Every marketing email must include an unsubscribe link.</p>` : ""}
+    <div class="tablewrap" id="table">${table(rows, cols)}</div>
+  </section>`;
+  wireChart();
+}
+function tile(k, v, s){ return `<div class="tile"><div class="k">${esc(k)}</div><div class="v">${Number(v).toLocaleString()}</div>${s ? `<div class="s">${esc(s)}</div>` : ""}</div>`; }
+function meter(n){
+  const w = Math.min(100, n / GOAL_HIGH * 100), t = GOAL_LOW / GOAL_HIGH * 100;
+  return `<div class="meter" role="meter" aria-valuemin="0" aria-valuemax="${GOAL_HIGH}" aria-valuenow="${n}" aria-label="Plus waitlist toward goal">
+    <div class="fill" style="width:${w}%"></div><div class="tick" style="left:calc(${t}% - 1px)"></div>
+    <span class="tl" style="left:0;transform:none">0</span><span class="tl" style="left:${t}%">${GOAL_LOW}</span><span class="tl" style="left:auto;right:0;transform:none">${GOAL_HIGH}</span></div>`;
+}
+function days(){
+  const out = [], today = new Date(); today.setHours(0, 0, 0, 0);
+  for (let i = 29; i >= 0; i--){ const d = new Date(today.getTime() - i * DAY); out.push({t: d.getTime(), n: 0}); }
+  A.users.forEach(x => { if (!x.createdAt) return; const d = new Date(x.createdAt); d.setHours(0, 0, 0, 0); const slot = out.find(o => o.t === d.getTime()); if (slot) slot.n++; });
+  return out;
+}
+function chart(){
+  const D = days(), sum = D.reduce((a, d) => a + d.n, 0);
+  return `<div class="chart" id="chart" role="img" aria-label="${sum} new accounts in the last 30 days"></div><p class="note">${sum} new account${sum === 1 ? "" : "s"} in 30 days.</p>`;
+}
+function drawChart(W){
+  const D = days(), max = Math.max(1, ...D.map(d => d.n)), top = niceMax(max);
+  const H = 170, padL = 26, padB = 22, padT = 8, cw = (W - padL) / D.length, bw = Math.max(3, cw - 4), ih = H - padB - padT;
+  const y = v => padT + ih - v / top * ih;
+  let g = `<line class="gl" x1="${padL}" x2="${W}" y1="${y(top)}" y2="${y(top)}"/><line class="gl" x1="${padL}" x2="${W}" y1="${y(top / 2)}" y2="${y(top / 2)}"/><line class="gl" x1="${padL}" x2="${W}" y1="${y(0)}" y2="${y(0)}"/>`;
+  g += `<text class="axis" x="${padL - 6}" y="${y(top) + 4}" text-anchor="end">${top}</text><text class="axis" x="${padL - 6}" y="${y(0) + 4}" text-anchor="end">0</text>`;
+  D.forEach((d, i) => {
+    const x = padL + i * cw + (cw - bw) / 2, h = d.n ? Math.max(2, y(0) - y(d.n)) : 0;
+    g += `<rect class="hit" x="${padL + i * cw}" y="${padT}" width="${cw}" height="${ih}" data-i="${i}"/>`;
+    g += h ? `<path class="bar" data-bar="${i}" d="${barPath(x, y(0), bw, h)}"/>` : `<rect class="bar" data-bar="${i}" x="${x}" y="${y(0)}" width="${bw}" height="0"/>`;
+  });
+  const lab = t => new Date(t).toLocaleDateString("en-US", {month: "short", day: "numeric"});
+  g += `<text class="axis" x="${padL}" y="${H - 4}">${lab(D[0].t)}</text><text class="axis" x="${W}" y="${H - 4}" text-anchor="end">Today</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">${g}</svg><div class="tip" id="tip" hidden></div>`;
+}
+function barPath(x, base, w, h){ const r = Math.min(4, w / 2, h); return `M${x},${base}V${base - h + r}Q${x},${base - h} ${x + r},${base - h}H${x + w - r}Q${x + w},${base - h} ${x + w},${base - h + r}V${base}Z`; }
+function niceMax(m){ if (m <= 4) return 4; const p = Math.pow(10, Math.floor(Math.log10(m))), n = m / p; return (n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
+function wireChart(){
+  const c = $("chart"); if (!c) return; c.innerHTML = drawChart(Math.max(240, c.clientWidth)); const D = days(), tip = $("tip");
+  c.querySelectorAll(".hit").forEach(h => {
+    h.addEventListener("mouseenter", () => {
+      const i = +h.dataset.i, d = D[i], r = h.getBoundingClientRect(), cr = c.getBoundingClientRect();
+      c.querySelectorAll(".bar.on").forEach(b => b.classList.remove("on")); c.querySelector(`[data-bar="${i}"]`).classList.add("on");
+      tip.hidden = false; tip.textContent = `${new Date(d.t).toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})}: ${d.n} new`;
+      const x = r.left - cr.left + r.width / 2, half = tip.offsetWidth / 2;
+      tip.style.left = Math.min(Math.max(x, half), cr.width - half) + "px"; tip.style.top = "20px";
+    });
+  });
+  c.addEventListener("mouseleave", () => { tip.hidden = true; c.querySelectorAll(".bar.on").forEach(b => b.classList.remove("on")); });
+}
+function table(rows, cols){
+  if (!rows.length) return `<p class="empty">${A.q ? "No matches." : A.tab === "waitlist" ? "No one on the Plus waitlist yet." : A.tab === "email" ? "No one has opted in to emails yet." : "No accounts yet."}</p>`;
+  return `<table><thead><tr>${cols.map(c => `<th scope="col">${esc(c[0])}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${cols.map(c => { const v = c[1](r) ?? ""; return `<td>${v === "Yes" ? `<span class="pill ok">Yes</span>` : v === "No" ? `<span class="pill">No</span>` : esc(v)}</td>`; }).join("")}</tr>`).join("")}</tbody></table>`;
+}
+function exportCSV(){
+  const L = lists(), rows = filtered(L[A.tab]), cols = COLS[A.tab];
+  const cell = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const csv = [cols.map(c => c[0]).join(","), ...rows.map(r => cols.map(c => cell(c[1](r))).join(","))].join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv"}));
+  a.download = `keepwise-${A.tab}-${new Date().toISOString().slice(0, 10)}.csv`; document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ---- events ----
+document.addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.hasAttribute("data-google")){
+    try { await A.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    catch(err){ const el = $("signin-err"); if (el){ el.hidden = false; el.textContent = err && err.code === "auth/popup-blocked" ? "Your browser blocked the Google window. Allow pop-ups and try again." : "Sign-in didn’t finish. Please try again."; } }
+    return;
+  }
+  if (b.id === "signout" || b.hasAttribute("data-signout")){ await A.auth.signOut(); return; }
+  if (b.hasAttribute("data-refresh") || b.hasAttribute("data-retry")){ if (A.user) loadUsers(); else location.reload(); return; }
+  if (b.dataset.tab){ A.tab = b.dataset.tab; render(); return; }
+  if (b.hasAttribute("data-export")){ exportCSV(); return; }
+});
+document.addEventListener("input", e => { if (e.target.id === "q"){ A.q = e.target.value; const L = lists(); $("table").innerHTML = table(filtered(L[A.tab]), COLS[A.tab]); } });
+let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (A.state === "ready") wireChart(); }, 150); });
+init();
+})();
+</script>
+</body>
+</html>
