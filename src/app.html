@@ -174,6 +174,7 @@ details summary::-webkit-details-marker{display:none}
 .add-line{margin-top:12px;flex-wrap:nowrap}
 .review{border-color:color-mix(in srgb,var(--gold) 40%,var(--line))}
 .review-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.review-btns .btn{padding:10px 6px;white-space:nowrap;font-size:.92rem}
 .import-card h3{font-size:1.05rem}
 .people .person,.people .person-wrap{border-bottom:1px solid var(--line)}
 .people > :last-child,.people .person-wrap .person{border-bottom:0}
@@ -426,7 +427,7 @@ function compute(){
   const nextMonth = left <= 2;
   const planDate = nextMonth ? new Date(now.getFullYear(), now.getMonth()+1, 1) : now;
   const mName = d => d.toLocaleString("en-US", {month:"long"});
-  const planNote = nextMonth ? `${mName(now)} has ${left === 0 ? "its last day today" : left === 1 ? "1 day left" : left + " days left"}. This plan is ${mName(planDate)}.` : `${mName(now)} has ${left} days left. This plan is ${mName(now)}.`;
+  const planNote = nextMonth ? (left === 0 ? `Today is the last day of ${mName(now)}, so this plan covers ${mName(planDate)}.` : left === 1 ? `${mName(now)} ends tomorrow, so this plan covers ${mName(planDate)}.` : `${left} days left in ${mName(now)}. This plan covers ${mName(planDate)}.`) : `${left} days left in ${mName(now)}. This plan covers ${mName(now)}.`;
   const planKey = `${planDate.getFullYear()}-${String(planDate.getMonth()+1).padStart(2,"0")}`;
   const setAside = (S.deposits || []).filter(x => x.month === planKey).reduce((a,x) => a + x.amount, 0);
   const endSaved = S.efSaved + savings - setAside;
@@ -1052,7 +1053,7 @@ OUT.subsList = () => {
       <div><div class="name tnum">${fmt(s.price)}<span class="muted small">/${s.cycle === "yr" ? "yr" : "mo"}</span></div>${s.cycle === "yr" ? `<div class="muted small tnum">${fmt(subMonthly(s))}/mo</div>` : ""}</div></div>
       ${f.length ? `<div class="inline">${f.map(r => `<span class="pill ${k === "keep" ? "grey" : "flag"}">${esc(r)}</span>`).join("")}</div>` : ""}
       <div class="inline" style="justify-content:space-between">
-        <div class="seg" role="group" aria-label="${esc(s.name)}"><button type="button" data-keep="keep" aria-pressed="${k === "keep"}">Keep</button><button type="button" data-keep="auto" aria-pressed="${k === "auto"}">Rules</button><button type="button" class="drop" data-keep="drop" aria-pressed="${k === "drop"}">Drop</button></div>
+        <div class="seg" role="group" aria-label="${esc(s.name)}"><button type="button" data-keep="keep" aria-pressed="${k === "keep"}">Keep</button><button type="button" data-keep="auto" aria-pressed="${k === "auto"}" title="Let your rules decide">Auto</button><button type="button" class="drop" data-keep="drop" aria-pressed="${k === "drop"}">Drop</button></div>
         <span class="inline"><button class="btn small" type="button" data-used>Used today</button><button class="btn small danger" type="button" data-del-sub aria-label="Remove ${esc(s.name)}">Remove</button></span></div>
       ${k === "drop" ? `<p class="small">Cancel before it renews, in the app or site where you signed up. <a class="good" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Find the cancel page</a></p>` : ""}</div>`;}).join("")}</div>`;
 };
@@ -1126,15 +1127,15 @@ V.plan = () => `
     <label class="field"><span>Currency</span><select data-bind="cur">${CURRENCIES.map(([c,n]) => `<option value="${c}" ${c===S.cur?"selected":""}>${c} · ${n}</option>`).join("")}</select></label>
   </div>
   <section class="card"><h2>Envelopes</h2><p class="muted small">Share of money coming in each envelope should hold.</p>
-    <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr));align-items:end">
       ${[["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => `<label class="field"><span>${n} %</span><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"></label>`).join("")}
     </div><div data-out="envCheck">${OUT.envCheck()}</div></section>
   <section class="card"><h2>What goes out each month</h2>
     <div data-out="expTotal">${OUT.expTotal()}</div>
     <div class="rows" style="border-radius:14px">${S.expenses.map(e => `<div class="row" data-exp="${e.id}" style="padding:10px 12px">
       <input data-exp-name value="${esc(e.name)}" aria-label="Name" enterkeyhint="done">
-      <div class="inline"><span class="money-in" style="flex:1 1 120px"><em>${esc(sym())}</em><input data-exp-amt type="text" inputmode="decimal" enterkeyhint="done" value="${e.amount}" aria-label="Amount for ${esc(e.name)}"></span>
-      <select data-exp-env style="flex:1 1 120px" aria-label="Envelope"><option value="needs" ${e.env==="needs"?"selected":""}>Expenditures</option><option value="misc" ${e.env==="misc"?"selected":""}>Misc</option></select>
+      <div class="inline"><span class="money-in" style="flex:1 1 100px"><em>${esc(sym())}</em><input data-exp-amt type="text" inputmode="decimal" enterkeyhint="done" value="${e.amount}" aria-label="Amount for ${esc(e.name)}"></span>
+      <select data-exp-env style="flex:1 1 150px" aria-label="Envelope"><option value="needs" ${e.env==="needs"?"selected":""}>Expenditures</option><option value="misc" ${e.env==="misc"?"selected":""}>Misc</option></select>
       <button class="btn small danger" type="button" data-del-exp aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>
     <button class="btn" type="button" data-add-exp>Add a line</button>
     <p class="muted small">Subscriptions live on the Subs tab and count toward Misc.</p></section>
