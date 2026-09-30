@@ -896,6 +896,25 @@ async def split_people_picker_search(ctx):
     await pg.click("form[data-form=split] h2"); await pg.wait_for_timeout(100)
     assert await pg.locator("[data-part-add]").count() == 0, "tapping elsewhere closes the list"
 
+@test
+async def split_edit_in_place_and_icon(ctx):
+    pg = await open_app(ctx); await tab(pg, "split")
+    if await pg.locator("[data-mode=local]").count(): await pg.click("[data-mode=local]"); await pg.wait_for_timeout(120)
+    card = pg.locator("[data-split]").nth(2); sid = await card.get_attribute("data-split")
+    await card.scroll_into_view_if_needed(); await pg.wait_for_timeout(100)
+    top_before = await pg.evaluate("document.getElementById('main').scrollTop")
+    await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(300)
+    assert await pg.locator(f"[data-split='{sid}']").count() == 0, "the card became the form"
+    assert await pg.locator("form[data-form=split]").count() == 1 and await pg.locator("[data-new-split]").count() == 1, "form is in place; New split stays at the top"
+    top_after = await pg.evaluate("document.getElementById('main').scrollTop")
+    assert top_after > 200 and abs(top_after - top_before) < 400, (top_before, top_after)
+    await pg.click("[data-icon=travel]"); await pg.wait_for_timeout(100)
+    assert await pg.get_attribute("[data-icon=travel]", "aria-pressed") == "true"
+    await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(250)
+    assert [x for x in (await state(pg))["splits"] if x["id"] == sid][0]["icon"] == "travel"
+    assert await pg.evaluate("document.getElementById('main').scrollTop") > 200, "stays near the card after saving"
+    assert await pg.locator(f"[data-split='{sid}'] .ico path").count() == 2, "card shows the chosen icon"
+
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")
 SEED = {
