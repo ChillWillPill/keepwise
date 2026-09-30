@@ -1321,8 +1321,17 @@ function refreshOuts(){
 const numv = v => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n) ? 0 : n; };
 
 // ================= accounts (optional; the profile lives in Firebase, money data never leaves this device) =================
-// Paste the Firebase project's public web config here. Until then, Account shows "coming soon".
-const FB_CONFIG = window.KEEPWISE_FIREBASE || null;
+// The project's public web config (safe to ship; access is controlled by Firebase security rules).
+// Tests can override it with window.KEEPWISE_FIREBASE (null turns accounts off).
+const FB_PROJECT = {
+  apiKey: "AIzaSyD8vgylgp_MxETFmZrRaw3j-T01ruaYknM",
+  authDomain: "keepwise-c28c3.firebaseapp.com",
+  projectId: "keepwise-c28c3",
+  storageBucket: "keepwise-c28c3.firebasestorage.app",
+  messagingSenderId: "514732112999",
+  appId: "1:514732112999:web:bb670a443dd04d7b0668c2"
+};
+const FB_CONFIG = "KEEPWISE_FIREBASE" in window ? window.KEEPWISE_FIREBASE : FB_PROJECT;
 const FB_BASE = "https://cdn.jsdelivr.net/npm/firebase@10.14.1/";
 const TERMS_VERSION = "2026-09-30";
 const IN_APP = !!window.Capacitor; // Google blocks its sign-in page inside app web views

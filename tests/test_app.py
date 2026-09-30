@@ -37,6 +37,7 @@ async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False):
         if os.path.exists(path): await route.fulfill(path=path, content_type="application/javascript")
         else: await route.abort()
     await pg.route("https://cdnjs.cloudflare.com/**", serve_vendor)
+    if not fb: await pg.add_init_script("window.KEEPWISE_FIREBASE = null;")  # no network sign-in in ordinary tests
     if fb:  # sign-in tests: a project config plus an offline stand-in for the Firebase SDK
         await pg.add_init_script("window.KEEPWISE_FIREBASE = {apiKey: 'test', authDomain: 'test.firebaseapp.com', projectId: 'test'};")
         async def serve_fb(route):
