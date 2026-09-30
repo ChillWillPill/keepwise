@@ -1,4 +1,4 @@
-"""Builds every Keepwise icon from the owl-and-wallet logo (assets/logo-source.jpg).
+"""Builds every KeepWise icon from the owl-and-wallet logo (assets/logo-source.jpg).
 The round emblem is cut out of the source, cleaned to pure white, then placed at each size the app needs."""
 from PIL import Image, ImageDraw
 import numpy as np, os, base64, io

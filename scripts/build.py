@@ -16,7 +16,7 @@ head = """<!doctype html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Keepwise">
+<meta name="apple-mobile-web-app-title" content="KeepWise">
 <style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -34,7 +34,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:" && !window.Ca
 os.makedirs(os.path.join(ROOT, "www"), exist_ok=True)
 open(os.path.join(ROOT, "www/index.html"), "w", encoding="utf-8").write(head + src + sw)
 manifest = {
-  "name": "Keepwise", "short_name": "Keepwise", "description": "What you keep at month end.",
+  "name": "KeepWise", "short_name": "KeepWise", "description": "What you keep at month end.",
   "start_url": "./", "scope": "./", "display": "standalone", "orientation": "portrait",
   "background_color": "#f3efe6", "theme_color": "#f3efe6",
   "icons": [
@@ -44,7 +44,7 @@ manifest = {
   ]
 }
 json.dump(manifest, open(os.path.join(ROOT, "www/manifest.webmanifest"), "w"), indent=2)
-open(os.path.join(ROOT, "www/sw.js"), "w").write(f"""// Keepwise service worker, build {version}
+open(os.path.join(ROOT, "www/sw.js"), "w").write(f"""// KeepWise service worker, build {version}
 const CACHE = "keepwise-{version}";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => {{ e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); }});

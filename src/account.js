@@ -84,10 +84,10 @@ const accErrBox = () => `<div data-out="accErr">${OUT.accErr()}</div>`;
 OUT.accErr = () => ACC.err ? `<p class="err" role="alert">${esc(ACC.err)}</p>` : "";
 const legalLinks = `<a href="https://chillwillpill.github.io/keepwise/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="https://chillwillpill.github.io/keepwise/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>`;
 V.account = () => {
-  if (ACC.state === "preview") return `${accHeader()}<section class="card"><h2>Sign in on the Keepwise website</h2><p class="muted">Accounts can’t open inside this preview. Open the website to sign in with Google or email. Everything else works here as normal.</p><a class="btn primary" href="${SITE_URL}" target="_blank" rel="noopener">Open Keepwise</a></section>`;
-  if (ACC.state === "off") return `${accHeader()}<section class="card"><h2>Accounts are coming soon</h2><p class="muted">Keepwise works fully without an account. Everything you enter stays on this phone.</p></section>`;
+  if (ACC.state === "preview") return `${accHeader()}<section class="card"><h2>Sign in on the KeepWise website</h2><p class="muted">Accounts can’t open inside this preview. Open the website to sign in with Google or email. Everything else works here as normal.</p><a class="btn primary" href="${SITE_URL}" target="_blank" rel="noopener">Open KeepWise</a></section>`;
+  if (ACC.state === "off") return `${accHeader()}<section class="card"><h2>Accounts are coming soon</h2><p class="muted">KeepWise works fully without an account. Everything you enter stays on this phone.</p></section>`;
   if (ACC.state === "idle" || ACC.state === "loading") return `${accHeader()}<section class="card"><p class="muted">Connecting…</p></section>`;
-  if (ACC.state === "error") return `${accHeader()}<section class="card"><h2>Can’t reach sign-in</h2><p class="muted">Check your connection and try again. Keepwise still works on this phone without an account.</p><button class="btn" type="button" data-acc-retry>Try again</button></section>`;
+  if (ACC.state === "error") return `${accHeader()}<section class="card"><h2>Can’t reach sign-in</h2><p class="muted">Check your connection and try again. KeepWise still works on this phone without an account.</p><button class="btn" type="button" data-acc-retry>Try again</button></section>`;
   if (!ACC.user) return accSignIn();
   return accComplete() ? accProfile() : accFinish();
 };
@@ -128,7 +128,7 @@ function accFields(first){
       ${loc ? `<p class="small">Approximate location saved (to about 1 km).</p><div class="inline"><button class="btn small" type="button" data-acc-loc>Update</button><button class="btn small danger" type="button" data-acc-loc-clear>Remove</button></div>`
             : `<p class="muted small">Optional. If you choose to get offers, we may use this to show deals available near you. We save only an approximate area, never your exact location.</p><button class="btn small" type="button" data-acc-loc style="align-self:flex-start">Use my approximate location</button>`}
     </div>
-    <label class="check"><input type="checkbox" name="marketing" data-acc-field="marketing" ${mk ? "checked" : ""}><span>Email me offers, birthday deals and news from Keepwise. You can unsubscribe at any time.</span></label>
+    <label class="check"><input type="checkbox" name="marketing" data-acc-field="marketing" ${mk ? "checked" : ""}><span>Email me offers, birthday deals and news from KeepWise. You can unsubscribe at any time.</span></label>
     ${first ? `<label class="check"><input type="checkbox" name="consent" data-acc-field="consent" ${d.consent ? "checked" : ""}><span>I’m 18 or older and I agree to the ${legalLinks}.</span></label>` : ""}`;
 }
 function accFinish(){
@@ -149,9 +149,9 @@ function accProfile(){
   </section>
   <section class="card"><h2>Profile</h2>
     <form data-form="acc-profile" class="acc-form" novalidate>${accFields(false)}${accErrBox()}<button class="btn primary" type="submit" ${ACC.busy ? "disabled" : ""}>Save changes</button></form></section>
-  <section class="card plus-card"><div class="inline" style="justify-content:space-between"><h2>Keepwise Plus</h2><span class="pill gold">Coming soon</span></div>
+  <section class="card plus-card"><div class="inline" style="justify-content:space-between"><h2>KeepWise Plus</h2><span class="pill gold">Coming soon</span></div>
     <p class="small">Back up your budget with end-to-end encryption and use it on all your devices. Only you can read your data.</p>
-    ${ACC.profile && ACC.profile.plusInterest ? `<p class="small"><span class="pill ok">You’re on the waitlist</span> We’ll email you when Keepwise Plus launches.</p><button class="link small" type="button" data-acc-plus-off style="align-self:flex-start">Leave the waitlist</button>`
+    ${ACC.profile && ACC.profile.plusInterest ? `<p class="small"><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p><button class="link small" type="button" data-acc-plus-off style="align-self:flex-start">Leave the waitlist</button>`
       : `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`}
   </section>
   <section class="card"><h2>Account</h2>
@@ -178,7 +178,7 @@ const photoIn = document.createElement("input"); photoIn.type = "file"; photoIn.
 photoIn.addEventListener("change", async () => {
   const f = photoIn.files[0]; photoIn.value = ""; if (!f) return;
   try { ACC.draft.photo = await shrinkPhoto(f); render(true); toast("Photo ready. Tap Save changes to keep it."); }
-  catch(e){ toast("That file isn’t a photo Keepwise can read."); }
+  catch(e){ toast("That file isn’t a photo KeepWise can read."); }
 });
 
 function setAccErr(msg){ ACC.err = msg; refreshOuts(); }
@@ -214,7 +214,7 @@ $("view").addEventListener("click", async e => {
   }
   if (has("data-acc-plus") || has("data-acc-plus-off")){
     const on = has("data-acc-plus"), data = {plusInterest: on, plusInterestAt: Date.now(), updatedAt: Date.now()};
-    try { await accDoc().set(data, {merge: true}); Object.assign(ACC.profile, data); render(true); toast(on ? "You’re on the Keepwise Plus waitlist." : "You’ve left the Plus waitlist."); }
+    try { await accDoc().set(data, {merge: true}); Object.assign(ACC.profile, data); render(true); toast(on ? "You’re on the KeepWise Plus waitlist." : "You’ve left the Plus waitlist."); }
     catch(err){ toast("Couldn’t save that. Check your connection and try again."); }
     return;
   }
@@ -268,7 +268,7 @@ $("view").addEventListener("submit", async e => {
     if (!name){ setAccErr("Enter your full name."); return; }
     const age = ageOn(dob);
     if (!dob || age < 0 || dob > isoDaysAgo(0)){ setAccErr("Enter your date of birth."); return; }
-    if (age < 18){ setAccErr("You must be 18 or older to create a Keepwise account."); return; }
+    if (age < 18){ setAccErr("You must be 18 or older to create a KeepWise account."); return; }
     if (age > 120){ setAccErr("Check your date of birth."); return; }
     const digits = phone.replace(/\D/g, "");
     if (phone && (!/^\+?[\d\s().-]+$/.test(phone) || digits.length < 7 || digits.length > 15)){ setAccErr("Enter a valid phone number, or leave it empty."); return; }

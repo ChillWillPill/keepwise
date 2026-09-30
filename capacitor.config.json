@@ -1,6 +1,6 @@
 {
   "appId": "app.keepwise.money",
-  "appName": "Keepwise",
+  "appName": "KeepWise",
   "webDir": "www",
   "backgroundColor": "#f3efe6",
   "android": { "backgroundColor": "#f3efe6" },

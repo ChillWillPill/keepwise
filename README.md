@@ -1,13 +1,13 @@
-# Keepwise
+# KeepWise
 
-See what you keep at month end. Keepwise finds subscriptions you don't use, suggests cheaper swaps, keeps promo codes, plans your budget in three envelopes, and splits bills with friends.
+See what you keep at month end. KeepWise finds subscriptions you don't use, suggests cheaper swaps, keeps promo codes, plans your budget in three envelopes, and splits bills with friends.
 
 ## Try it
 
 - **Any phone (free):** open the web app at https://chillwillpill.github.io/keepwise/.
   - iPhone: open it in Safari → Share → **Add to Home Screen**.
   - Android: open it in Chrome → menu → **Install app**.
-- **Android app:** download `keepwise.apk` from the **Keepwise test build** release on this page, open it on your phone, and allow installs when asked.
+- **Android app:** download `keepwise.apk` from the **KeepWise test build** release on this page, open it on your phone, and allow installs when asked.
 
 Your data stays on your phone. Nothing is sent to a server.
 

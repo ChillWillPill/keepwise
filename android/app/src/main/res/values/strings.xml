@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Keepwise</string>
-    <string name="title_activity_main">Keepwise</string>
+    <string name="app_name">KeepWise</string>
+    <string name="title_activity_main">KeepWise</string>
     <string name="package_name">app.keepwise.money</string>
     <string name="custom_url_scheme">app.keepwise.money</string>
 </resources>

@@ -1,6 +1,6 @@
 {
-  "name": "Keepwise",
-  "short_name": "Keepwise",
+  "name": "KeepWise",
+  "short_name": "KeepWise",
   "description": "What you keep at month end.",
   "start_url": "./",
   "scope": "./",

@@ -1,4 +1,4 @@
-"""Keepwise end-to-end test suite (Playwright, Chromium).
+"""KeepWise end-to-end test suite (Playwright, Chromium).
 Run: python3 tests/test_app.py [path/to/app.html]
 Each test gets a fresh browser context (empty storage)."""
 import asyncio, sys, os, re, json, tempfile, traceback
@@ -701,7 +701,7 @@ async def account_in_claude_preview_points_to_website(ctx):
     pg = await open_app(ctx, mock=True, preview=True)
     await open_account(pg)
     v = await text(pg, "#view")
-    assert "Sign in on the Keepwise website" in v and "Continue with Google" not in v
+    assert "Sign in on the KeepWise website" in v and "Continue with Google" not in v
     assert await pg.get_attribute("#view a.btn.primary", "href") == "https://chillwillpill.github.io/keepwise/"
     assert await pg.evaluate("typeof window.firebase") == "undefined", "no sign-in code loaded in the preview"
 
