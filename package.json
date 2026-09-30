@@ -1,0 +1,20 @@
+{
+  "name": "keepwise",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Keepwise: see what you keep at month end.",
+  "scripts": {
+    "build": "python3 scripts/build.py",
+    "test": "python3 tests/test_app.py src/app.html && python3 tests/test_app.py www/index.html",
+    "android": "npm run build && npx cap sync android && npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.0.0"
+  }
+}

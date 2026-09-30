@@ -1,0 +1,1099 @@
+<title>Keepwise</title>
+<meta name="theme-color" content="#f3efe6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap">
+<style>
+/* Layout: an app shell pinned to the visible screen (sized from visualViewport in JS): header, one scrolling column, tab bar flush to the bottom edge. */
+:root{
+  --bg:#f3efe6; --card:#fbf8f2; --ink:#1c2420; --muted:#4d564e; --line:#e0d5c5; --chip:#efe4d4;
+  --green:#1b6843; --green-soft:#e4f2ea; --rust:#a84b34; --rust-soft:#f6e2da; --gold:#9a7417; --gold-soft:#f3e9cc;
+  --display:"Fraunces", ui-serif, Georgia, serif;
+  --body:"Figtree", ui-sans-serif, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27;
+  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27;
+  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; color-scheme:dark}
+
+*{box-sizing:border-box}
+.brand b,h1,h2,.big,.summary3 b,.bigsoft{font-optical-sizing:auto;font-weight:600;letter-spacing:-.025em}
+html,body{margin:0;overflow:hidden;overscroll-behavior:none}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-text-size-adjust:100%}
+.app{position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100%);display:flex;flex-direction:column;background:var(--bg)}
+.app-header{flex:none;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;border-bottom:1px solid var(--line);background:var(--bg)}
+.brand{display:flex;align-items:center;gap:12px;max-width:720px;margin:0 auto}
+.logo{width:40px;height:40px;border-radius:11px;background:var(--green);display:grid;place-items:center;flex:none}
+.brand b{font:600 1.25rem/1.1 var(--display);letter-spacing:-.025em;display:block}
+.brand small{color:var(--muted);font-size:.75rem}
+.bell{appearance:none;position:relative;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.bell[hidden]{display:none}
+.bell:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.bell-n{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:99px;background:var(--rust);color:var(--card);font:700 .72rem/20px var(--body);text-align:center;padding:0 5px}
+.app-main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.view{max-width:720px;margin:0 auto;padding:20px 16px 32px;display:flex;flex-direction:column;gap:18px}
+.tabbar{flex:none;display:grid;grid-template-columns:repeat(6,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.app.typing .tabbar{display:none}
+.tab{appearance:none;border:0;background:none;color:var(--muted);font:500 .78rem var(--body);display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;cursor:pointer;min-width:0}
+.tab svg{width:24px;height:24px}
+.tab[aria-current="page"]{color:var(--ink);font-weight:600}
+.tab[aria-current="page"] svg{color:var(--green)}
+.tab:focus-visible{outline:2px solid var(--green);outline-offset:-4px;border-radius:8px}
+
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font:600 2.25rem/1.1 var(--display);letter-spacing:-.025em}
+h2{font:600 1.5rem/1.2 var(--display);letter-spacing:-.025em}
+h3{font-size:1rem;font-weight:700}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+.label{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tnum{font-variant-numeric:tabular-nums}
+.big{font:600 3rem/1 var(--display);color:var(--green);letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.big.neg{color:var(--rust)}
+.good{color:var(--green)} .bad{color:var(--rust)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.rows{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.row{padding:14px 18px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.row-top > div:last-child{text-align:right;flex:none}
+.name{font-weight:600}
+
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field > span{font-weight:600;font-size:.95rem}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 14px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-offset:1px;border-color:transparent}
+.money-in{position:relative}
+.money-in em{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-style:normal;color:var(--muted);pointer-events:none}
+.money-in input{padding-left:calc(14px + var(--sym-w,1.2ch) + 8px)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.btn{appearance:none;font:600 .95rem var(--body);border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;cursor:pointer;text-align:center}
+.btn:focus-visible,.link:focus-visible,.chip:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.btn.primary{background:var(--green);border-color:var(--green);color:#f3faf6;width:100%;padding:14px;font-size:1rem;border-radius:16px}
+.btn.small{padding:6px 10px;font-size:.84rem;border-radius:10px}
+.btn.danger{color:var(--rust)}
+.link{appearance:none;background:none;border:0;padding:0;font:600 1rem var(--body);color:var(--green);cursor:pointer;text-align:left}
+.link.plain{color:var(--ink);font-weight:500}
+.linkrow{border-top:1px solid var(--line);padding-top:12px}
+
+.stack{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--chip)}
+.stack i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.9rem;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--c);vertical-align:-1px}
+.meter{height:9px;border-radius:99px;background:var(--chip);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;background:var(--green)}
+.meter i.over{background:var(--rust)}
+
+.pill{display:inline-block;font-size:.76rem;font-weight:600;border-radius:99px;padding:3px 9px;white-space:nowrap}
+.pill.flag{background:var(--rust-soft);color:var(--rust)}
+.pill.ok{background:var(--green-soft);color:var(--green)}
+.pill.gold{background:var(--gold-soft);color:var(--gold)}
+.pill.grey{background:var(--chip);color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;flex:none}
+.seg button{appearance:none;border:0;background:none;font:600 .85rem var(--body);color:var(--muted);padding:7px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--green-soft);color:var(--green)}
+.seg button[aria-pressed="true"].drop{background:var(--rust-soft);color:var(--rust)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{appearance:none;border:0;background:var(--chip);color:var(--ink);font:500 .95rem var(--body);padding:9px 16px;border-radius:99px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px}
+.steps li::before{counter-increment:s;content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-weight:700;font-size:.9rem}
+.summary3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.summary3 b{display:block;font:600 1.5rem/1.2 var(--display);font-variant-numeric:tabular-nums;margin-top:4px}
+.balances{border-top:1px solid var(--line)}
+.balances div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.entry{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:start}
+.ico{width:48px;height:48px;border-radius:14px;background:var(--chip);display:grid;place-items:center;color:var(--ink)}
+.ico svg{width:24px;height:24px}
+.code{font:600 .95rem ui-monospace,"SFMono-Regular",Menlo,monospace;background:var(--bg);border:1px dashed var(--line);border-radius:10px;padding:6px 10px;cursor:pointer;color:var(--ink)}
+.ask-out{background:var(--bg);border-radius:14px;padding:12px 14px;white-space:pre-line}
+.note{background:var(--chip);color:var(--ink);border-radius:16px;padding:14px 16px;font-size:.95rem}
+.err{color:var(--rust);font-size:.9rem;font-weight:600}
+.empty{color:var(--muted);padding:6px 0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:.92rem;z-index:30;max-width:calc(100% - 32px);text-align:center}
+details summary{cursor:pointer;font-weight:600;color:var(--green);list-style:none}
+details summary::-webkit-details-marker{display:none}
+.cmp-wrap{display:flex;flex-direction:column;gap:8px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;height:200px;border-bottom:1px solid var(--line)}
+.cmp-col{appearance:none;border:0;background:transparent;border-radius:14px 14px 0 0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;padding:0;cursor:pointer;position:relative;font:inherit;color:var(--ink)}
+.cmp-col:hover,.cmp-col.on,.cmp-col:focus-visible{background:var(--chip);outline:none}
+.cmp-val{font-weight:600;font-size:.95rem;color:var(--muted)}
+.cmp-bar{display:block;width:44%;max-width:72px;border-radius:4px 4px 0 0;background:var(--green)}
+.cmp-bar.now{background:color-mix(in srgb,var(--green) 55%,var(--card))}
+.cmp-tip{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 14px;display:none;flex-direction:column;align-items:flex-start;gap:2px;white-space:nowrap;z-index:2;text-align:left;font-size:.95rem;pointer-events:none}
+.cmp-tip small{opacity:.8}
+.cmp-col:hover .cmp-tip,.cmp-col.on .cmp-tip,.cmp-col:focus-visible .cmp-tip{display:flex}
+.cmp-labels{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.cmp-bar{animation:grow .4s ease-out both;transform-origin:bottom}@keyframes grow{from{transform:scaleY(.2)}to{transform:scaleY(1)}}}
+.env-row{padding:0}
+.env-head{appearance:none;border:0;background:none;width:100%;text-align:left;font:inherit;color:inherit;padding:14px 18px;display:flex;flex-direction:column;gap:8px;cursor:pointer}
+.env-head:focus-visible{outline:2px solid var(--green);outline-offset:-3px;border-radius:14px}
+.env-hint{display:inline-flex;align-items:center;gap:4px;align-self:flex-end}
+.env-row.open .env-hint svg{transform:rotate(180deg)}
+.env-body{padding:0 18px 16px;display:flex;flex-direction:column;gap:0}
+.env-body > .btn.primary{margin-bottom:10px}
+.line{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.line .inline{flex-wrap:nowrap}
+.danger-link{color:var(--rust)}
+.add-line{margin-top:12px;flex-wrap:nowrap}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:420px){.summary3 b{font-size:1.25rem}.grid2{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.meter i,.stack i{transition:width .25s ease}}
+</style>
+
+<div class="app" id="app">
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3c4.5 3.5 7 7 7 10.5A7 7 0 0 1 5 13.5C5 10 7.5 6.5 12 3z" fill="#fff"/><circle cx="12" cy="14" r="3" fill="currentColor" style="color:var(--green)"/></svg></div>
+      <div style="flex:1"><b>Keepwise</b><small>What you keep</small></div>
+      <button class="bell" id="bell" type="button" aria-label="Notifications" hidden><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bell-n" id="bell-n" hidden>0</span></button>
+    </div>
+  </header>
+  <main class="app-main" id="main"><div class="view" id="view"></div></main>
+  <nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<input type="file" id="vcf" accept=".vcf,text/vcard,text/x-vcard" class="sr" tabindex="-1" aria-hidden="true">
+
+<script>
+(() => {
+"use strict";
+/* ================= viewport: keep the shell pinned to what is actually visible ================= */
+const appEl = document.getElementById("app"), vv = window.visualViewport, rootStyle = document.documentElement.style;
+function fit(){
+  rootStyle.setProperty("--vv-h", (vv ? vv.height : window.innerHeight) + "px");
+  rootStyle.setProperty("--vv-top", (vv ? vv.offsetTop : 0) + "px");
+}
+let fitRaf; const refit = () => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(fit); };
+if (vv){ vv.addEventListener("resize", refit); vv.addEventListener("scroll", refit); }
+["resize","orientationchange","pageshow","load"].forEach(e => window.addEventListener(e, refit));
+const isField = el => !!(el && el.matches && el.matches("input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select"));
+document.addEventListener("focusin", e => { if (isField(e.target) && e.target.tagName !== "SELECT") appEl.classList.add("typing"); });
+document.addEventListener("focusout", () => setTimeout(() => {
+  if (!isField(document.activeElement)) { appEl.classList.remove("typing"); window.scrollTo(0,0); refit(); refreshOuts(); }
+}, 60));
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+window.scrollTo(0,0); fit(); [100,400,1000,2000].forEach(ms => setTimeout(fit, ms));
+
+/* ================= helpers ================= */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const r2 = v => Math.round(v * 100) / 100;
+const DAY = 864e5;
+const todayMid = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const isoDaysAgo = n => { const d = todayMid(); d.setDate(d.getDate() - n); return d.toISOString().slice(0,10); };
+const daysSince = iso => { if (!iso) return 999; const [y,m,d] = iso.split("-").map(Number); return Math.round((todayMid() - new Date(y, m-1, d)) / DAY); };
+const CURRENCIES = [["USD","US dollar"],["GBP","British pound"],["EUR","Euro"],["CAD","Canadian dollar"],["AUD","Australian dollar"],["INR","Indian rupee"],["PKR","Pakistani rupee"],["AED","UAE dirham"]];
+function fmt(v){
+  const n = r2(v), whole = Math.abs(n % 1) < 0.005;
+  try { return new Intl.NumberFormat("en-US", {style:"currency", currency:S.cur, minimumFractionDigits: whole?0:2, maximumFractionDigits: whole?0:2}).format(n); }
+  catch(e){ return n.toFixed(2); }
+}
+const sym = () => { try { return new Intl.NumberFormat("en-US",{style:"currency",currency:S.cur,maximumFractionDigits:0}).formatToParts(0).find(p=>p.type==="currency").value; } catch(e){ return "$"; } };
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2600); }
+
+/* ================= example data ================= */
+function example(){
+  return {
+    v:1, tab:"month", cur:"USD", income:5200, env:{needs:60, misc:20, save:20},
+    efSaved:2400, efMonths:3, goalName:"New laptop", goalAmt:1200, priority:"ef", ruleDays:45, filter:"All",
+    expenses:[
+      {id:"rent", name:"Rent", amount:1850, env:"needs"},
+      {id:"groc", name:"Groceries", amount:520, env:"needs"},
+      {id:"kit",  name:"Meal kit (12 dinners)", amount:335.74, env:"needs"},
+      {id:"util", name:"Electric and gas", amount:138.40, env:"needs"},
+      {id:"net",  name:"Internet", amount:65, env:"needs"},
+      {id:"phone",name:"Phone plan", amount:85, env:"needs"},
+      {id:"car",  name:"Car insurance", amount:142, env:"needs"},
+      {id:"move", name:"Gas and transit", amount:210, env:"needs"},
+      {id:"dine", name:"Eating out", amount:120, env:"misc"},
+      {id:"cafe", name:"Coffee out", amount:64, env:"misc"},
+      {id:"fun",  name:"Clothes and gifts", amount:70, env:"misc"}
+    ],
+    subs:[
+      {id:"s1", name:"Netflix", price:17.99, cycle:"mo", last:isoDaysAgo(2),  group:"Video",   env:"misc", keep:"auto"},
+      {id:"s2", name:"Spotify", price:11.99, cycle:"mo", last:isoDaysAgo(1),  group:"Music",   env:"misc", keep:"auto"},
+      {id:"s3", name:"Apple Music", price:10.99, cycle:"mo", last:isoDaysAgo(20), group:"Music", env:"misc", keep:"auto"},
+      {id:"s4", name:"Hulu Premium", price:18.99, cycle:"mo", last:isoDaysAgo(52), group:"Video", env:"misc", keep:"auto"},
+      {id:"s5", name:"Disney+", price:9.99, cycle:"mo", last:isoDaysAgo(70), group:"Video",     env:"misc", keep:"auto"},
+      {id:"s6", name:"Planet Fitness Black Card", price:24.99, cycle:"mo", last:isoDaysAgo(88), group:"Fitness", env:"misc", keep:"auto"},
+      {id:"s7", name:"iCloud+ 200 GB", price:2.99, cycle:"mo", last:isoDaysAgo(0), group:"Storage", env:"misc", keep:"auto"},
+      {id:"s8", name:"Adobe Photoshop", price:22.99, cycle:"mo", last:isoDaysAgo(61), group:"Apps", env:"misc", keep:"auto"},
+      {id:"s9", name:"Audible", price:14.95, cycle:"mo", last:isoDaysAgo(6), group:"Books",     env:"misc", keep:"auto"},
+      {id:"s10",name:"Duolingo Super", price:83.99, cycle:"yr", last:isoDaysAgo(49), group:"Apps", env:"misc", keep:"auto"}
+    ],
+    swaps:[
+      {id:"w1", link:"expense:kit", title:"Meal kit", alt:"Cook those 12 dinners", altCost:50, note:"Same recipes from your grocery run, about $4 a plate", on:false},
+      {id:"w2", link:"expense:phone", title:"Phone plan", alt:"Prepaid plan on the same network", altCost:25, note:"Keep your number; check coverage first", on:false},
+      {id:"w3", link:"expense:cafe", title:"Coffee out", alt:"Brew at home", altCost:12, note:"Beans and filters for a month", on:false},
+      {id:"w4", link:"sub:s1", title:"Netflix", alt:"Standard with ads", altCost:7.99, note:"Same shows, short ad breaks", on:false},
+      {id:"w5", link:"sub:s6", title:"Planet Fitness Black Card", alt:"Classic membership", altCost:15, note:"Your home club only", on:false},
+      {id:"w6", link:"expense:car", title:"Car insurance", alt:"Three quotes at renewal", altCost:117, note:"A rough guess until you get real quotes", on:false}
+    ],
+    codes:[
+      {id:"c1", store:"HelloFresh", offer:"Up to 10 free meals on your first box", code:"SAMPLE-HF10", worked:6, failed:1, last:isoDaysAgo(1), mine:false},
+      {id:"c2", store:"Target", offer:"$10 off $50 on home goods", code:"SAMPLE-TGT10", worked:3, failed:0, last:isoDaysAgo(3), mine:false},
+      {id:"c3", store:"Uber Eats", offer:"40% off your next 2 orders", code:"SAMPLE-EATS40", worked:2, failed:2, last:isoDaysAgo(9), mine:false},
+      {id:"c4", store:"Nike", offer:"20% off for new members", code:"SAMPLE-NIKE20", worked:4, failed:0, last:isoDaysAgo(2), mine:false},
+      {id:"c5", store:"Best Buy", offer:"$25 off laptops over $500", code:"SAMPLE-BBY25", worked:1, failed:4, last:isoDaysAgo(30), mine:false},
+      {id:"c6", store:"DoorDash", offer:"Free delivery for 30 days", code:"SAMPLE-DASH30", worked:5, failed:1, last:isoDaysAgo(4), mine:false}
+    ],
+    people:[{id:"me",name:"You"},{id:"p1",name:"Alex"},{id:"p2",name:"Dad"},{id:"p3",name:"Jordan"},{id:"p4",name:"Mom"},{id:"p5",name:"Sam"},{id:"p6",name:"Priya"}],
+    tags:["Friends","Work","Family","Lunch","Movie","Dinner","Borrow"],
+    splits:[
+      {id:"x1", title:"Dominos", amount:150, tag:"Dinner", paidBy:"me", method:"equal", parts:{me:1,p1:1,p5:1,p3:1}, date:isoDaysAgo(3)},
+      {id:"x2", title:"Family groceries", amount:90, tag:"Family", paidBy:"p4", method:"percent", parts:{me:40,p4:40,p2:20}, date:isoDaysAgo(5)},
+      {id:"x3", title:"Spot for rent", amount:75, tag:"Borrow", paidBy:"p3", method:"borrow", parts:{me:75}, date:isoDaysAgo(8)},
+      {id:"x4", title:"Movie tickets", amount:48, tag:"Movie", paidBy:"p1", method:"equal", parts:{me:1,p1:1,p6:1}, date:isoDaysAgo(9)},
+      {id:"x5", title:"Team lunch", amount:36, tag:"Lunch", paidBy:"me", method:"exact", parts:{me:12,p6:12,p5:12}, date:isoDaysAgo(12)}
+    ],
+    settlements:[]
+  };
+}
+
+/* ================= state ================= */
+const KEY = "keepwise-app-v1";
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e) { S = null; }
+if (!S || S.v !== 1) S = example();
+(S.settlements || (S.settlements = [])).forEach(x => { if (!x.id) x.id = uid(); });
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+window.addEventListener("pagehide", save);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
+
+/* ================= money math ================= */
+const subMonthly = s => s.cycle === "yr" ? s.price / 12 : s.price;
+function subFlags(){
+  const out = {};
+  S.subs.forEach(s => {
+    const reasons = [], d = daysSince(s.last);
+    if (d > S.ruleDays) reasons.push(`Unused for ${d} days`);
+    if (s.group){
+      const newer = S.subs.find(o => o !== s && o.group && o.group.toLowerCase() === s.group.toLowerCase() && o.keep !== "drop" && daysSince(o.last) < d);
+      if (newer) reasons.push(`Duplicate of ${newer.name}`);
+    }
+    out[s.id] = reasons;
+  });
+  return out;
+}
+function swapFor(type, id){ return S.swaps.find(w => w.on && w.link === `${type}:${id}`); }
+function compute(){
+  const flags = subFlags();
+  let needs = 0, misc = 0;
+  S.expenses.forEach(e => { const w = swapFor("expense", e.id), a = w ? +w.altCost : +e.amount || 0; if (e.env === "needs") needs += a; else misc += a; });
+  const liveSubs = S.subs.filter(s => s.keep !== "drop");
+  liveSubs.forEach(s => { const w = swapFor("sub", s.id), a = w ? +w.altCost : subMonthly(s); if (s.env === "needs") needs += a; else misc += a; });
+  const income = +S.income || 0;
+  const savings = income - needs - misc;
+  const flagged = liveSubs.filter(s => flags[s.id].length && s.keep !== "keep");
+  const flaggedSave = flagged.reduce((a, s) => { const w = swapFor("sub", s.id); return a + (w ? +w.altCost : subMonthly(s)); }, 0);
+  const envNeeds = income * S.env.needs / 100, envMisc = income * S.env.misc / 100, envSave = income * S.env.save / 100;
+  const efTarget = S.efMonths * needs;
+  const efGap = Math.max(0, efTarget - S.efSaved);
+  let toEF = 0, toGoal = 0;
+  const pos = Math.max(0, savings);
+  if (S.priority === "ef"){ toEF = Math.min(pos, efGap); toGoal = pos - toEF; }
+  else if (S.priority === "goal"){ toGoal = Math.min(pos, S.goalAmt || pos); toEF = pos - toGoal; }
+  else { toEF = Math.min(pos / 2, efGap); toGoal = pos - toEF; }
+  const efMonthsLeft = toEF > 0 ? Math.ceil(efGap / toEF) : null;
+  const inactiveSwaps = S.swaps.map(w => ({w, save: swapSaving(w)})).filter(x => !x.w.on && x.save > 0).sort((a,b) => b.save - a.save);
+  const now = new Date(), dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate(), left = dim - now.getDate();
+  const nextMonth = left <= 2;
+  const planDate = nextMonth ? new Date(now.getFullYear(), now.getMonth()+1, 1) : now;
+  const mName = d => d.toLocaleString("en-US", {month:"long"});
+  const planNote = nextMonth ? `${mName(now)} has ${left === 0 ? "its last day today" : left === 1 ? "1 day left" : left + " days left"}. This plan is ${mName(planDate)}.` : `${mName(now)} has ${left} days left. This plan is ${mName(now)}.`;
+  const planKey = `${planDate.getFullYear()}-${String(planDate.getMonth()+1).padStart(2,"0")}`;
+  const setAside = (S.deposits || []).filter(x => x.month === planKey).reduce((a,x) => a + x.amount, 0);
+  const endSaved = S.efSaved + savings - setAside;
+  const toSetAside = Math.max(0, r2(savings - setAside));
+  return {flags, needs, misc, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: mName(planDate), planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
+}
+function linkedItem(w){
+  const [type, id] = w.link.split(":");
+  if (type === "expense"){ const e = S.expenses.find(x => x.id === id); return e ? {name:e.name, cost:+e.amount} : null; }
+  const s = S.subs.find(x => x.id === id); return s && s.keep !== "drop" ? {name:s.name, cost:subMonthly(s)} : null;
+}
+function swapSaving(w){ const it = linkedItem(w); return it ? Math.max(0, it.cost - (+w.altCost || 0)) : 0; }
+
+/* ================= split math (works on this phone's list or the shared circle) ================= */
+const SH = {state:"loading", db:null, user:null, me:null, splits:[], pays:[], members:[], names:{}, lastSeen:0, loaded:{splits:false, pays:false, members:false}, known:null, joinTried:false};
+const shared = () => S.splitMode === "shared" && SH.state === "ready";
+function CTX(){
+  if (shared()){
+    const ids = [SH.me, ...SH.members.filter(m => m !== SH.me)];
+    return {kind:"shared", me:SH.me, splits:SH.splits.filter(x => !x.deleted), pays:SH.pays.filter(x => !x.deleted), people: ids.map(id => ({id, name: id === SH.me ? "You" : (SH.names[id] || "Someone")}))};
+  }
+  return {kind:"local", me:"me", splits:S.splits, pays:S.settlements, people:S.people};
+}
+const person = (id, c) => (c || CTX()).people.find(p => p.id === id) || {id, name: SH.names[id] || "Someone"};
+function shares(x){
+  const out = {}, ids = Object.keys(x.parts || {});
+  if (x.method === "equal"){ ids.forEach(id => out[id] = x.amount / ids.length); }
+  else if (x.method === "percent"){ ids.forEach(id => out[id] = x.amount * (+x.parts[id] || 0) / 100); }
+  else if (x.method === "exact"){ ids.forEach(id => out[id] = +x.parts[id] || 0); }
+  else if (x.method === "borrow"){ ids.forEach(id => out[id] = x.amount); }
+  return out;
+}
+function debts(c){ // pairwise: debt[a][b] = what a owes b
+  c = c || CTX(); const d = {};
+  const add = (a, b, v) => { if (a === b || !v) return; (d[a] = d[a] || {}); d[a][b] = (d[a][b] || 0) + v; };
+  c.splits.forEach(x => { const sh = shares(x); for (const id in sh) add(id, x.paidBy, sh[id]); });
+  c.pays.forEach(s => add(s.to, s.from, s.amount)); // a payment from A to B cancels A's debt to B
+  return d;
+}
+function myBalances(c){
+  c = c || CTX(); const d = debts(c), me = c.me, out = [];
+  c.people.filter(p => p.id !== me).forEach(p => {
+    const net = r2(((d[p.id] || {})[me] || 0) - ((d[me] || {})[p.id] || 0)); // + they owe me
+    if (Math.abs(net) >= 0.01) out.push({p, net});
+  });
+  out.sort((a,b) => a.net - b.net);
+  return out;
+}
+function splitLine(x, c){
+  c = c || CTX(); const sh = shares(x), me = c.me, bits = [];
+  for (const id in sh){
+    if (id === x.paidBy || !sh[id]) continue;
+    if (x.paidBy === me) bits.push({t:`${person(id, c).name} owes you ${fmt(sh[id])}`, good:true});
+    else if (id === me) bits.push({t:`You owe ${person(x.paidBy, c).name} ${fmt(sh[id])}`, good:false});
+  }
+  return bits;
+}
+const METHOD_LABEL = {equal:"Equally", percent:"Percent", exact:"Exact amounts", borrow:"Owe or owed"};
+
+/* ================= icons ================= */
+const I = {
+  month:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3"/></svg>',
+  subs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="6" cy="6" r="2.8"/><circle cx="6" cy="18" r="2.8"/><path d="M8.2 7.8 20 19.5M8.2 16.2 20 4.5"/></svg>',
+  cheaper:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v17M7 20.5h10M5 7h14"/><path d="M5 7l-2.5 6a2.8 2.8 0 0 0 5 0zM19 7l-2.5 6a2.8 2.8 0 0 0 5 0z"/></svg>',
+  codes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3.5 6.5h17v3.5a2 2 0 0 0 0 4v3.5h-17V14a2 2 0 0 0 0-4z"/><path d="M9.5 7v10" stroke-dasharray="2 2"/></svg>',
+  plan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h9M18 7h2M4 17h3M11 17h9"/><circle cx="15.5" cy="7" r="2.3"/><circle cx="8.8" cy="17" r="2.3"/><path d="M4 12h5M13 12h7"/></svg>',
+  split:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="8" r="3.4"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14a5 5 0 0 1 5 5"/></svg>',
+  food:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 5c6-2 12 0 16 4L9 20z"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="13" cy="14" r="1.2" fill="currentColor"/></svg>',
+  bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 10a3 3 0 0 0 6 0"/><path d="M8 7V6a4 4 0 0 1 8 0v1"/></svg>',
+  cash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="6.5" width="18" height="11" rx="2"/><circle cx="12" cy="12" r="2.3"/><path d="M6.5 12h.01M17.5 12h.01" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  film:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M7.5 5v14M16.5 5v14M3.5 9.5h4M3.5 14.5h4M16.5 9.5h4M16.5 14.5h4"/></svg>',
+  work:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="7.5" width="17" height="12" rx="2"/><path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5M3.5 12.5h17"/></svg>',
+  receipt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M6 3.5h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3z"/><path d="M9 8.5h6M9 12h6M9 15.5h3.5"/></svg>'
+};
+const tagIcon = t => ({Dinner:I.food, Lunch:I.food, Family:I.bag, Borrow:I.cash, Movie:I.film, Work:I.work})[t] || I.receipt;
+const TABS = [["month","Month"],["subs","Subs"],["cheaper","Cheaper"],["codes","Codes"],["plan","Plan"],["split","Split"]];
+
+/* ================= views ================= */
+const V = {};
+const OUT = {}; // live-updating fragments: id -> () => html
+
+// ---- Month ----
+V.month = () => {
+  const C = compute();
+  return `${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap"><p>Sample month for one person, stored only on this device. Change the income and the list. The month-end number follows.</p><button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
+  <p class="muted" data-out="planNote">${esc(C.planNote)}</p>
+  <div data-out="headline">${OUT.headline()}</div>
+  <div class="grid2">
+    <label class="field"><span>Currency</span><select data-bind="cur" id="m-cur">${CURRENCIES.map(([c,n]) => `<option value="${c}" ${c===S.cur?"selected":""}>${c} · ${n}</option>`).join("")}</select></label>
+    <label class="field"><span>Money coming in</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month"></span></label>
+  </div>
+  <p class="muted small">Changing currency does not convert the numbers. 90 stays 90.</p>
+  <div data-out="stack">${OUT.stack()}</div>
+  <div data-out="dropCard">${OUT.dropCard()}</div>
+  <div data-out="envelopes">${OUT.envelopes()}</div>
+  <section class="card"><h2>How to use it</h2><div data-out="howto">${OUT.howto()}</div></section>
+  <section class="card" aria-labelledby="askh">
+    <h2 id="askh">Ask Keepwise</h2>
+    <p class="muted small">The plan above is already worked out from your settings. This answers questions about the same numbers in plain language.</p>
+    <button class="btn primary" type="button" data-plain style="width:auto;align-self:flex-start;padding:12px 20px">Say it plainly</button>
+    <div class="chips">${["How much will I save?","What should I cancel?","Can I afford $300?","Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask about your month" aria-label="Ask Keepwise" style="flex:1 1 200px"><button class="btn" type="submit">Ask</button></form>
+    <div id="ask-out" class="ask-out" ${ASK.last ? "" : "hidden"}>${esc(ASK.last)}</div>
+  </section>`;
+};
+OUT.planNote = () => esc(compute().planNote);
+OUT.sym = () => esc(sym());
+OUT.headline = () => {
+  const C = compute(), over = C.needs - C.envNeeds;
+  const tail = S.priority === "ef" ? "if you follow emergency fund first and add nothing else" : S.priority === "goal" ? `if ${esc(S.goalName || "your goal")} comes first and you add nothing else` : "if you split it between goal and emergency fund";
+  return `<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"}</h1>
+  <div class="big ${C.savings < 0 ? "neg" : ""}" style="margin-top:8px">${fmt(Math.abs(C.savings))}</div>
+  <p class="muted" style="margin-top:10px">${C.savings >= 0 ? `${C.planMonth} ends with ${fmt(C.endSaved)} saved ${tail}.` : `${C.planMonth} spends more than comes in. Drop a flagged subscription or use a cheaper swap to close it.`}${over > 0.005 ? ` Needs are ${fmt(over)} over the envelope.` : ""}</p>`;
+};
+OUT.stack = () => {
+  const C = compute(), tot = Math.max(C.income, C.needs + C.misc, 1);
+  const s = Math.max(0, C.savings);
+  return `<div class="stack" role="img" aria-label="Needs ${fmt(C.needs)}, misc ${fmt(C.misc)}, savings ${fmt(s)}"><i style="width:${C.needs/tot*100}%;background:var(--ink)"></i><i style="width:${C.misc/tot*100}%;background:var(--rust)"></i><i style="width:${s/tot*100}%;background:var(--green)"></i></div>
+  <div class="legend tnum" style="margin-top:10px"><span style="--c:var(--ink)">Needs ${fmt(C.needs)}</span><span style="--c:var(--rust)">Misc ${fmt(C.misc)}</span><span style="--c:var(--green)">Savings ${fmt(s)}</span></div>`;
+};
+const UI = {compare:false};
+function compareChart(now, after, afterLabel){
+  const max = Math.max(now, after, 1), h = v => Math.max(4, Math.max(0, v) / max * 140);
+  const col = (cls, label, v, tipExtra) => `<button type="button" class="cmp-col" aria-label="${esc(label)}: ${fmt(v)}${tipExtra ? ", " + tipExtra : ""}">
+      <span class="cmp-tip" aria-hidden="true"><b>${esc(label)}</b><span class="tnum">${fmt(v)}</span>${tipExtra ? `<small>${esc(tipExtra)}</small>` : ""}</span>
+      <span class="cmp-val tnum">${fmt(v)}</span><span class="cmp-bar ${cls}" style="height:${h(v)}px"></span></button>`;
+  const diff = after - now;
+  return `<div class="cmp-wrap" role="group" aria-label="Month-end savings, now and ${esc(afterLabel.toLowerCase())}">
+    <div class="cmp">${col("now", "Now", now, "")}${col("after", afterLabel, after, diff > 0 ? `+${fmt(diff)} a month` : "")}</div>
+    <div class="cmp-labels"><span>Now</span><span>${esc(afterLabel)}</span></div>
+    <p class="small ${diff > 0 ? "good" : "muted"} tnum" style="text-align:center">${diff > 0 ? `+${fmt(diff)} a month, ${fmt(diff * 12)} a year` : "No difference yet"}</p></div>`;
+}
+OUT.dropCard = () => {
+  const C = compute(), now = C.endSaved;
+  const toggle = `<div class="linkrow"><button class="link plain" data-compare type="button" aria-expanded="${UI.compare}">${UI.compare ? "Hide the comparison" : "Compare the close"}</button></div>`;
+  if (!C.flagged.length){
+    const swapSave = C.inactiveSwaps.reduce((a, x) => a + x.save, 0);
+    return `<section class="card"><p class="label">Your rules</p><p>Nothing is flagged right now. Every subscription was opened in the last ${S.ruleDays} days and none overlap.</p>
+      ${toggle}${UI.compare ? compareChart(now, now + swapSave, "With swaps") + `<button class="link" data-go="cheaper" type="button">See the swaps</button>` : ""}</section>`;
+  }
+  return `<section class="card"><p class="muted">If you drop what your rules flag</p>
+    <div style="font:600 1.875rem/1.1 var(--display);letter-spacing:-.025em" class="tnum bigsoft">${fmt(now + C.flaggedSave)}</div>
+    <p>Savings finishes ${fmt(C.flaggedSave)} higher. The unused list is ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year.</p>
+    <div class="linkrow"><button class="link" data-go="subs" type="button">Review subscriptions</button></div>
+    ${toggle}${UI.compare ? compareChart(now, now + C.flaggedSave, "After cuts") : ""}</section>`;
+};
+OUT.envelopes = () => {
+  const C = compute();
+  const rows = [
+    ["save","Savings","Money you keep", Math.max(0,C.savings), C.envSave, true],
+    ["needs","Expenditures","Bills, food, getting around", C.needs, C.envNeeds, false],
+    ["misc","Miscellaneous","The rest of life", C.misc, C.envMisc, false]
+  ];
+  return `<div class="rows">${rows.map(([k, n, d, v, env, isSave]) => {
+    const over = !isSave && v > env + 0.005, pct = Math.min(100, env > 0 ? v / env * 100 : 0), open = UI.openEnv === k;
+    return `<div class="row env-row${open ? " open" : ""}">
+      <button type="button" class="env-head" data-env-open="${k}" aria-expanded="${open}">
+        <div class="row-top"><div><div class="name" style="font-size:1.1rem">${n}</div><div class="muted small">${d}</div></div>
+        <div><div class="name tnum ${over ? "bad" : ""}" style="font-size:1.1rem">${fmt(v)}</div><div class="small tnum muted">of ${fmt(env)}</div></div></div>
+        <div class="meter"><i class="${over ? "over" : ""}" style="width:${pct}%"></i></div>
+        <span class="env-hint small muted">${open ? "Hide details" : "Details"}<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span>
+      </button>
+      ${open ? envDetail(k, C) : ""}</div>`;}).join("")}</div>`;
+};
+function envDetail(k, C){
+  if (k === "save"){
+    const deps = (S.deposits || []).slice().sort((a,b) => (b.date||"").localeCompare(a.date||""));
+    return `<div class="env-body">
+      ${C.toSetAside > 0 ? `<button class="btn primary" type="button" data-set-aside>Set aside ${fmt(C.toSetAside)}</button>` : C.savings > 0 ? `<p class="good small">All of ${C.planMonth}’s ${fmt(C.savings)} is set aside.</p>` : `<p class="err">Nothing to set aside: ${C.planMonth} spends more than comes in.</p>`}
+      <p class="muted small">Account balance ${fmt(S.efSaved)}${C.efTarget ? ` of your ${fmt(C.efTarget)} emergency fund target` : ""}.</p>
+      ${deps.length ? deps.map(x => `<div class="line" data-dep="${x.id}"><div><div>Set aside for ${esc(x.label || "")}</div><div class="muted small">${shortDate(x.date)}</div></div><div class="inline"><span class="tnum good">+${fmt(x.amount)}</span><button class="link danger-link" type="button" data-undo-dep>Undo</button></div></div>`).join("") : `<p class="muted">Nothing in this account yet.</p>`}
+    </div>`;
+  }
+  const exp = S.expenses.filter(e => e.env === k);
+  const subs = C.liveSubs.filter(s => s.env === k);
+  return `<div class="env-body">
+    ${exp.map(e => { const w = swapFor("expense", e.id); return `<div class="line" data-exp="${e.id}"><div><div>${esc(e.name)}</div><div class="muted small">${w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
+    ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Subscription · ${fmt(sb.price)}/yr` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subMonthly(sb))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
+    ${!exp.length && !subs.length ? `<p class="muted">Nothing here yet.</p>` : ""}
+    <div class="inline add-line" data-add-line="${k}"><input data-new-name placeholder="Add a line" aria-label="New line name" enterkeyhint="next" style="flex:2 1 140px"><input data-new-amt inputmode="decimal" placeholder="0" aria-label="Amount per month" enterkeyhint="done" style="flex:1 1 80px"><button class="btn" type="button" data-add-line-btn>Add</button></div>
+  </div>`;
+}
+OUT.howto = () => {
+  const C = compute(), best = C.inactiveSwaps[0];
+  const names = C.flagged.map(s => s.name);
+  const list = names.length > 4 ? names.slice(0,4).join(", ") + ` and ${names.length-4} more` : names.join(", ");
+  return `<ol class="steps">
+    <li><div><h3>Where ${C.planMonth} ends</h3><p class="muted">Money coming in is ${fmt(C.income)}. Needs take ${fmt(C.needs)} and misc ${fmt(C.misc)}, so ${fmt(C.savings)} is left.${C.savings > 0 ? (S.priority === "ef" ? ` It goes to your emergency fund first: ${fmt(S.efSaved)} of ${fmt(C.efTarget)} so far.` : S.priority === "goal" ? ` It goes to ${esc(S.goalName || "your goal")} first.` : " Half goes to your emergency fund, half to your goal.") : ""}${C.misc < C.envMisc && C.savings > 0 ? ` Miscellaneous still has ${fmt(C.envMisc - C.misc)} of room if you choose to use it. That comes out of savings.` : ""}</p></div></li>
+    <li><div><h3>Drop what you don’t use</h3><p class="muted">${names.length ? `${esc(list)}. Rule: unused after ${S.ruleDays} days, or a duplicate of something you opened more recently. Dropping them keeps ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year. After the drop, savings can finish at ${fmt(C.endSaved + C.flaggedSave)}.` : `Nothing flagged. The rule is unused after ${S.ruleDays} days, or a duplicate of something you opened more recently.`}</p></div></li>
+    <li><div><h3>The cheapest real swap</h3><p class="muted">${best ? `${esc(best.w.title)} → ${esc(best.w.alt)} keeps about ${fmt(best.save)} a month.` : "You’re already using every swap on the Cheaper tab."}</p></div></li>
+    <li><div><h3>On payday</h3><p class="muted">${C.savings > 0 ? `Move ${fmt(C.savings)} to savings on payday and do not borrow it back.${S.priority !== "goal" && C.efGap > 0 ? ` Target: ${S.efMonths} months of needs (${fmt(C.efTarget)})${C.efMonthsLeft ? `, reached in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}` : ""}.` : ""} You have ${fmt(S.efSaved)} now; this month lands at ${fmt(C.endSaved)}.` : "Fix the shortfall first: nothing is left to move this month."}</p></div></li>
+  </ol>`;
+};
+
+// ---- Ask Keepwise (answers from your own numbers, runs on this device) ----
+const ASK = {last:""};
+function plainly(){
+  const C = compute(), now = C.endSaved, best = C.inactiveSwaps[0], b = myBalances();
+  const net = b.reduce((a, x) => a + x.net, 0);
+  const lines = [];
+  lines.push(C.savings >= 0
+    ? `In ${C.planMonth} you bring in ${fmt(C.income)} and spend ${fmt(C.needs + C.misc)}, so ${fmt(C.savings)} is yours to keep.`
+    : `In ${C.planMonth} you spend ${fmt(C.needs + C.misc - C.income)} more than you bring in. Fix that before anything else.`);
+  if (C.savings > 0) lines.push(`Move it to savings on payday. That takes you from ${fmt(S.efSaved)} to ${fmt(now)}.`);
+  if (C.needs > C.envNeeds) lines.push(`Bills and food are ${fmt(C.needs - C.envNeeds)} over what you planned for them.`);
+  if (C.flagged.length) lines.push(`You pay ${fmt(C.flaggedSave)} a month for ${C.flagged.length} thing${C.flagged.length > 1 ? "s" : ""} you barely use. Dropping them gets you to ${fmt(now + C.flaggedSave)}.`);
+  if (best) lines.push(`The biggest easy win: ${best.w.title.toLowerCase()} → ${best.w.alt.toLowerCase()}, about ${fmt(best.save)} a month.`);
+  if (Math.abs(net) >= 0.01) lines.push(net > 0 ? `Friends and family owe you ${fmt(net)} overall.` : `You owe friends and family ${fmt(-net)} overall.`);
+  return lines.join("\n");
+}
+function answer(q){
+  const C = compute(), t = q.toLowerCase();
+  const amt = (t.match(/(\d[\d,]*(?:\.\d+)?)/) || [])[1];
+  if (/afford|buy|spend|purchase/.test(t) && amt){
+    const a = +amt.replace(/,/g,""), left = C.savings - a;
+    return left >= 0 ? `Yes. Spending ${fmt(a)} still leaves ${fmt(left)} saved in ${C.planMonth}.${C.toEF > 0 ? ` Your emergency fund gets ${fmt(Math.min(left, C.efGap))} instead of ${fmt(C.toEF)} this month.` : ""}` : `Not without going short. ${fmt(a)} is ${fmt(-left)} more than ${C.planMonth} leaves. Dropping flagged subscriptions frees ${fmt(C.flaggedSave)} a month.`;
+  }
+  if (/owe|owed|split|debt/.test(t)){
+    const b = myBalances(); if (!b.length) return "Everyone is square. No one owes you and you owe no one.";
+    return b.map(x => x.net > 0 ? `${x.p.name} owes you ${fmt(x.net)}` : `You owe ${x.p.name} ${fmt(-x.net)}`).join("\n");
+  }
+  if (/cancel|drop|unused|subscri/.test(t)){
+    return C.flagged.length ? `Your rules flag ${C.flagged.length}:\n${C.flagged.map(s => `${s.name}, ${fmt(subMonthly(s))}/mo (${C.flags[s.id].join("; ")})`).join("\n")}\nTogether: ${fmt(C.flaggedSave)} a month.` : `Nothing is flagged. Every subscription was opened in the last ${S.ruleDays} days.`;
+  }
+  if (/emergency|fund|cushion/.test(t)){
+    if (C.efGap <= 0) return `Your emergency fund is full: ${fmt(S.efSaved)} covers ${S.efMonths} months of needs.`;
+    return C.efMonthsLeft ? `You have ${fmt(S.efSaved)} of ${fmt(C.efTarget)}. At ${fmt(C.toEF)} a month it’s full in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}.` : `You have ${fmt(S.efSaved)} of ${fmt(C.efTarget)}, but nothing is going to it right now. Set leftover money to emergency fund first on the Plan tab.`;
+  }
+  if (/cheap|swap|save more|cut/.test(t)){
+    const b = C.inactiveSwaps.slice(0,3); return b.length ? `Biggest swaps you’re not using:\n${b.map(x => `${x.w.title} → ${x.w.alt}: keeps ${fmt(x.save)}/mo`).join("\n")}` : "You’re already using every swap on the Cheaper tab.";
+  }
+  if (/envelope|over|needs|budget/.test(t)){
+    const o = C.needs - C.envNeeds, m = C.misc - C.envMisc;
+    return `Needs: ${fmt(C.needs)} of ${fmt(C.envNeeds)}${o > 0 ? ` (${fmt(o)} over)` : ""}.\nMisc: ${fmt(C.misc)} of ${fmt(C.envMisc)}${m > 0 ? ` (${fmt(m)} over)` : ""}.\nSavings: ${fmt(C.savings)} against a ${fmt(C.envSave)} envelope.`;
+  }
+  if (/save|keep|left|end/.test(t)) return `${C.planMonth}: ${fmt(C.income)} in, ${fmt(C.needs + C.misc)} out, ${fmt(C.savings)} kept. Drop what your rules flag and it’s ${fmt(C.savings + C.flaggedSave)}.`;
+  return "I can answer from your numbers: what you’ll save, what to cancel, whether you can afford something, who owes you, and when your emergency fund is full.";
+}
+
+// ---- Subs ----
+V.subs = () => `
+  <h1>Subscriptions</h1>
+  <div data-out="subsSummary">${OUT.subsSummary()}</div>
+  <label class="field"><span>Flag anything unused for more than</span><span class="inline"><input id="rule-days" data-bind="ruleDays" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.ruleDays}" style="width:90px" aria-label="Days"><span class="muted">days, or a duplicate of one you use</span></span></label>
+  <div data-out="subsList">${OUT.subsList()}</div>
+  <details class="card"><summary>Add a subscription</summary>
+    <form data-form="addSub" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+      <label class="field"><span>Name</span><input name="name" required placeholder="e.g. YouTube Premium"></label>
+      <div class="grid2"><label class="field"><span>Price</span><input name="price" required inputmode="decimal" placeholder="13.99"></label>
+      <label class="field"><span>Billed</span><select name="cycle"><option value="mo">Monthly</option><option value="yr">Yearly</option></select></label></div>
+      <div class="grid2"><label class="field"><span>Last opened</span><input name="last" type="date" value="${isoDaysAgo(0)}"></label>
+      <label class="field"><span>Kind</span><input name="group" placeholder="Video, Music, Fitness…" list="groups"></label></div>
+      <datalist id="groups">${[...new Set(S.subs.map(s => s.group).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("")}</datalist>
+      <button class="btn primary" type="submit">Add subscription</button>
+    </form></details>`;
+OUT.subsSummary = () => {
+  const C = compute(), tot = C.liveSubs.reduce((a,s) => a + subMonthly(s), 0), dropped = S.subs.filter(s => s.keep === "drop");
+  return `<div class="card"><div class="summary3">
+    <div><span class="label">Per month</span><b>${fmt(tot)}</b></div>
+    <div><span class="label">Per year</span><b>${fmt(tot*12)}</b></div>
+    <div><span class="label">Flagged</span><b class="${C.flagged.length ? "bad" : ""}">${fmt(C.flaggedSave)}</b></div></div>
+    ${dropped.length ? `<p class="small good">Dropping ${dropped.length} keeps ${fmt(dropped.reduce((a,s)=>a+subMonthly(s),0))} a month.</p>` : ""}</div>`;
+};
+OUT.subsList = () => {
+  const C = compute();
+  if (!S.subs.length) return `<p class="empty">No subscriptions yet. Add one below.</p>`;
+  const order = [...S.subs].sort((a,b) => (C.flags[b.id].length - C.flags[a.id].length) || subMonthly(b) - subMonthly(a));
+  return `<div class="rows">${order.map(s => {
+    const f = C.flags[s.id], d = daysSince(s.last), k = s.keep;
+    const q = encodeURIComponent(`how to cancel ${s.name}`);
+    return `<div class="row" data-sub="${s.id}"><div class="row-top"><div><div class="name">${esc(s.name)}</div>
+      <div class="muted small">${d === 0 ? "Opened today" : d === 1 ? "Opened yesterday" : `Opened ${d} days ago`}${s.group ? ` · ${esc(s.group)}` : ""}</div></div>
+      <div><div class="name tnum">${fmt(s.price)}<span class="muted small">/${s.cycle === "yr" ? "yr" : "mo"}</span></div>${s.cycle === "yr" ? `<div class="muted small tnum">${fmt(subMonthly(s))}/mo</div>` : ""}</div></div>
+      ${f.length ? `<div class="inline">${f.map(r => `<span class="pill ${k === "keep" ? "grey" : "flag"}">${esc(r)}</span>`).join("")}</div>` : ""}
+      <div class="inline" style="justify-content:space-between">
+        <div class="seg" role="group" aria-label="${esc(s.name)}"><button type="button" data-keep="keep" aria-pressed="${k === "keep"}">Keep</button><button type="button" data-keep="auto" aria-pressed="${k === "auto"}">Rules</button><button type="button" class="drop" data-keep="drop" aria-pressed="${k === "drop"}">Drop</button></div>
+        <span class="inline"><button class="btn small" type="button" data-used>Used today</button><button class="btn small danger" type="button" data-del-sub aria-label="Remove ${esc(s.name)}">Remove</button></span></div>
+      ${k === "drop" ? `<p class="small">Cancel before it renews, in the app or site where you signed up. <a class="good" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Find the cancel page</a></p>` : ""}</div>`;}).join("")}</div>`;
+};
+
+// ---- Cheaper ----
+V.cheaper = () => `
+  <h1>Cheaper</h1>
+  <p class="muted">Close alternatives to what you already pay for. Turn one on and your month updates. Prices are estimates; check before you switch.</p>
+  <div data-out="cheapSummary">${OUT.cheapSummary()}</div>
+  <div data-out="cheapList">${OUT.cheapList()}</div>
+  <details class="card"><summary>Add your own comparison</summary>
+    <form data-form="addSwap" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+      <label class="field"><span>What you pay for now</span><select name="link">${[...S.expenses.map(e => `<option value="expense:${e.id}">${esc(e.name)} (${fmt(e.amount)})</option>`), ...S.subs.filter(s => s.keep !== "drop").map(s => `<option value="sub:${s.id}">${esc(s.name)} (${fmt(subMonthly(s))})</option>`)].join("")}</select></label>
+      <label class="field"><span>Cheaper option</span><input name="alt" required placeholder="e.g. Library card"></label>
+      <label class="field"><span>It costs per month</span><input name="altCost" required inputmode="decimal" placeholder="0"></label>
+      <button class="btn primary" type="submit">Add comparison</button>
+    </form></details>`;
+OUT.cheapSummary = () => {
+  const on = S.swaps.filter(w => w.on), sOn = on.reduce((a,w) => a + swapSaving(w), 0), sAll = S.swaps.reduce((a,w) => a + swapSaving(w), 0);
+  return `<div class="card"><div class="summary3" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div><span class="label">Swaps on</span><b class="good">${fmt(sOn)}<span class="small muted">/mo</span></b></div>
+    <div><span class="label">If you use all</span><b>${fmt(sAll)}<span class="small muted">/mo</span></b></div></div></div>`;
+};
+OUT.cheapList = () => {
+  const items = S.swaps.map(w => ({w, it: linkedItem(w), save: swapSaving(w)})).filter(x => x.it).sort((a,b) => b.save - a.save);
+  if (!items.length) return `<p class="empty">No comparisons yet.</p>`;
+  return `<div class="rows">${items.map(({w, it, save}) => `<div class="row" data-swap="${w.id}">
+    <div class="row-top"><div><div class="name">${esc(w.title || it.name)} → ${esc(w.alt)}</div>${w.note ? `<div class="muted small">${esc(w.note)}</div>` : ""}</div>
+    <div><div class="name tnum good">${fmt(save)}<span class="small muted">/mo</span></div><div class="muted small tnum">${fmt(save*12)}/yr</div></div></div>
+    <div class="inline" style="justify-content:space-between"><span class="small muted tnum">${fmt(it.cost)} now · <label>new cost <input data-alt="${w.id}" type="text" inputmode="decimal" enterkeyhint="done" value="${w.altCost}" style="width:96px;padding:6px 10px" aria-label="Cheaper option cost"></label></span>
+    <span class="inline"><button class="btn small ${w.on ? "" : ""}" type="button" data-swap-on aria-pressed="${w.on}" style="${w.on ? "background:var(--green-soft);color:var(--green);border-color:transparent" : ""}">${w.on ? "Using this swap" : "Use this swap"}</button><button class="btn small danger" type="button" data-del-swap aria-label="Remove comparison">Remove</button></span></div></div>`).join("")}</div>`;
+};
+
+// ---- Codes ----
+let codeQ = "";
+V.codes = () => `
+  <h1>Codes</h1>
+  <p class="muted">Codes marked Likely worked for someone in the last week. Tap a code to copy it, then tell Keepwise if it worked.</p>
+  <div class="note small">Example codes are placeholders until Keepwise connects to affiliate feeds. Codes you add are real and stay on this device.</div>
+  <input id="code-q" type="search" enterkeyhint="search" placeholder="Search a store" aria-label="Search codes" value="${esc(codeQ)}">
+  <div data-out="codeList">${OUT.codeList()}</div>
+  <details class="card"><summary>Add a code you found</summary>
+    <form data-form="addCode" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+      <div class="grid2"><label class="field"><span>Store</span><input name="store" required></label><label class="field"><span>Code</span><input name="code" required autocapitalize="characters"></label></div>
+      <label class="field"><span>What it gives</span><input name="offer" placeholder="e.g. 15% off first order"></label>
+      <button class="btn primary" type="submit">Add code</button>
+    </form></details>`;
+function codeStatus(c){
+  const d = daysSince(c.last);
+  if (c.failed > c.worked + 1) return ["Probably dead","flag"];
+  if (d <= 7 && c.worked >= c.failed) return ["Likely","ok"];
+  return ["Check first","gold"];
+}
+OUT.codeList = () => {
+  const q = codeQ.trim().toLowerCase();
+  const list = S.codes.filter(c => !q || c.store.toLowerCase().includes(q) || (c.offer||"").toLowerCase().includes(q))
+    .sort((a,b) => { const r = x => ({Likely:0,"Check first":1,"Probably dead":2})[codeStatus(x)[0]]; return r(a) - r(b) || daysSince(a.last) - daysSince(b.last); });
+  if (!list.length) return `<p class="empty">No codes for “${esc(codeQ)}” yet. Add one you found below.</p>`;
+  return `<div class="rows">${list.map(c => { const [st, cls] = codeStatus(c), d = daysSince(c.last);
+    return `<div class="row" data-code="${c.id}"><div class="row-top"><div><div class="name">${esc(c.store)}</div><div class="muted small">${esc(c.offer || "")}</div></div><div><span class="pill ${cls}">${st}</span></div></div>
+    <div class="inline" style="justify-content:space-between"><button class="code" type="button" data-copy="${esc(c.code)}" aria-label="Copy code ${esc(c.code)}">${esc(c.code)}</button>
+    <span class="muted small">${c.mine ? "Added by you · " : ""}worked ${c.worked}×, failed ${c.failed}× · last ${d === 0 ? "today" : d === 1 ? "yesterday" : d + " days ago"}</span></div>
+    <div class="inline"><button class="btn small" type="button" data-vote="worked">It worked</button><button class="btn small" type="button" data-vote="failed">Didn’t work</button>${c.mine ? `<button class="btn small danger" type="button" data-del-code>Remove</button>` : ""}</div></div>`;}).join("")}</div>`;
+};
+
+// ---- Plan ----
+V.plan = () => `
+  <h1>Plan</h1>
+  <div class="grid2">
+    <label class="field"><span>Money coming in</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}"></span></label>
+    <label class="field"><span>Currency</span><select data-bind="cur">${CURRENCIES.map(([c,n]) => `<option value="${c}" ${c===S.cur?"selected":""}>${c} · ${n}</option>`).join("")}</select></label>
+  </div>
+  <section class="card"><h2>Envelopes</h2><p class="muted small">Share of money coming in each envelope should hold.</p>
+    <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+      ${[["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => `<label class="field"><span>${n} %</span><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"></label>`).join("")}
+    </div><div data-out="envCheck">${OUT.envCheck()}</div></section>
+  <section class="card"><h2>What goes out each month</h2>
+    <div data-out="expTotal">${OUT.expTotal()}</div>
+    <div class="rows" style="border-radius:14px">${S.expenses.map(e => `<div class="row" data-exp="${e.id}" style="padding:10px 12px">
+      <input data-exp-name value="${esc(e.name)}" aria-label="Name" enterkeyhint="done">
+      <div class="inline"><span class="money-in" style="flex:1 1 120px"><em>${esc(sym())}</em><input data-exp-amt type="text" inputmode="decimal" enterkeyhint="done" value="${e.amount}" aria-label="Amount for ${esc(e.name)}"></span>
+      <select data-exp-env style="flex:1 1 120px" aria-label="Envelope"><option value="needs" ${e.env==="needs"?"selected":""}>Expenditures</option><option value="misc" ${e.env==="misc"?"selected":""}>Misc</option></select>
+      <button class="btn small danger" type="button" data-del-exp aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>
+    <button class="btn" type="button" data-add-exp>Add a line</button>
+    <p class="muted small">Subscriptions live on the Subs tab and count toward Misc.</p></section>
+  <section class="card"><h2>Savings</h2>
+    <div class="grid2"><label class="field"><span>Emergency fund so far</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="efSaved" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.efSaved}"></span></label>
+    <label class="field"><span>Target, months of needs</span><input data-bind="efMonths" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.efMonths}"></label></div>
+    <div class="grid2"><label class="field"><span>Saving for</span><input data-bind="goalName" type="text" enterkeyhint="done" value="${esc(S.goalName)}"></label>
+    <label class="field"><span>Goal amount</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="goalAmt" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.goalAmt}"></span></label></div>
+    <label class="field"><span>Leftover money goes to</span><select data-bind="priority"><option value="ef" ${S.priority==="ef"?"selected":""}>Emergency fund first</option><option value="goal" ${S.priority==="goal"?"selected":""}>My goal first</option><option value="split" ${S.priority==="split"?"selected":""}>Half and half</option></select></label>
+    <div data-out="saveSplit">${OUT.saveSplit()}</div></section>
+  <section class="card"><h2>Your data</h2><p class="muted small">Everything stays on this device. Nothing is sent anywhere.</p>
+    <div class="inline"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank">Start empty</button></div>
+    <div id="reset-confirm"></div></section>`;
+OUT.envCheck = () => { const t = S.env.needs + S.env.misc + S.env.save; return t === 100 ? `<p class="muted small">Adds up to 100%.</p>` : `<p class="err">These add up to ${t}%. Make them total 100%.</p>`; };
+OUT.expTotal = () => { const C = compute(); return `<p class="small tnum">Expenditures ${fmt(C.needs)} · Misc ${fmt(C.misc)} (with subscriptions and swaps)</p>`; };
+OUT.saveSplit = () => { const C = compute(); return C.savings > 0 ? `<p class="small tnum">This month: ${fmt(C.toEF)} to emergency fund, ${fmt(C.toGoal)} to ${esc(S.goalName || "your goal")}.${C.efTarget ? ` Fund target ${fmt(C.efTarget)}.` : ""}</p>` : `<p class="err">Nothing is left to save this month.</p>`; };
+
+// ---- Split ----
+let splitDraft = null, splitErr = "";
+function modeSwitch(){
+  const m = S.splitMode === "shared" ? "shared" : "local";
+  return `<div class="seg" role="group" aria-label="Which splits" style="align-self:flex-start"><button type="button" data-mode="shared" aria-pressed="${m === "shared"}">Shared with friends</button><button type="button" data-mode="local" aria-pressed="${m === "local"}">On this phone</button></div>`;
+}
+function sharedUnavailable(){
+  if (SH.state === "loading") return `<div class="card"><p class="muted">Connecting to your shared circle…</p></div>`;
+  if (!window.claude) return `<div class="card"><h2>Friend sync is coming to the app</h2>
+    <p>Right now, shared splits with live notifications work in the Claude version of Keepwise. In this app, your splits stay on this phone.</p>
+    <p class="muted small">Switch to “On this phone” to keep splitting with names you add by hand.</p></div>`;
+  return `<div class="card"><h2>Share splits with friends</h2>
+    <p>Shared splits work when this page is opened in Claude while you’re signed in. Friends need a Claude account too.</p>
+    <ol class="steps"><li><div><h3>Invite them</h3><p class="muted">In the Claude app, open this page’s Share menu and invite each friend by email as an Editor. Leave public link sharing off, or they can view but not add.</p></div></li>
+    <li><div><h3>They open the link</h3><p class="muted">They tap Split, then Shared with friends. That adds them to your circle.</p></div></li>
+    <li><div><h3>Everyone adds splits</h3><p class="muted">When a friend adds, edits or deletes a split that includes you, or marks a payment, it shows up under the bell at the top.</p></div></li></ol>
+    <p class="muted small">Until then, “On this phone” keeps working with names you add by hand.</p></div>`;
+}
+V.split = () => {
+  const c = CTX();
+  const wantShared = S.splitMode === "shared";
+  if (wantShared && !shared()) return `<h1>Split</h1>${modeSwitch()}${sharedUnavailable()}`;
+  const tags = ["All", ...S.tags];
+  const list = c.splits.filter(x => S.filter === "All" || x.tag === S.filter).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0) || (b.date||"").localeCompare(a.date||""));
+  return `
+  <h1>Split</h1>
+  ${modeSwitch()}
+  <div data-out="splitSum">${OUT.splitSum()}</div>
+  <div class="chips" role="group" aria-label="Filter">${tags.map(t => `<button class="chip" type="button" data-filter="${esc(t)}" aria-pressed="${S.filter === t}">${esc(t)}</button>`).join("")}</div>
+  ${splitDraft ? splitForm() : `<button class="btn primary" type="button" data-new-split>New split</button>`}
+  ${list.length ? list.map(x => { const lines = splitLine(x, c);
+    const by = c.kind === "shared" && x.createdBy && x.createdBy !== c.me ? ` · added by ${esc(person(x.createdBy, c).name)}` : "";
+    return `<div class="card" data-split="${esc(x.id)}"><div class="entry"><div class="ico" aria-hidden="true">${tagIcon(x.tag)}</div>
+      <div style="min-width:0"><div class="name" style="font-size:1.1rem">${esc(x.title)}</div><div class="muted small">${esc(x.tag)} · ${METHOD_LABEL[x.method] || ""}${x.paidBy !== c.me ? ` · ${esc(person(x.paidBy, c).name)} paid` : ""}${by}</div>
+      <p class="small" style="margin-top:4px">${lines.length ? lines.map(l => `<span class="${l.good ? "good" : "bad"}">${esc(l.t)}</span>`).join(" · ") : `<span class="muted">Doesn’t involve you</span>`}</p></div>
+      <div class="name tnum" style="font-size:1.1rem">${fmt(x.amount)}</div></div>
+      <div class="inline" style="justify-content:flex-end"><button class="btn small" type="button" data-edit-split>Edit</button><button class="btn small danger" type="button" data-del-split>Delete</button></div></div>`; }).join("") : `<p class="empty">No splits${S.filter !== "All" ? ` tagged ${esc(S.filter)}` : ""} yet.</p>`}
+  ${historySection(c)}
+  ${c.kind === "shared" ? `<section style="display:flex;flex-direction:column;gap:12px"><h2>Your circle</h2>
+    <p class="muted">Everyone who opened this page and joined. Invite more people from the Share menu.</p>
+    <div class="rows">${c.people.map(p => `<div class="row"><div class="name">${esc(p.name)}</div></div>`).join("")}</div></section>` : `
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <h2>People</h2>
+    <p class="muted">Add someone by hand, or import a contacts file (.vcf) from your phone. Names stay on this device.</p>
+    <form class="inline" data-form="addPerson"><input name="name" placeholder="Name" aria-label="New person's name" enterkeyhint="done" style="flex:1 1 180px"><button class="btn" type="submit">Add</button></form>
+    <button class="btn" type="button" data-import>Import contacts</button>
+    <div class="rows">${S.people.map(p => p.id === "me" ? `<div class="row"><div class="name">You</div></div>` : `<div class="row" data-person="${p.id}"><div class="inline"><input data-person-name value="${esc(p.name)}" aria-label="Name" enterkeyhint="done" style="flex:1 1 160px"><button class="btn small danger" type="button" data-del-person>Remove</button></div></div>`).join("")}</div>
+  </section>`}`;
+};
+OUT.splitSum = () => {
+  const b = myBalances(), owed = b.filter(x => x.net > 0).reduce((a,x) => a + x.net, 0), owe = b.filter(x => x.net < 0).reduce((a,x) => a - x.net, 0), net = owed - owe;
+  return `<div class="card"><div class="summary3">
+    <div><span class="muted small">You're owed</span><b class="good">${fmt(owed)}</b></div>
+    <div><span class="muted small">You owe</span><b class="bad">${fmt(owe)}</b></div>
+    <div><span class="muted small">${net >= 0 ? "Net you're owed" : "Net you owe"}</span><b class="${net >= 0 ? "good" : "bad"}">${fmt(Math.abs(net))}</b></div></div></div>
+    ${b.length ? `<div class="balances">${b.map(x => `<div data-settle="${esc(x.p.id)}" data-amt="${Math.abs(x.net)}"><span class="${x.net > 0 ? "good" : "bad"}">${x.net > 0 ? `${esc(x.p.name)} owes you ${fmt(x.net)}` : `You owe ${esc(x.p.name)} ${fmt(-x.net)}`}</span><button class="btn small" type="button" data-settle-btn>${x.net > 0 ? "Got paid" : "Paid"}</button></div>`).join("")}</div>` : `<p class="muted">Everyone is square.</p>`}`;
+};
+const shortDate = iso => { if (!iso) return ""; const [y,m,d] = iso.split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("en-US", {month:"short", day:"numeric"}); };
+function historySection(c){
+  c = c || CTX(); const me = c.me;
+  const pays = [...c.pays].sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0) || (b.date||"").localeCompare(a.date||""));
+  const row = x => {
+    const mine = x.from === me || x.to === me;
+    const text = x.from === me ? `You paid ${esc(person(x.to, c).name)} ${fmt(x.amount)}` : x.to === me ? `${esc(person(x.from, c).name)} paid you ${fmt(x.amount)}` : `${esc(person(x.from, c).name)} paid ${esc(person(x.to, c).name)} ${fmt(x.amount)}`;
+    const by = c.kind === "shared" && x.createdBy && x.createdBy !== me ? ` · marked by ${esc(person(x.createdBy, c).name)}` : ` · marked ${x.from === me ? "Paid" : "Got paid"}`;
+    if (UI.editPay === x.id) return `<div class="row" data-pay="${esc(x.id)}">
+      <div class="name">${text}</div>
+      <div class="grid2"><label class="field"><span>Amount</span><span class="money-in"><em>${esc(sym())}</em><input data-pay-amt type="text" inputmode="decimal" enterkeyhint="done" value="${x.amount}"></span></label>
+      <label class="field"><span>Date</span><input data-pay-date type="date" value="${esc(x.date)}"></label></div>
+      <div class="inline"><button class="btn small" type="button" data-pay-save>Save</button><button class="btn small" type="button" data-pay-cancel>Cancel</button><button class="btn small danger" type="button" data-pay-del>Delete payment</button></div></div>`;
+    return `<div class="row" data-pay="${esc(x.id)}"><div class="row-top"><div><div class="${x.to === me ? "good" : ""}">${text}</div><div class="muted small">${shortDate(x.date)}${by}</div></div>
+      ${mine ? `<div class="inline" style="justify-content:flex-end"><button class="btn small" type="button" data-pay-edit>Edit</button><button class="btn small danger" type="button" data-pay-del>Undo</button></div>` : ""}</div></div>`;
+  };
+  return `<section style="display:flex;flex-direction:column;gap:12px" id="history">
+    <h2>History</h2>
+    <p class="muted">Every Paid and Got paid${c.kind === "shared" ? " in your circle" : " you tapped"}. Undo one that didn’t really happen and the balance goes back. To change what someone owes, tap Edit on the split above.</p>
+    ${pays.length ? `<div class="rows">${pays.map(row).join("")}</div>` : `<p class="empty">No payments recorded yet.</p>`}
+  </section>`;
+}
+function splitForm(){
+  const c = CTX(), d = splitDraft, others = c.people;
+  const partRows = d.method === "borrow" ? `
+    <label class="field"><span>${d.paidBy === c.me ? "Who borrowed from you" : "Who owes it"}</span><select data-d="borrower">${others.filter(p => p.id !== d.paidBy).map(p => `<option value="${esc(p.id)}" ${d.borrower===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>`
+    : `<fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px"><legend class="field" style="font-weight:600;margin-bottom:6px">Split between</legend>
+    ${others.map(p => { const on = d.parts[p.id] !== undefined; return `<div class="inline" style="justify-content:space-between"><label class="inline"><input type="checkbox" data-part="${esc(p.id)}" ${on ? "checked" : ""} style="width:20px;height:20px"> ${esc(p.name)}</label>
+      ${on && d.method !== "equal" ? `<input data-part-val="${esc(p.id)}" type="text" inputmode="decimal" enterkeyhint="done" value="${d.parts[p.id] ?? ""}" placeholder="${d.method === "percent" ? "%" : sym()}" style="width:110px" aria-label="${esc(p.name)} share">` : on && d.amount ? `<span class="muted small tnum">${fmt((+d.amount||0) / Object.keys(d.parts).length)}</span>` : ""}</div>`; }).join("")}</fieldset>`;
+  return `<form class="card" data-form="split"><h2>${d.editId ? "Edit split" : "New split"}</h2>
+    ${c.kind === "shared" ? `<p class="muted small">Everyone in the split gets a notification.</p>` : ""}
+    <div class="grid2"><label class="field"><span>What for</span><input data-d="title" value="${esc(d.title)}" placeholder="e.g. Pizza night" enterkeyhint="next"></label>
+    <label class="field"><span>Total</span><span class="money-in"><em>${esc(sym())}</em><input data-d="amount" type="text" inputmode="decimal" enterkeyhint="done" value="${d.amount}"></span></label></div>
+    <div class="grid2"><label class="field"><span>Paid by</span><select data-d="paidBy">${others.map(p => `<option value="${esc(p.id)}" ${d.paidBy===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>
+    <label class="field"><span>Tag</span><select data-d="tag">${S.tags.map(t => `<option ${d.tag===t?"selected":""}>${esc(t)}</option>`).join("")}</select></label></div>
+    <label class="field"><span>How to split</span><select data-d="method">${Object.entries(METHOD_LABEL).map(([k,v]) => `<option value="${k}" ${d.method===k?"selected":""}>${v}</option>`).join("")}</select></label>
+    ${partRows}
+    ${splitErr ? `<p class="err">${esc(splitErr)}</p>` : ""}
+    <div class="grid2"><button class="btn" type="button" data-cancel-split>Cancel</button><button class="btn primary" type="submit" style="padding:10px">Save split</button></div></form>`;
+}
+
+// ---- Notifications inbox ----
+function notifications(){
+  if (SH.state !== "ready") return [];
+  const me = SH.me, out = [], nm = id => SH.names[id] || "Someone";
+  SH.splits.forEach(x => {
+    const by = x.updatedBy || x.createdBy, t = x.updatedAt || x.createdAt || 0;
+    if (!by || by === me) return;
+    if (!(x.paidBy === me || (x.parts && me in x.parts))) return;
+    const sh = shares(x), verb = x.deleted ? "deleted" : x.updatedAt ? "edited" : "added you to";
+    let detail = "";
+    if (!x.deleted){
+      if (x.paidBy === me){ const tot = Object.entries(sh).filter(([id]) => id !== me).reduce((a,[,v]) => a + v, 0); detail = `You paid ${fmt(x.amount)}. Others owe you ${fmt(tot)}.`; }
+      else if (sh[me]) detail = `You owe ${nm(x.paidBy)} ${fmt(sh[me])}.`;
+    } else detail = "It no longer counts toward your balance.";
+    out.push({key:`s:${x.id}:${t}`, t, text:`${nm(by)} ${verb} “${x.title}”`, detail});
+  });
+  SH.pays.forEach(p => {
+    const by = p.updatedBy || p.createdBy, t = p.updatedAt || p.createdAt || 0;
+    if (!by || by === me || (p.from !== me && p.to !== me)) return;
+    const other = p.from === me ? p.to : p.from;
+    const text = p.deleted ? `${nm(by)} removed a ${fmt(p.amount)} payment` : p.updatedAt ? `${nm(by)} changed a payment to ${fmt(p.amount)}` : p.to === me ? `${nm(p.from)} marked ${fmt(p.amount)} as paid to you` : `${nm(other)} marked your ${fmt(p.amount)} as paid`;
+    out.push({key:`p:${p.id}:${t}`, t, text, detail: p.to === me && !p.deleted ? "Check it arrived. Undo it in History if it didn’t." : ""});
+  });
+  return out.sort((a,b) => b.t - a.t);
+}
+const unreadCount = () => notifications().filter(n => n.t > SH.lastSeen).length;
+function renderBell(){
+  const b = $("bell"); if (!b) return;
+  b.hidden = SH.state !== "ready";
+  const n = unreadCount(), badge = $("bell-n");
+  badge.hidden = !n; badge.textContent = n > 9 ? "9+" : String(n);
+  b.setAttribute("aria-label", n ? `Notifications, ${n} new` : "Notifications");
+}
+V.inbox = () => {
+  const list = notifications(), seen = UI.inboxSeen || 0;
+  return `<div class="inline" style="justify-content:space-between"><h1>Notifications</h1><button class="btn small" type="button" data-close-inbox>Done</button></div>
+    <p class="muted">What friends did in your shared circle: splits that include you, and payments.</p>
+    ${list.length ? `<div class="rows">${list.map(n => `<div class="row"><div class="row-top"><div>${n.t > seen ? `<span class="pill ok" style="margin-right:6px">New</span>` : ""}<span class="name">${esc(n.text)}</span>${n.detail ? `<div class="muted small">${esc(n.detail)}</div>` : ""}</div><div class="muted small">${ago(n.t)}</div></div></div>`).join("")}</div>
+    <button class="btn" type="button" data-go-split>Open shared splits</button>` : `<p class="empty">Nothing yet. When a friend adds a split with you in it, it shows here.</p>`}`;
+};
+function ago(t){ if (!t) return ""; const m = Math.round((Date.now() - t) / 6e4); if (m < 1) return "now"; if (m < 60) return m + "m"; const h = Math.round(m / 60); if (h < 24) return h + "h"; const d = Math.round(h / 24); return d < 7 ? d + "d" : new Date(t).toLocaleDateString("en-US", {month:"short", day:"numeric"}); }
+
+// ---- Shared circle connection ----
+async function shWrite(fn, okMsg){
+  try { await fn(); if (okMsg) toast(okMsg); return true; }
+  catch(e){ const code = e && e.code;
+    toast(code === "invalid_argument" ? "You can see this circle but not change it. Ask the owner to invite you as an Editor." : code === "quota_exceeded" ? "The shared list is full. Delete old splits first." : "Couldn’t save that. Check your connection and try again.");
+    return false; }
+}
+async function joinCircle(){
+  if (SH.state !== "ready" || SH.joinTried || !SH.loaded.members) return;
+  SH.joinTried = true;
+  if (!SH.members.includes(SH.me)) await shWrite(() => SH.db.doc("members/" + SH.me).set({joinedAt: Date.now()}));
+}
+async function resolveNames(){
+  if (!SH.user) return;
+  const ids = new Set(SH.members);
+  SH.splits.forEach(x => { [x.createdBy, x.updatedBy, x.paidBy, ...Object.keys(x.parts || {})].forEach(i => i && ids.add(i)); });
+  SH.pays.forEach(p => [p.from, p.to, p.createdBy, p.updatedBy].forEach(i => i && ids.add(i)));
+  const missing = [...ids].filter(i => !(i in SH.names)); if (!missing.length) return;
+  const ps = await SH.user.profiles(missing);
+  missing.forEach(i => SH.names[i] = (ps[i] && ps[i].name) || "");
+  onShared(true);
+}
+function onShared(fromNames){
+  if (!fromNames) resolveNames();
+  if (SH.loaded.splits && SH.loaded.pays){
+    const keys = notifications().filter(n => n.t > SH.lastSeen);
+    if (SH.known){ const fresh = keys.filter(n => !SH.known.has(n.key)); if (fresh.length) toast(fresh.length === 1 ? fresh[0].text : `${fresh.length} new updates from your circle`); }
+    SH.known = new Set(notifications().map(n => n.key));
+  }
+  renderBell();
+  if (S.splitMode === "shared" && SH.loaded.members) joinCircle();
+  if (UI.inbox) { render(true); return; }
+  if (S.tab === "split" && S.splitMode === "shared"){ if (splitDraft || UI.editPay) refreshOuts(); else render(true); }
+}
+async function initShared(){
+  try {
+    if (!window.claude || !window.claude.use){ SH.state = "off"; return; }
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    const me = user ? await user.id() : null;
+    if (!db || !me){ SH.state = "off"; if (S.tab === "split") render(true); return; }
+    Object.assign(SH, {db, user, me, state:"ready"});
+    try { const st = await db.doc(`data/users/${me}/state`).get(); SH.lastSeen = st.exists ? (+st.data().lastSeen || 0) : 0; } catch(e){}
+    const fail = e => { if (e && e.code === "revoked"){ SH.state = "off"; renderBell(); if (S.tab === "split") render(true); } };
+    db.collection("splits").onSnapshot(q => { SH.splits = q.docs.map(d => ({...d.data(), id:d.id})); SH.loaded.splits = true; onShared(); }, fail);
+    db.collection("payments").onSnapshot(q => { SH.pays = q.docs.map(d => ({...d.data(), id:d.id})); SH.loaded.pays = true; onShared(); }, fail);
+    db.collection("members").onSnapshot(q => { SH.members = q.docs.map(d => d.id); SH.loaded.members = true; onShared(); }, fail);
+    if (S.tab === "split") render(true);
+  } catch(e){ SH.state = "off"; if (S.tab === "split") render(true); }
+}
+async function markSeen(){
+  UI.inboxSeen = SH.lastSeen;
+  const t = Date.now(); SH.lastSeen = t; renderBell();
+  if (SH.state === "ready") { try { await SH.db.doc(`data/users/${SH.me}/state`).set({lastSeen: t}); } catch(e){} }
+}
+
+/* ================= render ================= */
+function renderTabs(){
+  $("tabbar").innerHTML = TABS.map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${I[k]}<span>${n}</span></button>`).join("");
+}
+function render(keepScroll){
+  const main = $("main"), top = main.scrollTop;
+  $("view").innerHTML = UI.inbox ? V.inbox() : V[S.tab]();
+  renderTabs(); renderBell();
+  main.scrollTop = keepScroll ? top : 0;
+  if (!isField(document.activeElement)) appEl.classList.remove("typing");
+}
+function refreshOuts(){
+  const active = document.activeElement;
+  document.querySelectorAll("#view [data-out]").forEach(el => {
+    if (isField(active) && el.contains(active)) return; // never rebuild the box someone is typing in
+    const f = OUT[el.dataset.out]; if (f) el.innerHTML = f();
+  });
+  if (!isField(document.activeElement)) appEl.classList.remove("typing");
+}
+const numv = v => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n) ? 0 : n; };
+
+/* ================= events ================= */
+const view = $("view");
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; S.tab = b.dataset.tab; save(); render(false); });
+$("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; if (UI.inbox) markSeen(); render(false); });
+
+view.addEventListener("input", e => {
+  const t = e.target;
+  if (t.dataset.bind){
+    const k = t.dataset.bind; S[k] = t.hasAttribute("data-num") ? numv(t.value) : t.value;
+    if (k === "cur"){ save(); render(true); return; }
+    if (k === "efMonths") S.efMonths = Math.max(0, Math.round(S.efMonths));
+    if (k === "ruleDays") S.ruleDays = Math.max(1, Math.round(S.ruleDays));
+    save(); refreshOuts(); return;
+  }
+  if (t.dataset.env){ S.env[t.dataset.env] = Math.max(0, Math.round(numv(t.value))); save(); refreshOuts(); return; }
+  const exp = t.closest("[data-exp]");
+  if (exp){ const it = S.expenses.find(x => x.id === exp.dataset.exp); if (!it) return;
+    if (t.hasAttribute("data-exp-name")) it.name = t.value;
+    if (t.hasAttribute("data-exp-amt")) it.amount = numv(t.value);
+    if (t.hasAttribute("data-exp-env")) it.env = t.value;
+    save(); refreshOuts(); return; }
+  if (t.dataset.alt){ const w = S.swaps.find(x => x.id === t.dataset.alt); if (w){ w.altCost = numv(t.value); save(); refreshOuts(); } return; }
+  if (t.id === "code-q"){ codeQ = t.value; refreshOuts(); return; }
+  const pn = t.closest("[data-person]");
+  if (pn && t.hasAttribute("data-person-name")){ const p = S.people.find(x => x.id === pn.dataset.person); if (p){ p.name = t.value; save(); refreshOuts(); } return; }
+  if (splitDraft){
+    if (t.dataset.d){ splitDraft[t.dataset.d] = t.value;
+      if (["paidBy","method"].includes(t.dataset.d)){ if (t.dataset.d === "method" && t.value !== "borrow") { for (const id in splitDraft.parts) splitDraft.parts[id] = t.value === "equal" ? 1 : ""; } splitErr = ""; render(true); }
+      return; }
+    if (t.dataset.partVal){ splitDraft.parts[t.dataset.partVal] = t.value; return; }
+  }
+});
+view.addEventListener("change", e => {
+  const t = e.target;
+  if (splitDraft && t.dataset.part){ if (t.checked) splitDraft.parts[t.dataset.part] = splitDraft.method === "equal" ? 1 : ""; else delete splitDraft.parts[t.dataset.part]; render(true); return; }
+  if (t.dataset.expEnv !== undefined || t.hasAttribute("data-exp-env") || t.dataset.alt || t.hasAttribute("data-exp-amt")) { refreshOuts(); }
+});
+
+view.addEventListener("click", async e => {
+  const t = e.target, b = t.closest("button, a");
+  if (!b) return;
+  if (b.dataset.go){ S.tab = b.dataset.go; save(); render(false); return; }
+  if (b.dataset.envOpen){ UI.openEnv = UI.openEnv === b.dataset.envOpen ? null : b.dataset.envOpen; refreshOuts(); return; }
+  if (b.hasAttribute("data-set-aside")){ const C = compute(), amt = C.toSetAside; if (amt <= 0) return;
+    (S.deposits = S.deposits || []).push({id:uid(), amount:amt, month:C.planKey, label:C.planMonth, date:isoDaysAgo(0)}); S.efSaved = r2(S.efSaved + amt); save(); refreshOuts(); toast(`Set aside ${fmt(amt)}. Your account is at ${fmt(S.efSaved)}.`); return; }
+  if (b.hasAttribute("data-undo-dep")){ const id = b.closest("[data-dep]").dataset.dep, x = (S.deposits || []).find(d => d.id === id); if (!x) return;
+    S.deposits = S.deposits.filter(d => d !== x); S.efSaved = r2(Math.max(0, S.efSaved - x.amount)); save(); refreshOuts(); toast(`Undid ${fmt(x.amount)}.`); return; }
+  if (b.hasAttribute("data-add-line-btn")){ const box = b.closest("[data-add-line]"), name = box.querySelector("[data-new-name]").value.trim(), amt = numv(box.querySelector("[data-new-amt]").value);
+    if (!name){ toast("Give the line a name."); box.querySelector("[data-new-name]").focus(); return; }
+    S.expenses.push({id:uid(), name, amount:amt, env:box.dataset.addLine}); save(); refreshOuts(); toast(`Added ${name}.`); return; }
+  if (b.hasAttribute("data-hide-note")){ S.hideNote = true; save(); render(true); return; }
+  if (b.hasAttribute("data-compare")){ UI.compare = !UI.compare; refreshOuts(); return; }
+  if (b.classList.contains("cmp-col")){ const was = b.classList.contains("on"); b.parentElement.querySelectorAll(".cmp-col").forEach(c => c.classList.remove("on")); if (!was) b.classList.add("on"); return; }
+  if (b.hasAttribute("data-plain")){ ASK.last = plainly(); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; return; }
+  if (b.dataset.ask){ const q = b.dataset.ask; $("ask-in").value = q; ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; return; }
+  const subRow = b.closest("[data-sub]");
+  if (subRow){ const s = S.subs.find(x => x.id === subRow.dataset.sub); if (!s) return;
+    if (b.dataset.keep){ s.keep = b.dataset.keep; save(); render(true); if (s.keep === "drop") toast(`${s.name} marked to drop. Your month updated.`); return; }
+    if (b.hasAttribute("data-used")){ s.last = isoDaysAgo(0); save(); render(true); toast(`${s.name} marked as used today.`); return; }
+    if (b.hasAttribute("data-del-sub")){ S.subs = S.subs.filter(x => x !== s); S.swaps = S.swaps.filter(w => w.link !== `sub:${s.id}`); save(); render(true); toast(`Removed ${s.name}.`); return; }
+  }
+  const sw = b.closest("[data-swap]");
+  if (sw){ const w = S.swaps.find(x => x.id === sw.dataset.swap); if (!w) return;
+    if (b.hasAttribute("data-swap-on")){ w.on = !w.on; save(); render(true); toast(w.on ? `Using ${w.alt}. Your month updated.` : "Swap turned off."); return; }
+    if (b.hasAttribute("data-del-swap")){ S.swaps = S.swaps.filter(x => x !== w); save(); render(true); return; }
+  }
+  if (b.dataset.copy){ const c = b.dataset.copy;
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(b); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Code selected. Copy it from the menu."); };
+    try { await navigator.clipboard.writeText(c); toast(`Copied ${c}`); } catch(err){ fallback(); } return; }
+  const cr = b.closest("[data-code]");
+  if (cr){ const c = S.codes.find(x => x.id === cr.dataset.code); if (!c) return;
+    if (b.dataset.vote){ c[b.dataset.vote]++; if (b.dataset.vote === "worked") c.last = isoDaysAgo(0); save(); refreshOuts(); toast("Thanks. That helps rank this code."); return; }
+    if (b.hasAttribute("data-del-code")){ S.codes = S.codes.filter(x => x !== c); save(); refreshOuts(); return; }
+  }
+  const er = b.closest("[data-exp]");
+  if (er && b.hasAttribute("data-del-exp")){ S.expenses = S.expenses.filter(x => x.id !== er.dataset.exp); S.swaps = S.swaps.filter(w => w.link !== `expense:${er.dataset.exp}`); save(); render(true); return; }
+  if (b.hasAttribute("data-add-exp")){ S.expenses.push({id:uid(), name:"New line", amount:0, env:"needs"}); save(); render(true);
+    const rows = view.querySelectorAll("[data-exp-name]"); const last = rows[rows.length-1]; if (last){ last.focus(); last.select(); } return; }
+  if (b.dataset.reset){ const kind = b.dataset.reset;
+    $("reset-confirm").innerHTML = `<div class="note" style="margin-top:10px"><p>${kind === "blank" ? "Clear everything and start empty?" : "Replace your numbers with the example?"} This can’t be undone.</p><div class="inline" style="margin-top:10px"><button class="btn" type="button" data-reset-no>Keep my data</button><button class="btn danger" type="button" data-reset-yes="${kind}">${kind === "blank" ? "Clear it" : "Load example"}</button></div></div>`; return; }
+  if (b.hasAttribute("data-reset-no")){ $("reset-confirm").innerHTML = ""; return; }
+  if (b.dataset.resetYes){ const ex = example();
+    if (b.dataset.resetYes === "blank"){ Object.assign(ex, {income:0, efSaved:0, expenses:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0}); }
+    ex.tab = "plan"; S = ex; save(); render(false); toast(b.dataset.resetYes === "blank" ? "Started empty." : "Example loaded."); return; }
+  if (b.dataset.filter){ S.filter = b.dataset.filter; save(); render(true); return; }
+  if (b.hasAttribute("data-close-inbox")){ UI.inbox = false; render(false); return; }
+  if (b.hasAttribute("data-go-split")){ UI.inbox = false; S.tab = "split"; S.splitMode = "shared"; save(); render(false); return; }
+  if (b.dataset.mode){ S.splitMode = b.dataset.mode; splitDraft = null; UI.editPay = null; save(); render(true); if (S.splitMode === "shared") joinCircle(); return; }
+  if (b.hasAttribute("data-new-split")){ const me = CTX().me; splitDraft = {title:"", amount:"", paidBy:me, tag: S.filter !== "All" ? S.filter : S.tags[0], method:"equal", parts:{[me]:1}, borrower:""}; splitErr = ""; render(true); return; }
+  if (b.hasAttribute("data-cancel-split")){ splitDraft = null; splitErr = ""; render(true); return; }
+  const sp = b.closest("[data-split]");
+  if (sp && b.hasAttribute("data-del-split")){
+    if (shared()){ const x = SH.splits.find(y => y.id === sp.dataset.split); if (!x) return;
+      await shWrite(() => SH.db.doc("splits/" + x.id).update({deleted:true, updatedBy:SH.me, updatedAt:Date.now()}), `Deleted ${x.title}. Your circle was notified.`); return; }
+    const x = S.splits.find(y => y.id === sp.dataset.split);
+    S.splits = S.splits.filter(y => y !== x); save(); render(true); toast(`Deleted ${x ? x.title : "split"}.`); return; }
+  const st = b.closest("[data-settle]");
+  if (st && b.hasAttribute("data-settle-btn")){ const pid = st.dataset.settle, amt = +st.dataset.amt, bal = myBalances().find(x => x.p.id === pid);
+    if (!bal) return;
+    if (shared()){ const me = SH.me, rec = bal.net > 0 ? {from:pid, to:me} : {from:me, to:pid};
+      await shWrite(() => SH.db.collection("payments").doc(uid() + uid()).set({...rec, amount:amt, date:isoDaysAgo(0), createdBy:me, createdAt:Date.now()}), bal.net > 0 ? `Recorded ${fmt(amt)} from ${bal.p.name}. Undo it in History.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}. ${bal.p.name} was notified.`); return; }
+    if (bal.net > 0) S.settlements.push({id:uid(), from:pid, to:"me", amount:amt, date:isoDaysAgo(0)});
+    else S.settlements.push({id:uid(), from:"me", to:pid, amount:amt, date:isoDaysAgo(0)});
+    save(); render(true); toast(bal.net > 0 ? `Recorded ${fmt(amt)} from ${bal.p.name}. Undo it in History.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}. Undo it in History.`); return; }
+  const pay = b.closest("[data-pay]");
+  if (pay && shared()){ const x = SH.pays.find(y => y.id === pay.dataset.pay); if (!x) return;
+    if (b.hasAttribute("data-pay-edit")){ UI.editPay = x.id; render(true); return; }
+    if (b.hasAttribute("data-pay-cancel")){ UI.editPay = null; render(true); return; }
+    if (b.hasAttribute("data-pay-del")){ UI.editPay = null; await shWrite(() => SH.db.doc("payments/" + x.id).update({deleted:true, updatedBy:SH.me, updatedAt:Date.now()}), "Payment removed. The balance is back."); render(true); return; }
+    if (b.hasAttribute("data-pay-save")){ const a = numv(pay.querySelector("[data-pay-amt]").value), dt = pay.querySelector("[data-pay-date]").value;
+      if (a <= 0){ toast("Enter an amount above zero, or delete the payment."); return; }
+      UI.editPay = null; await shWrite(() => SH.db.doc("payments/" + x.id).update({amount:a, date: dt || x.date, updatedBy:SH.me, updatedAt:Date.now()}), "Payment updated."); render(true); return; }
+    return;
+  }
+  if (pay){ const x = S.settlements.find(y => y.id === pay.dataset.pay); if (!x) return;
+    if (b.hasAttribute("data-pay-edit")){ UI.editPay = x.id; render(true); return; }
+    if (b.hasAttribute("data-pay-cancel")){ UI.editPay = null; render(true); return; }
+    if (b.hasAttribute("data-pay-del")){ S.settlements = S.settlements.filter(y => y !== x); UI.editPay = null; save(); render(true); toast("Payment removed. The balance is back."); return; }
+    if (b.hasAttribute("data-pay-save")){ const a = numv(pay.querySelector("[data-pay-amt]").value), dt = pay.querySelector("[data-pay-date]").value;
+      if (a <= 0){ toast("Enter an amount above zero, or delete the payment."); return; }
+      x.amount = a; if (dt) x.date = dt; UI.editPay = null; save(); render(true); toast("Payment updated."); return; }
+  }
+  if (sp && b.hasAttribute("data-edit-split")){ const x = CTX().splits.find(y => y.id === sp.dataset.split); if (!x) return;
+    const parts = {}; for (const id in x.parts) parts[id] = x.method === "equal" ? 1 : String(x.parts[id]);
+    splitDraft = {editId:x.id, title:x.title, amount:String(x.amount), paidBy:x.paidBy, tag:x.tag, method:x.method, parts: x.method === "borrow" ? {} : parts, borrower: x.method === "borrow" ? Object.keys(x.parts)[0] : ""};
+    splitErr = ""; render(false); return; }
+  const pr = b.closest("[data-person]");
+  if (pr && b.hasAttribute("data-del-person")){ const id = pr.dataset.person;
+    if (S.splits.some(x => x.paidBy === id || (x.parts && id in x.parts))){ toast(`${person(id).name} is in a split. Delete that split first.`); return; }
+    S.people = S.people.filter(p => p.id !== id); save(); render(true); return; }
+  if (b.hasAttribute("data-import")){
+    if (navigator.contacts && navigator.contacts.select){
+      try { const got = await navigator.contacts.select(["name"], {multiple:true}); addNames(got.map(c => (c.name||[])[0]).filter(Boolean)); return; } catch(err){ /* fall back to file */ }
+    }
+    $("vcf").click(); return;
+  }
+});
+
+view.addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.target, kind = f.dataset.form, fd = new FormData(f);
+  if (kind === "ask"){ const q = $("ask-in").value.trim(); if (!q) return; ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
+  if (kind === "addSub"){ const name = String(fd.get("name")).trim(), price = numv(fd.get("price")); if (!name || !price){ toast("Add a name and a price."); return; }
+    S.subs.push({id:uid(), name, price, cycle:fd.get("cycle"), last:fd.get("last") || isoDaysAgo(0), group:String(fd.get("group")||"").trim(), env:"misc", keep:"auto"}); save(); render(true); toast(`Added ${name}.`); return; }
+  if (kind === "addSwap"){ const link = fd.get("link"), alt = String(fd.get("alt")).trim(); if (!link || !alt){ toast("Pick what you pay for and name the cheaper option."); return; }
+    const [type,id] = link.split(":"), src = type === "expense" ? S.expenses.find(x=>x.id===id) : S.subs.find(x=>x.id===id);
+    S.swaps.push({id:uid(), link, title: src ? src.name : "", alt, altCost:numv(fd.get("altCost")), note:"", on:false}); save(); render(true); toast("Comparison added."); return; }
+  if (kind === "addCode"){ const store = String(fd.get("store")).trim(), code = String(fd.get("code")).trim(); if (!store || !code) return;
+    S.codes.unshift({id:uid(), store, code, offer:String(fd.get("offer")||"").trim(), worked:0, failed:0, last:isoDaysAgo(0), mine:true}); save(); render(true); toast(`Saved the ${store} code.`); return; }
+  if (kind === "addPerson"){ const name = String(fd.get("name")).trim(); if (!name) return; addNames([name]); return; }
+  if (kind === "split"){
+    const d = splitDraft, amount = numv(d.amount);
+    if (!d.title.trim()){ splitErr = "Say what the split is for."; render(true); return; }
+    if (amount <= 0){ splitErr = "Enter a total above zero."; render(true); return; }
+    let parts = {};
+    if (d.method === "borrow"){ const who = d.borrower || (CTX().people.find(p => p.id !== d.paidBy) || {}).id; if (!who){ splitErr = "Add another person first."; render(true); return; } parts[who] = amount; }
+    else {
+      const ids = Object.keys(d.parts); if (ids.length < 2){ splitErr = "Pick at least two people."; render(true); return; }
+      if (d.method === "equal") ids.forEach(id => parts[id] = 1);
+      else { ids.forEach(id => parts[id] = numv(d.parts[id]));
+        const sum = ids.reduce((a,id) => a + parts[id], 0);
+        if (d.method === "percent" && Math.abs(sum - 100) > 0.01){ splitErr = `Percentages add up to ${r2(sum)}%. Make them total 100%.`; render(true); return; }
+        if (d.method === "exact" && Math.abs(sum - amount) > 0.01){ splitErr = `Amounts add up to ${fmt(sum)}, not ${fmt(amount)}.`; render(true); return; } }
+    }
+    const rec = {title:d.title.trim(), amount, tag:d.tag, paidBy:d.paidBy, method:d.method, parts};
+    if (shared()){
+      const me = SH.me, old = d.editId && SH.splits.find(y => y.id === d.editId);
+      const ok = old ? await shWrite(() => { const {id, ...body} = old; return SH.db.doc("splits/" + old.id).set({...body, ...rec, updatedBy:me, updatedAt:Date.now()}); }, "Split updated. Your circle was notified.")
+                     : await shWrite(() => SH.db.collection("splits").doc(uid() + uid()).set({...rec, date:isoDaysAgo(0), createdBy:me, createdAt:Date.now()}), "Split saved. Everyone in it was notified.");
+      if (ok){ splitDraft = null; splitErr = ""; render(false); }
+      return;
+    }
+    const old = d.editId && S.splits.find(y => y.id === d.editId);
+    if (old) Object.assign(old, rec); else S.splits.push({id:uid(), ...rec, date:isoDaysAgo(0)});
+    splitDraft = null; splitErr = ""; save(); render(false); toast(old ? "Split updated." : "Split saved."); return;
+  }
+});
+
+function addNames(names){
+  let added = 0;
+  names.map(n => String(n).trim()).filter(Boolean).forEach(n => { if (!S.people.some(p => p.name.toLowerCase() === n.toLowerCase())){ S.people.push({id:uid(), name:n}); added++; } });
+  save(); render(true); toast(added ? `Added ${added} ${added === 1 ? "person" : "people"}.` : "Everyone there is already on your list.");
+}
+$("vcf").addEventListener("change", e => {
+  const file = e.target.files[0]; if (!file) return;
+  const rd = new FileReader();
+  rd.onload = () => { const names = String(rd.result).split(/\r?\n/).filter(l => /^FN[:;]/i.test(l)).map(l => l.replace(/^FN[^:]*:/i, "").replace(/\\,/g, ",").trim()); if (!names.length) toast("No names found in that file."); else addNames(names); e.target.value = ""; };
+  rd.readAsText(file);
+});
+
+save();
+render(false);
+initShared();
+})();
+</script>

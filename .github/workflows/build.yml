@@ -1,0 +1,77 @@
+name: Test, build the Android app, publish the web app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: build
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test browser
+        run: pip install playwright && python -m playwright install --with-deps chromium
+      - name: Build the web app
+        run: python scripts/build.py
+      - name: Run every test (source and built app)
+        run: python tests/test_app.py src/app.html && python tests/test_app.py www/index.html
+
+  android:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: Copy the app into the Android project
+        run: python3 scripts/build.py && npx cap sync android
+      - name: Build the APK
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk keepwise.apk
+      - name: Publish a public download link
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-build
+          name: Keepwise test build
+          prerelease: true
+          make_latest: false
+          body: |
+            Test build of Keepwise for Android. Download keepwise.apk on your phone, open it, and allow installs from your browser when Android asks.
+            iPhone: open the web app link from the README in Safari, tap Share, then Add to Home Screen.
+          files: keepwise.apk
+
+  web:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/build.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: www
+      - id: deploy
+        uses: actions/deploy-pages@v4
