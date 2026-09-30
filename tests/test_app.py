@@ -340,7 +340,11 @@ async def split_settle_history_undo_edit(ctx):
     assert "You paid Jordan $37.50" in await text(pg, "#history")
     await pg.click("#history [data-pay-edit]"); await pg.fill("[data-pay-amt]", "10"); await pg.click("[data-pay-save]"); await pg.wait_for_timeout(100)
     assert "You owe Jordan $27.50" in await text(pg, "[data-out=splitSum]")
+    await pg.click("#history [data-pay-edit]"); await pg.wait_for_timeout(80)
+    assert "Not paid, put it back" in await text(pg, "#history")
     await pg.click("#history [data-pay-del]"); await pg.wait_for_timeout(100)
+    assert await pg.inner_text("#toast") == "Back in the list: you owe Jordan $37.50."
+    assert await pg.locator("[data-settle]", has_text="Jordan").locator("[data-settle-btn]").inner_text() == "Paid"
     assert await text(pg, "[data-out=splitSum] .summary3") == before
     assert "No payments recorded yet" in await text(pg, "#history")
 

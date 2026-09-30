@@ -759,6 +759,11 @@ OUT.splitSum = () => {
     <div><span class="muted small">${net >= 0 ? "Net you're owed" : "Net you owe"}</span><b class="${net >= 0 ? "good" : "bad"}">${fmt(Math.abs(net))}</b></div></div></div>
     ${b.length ? `<div class="balances">${b.map(x => `<div data-settle="${esc(x.p.id)}" data-amt="${Math.abs(x.net)}"><span class="${x.net > 0 ? "good" : "bad"}">${x.net > 0 ? `${esc(x.p.name)} owes you ${fmt(x.net)}` : `You owe ${esc(x.p.name)} ${fmt(-x.net)}`}</span><button class="btn small" type="button" data-settle-btn>${x.net > 0 ? "Got paid" : "Paid"}</button></div>`).join("")}</div>` : `<p class="muted">Everyone is square.</p>`}`;
 };
+function backInList(x){
+  const c = CTX(), other = x.from === c.me ? x.to : x.from, bal = myBalances(c).find(b => b.p.id === other);
+  if (!bal) return `Put back. You and ${person(other, c).name} are square.`;
+  return bal.net > 0 ? `Back in the list: ${bal.p.name} owes you ${fmt(bal.net)}.` : `Back in the list: you owe ${bal.p.name} ${fmt(-bal.net)}.`;
+}
 const shortDate = iso => { if (!iso) return ""; const [y,m,d] = iso.split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("en-US", {month:"short", day:"numeric"}); };
 function historySection(c){
   c = c || CTX(); const me = c.me;
@@ -771,13 +776,14 @@ function historySection(c){
       <div class="name">${text}</div>
       <div class="grid2"><label class="field"><span>Amount</span><span class="money-in"><em>${esc(sym())}</em><input data-pay-amt type="text" inputmode="decimal" enterkeyhint="done" value="${x.amount}"></span></label>
       <label class="field"><span>Date</span><input data-pay-date type="date" value="${esc(x.date)}"></label></div>
-      <div class="inline"><button class="btn small" type="button" data-pay-save>Save</button><button class="btn small" type="button" data-pay-cancel>Cancel</button><button class="btn small danger" type="button" data-pay-del>Delete payment</button></div></div>`;
+      <p class="muted small">Only part was paid? Lower the amount and the rest goes back in the list.</p>
+      <div class="inline"><button class="btn small" type="button" data-pay-save>Save</button><button class="btn small" type="button" data-pay-cancel>Cancel</button><button class="btn small danger" type="button" data-pay-del>Not paid, put it back</button></div></div>`;
     return `<div class="row" data-pay="${esc(x.id)}"><div class="row-top"><div><div class="${x.to === me ? "good" : ""}">${text}</div><div class="muted small">${shortDate(x.date)}${by}</div></div>
-      ${mine ? `<div class="inline" style="justify-content:flex-end"><button class="btn small" type="button" data-pay-edit>Edit</button><button class="btn small danger" type="button" data-pay-del>Undo</button></div>` : ""}</div></div>`;
+      ${mine ? `<div class="inline" style="justify-content:flex-end"><button class="btn small" type="button" data-pay-edit>Edit</button><button class="btn small danger" type="button" data-pay-del>Put back in the list</button></div>` : ""}</div></div>`;
   };
   return `<section style="display:flex;flex-direction:column;gap:12px" id="history">
     <h2>History</h2>
-    <p class="muted">Every Paid and Got paid${c.kind === "shared" ? " in your circle" : " you tapped"}. Undo one that didn’t really happen and the balance goes back. To change what someone owes, tap Edit on the split above.</p>
+    <p class="muted">Every Paid and Got paid${c.kind === "shared" ? " in your circle" : " you tapped"}. If one didn’t really happen, put it back in the list and its Paid or Got paid button returns. To change what someone owes, tap Edit on the split above.</p>
     ${pays.length ? `<div class="rows">${pays.map(row).join("")}</div>` : `<p class="empty">No payments recorded yet.</p>`}
   </section>`;
 }
@@ -1026,7 +1032,7 @@ view.addEventListener("click", async e => {
   if (pay && shared()){ const x = SH.pays.find(y => y.id === pay.dataset.pay); if (!x) return;
     if (b.hasAttribute("data-pay-edit")){ UI.editPay = x.id; render(true); return; }
     if (b.hasAttribute("data-pay-cancel")){ UI.editPay = null; render(true); return; }
-    if (b.hasAttribute("data-pay-del")){ UI.editPay = null; await shWrite(() => SH.db.doc("payments/" + x.id).update({deleted:true, updatedBy:SH.me, updatedAt:Date.now()}), "Payment removed. The balance is back."); render(true); return; }
+    if (b.hasAttribute("data-pay-del")){ UI.editPay = null; if (await shWrite(() => SH.db.doc("payments/" + x.id).update({deleted:true, updatedBy:SH.me, updatedAt:Date.now()}))) toast(backInList(x)); render(true); return; }
     if (b.hasAttribute("data-pay-save")){ const a = numv(pay.querySelector("[data-pay-amt]").value), dt = pay.querySelector("[data-pay-date]").value;
       if (a <= 0){ toast("Enter an amount above zero, or delete the payment."); return; }
       UI.editPay = null; await shWrite(() => SH.db.doc("payments/" + x.id).update({amount:a, date: dt || x.date, updatedBy:SH.me, updatedAt:Date.now()}), "Payment updated."); render(true); return; }
@@ -1035,7 +1041,7 @@ view.addEventListener("click", async e => {
   if (pay){ const x = S.settlements.find(y => y.id === pay.dataset.pay); if (!x) return;
     if (b.hasAttribute("data-pay-edit")){ UI.editPay = x.id; render(true); return; }
     if (b.hasAttribute("data-pay-cancel")){ UI.editPay = null; render(true); return; }
-    if (b.hasAttribute("data-pay-del")){ S.settlements = S.settlements.filter(y => y !== x); UI.editPay = null; save(); render(true); toast("Payment removed. The balance is back."); return; }
+    if (b.hasAttribute("data-pay-del")){ S.settlements = S.settlements.filter(y => y !== x); UI.editPay = null; save(); render(true); toast(backInList(x)); return; }
     if (b.hasAttribute("data-pay-save")){ const a = numv(pay.querySelector("[data-pay-amt]").value), dt = pay.querySelector("[data-pay-date]").value;
       if (a <= 0){ toast("Enter an amount above zero, or delete the payment."); return; }
       x.amount = a; if (dt) x.date = dt; UI.editPay = null; save(); render(true); toast("Payment updated."); return; }

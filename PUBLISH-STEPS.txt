@@ -1,0 +1,34 @@
+Publish Keepwise on your anonymous GitHub account
+==================================================
+
+1. Sign in to GitHub in your browser as the ANONYMOUS account.
+   Create a new PUBLIC repository named: keepwise
+   Leave it empty (no README, no license).
+
+2. Unzip keepwise.zip. You get a folder called keepwise-app.
+
+3. Open a terminal in that folder (in File Explorer: open the folder,
+   type  cmd  in the address bar, press Enter) and run these two lines.
+   Replace ANON with the anonymous account's username (both places):
+
+   git remote add origin https://ANON@github.com/ANON/keepwise.git
+   git push -u origin main
+
+   When a GitHub sign-in window opens, sign in as the ANONYMOUS account.
+   Putting ANON@ in the address stops Windows from reusing your main account.
+
+4. On GitHub, open the repo > Settings > Pages.
+   Under "Build and deployment", set Source to "GitHub Actions".
+
+5. Open the Actions tab and re-run the workflow (or wait for it).
+   After about 5 minutes:
+   - Web app (iPhone and Android): https://ANON.github.io/keepwise/
+   - Android APK: Releases > "Keepwise test build" > keepwise.apk
+
+Anonymity checks
+- Every commit is signed "Keepwise <keepwise@users.noreply.github.com>",
+  not your name or email.
+- Before any future commit from this folder, run once:
+  git config user.name "Keepwise"
+  git config user.email "keepwise@users.noreply.github.com"
+  Otherwise Git uses the name and email set on your PC.
