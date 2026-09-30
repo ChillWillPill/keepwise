@@ -23,7 +23,7 @@ def money(s):  # "$1,456.99" -> 1456.99 ; handles "−"
     v = float(m.group(2).replace(",", ""))
     return -v if m.group(1) else v
 
-async def open_app(ctx, mock=False, w=390, h=844, scheme="light"):
+async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False):
     pg = await ctx.new_page()
     await pg.set_viewport_size({"width": w, "height": h})
     pg.errors = []
@@ -37,6 +37,12 @@ async def open_app(ctx, mock=False, w=390, h=844, scheme="light"):
         if os.path.exists(path): await route.fulfill(path=path, content_type="application/javascript")
         else: await route.abort()
     await pg.route("https://cdnjs.cloudflare.com/**", serve_vendor)
+    if fb:  # sign-in tests: a project config plus an offline stand-in for the Firebase SDK
+        await pg.add_init_script("window.KEEPWISE_FIREBASE = {apiKey: 'test', authDomain: 'test.firebaseapp.com', projectId: 'test'};")
+        async def serve_fb(route):
+            if route.request.url.endswith("firebase-app-compat.js"): await route.fulfill(path=os.path.join(HERE, "mock_firebase.js"), content_type="application/javascript")
+            else: await route.fulfill(body="", content_type="application/javascript")
+        await pg.route("https://cdn.jsdelivr.net/npm/firebase@*/**", serve_fb)
     await pg.emulate_media(color_scheme=scheme)
     await pg.goto(URL); await pg.wait_for_timeout(500)
     return pg
@@ -674,6 +680,120 @@ async def legal_links_and_pages(ctx):
         w = await lp.evaluate("[document.documentElement.scrollWidth, innerWidth]")
         assert w[0] <= w[1], f"{f} scrolls sideways at 320px"
         await lp.close()
+
+# ---------------- accounts ----------------
+async def fs_docs(pg): return await pg.evaluate("JSON.parse(localStorage.getItem('__mock_fs') || '{}')")
+async def open_account(pg):
+    await pg.click("#acct-btn"); await pg.wait_for_timeout(250)
+async def acc_err(pg): return await text(pg, "[data-out=accErr]")
+
+@test
+async def account_coming_soon_without_project(ctx):
+    pg = await open_app(ctx)
+    await open_account(pg)
+    assert "Accounts are coming soon" in await text(pg, "#view")
+    await pg.click("[data-close-account]"); await pg.wait_for_timeout(120)
+    assert await pg.locator("[data-out=hero]").count() + await pg.locator("#m-income").count() > 0, "Done returns to the tab"
+
+@test
+async def account_email_signup_and_profile(ctx):
+    pg = await open_app(ctx, fb=True)
+    await open_account(pg)
+    v = await text(pg, "#view")
+    assert "Continue with Google" in v and "Your budget, statements and subscriptions still stay on this phone" in v
+    await pg.click("[data-acc-mode=create]"); await pg.wait_for_timeout(120)
+    await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(120)
+    assert "valid email" in await acc_err(pg)
+    await pg.fill("#acc-email", "ada@example.com"); await pg.fill("#acc-pass", "short")
+    await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(120)
+    assert "at least 8" in await acc_err(pg)
+    assert await pg.input_value("#acc-email") == "ada@example.com", "email kept after an error"
+    await pg.fill("#acc-pass", "longenough1"); await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(400)
+    assert await pg.evaluate("window.__mockMail.some(m => m.type === 'verify' && m.to === 'ada@example.com')"), "verification email sent"
+    v = await text(pg, "#view")
+    assert "Finish your profile" in v and "Verify your email" in v
+    f = "[data-form=acc-profile]"
+    assert not await pg.is_checked(f + " [name=marketing]"), "marketing opt-in starts unticked"
+    await pg.fill(f + " [name=name]", "Ada Brook")
+    await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(120)
+    assert "date of birth" in await acc_err(pg)
+    await pg.fill(f + " [name=dob]", "2012-05-01"); await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(120)
+    assert "18 or older" in await acc_err(pg)
+    await pg.fill(f + " [name=dob]", "1994-03-12"); await pg.fill(f + " [name=phone]", "call me")
+    await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(120)
+    assert "valid phone" in await acc_err(pg)
+    await pg.fill(f + " [name=phone]", "+44 7700 900123"); await pg.fill(f + " [name=city]", "Leeds")
+    await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(120)
+    assert "agree to the Terms" in await acc_err(pg)
+    assert await pg.input_value(f + " [name=name]") == "Ada Brook", "typed profile kept after an error"
+    await pg.check(f + " [name=consent]"); await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(400)
+    d = (await fs_docs(pg))["users/u1"]
+    assert d["name"] == "Ada Brook" and d["dob"] == "1994-03-12" and d["city"] == "Leeds" and d["phone"] == "+44 7700 900123"
+    assert d["phoneVerified"] is False and d["marketing"] is False and d["termsAcceptedAt"] and d["termsVersion"]
+    v = await text(pg, "#view")
+    assert "Email not verified" in v and "Not yet verified" in v and "Save changes" in v
+    assert (await pg.inner_text("#acct-btn")).strip() == "AB", "header shows the initials"
+    await pg.evaluate("window.__mockVerify('ada@example.com')")
+    await pg.click("[data-acc-verified]"); await pg.wait_for_timeout(300)
+    assert "Email verified" in await text(pg, "#view")
+    await pg.check(f + " [name=marketing]"); await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(300)
+    d = (await fs_docs(pg))["users/u1"]; assert d["marketing"] is True and d["marketingUpdatedAt"] and d["emailVerified"] is True
+    await pg.reload(); await pg.wait_for_timeout(700)
+    assert (await pg.inner_text("#acct-btn")).strip() == "AB", "still signed in after reopening"
+    assert "users/u1" in await fs_docs(pg) and "income" not in (await fs_docs(pg))["users/u1"], "money data is not in the account"
+
+@test
+async def account_sign_in_errors_and_reset(ctx):
+    pg = await open_app(ctx, fb=True)
+    await open_account(pg)
+    await pg.fill("#acc-email", "nobody@example.com"); await pg.fill("#acc-pass", "wrongpass1")
+    await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(250)
+    assert "incorrect" in await acc_err(pg)
+    await pg.click("[data-acc-mode=reset]"); await pg.wait_for_timeout(120)
+    assert await pg.locator("#acc-pass").count() == 0 and await pg.input_value("#acc-email") == "nobody@example.com"
+    await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(250)
+    assert await pg.evaluate("window.__mockMail.some(m => m.type === 'reset')")
+    assert await pg.locator("[data-acc-mode=signin][aria-pressed=true]").count() == 1, "back on sign in after the reset email"
+
+@test
+async def account_google_signout_and_delete(ctx):
+    pg = await open_app(ctx, fb=True)
+    await open_account(pg)
+    await pg.click("[data-acc-google]"); await pg.wait_for_timeout(400)
+    f = "[data-form=acc-profile]"
+    assert await pg.input_value(f + " [name=name]") == "Gina Park", "name comes from Google"
+    assert "Verify your email" not in await text(pg, "#view"), "Google emails are already verified"
+    await pg.fill(f + " [name=dob]", "1990-07-04"); await pg.check(f + " [name=consent]")
+    await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(400)
+    assert (await fs_docs(pg))["users/g1"]["provider"] == "google.com"
+    await pg.click("[data-acc-signout]"); await pg.wait_for_timeout(300)
+    assert "Continue with Google" in await text(pg, "#view")
+    await pg.click("[data-acc-google]"); await pg.wait_for_timeout(400)
+    assert "Save changes" in await text(pg, "#view"), "a finished profile opens straight away"
+    await pg.click("[data-acc-delete]"); await pg.wait_for_timeout(120)
+    await pg.click("[data-acc-delete-no]"); await pg.wait_for_timeout(120)
+    assert "users/g1" in await fs_docs(pg)
+    await pg.click("[data-acc-delete]"); await pg.wait_for_timeout(120)
+    await pg.click("[data-acc-delete-yes]"); await pg.wait_for_timeout(400)
+    assert "users/g1" not in await fs_docs(pg), "profile erased"
+    assert "Continue with Google" in await text(pg, "#view")
+
+@test
+async def account_screens_fit_small_phones(ctx):
+    for scheme in ["light", "dark"]:
+        pg = await open_app(ctx, fb=True, w=320, h=640, scheme=scheme)
+        await open_account(pg)
+        await pg.click("[data-acc-mode=create]"); await pg.wait_for_timeout(120)
+        sw = await pg.evaluate("[document.documentElement.scrollWidth, innerWidth, document.querySelector('#main').scrollWidth, document.querySelector('#main').clientWidth]")
+        assert sw[0] <= sw[1] and sw[2] <= sw[3], f"sign-in overflows at 320px: {sw}"
+        await pg.click("[data-acc-google]"); await pg.wait_for_timeout(400)
+        f = "[data-form=acc-profile]"
+        await pg.fill(f + " [name=dob]", "1990-07-04"); await pg.check(f + " [name=consent]"); await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(400)
+        sw = await pg.evaluate("[document.documentElement.scrollWidth, innerWidth, document.querySelector('#main').scrollWidth, document.querySelector('#main').clientWidth]")
+        assert sw[0] <= sw[1] and sw[2] <= sw[3], f"profile overflows at 320px: {sw}"
+        await pg.screenshot(path=os.path.join(os.environ.get("SHOT_DIR", TMP), f"account-{scheme}.png"), full_page=False)
+        await pg.click("[data-acc-delete]"); await pg.click("[data-acc-delete-yes]"); await pg.wait_for_timeout(300)
+        await pg.close()
 
 # ---------------- persistence ----------------
 @test
