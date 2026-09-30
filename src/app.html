@@ -7,22 +7,24 @@
 :root{
   --bg:#f3efe6; --card:#fbf8f2; --ink:#1c2420; --muted:#4d564e; --line:#e0d5c5; --chip:#efe4d4;
   --green:#1b6843; --green-soft:#e4f2ea; --rust:#a84b34; --rust-soft:#f6e2da; --gold:#9a7417; --gold-soft:#f3e9cc;
+  --lift:0 1px 2px rgba(28,36,32,.04),0 6px 18px -12px rgba(28,36,32,.18);
   --display:"Fraunces", ui-serif, Georgia, serif;
   --body:"Figtree", ui-sans-serif, system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27;
-  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; color-scheme:dark}}
+  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="light"]{color-scheme:light}
 :root[data-theme="dark"]{
   --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27;
-  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; color-scheme:dark}
+  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); color-scheme:dark}
 
 *{box-sizing:border-box}
 .brand b,h1,h2,.big,.summary3 b,.bigsoft{font-optical-sizing:auto;font-weight:600;letter-spacing:-.025em}
 html,body{margin:0;overflow:hidden;overscroll-behavior:none}
 body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-text-size-adjust:100%}
 .app{position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100%);display:flex;flex-direction:column;background:var(--bg)}
-.app-header{flex:none;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;border-bottom:1px solid var(--line);background:var(--bg)}
+.app-header{flex:none;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);position:relative;z-index:3}
 .brand{display:flex;align-items:center;gap:12px;max-width:720px;margin:0 auto}
 .logo{width:40px;height:40px;border-radius:11px;background:var(--green);display:grid;place-items:center;flex:none}
 .brand b{font:600 1.25rem/1.1 var(--display);letter-spacing:-.025em;display:block}
@@ -35,14 +37,20 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .view{max-width:720px;margin:0 auto;padding:20px 16px 32px;display:flex;flex-direction:column;gap:18px}
 .tabbar{flex:none;display:grid;grid-template-columns:repeat(6,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .app.typing .tabbar{display:none}
-.tab{appearance:none;border:0;background:none;color:var(--muted);font:500 .78rem var(--body);display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;cursor:pointer;min-width:0}
-.tab svg{width:24px;height:24px}
+.tab{appearance:none;border:0;background:none;color:var(--muted);font:500 clamp(.6rem,2.9vw,.78rem)/1.2 var(--body);display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 8px;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
+.tab span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em}
+.tab .ti{display:grid;place-items:center;width:52px;max-width:92%;height:30px;border-radius:99px;transition:background .2s ease,color .2s ease}
+.tab svg{width:22px;height:22px}
 .tab[aria-current="page"]{color:var(--ink);font-weight:600}
-.tab[aria-current="page"] svg{color:var(--green)}
+.tab[aria-current="page"] .ti{background:var(--green-soft);color:var(--green)}
 .tab:focus-visible{outline:2px solid var(--green);outline-offset:-4px;border-radius:8px}
 
 h1,h2,h3{margin:0;text-wrap:balance}
-h1{font:600 2.25rem/1.1 var(--display);letter-spacing:-.025em}
+h1{font:600 clamp(1.9rem,9.4vw,2.25rem)/1.1 var(--display);letter-spacing:-.025em}
+.view > h1:first-child,.view > .inline:first-child h1{text-align:center}
+.hero{background:var(--green-soft);border:1px solid color-mix(in srgb,var(--green) 22%,transparent);border-radius:24px;padding:22px 18px;text-align:center;display:flex;flex-direction:column;gap:6px}
+.hero .big{font-size:clamp(2.4rem,12.4vw,3rem)}
+.hero p{max-width:40ch;margin-inline:auto}
 h2{font:600 1.5rem/1.2 var(--display);letter-spacing:-.025em}
 h3{font-size:1rem;font-weight:700}
 p{margin:0}
@@ -54,8 +62,8 @@ p{margin:0}
 .big.neg{color:var(--rust)}
 .good{color:var(--green)} .bad{color:var(--rust)}
 
-.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.rows{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:var(--lift)}
+.rows{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--lift)}
 .row{padding:14px 18px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
 .row-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
@@ -66,18 +74,27 @@ p{margin:0}
 .field > span{font-weight:600;font-size:.95rem}
 input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 14px;width:100%;min-width:0}
 /* iPhone Safari draws date boxes natively and ignores width; make them behave like the other fields */
-input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;min-height:48px;line-height:1.5;text-align:left}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;height:48px;line-height:1.5;text-align:left}
 input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
 input[type=date]::-webkit-calendar-picker-indicator{margin:0;opacity:.6}
 .grid2 > *{min-width:0}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-offset:1px;border-color:transparent}
-.money-in{position:relative}
-.money-in em{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-style:normal;color:var(--muted);pointer-events:none}
-.money-in input{padding-left:calc(14px + var(--sym-w,1.2ch) + 8px)}
+/* currency label and number share one box, so any length of symbol fits ($, £, PKR, AED) */
+.money-in{display:flex;align-items:center;gap:8px;min-width:0;min-height:48px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 14px}
+.money-in em{font-style:normal;color:var(--muted);flex:none;white-space:nowrap}
+.money-in input{flex:1;min-width:0;border:0;background:transparent;padding:11px 0;border-radius:0}
+.money-in input:focus{outline:none}
+.money-in:focus-within{outline:2px solid var(--green);outline-offset:1px;border-color:transparent}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-.btn{appearance:none;font:600 .95rem var(--body);border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;cursor:pointer;text-align:center}
+.btn{appearance:none;font:600 .95rem var(--body);border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;cursor:pointer;text-align:center;transition:transform .12s ease,background .2s ease;-webkit-tap-highlight-color:transparent}
+.btn:active,.chip:active,.seg button:active{transform:scale(.97)}
+.btn.primary{box-shadow:0 6px 16px -8px color-mix(in srgb,var(--green) 70%,transparent)}
+@media (prefers-reduced-motion:no-preference){.view.enter{animation:viewin .22s ease-out both}@keyframes viewin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+.icon-btn{appearance:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.icon-btn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.hdr-actions{display:flex;gap:8px;align-items:center}
 .btn:focus-visible,.link:focus-visible,.chip:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .btn.primary{background:var(--green);border-color:var(--green);color:#f3faf6;width:100%;padding:14px;font-size:1rem;border-radius:16px}
 .btn.small{padding:6px 10px;font-size:.84rem;border-radius:10px}
@@ -149,8 +166,17 @@ details summary::-webkit-details-marker{display:none}
 .line .inline{flex-wrap:nowrap}
 .danger-link{color:var(--rust)}
 .add-line{margin-top:12px;flex-wrap:nowrap}
+.review{border-color:color-mix(in srgb,var(--gold) 40%,var(--line))}
+.review-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.import-card h3{font-size:1.05rem}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-@media (max-width:420px){.summary3 b{font-size:1.25rem}.grid2{grid-template-columns:1fr}}
+@media (max-width:420px){.grid2{grid-template-columns:1fr}}
+/* on phones, totals become label/value rows so long amounts (CA$1,486.56, PKR 21,256) never collide */
+@media (max-width:560px){.summary3{grid-template-columns:1fr !important;gap:0}
+  .summary3 > div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .summary3 > div:last-child{border-bottom:0}
+  .summary3 b{margin-top:0;font-size:1.3rem;text-align:right}}
+.summary3 > div{min-width:0}.summary3 b{overflow-wrap:anywhere}
 @media (prefers-reduced-motion:no-preference){.meter i,.stack i{transition:width .25s ease}}
 </style>
 
@@ -159,13 +185,15 @@ details summary::-webkit-details-marker{display:none}
     <div class="brand">
       <div class="logo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3c4.5 3.5 7 7 7 10.5A7 7 0 0 1 5 13.5C5 10 7.5 6.5 12 3z" fill="#fff"/><circle cx="12" cy="14" r="3" fill="currentColor" style="color:var(--green)"/></svg></div>
       <div style="flex:1"><b>Keepwise</b><small>What you keep</small></div>
-      <button class="bell" id="bell" type="button" aria-label="Notifications" hidden><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bell-n" id="bell-n" hidden>0</span></button>
+      <div class="hdr-actions"><button class="icon-btn" id="theme-btn" type="button" aria-label="Theme"></button>
+      <button class="bell" id="bell" type="button" aria-label="Notifications" hidden><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bell-n" id="bell-n" hidden>0</span></button></div>
     </div>
   </header>
   <main class="app-main" id="main"><div class="view" id="view"></div></main>
   <nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
+<input type="file" id="stmt" accept=".csv,.pdf,text/csv,application/pdf" class="sr" tabindex="-1" aria-hidden="true">
 <input type="file" id="vcf" accept=".vcf,text/vcard,text/x-vcard" class="sr" tabindex="-1" aria-hidden="true">
 
 <script>
@@ -270,6 +298,21 @@ const KEY = "keepwise-app-v1";
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e) { S = null; }
 if (!S || S.v !== 1) S = example();
+const THEMES = ["system","light","dark"];
+const THEME_ICON = {
+  system:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
+  light:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>',
+  dark:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>'};
+function applyTheme(){
+  const t = THEMES.includes(S.theme) ? S.theme : "system", root = document.documentElement;
+  if (t === "system") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
+  const dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+  let m = document.querySelector('meta[name="theme-color"]'); if (!m){ m = document.createElement("meta"); m.name = "theme-color"; document.head.appendChild(m); }
+  m.content = dark ? "#141613" : "#f3efe6";
+  const b = document.getElementById("theme-btn");
+  if (b){ b.innerHTML = THEME_ICON[t]; b.setAttribute("aria-label", `Theme: ${t === "system" ? "Auto (matches your phone)" : t === "light" ? "Light" : "Dark"}. Tap to change.`); b.title = b.getAttribute("aria-label"); }
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
 (S.settlements || (S.settlements = [])).forEach(x => { if (!x.id) x.id = uid(); });
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
 window.addEventListener("pagehide", save);
@@ -280,10 +323,11 @@ const subMonthly = s => s.cycle === "yr" ? s.price / 12 : s.price;
 function subFlags(){
   const out = {};
   S.subs.forEach(s => {
-    const reasons = [], d = daysSince(s.last);
-    if (d > S.ruleDays) reasons.push(`Unused for ${d} days`);
-    if (s.group){
-      const newer = S.subs.find(o => o !== s && o.group && o.group.toLowerCase() === s.group.toLowerCase() && o.keep !== "drop" && daysSince(o.last) < d);
+    const reasons = [], d = s.last ? daysSince(s.last) : null;
+    if (s.low) reasons.push("You said you barely use it");
+    if (d !== null && d > S.ruleDays) reasons.push(`Unused for ${d} days`);
+    if (s.group && d !== null){
+      const newer = S.subs.find(o => o !== s && o.last && o.group && o.group.toLowerCase() === s.group.toLowerCase() && o.keep !== "drop" && daysSince(o.last) < d);
       if (newer) reasons.push(`Duplicate of ${newer.name}`);
     }
     out[s.id] = reasons;
@@ -395,14 +439,307 @@ const TABS = [["month","Month"],["subs","Subs"],["cheaper","Cheaper"],["codes","
 
 /* ================= views ================= */
 const V = {};
-const OUT = {}; // live-updating fragments: id -> () => html
+const OUT = {};
+// Big numbers keep their full size, and shrink only when a long amount (PKR 121,256.99) would not fit the screen.
+function importCard(){
+  return `<section class="card import-card"><div><h3>Import a bank statement</h3><p class="muted small">${S.imported ? `Last import: ${esc(S.imported.file)}, ${monthsLabel(S.imported.from)} to ${monthsLabel(S.imported.to)}.` : "CSV or PDF from your bank. Keepwise finds your pay, bills and every subscription. Read on this phone only."}</p></div>
+    <button class="btn primary" type="button" data-import-open>${S.imported ? "Import another statement" : "Choose a statement"}</button></section>`;
+}
+const fitSize = (txt, maxRem, sidePx) => `font-size:min(${maxRem}rem, calc((100vw - ${sidePx}px) / ${(String(txt).length * 0.62).toFixed(2)}))`; // live-updating fragments: id -> () => html
+
+// ================= bank statement import (CSV or PDF, read on this device only) =================
+const STMT = {result:null, busy:false, err:""};
+const STOP_WORDS = new Set(["POS","DEBIT","CREDIT","CARD","PURCHASE","RECURRING","PAYMENT","PMT","ACH","COM","WWW","INC","LLC","LTD","USA","US","UK","THE","STORE","ORDER","TRIP","MKTPLACE","OIL","DIRECT","DEP","DD","SO","FPI","BGC","TFR","REF","ONLINE","VISA","MASTERCARD","CONTACTLESS","APPLE","PAY","GOOGLE","SQ","TST","PP","PAYPAL","BILL"]);
+const KEEP_FIRST = /^(APPLE|GOOGLE|PAYPAL|AMAZON)$/;
+const CAT_RULES = [
+  ["Salary",/PAYROLL|SALARY|WAGES|DIRECT DEP|PAYCHECK|BGC|NET PAY/],
+  ["Tax",/\bTAX\b|IRS|HMRC|FBR|REVENUE SERVICE|COUNCIL TAX|INCOME TAX|WITHHOLDING/],
+  ["Housing",/RENT|MORTGAGE|APARTMENT|PROPERTY|LETTING|LANDLORD|HOA/],
+  ["Utilities",/ELECTRIC|ENERGY|WATER|GAS BILL|COMCAST|XFINITY|VERIZON|AT&T|T MOBILE|TMOBILE|INTERNET|BROADBAND|CON ED|BRITISH GAS|OCTOPUS|VODAFONE|EE LIMITED|JAZZ|ZONG|TELENOR|PTCL|K ELECTRIC|SUI GAS/],
+  ["Insurance",/GEICO|INSURANCE|STATE FARM|PROGRESSIVE|ALLSTATE|AVIVA|DIRECT LINE|ADMIRAL|JUBILEE/],
+  ["Loans",/LOAN|CREDIT CARD PAYMENT|STUDENT|FINANCE|AFFIRM|KLARNA/],
+  ["Subscriptions",/NETFLIX|SPOTIFY|HULU|DISNEY|ICLOUD|APPLE COM BILL|APPLE COM|ADOBE|AUDIBLE|PRIME|YOUTUBE|PARAMOUNT|PEACOCK|MAX\b|HBO|FITNESS|GYM|PELOTON|DROPBOX|MICROSOFT|OFFICE 365|OPENAI|CHATGPT|CLAUDE|ANTHROPIC|NOTION|DUOLINGO|PATREON|NOW TV|BRITBOX|CRUNCHYROLL|XBOX|PLAYSTATION|NINTENDO|CANVA|GRAMMARLY|LINKEDIN|TINDER|BUMBLE|HEADSPACE|CALM|NYTIMES|WSJ/],
+  ["Groceries",/TRADER JOE|KROGER|WHOLE FOODS|ALDI|TESCO|SAINSBURY|SAFEWAY|LIDL|WALMART|GROCERY|ASDA|COSTCO|CARREFOUR|IMTIAZ|METRO CASH|MORRISONS|WAITROSE/],
+  ["Dining",/STARBUCKS|CHIPOTLE|MCDONALD|DOORDASH|UBER EATS|GRUBHUB|RESTAURANT|CAFE|COFFEE|PIZZA|DELIVEROO|JUST EAT|GREGGS|FOODPANDA|KFC|SUBWAY|BURGER|DOMINO/],
+  ["Transport",/UBER|LYFT|CAREEM|SHELL|EXXON|CHEVRON|\bBP\b|PSO|METRO|TRANSIT|PARKING|TFL|TRAINLINE|FUEL|PETROL/],
+  ["Health",/CVS|WALGREENS|PHARMACY|BOOTS|CLINIC|DENTAL|HOSPITAL/],
+  ["Shopping",/AMAZON|TARGET|BEST BUY|ETSY|EBAY|ARGOS|DARAZ|IKEA|ZARA|H&M|NIKE|APPLE STORE/],
+  ["Transfers",/TRANSFER|ZELLE|VENMO|CASH APP|WISE|ATM|WITHDRAWAL|EASYPAISA|JAZZCASH|RAAST/]
+];
+const catOfDesc = d => { const u = " " + d.toUpperCase().replace(/[^A-Z0-9& ]/g, " ") + " "; for (const [c, re] of CAT_RULES) if (re.test(u)) return c; return "Other"; };
+const NEEDS_CATS = new Set(["Housing","Utilities","Insurance","Loans","Groceries","Transport","Health","Tax"]);
+const BILL_CAT = new Set(["Housing","Utilities","Insurance","Loans"]);
+const CAT_LABEL = {Groceries:"Groceries", Dining:"Eating out", Transport:"Getting around", Health:"Health", Shopping:"Shopping", Other:"Everything else", Transfers:"Transfers and cash", Tax:"Tax payments"};
+
+function merchantKey(desc){
+  const words = desc.toUpperCase().replace(/[^A-Z& ]/g, " ").split(/\s+/).filter(w => w.length > 1);
+  const kept = words.filter((w, i) => !STOP_WORDS.has(w) || (i === 0 && KEEP_FIRST.test(w) && words.length === 1));
+  return (kept.slice(0, 2).join(" ") || words.slice(0, 2).join(" ") || desc.toUpperCase()).trim();
+}
+const titleCase = k => k.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase()).replace(/\bIcloud\b/, "iCloud").replace(/\bAt&t\b/i, "AT&T");
+
+// ---- dates and amounts ----
+const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
+function parseAnyDate(s, yearHint, dayFirst){
+  s = String(s || "").trim(); let m;
+  if ((m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/))) return new Date(+m[1], +m[2]-1, +m[3]);
+  if ((m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/))){
+    let a = +m[1], b = +m[2], y = +m[3]; if (y < 100) y += 2000;
+    const df = dayFirst || a > 12; return new Date(y, (df ? b : a) - 1, df ? a : b);
+  }
+  if ((m = s.match(/^(\d{1,2})[\s-]+([A-Za-z]{3,4})[a-z]*[\s-,]*(\d{2,4})?/)) && MONTHS[m[2].toLowerCase()] !== undefined){
+    let y = m[3] ? +m[3] : yearHint; if (y < 100) y += 2000; return new Date(y, MONTHS[m[2].toLowerCase()], +m[1]);
+  }
+  if ((m = s.match(/^([A-Za-z]{3,4})[a-z]*\.?\s+(\d{1,2}),?\s*(\d{2,4})?/)) && MONTHS[m[1].toLowerCase()] !== undefined){
+    let y = m[3] ? +m[3] : yearHint; if (y < 100) y += 2000; return new Date(y, MONTHS[m[1].toLowerCase()], +m[2]);
+  }
+  const t = Date.parse(s); return isNaN(t) ? null : new Date(t);
+}
+function parseMoney(s){
+  if (s == null) return NaN; s = String(s).trim(); if (!s) return NaN;
+  const neg = /^\(.*\)$/.test(s) || /^-|-$/.test(s.replace(/[^\d\-()]/g, "")) || /\bDR\b/i.test(s);
+  const v = parseFloat(s.replace(/[^0-9.]/g, "")); if (isNaN(v)) return NaN;
+  return neg ? -v : v;
+}
+const isoOf = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
+// ---- CSV ----
+function csvRows(text){
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (q){ if (c === '"'){ if (text[i+1] === '"'){ f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === "," || c === ";" && !text.slice(0, 200).includes(",")) { row.push(f); f = ""; }
+    else if (c === "\n" || c === "\r"){ if (c === "\r" && text[i+1] === "\n") i++; row.push(f); if (row.some(x => x.trim())) rows.push(row); row = []; f = ""; }
+    else f += c;
+  }
+  row.push(f); if (row.some(x => x.trim())) rows.push(row);
+  return rows;
+}
+function txFromCSV(text){
+  const rows = csvRows(text.replace(/^﻿/, ""));
+  let hi = rows.findIndex(r => r.some(c => /date/i.test(c)) && r.some(c => /desc|name|merchant|payee|details|narrative|memo|particular|transaction/i.test(c)));
+  if (hi < 0) throw new Error("Couldn't find the header row. The file needs columns for date, description and amount.");
+  const h = rows[hi].map(x => x.trim().toLowerCase()), find = re => h.findIndex(x => re.test(x));
+  const di = find(/date/), de = find(/desc|name|merchant|payee|details|narrative|memo|particular|transaction/);
+  const cr = find(/credit|paid in|deposit|money in|inflow/), db = find(/debit|paid out|withdraw|money out|outflow/);
+  const am = find(/^amount|amount$|value|^sum/), ty = find(/^type$|dr\/cr|cr\/dr|direction/);
+  if (di < 0 || de < 0 || (am < 0 && cr < 0 && db < 0)) throw new Error("Couldn't find date, description and amount columns.");
+  const year = new Date().getFullYear(), dayFirst = ["GBP","EUR","PKR","INR","AUD","AED"].includes(S.cur);
+  let tx = rows.slice(hi + 1).map(r => {
+    const date = parseAnyDate(r[di], year, dayFirst), desc = (r[de] || "").trim();
+    let amt;
+    if (cr >= 0 || db >= 0){ const c = parseMoney(r[cr]), d = parseMoney(r[db]); amt = !isNaN(c) && c !== 0 ? Math.abs(c) : !isNaN(d) && d !== 0 ? -Math.abs(d) : NaN; }
+    else { amt = parseMoney(r[am]); if (ty >= 0 && !isNaN(amt)){ const t = (r[ty] || "").toLowerCase(); if (/^d|debit|out|withdraw/.test(t)) amt = -Math.abs(amt); else if (/^c|credit|in|deposit/.test(t)) amt = Math.abs(amt); } }
+    return {date, desc, amt};
+  }).filter(t => t.date && !isNaN(t.date) && t.desc && !isNaN(t.amt) && t.amt !== 0);
+  if (!tx.length) throw new Error("No transactions found in that file.");
+  if (am >= 0 && cr < 0 && db < 0 && ty < 0 && tx.every(t => t.amt > 0)){
+    // one unsigned column: payroll-looking lines are money in, everything else is money out
+    tx.forEach(t => { if (catOfDesc(t.desc) !== "Salary") t.amt = -t.amt; });
+  }
+  return tx;
+}
+
+// ---- PDF (pdf.js loaded on first use) ----
+function loadScript(src){ return new Promise((ok, no) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => no(new Error("Couldn't load the PDF reader. Check your connection and try again.")); document.head.appendChild(s); }); }
+async function pdfLib(){
+  if (window.pdfjsLib) return window.pdfjsLib;
+  const base = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  await loadScript(base + "pdf.min.js");
+  await loadScript(base + "pdf.worker.min.js"); // runs on the page itself, no separate worker needed
+  return window.pdfjsLib;
+}
+async function pdfLines(buf){
+  const lib = await pdfLib();
+  const doc = await lib.getDocument({data: buf, isEvalSupported: false, disableFontFace: true}).promise;
+  const lines = [];
+  for (let p = 1; p <= doc.numPages; p++){
+    const page = await doc.getPage(p), content = await page.getTextContent(), rows = new Map();
+    content.items.forEach(it => { if (!it.str.trim()) return; const y = Math.round(it.transform[5] / 3) * 3; if (!rows.has(y)) rows.set(y, []); rows.get(y).push({x: it.transform[4], s: it.str}); });
+    [...rows.entries()].sort((a, b) => b[0] - a[0]).forEach(([, items]) => lines.push(items.sort((a, b) => a.x - b.x).map(i => i.s).join(" ").replace(/\s+/g, " ").trim()));
+  }
+  return lines;
+}
+const MONEY_RE = /\(?-?[£$€₹]?\s?(?:Rs\.?\s?)?\d{1,3}(?:,\d{3})*\.\d{2}\)?(?:\s?(?:CR|DR))?-?/gi;
+const DATE_RE = /^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{1,2}[\s-][A-Za-z]{3,4}[a-z]*(?:[\s-,]+\d{2,4})?|[A-Za-z]{3,4}\.?\s\d{1,2}(?:,?\s\d{4})?)\b/;
+function txFromLines(lines){
+  const joined = lines.join(" "), yearHint = +((joined.match(/\b(20\d{2})\b/) || [])[1] || new Date().getFullYear());
+  const dayFirst = ["GBP","EUR","PKR","INR","AUD","AED"].includes(S.cur);
+  const out = []; let prevBal = null;
+  for (const line of lines){
+    const dm = line.match(DATE_RE); if (!dm) continue;
+    const date = parseAnyDate(dm[1], yearHint, dayFirst); if (!date || isNaN(date)) continue;
+    const rest = line.slice(dm[0].length), nums = rest.match(MONEY_RE); if (!nums) continue;
+    const desc = rest.replace(MONEY_RE, " ").replace(/\s+/g, " ").trim(); if (!desc || /opening|closing|brought forward|carried forward|balance b\/f|balance c\/f/i.test(desc)) { if (nums.length) prevBal = Math.abs(parseMoney(nums[nums.length-1])); continue; }
+    let amt = parseMoney(nums.length >= 2 ? nums[nums.length - 2] : nums[0]);
+    const bal = nums.length >= 2 ? parseMoney(nums[nums.length - 1]) : null;
+    const signed = /-|\(|DR|CR/i.test(nums.length >= 2 ? nums[nums.length - 2] : nums[0]);
+    if (nums.length >= 3){ // separate debit and credit columns: whichever is non-zero
+      const a = parseMoney(nums[nums.length - 3]), b = parseMoney(nums[nums.length - 2]);
+      amt = a && !b ? -Math.abs(a) : Math.abs(b);
+    } else if (!signed){
+      if (bal != null && prevBal != null && Math.abs(Math.abs(prevBal - bal) - Math.abs(amt)) < 0.02) amt = bal > prevBal ? Math.abs(amt) : -Math.abs(amt);
+      else amt = catOfDesc(desc) === "Salary" || /\b(CR|CREDIT|DEPOSIT|REFUND|RECEIVED|FROM)\b/i.test(desc) ? Math.abs(amt) : -Math.abs(amt);
+    } else if (/CR/i.test(nums[nums.length >= 2 ? nums.length - 2 : 0])) amt = Math.abs(amt);
+    if (bal != null) prevBal = bal;
+    if (amt) out.push({date, desc, amt});
+  }
+  if (!out.length) throw new Error("Couldn't read transactions from that PDF. Scanned statements (photos) can't be read; try the CSV export from your bank's website instead.");
+  return out;
+}
+
+// ---- analysis ----
+function analyzeStatement(tx, fileName){
+  tx.sort((a, b) => a.date - b.date);
+  const first = tx[0].date, last = tx[tx.length - 1].date;
+  const months = Math.max(1, Math.round((last - first) / (30.44 * DAY) + 0.5));
+  const group = list => { const g = {}; list.forEach(t => { const k = merchantKey(t.desc); (g[k] = g[k] || []).push(t); }); return g; };
+  const cadenceOf = list => {
+    if (list.length < 2) return null;
+    const gaps = list.slice(1).map((t, i) => (t.date - list[i].date) / DAY), amts = list.map(t => Math.abs(t.amt));
+    const steady = Math.max(...amts) / Math.min(...amts) <= 1.25, avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    if (steady && gaps.every(g => g >= 25 && g <= 36)) return "monthly";
+    if (steady && gaps.every(g => g >= 12 && g <= 16)) return "biweekly";
+    if (steady && gaps.every(g => g >= 6 && g <= 8)) return "weekly";
+    if (steady && gaps.every(g => g >= 350 && g <= 380)) return "yearly";
+    if (avgGap >= 25 && avgGap <= 36 && steady) return "monthly";
+    return null;
+  };
+  const perMonth = (amt, cad) => cad === "weekly" ? amt * 52 / 12 : cad === "biweekly" ? amt * 26 / 12 : cad === "yearly" ? amt / 12 : amt;
+  // money in
+  const credits = tx.filter(t => t.amt > 0), cg = group(credits), income = [];
+  let otherIn = 0;
+  for (const [k, list] of Object.entries(cg)){
+    const cad = cadenceOf(list), isPay = list.some(t => catOfDesc(t.desc) === "Salary");
+    const total = list.reduce((a, t) => a + t.amt, 0);
+    if (isPay || (cad && catOfDesc(list[0].desc) !== "Transfers")){
+      const avg = total / list.length, days = list.map(t => t.date.getDate());
+      const payday = days.sort((a, b) => days.filter(v => v === b).length - days.filter(v => v === a).length)[0];
+      income.push({name: titleCase(k), monthly: r2(cad ? perMonth(avg, cad) : total / months), cadence: cad || "irregular", payday, count: list.length});
+    } else otherIn += total;
+  }
+  income.sort((a, b) => b.monthly - a.monthly);
+  const monthlyIncome = r2(income.reduce((a, s) => a + s.monthly, 0));
+  // money out
+  const debits = tx.filter(t => t.amt < 0), dg = group(debits), subs = [], bills = [], taxes = [], spend = {};
+  for (const [k, list] of Object.entries(dg)){
+    const cat = catOfDesc(list[0].desc), cad = cadenceOf(list), amts = list.map(t => -t.amt), total = amts.reduce((a, b) => a + b, 0);
+    const lastAmt = amts[amts.length - 1];
+    if (cat === "Tax"){ taxes.push({name: titleCase(k), total: r2(total), monthly: r2(total / months)}); continue; }
+    if (cad && BILL_CAT.has(cat)){ bills.push({name: titleCase(k), cat, monthly: r2(perMonth(lastAmt, cad)), cadence: cad}); continue; }
+    if (cat === "Subscriptions" || (cad && cat !== "Groceries" && cat !== "Transfers" && cat !== "Transport" && lastAmt < 150)){
+      if (cat === "Subscriptions" || cad){
+        subs.push({name: titleCase(k), price: r2(lastAmt), cycle: cad === "yearly" ? "yr" : "mo", monthly: r2(perMonth(lastAmt, cad || "monthly")), since: isoOf(list[0].date), lastCharge: isoOf(list[list.length - 1].date), charges: list.length, paid: r2(total), cadence: cad || "monthly"});
+        continue;
+      }
+    }
+    spend[cat] = (spend[cat] || 0) + total;
+  }
+  subs.sort((a, b) => b.monthly - a.monthly); bills.sort((a, b) => b.monthly - a.monthly);
+  const spending = Object.entries(spend).map(([cat, total]) => ({cat, name: CAT_LABEL[cat] || cat, monthly: r2(total / months), env: NEEDS_CATS.has(cat) ? "needs" : "misc"})).filter(x => x.monthly >= 1).sort((a, b) => b.monthly - a.monthly);
+  const taxMonthly = r2(taxes.reduce((a, t) => a + t.monthly, 0));
+  const out = r2(bills.reduce((a, b) => a + b.monthly, 0) + subs.reduce((a, s) => a + s.monthly, 0) + spending.reduce((a, s) => a + s.monthly, 0) + taxMonthly);
+  return {fileName, count: tx.length, first: isoOf(first), last: isoOf(last), months, income, monthlyIncome, otherIn: r2(otherIn / months), subs, bills, taxes, taxMonthly, spending, monthlyOut: out};
+}
+
+// ---- apply to the plan ----
+function applyStatement(R, mode){
+  const expenses = [
+    ...R.bills.map(b => ({id: uid(), name: b.name, amount: b.monthly, env: "needs", source: "statement"})),
+    ...(R.taxMonthly ? [{id: uid(), name: "Tax payments", amount: R.taxMonthly, env: "needs", source: "statement"}] : []),
+    ...R.spending.filter(s => s.cat !== "Transfers").map(s => ({id: uid(), name: s.name, amount: s.monthly, env: s.env, source: "statement"}))
+  ];
+  const subs = R.subs.map(s => ({id: uid(), name: s.name, price: s.price, cycle: s.cycle, last: null, group: "", env: "misc", keep: "auto", since: s.since, charges: s.charges, paid: s.paid, lastCharge: s.lastCharge, source: "statement"}));
+  if (mode === "replace"){
+    if (R.monthlyIncome) S.income = R.monthlyIncome;
+    S.expenses = expenses; S.subs = subs;
+    S.swaps = S.swaps.filter(w => linkedItem(w));
+  } else {
+    if (R.monthlyIncome && !S.income) S.income = R.monthlyIncome;
+    const has = (list, n) => list.some(x => x.name.toLowerCase() === n.toLowerCase());
+    expenses.forEach(e => { if (!has(S.expenses, e.name)) S.expenses.push(e); });
+    subs.forEach(s => { const old = S.subs.find(x => x.name.toLowerCase() === s.name.toLowerCase()); if (old) Object.assign(old, {since: s.since, charges: s.charges, paid: s.paid, lastCharge: s.lastCharge}); else S.subs.push(s); });
+  }
+  S.payday = R.income[0] ? R.income[0].payday : S.payday;
+  S.imported = {file: R.fileName, when: isoDaysAgo(0), from: R.first, to: R.last};
+  S.hideNote = true;
+  save();
+}
+
+async function readStatementFile(file){
+  const name = file.name || "statement";
+  if (/\.pdf$/i.test(name) || file.type === "application/pdf"){
+    const buf = await file.arrayBuffer();
+    return analyzeStatement(txFromLines(await pdfLines(buf)), name);
+  }
+  return analyzeStatement(txFromCSV(await file.text()), name);
+}
+
+// ---- review screen ----
+const monthsLabel = iso => { if (!iso) return ""; const [y, m] = iso.split("-").map(Number); return new Date(y, m - 1, 1).toLocaleString("en-US", {month: "short", year: "numeric"}); };
+function paidFor(s){ if (!s.since) return ""; const [y, m, d] = s.since.split("-").map(Number); const mo = Math.max(1, Math.round((todayMid() - new Date(y, m - 1, d)) / (30.44 * DAY))); return `Paying since ${monthsLabel(s.since)} · ${s.charges} charge${s.charges === 1 ? "" : "s"} · ${fmt(s.paid)} so far`; }
+V.importReview = () => {
+  const R = STMT.result;
+  if (!R) return "";
+  const row = (a, b, c) => `<div class="line"><div><div>${esc(a)}</div>${c ? `<div class="muted small">${esc(c)}</div>` : ""}</div><span class="tnum">${b}</span></div>`;
+  const left = R.monthlyIncome - R.monthlyOut;
+  return `<div class="inline" style="justify-content:space-between"><h1>Your statement</h1><button class="btn small" type="button" data-import-cancel>Cancel</button></div>
+  <p class="muted" style="text-align:center">${esc(R.fileName)} · ${R.count} transactions · ${monthsLabel(R.first)} to ${monthsLabel(R.last)} (${R.months} month${R.months > 1 ? "s" : ""}). Read on this phone only.</p>
+  <section class="hero"><p class="label">A typical month</p>
+    <div class="big tnum" style="${fitSize(fmt(left), 3, 88)}${left < 0 ? ";color:var(--rust)" : ""}">${fmt(left)}</div>
+    <p class="muted">${fmt(R.monthlyIncome)} comes in, ${fmt(R.monthlyOut)} goes out${R.taxMonthly ? `, including ${fmt(R.taxMonthly)} of tax payments` : ""}.</p></section>
+  <section class="card"><h2>Money coming in</h2>
+    ${R.income.length ? R.income.map(s => row(s.name, fmt(s.monthly) + "/mo", `${s.cadence === "irregular" ? "Irregular" : s.cadence[0].toUpperCase() + s.cadence.slice(1)}${s.payday ? ` · usually on the ${ordinal(s.payday)}` : ""} · ${s.count} deposits`)).join("") : `<p class="muted">No regular salary found. You can type your income on the Month tab.</p>`}
+    ${R.otherIn ? `<p class="muted small">Plus about ${fmt(R.otherIn)}/mo of transfers and refunds, left out of the plan.</p>` : ""}</section>
+  <section class="card"><h2>Subscriptions <span class="muted small">(${R.subs.length})</span></h2>
+    ${R.subs.length ? R.subs.map(s => row(s.name, fmt(s.price) + (s.cycle === "yr" ? "/yr" : "/mo"), paidFor(s))).join("") : `<p class="muted">No subscriptions found.</p>`}
+    ${R.subs.length ? `<p class="small"><b>${fmt(R.subs.reduce((a, s) => a + s.monthly, 0))}</b> a month, <b>${fmt(R.subs.reduce((a, s) => a + s.paid, 0))}</b> paid in this statement.</p>` : ""}</section>
+  <section class="card"><h2>Bills</h2>${R.bills.length ? R.bills.map(b => row(b.name, fmt(b.monthly) + "/mo", b.cat)).join("") : `<p class="muted">No regular bills found.</p>`}
+    ${R.taxes.length ? R.taxes.map(t => row(t.name, fmt(t.monthly) + "/mo", `Tax · ${fmt(t.total)} in this statement`)).join("") : ""}</section>
+  <section class="card"><h2>Everyday spending</h2>${R.spending.length ? R.spending.map(s => row(s.name, fmt(s.monthly) + "/mo", s.env === "needs" ? "Expenditures" : "Miscellaneous")).join("") : `<p class="muted">Nothing else found.</p>`}</section>
+  <div class="grid2"><button class="btn" type="button" data-import-apply="merge">Add to my plan</button><button class="btn primary" type="button" data-import-apply="replace" style="padding:10px">Use this as my plan</button></div>
+  <p class="muted small" style="text-align:center">“Use this as my plan” replaces your income, lines and subscriptions. Splits, codes and savings stay.</p>`;
+};
+const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th","st","nd","rd"][n % 10] || "th");
+
+// ---- occasional subscription check-in ----
+function reviewPick(){
+  const today = isoDaysAgo(0);
+  if (S.reviewSnooze === today) return null;
+  const cands = S.subs.filter(s => s.keep !== "drop" && (!s.reviewedAt || daysSince(s.reviewedAt) > 30)).sort((a, b) => subMonthly(b) - subMonthly(a)).slice(0, 5);
+  if (!cands.length) return null;
+  let h = 0; for (const ch of today) h = (h * 31 + ch.charCodeAt(0)) >>> 0; // same pick all day, a different one tomorrow
+  return cands[h % cands.length];
+}
+OUT.reviewCard = () => {
+  const s = reviewPick(); if (!s) return "";
+  const since = s.since ? `You’ve paid ${fmt(s.paid || 0)} since ${monthsLabel(s.since)}.` : `It costs ${fmt(subMonthly(s))} a month.`;
+  return `<section class="card review" data-review-id="${s.id}"><p class="label">Quick check</p>
+    <h3 style="font-size:1.15rem">How much do you use ${esc(s.name)}?</h3>
+    <p class="muted">${since}</p>
+    <div class="review-btns"><button class="btn" type="button" data-review="lot">A lot</button><button class="btn" type="button" data-review="barely">Barely</button><button class="btn danger" type="button" data-review="none">Not at all</button></div>
+    <button class="link plain small" type="button" data-review="later" style="align-self:center">Ask me later</button></section>`;
+};
+function handleReview(kind, id){
+  if (kind === "later"){ S.reviewSnooze = isoDaysAgo(0); save(); refreshOuts(); return; }
+  const s = S.subs.find(x => x.id === id); if (!s) return;
+  s.reviewedAt = isoDaysAgo(0);
+  if (kind === "lot"){ s.last = isoDaysAgo(0); s.low = false; toast(`Keeping ${s.name}.`); }
+  if (kind === "barely"){ s.low = true; s.keep = "auto"; toast(`${s.name} is flagged. Review it on Subs.`); }
+  if (kind === "none"){ s.keep = "drop"; toast(`${s.name} marked to drop. Your month updated.`); }
+  save(); refreshOuts();
+}
 
 // ---- Month ----
 V.month = () => {
   const C = compute();
   return `${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap"><p>Sample month for one person, stored only on this device. Change the income and the list. The month-end number follows.</p><button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
-  <p class="muted" data-out="planNote">${esc(C.planNote)}</p>
-  <div data-out="headline">${OUT.headline()}</div>
+  <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
+  <div data-out="headline">${OUT.headline()}</div></section>
+  <div data-out="reviewCard">${OUT.reviewCard()}</div>
+  ${importCard()}
   <div class="grid2">
     <label class="field"><span>Currency</span><select data-bind="cur" id="m-cur">${CURRENCIES.map(([c,n]) => `<option value="${c}" ${c===S.cur?"selected":""}>${c} · ${n}</option>`).join("")}</select></label>
     <label class="field"><span>Money coming in</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month"></span></label>
@@ -427,7 +764,7 @@ OUT.headline = () => {
   const C = compute(), over = C.needs - C.envNeeds;
   const tail = S.priority === "ef" ? "if you follow emergency fund first and add nothing else" : S.priority === "goal" ? `if ${esc(S.goalName || "your goal")} comes first and you add nothing else` : "if you split it between goal and emergency fund";
   return `<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"}</h1>
-  <div class="big ${C.savings < 0 ? "neg" : ""}" style="margin-top:8px">${fmt(Math.abs(C.savings))}</div>
+  <div class="big ${C.savings < 0 ? "neg" : ""}" style="margin-top:8px;${fitSize(fmt(Math.abs(C.savings)), 3, 88)}">${fmt(Math.abs(C.savings))}</div>
   <p class="muted" style="margin-top:10px">${C.savings >= 0 ? `${C.planMonth} ends with ${fmt(C.endSaved)} saved ${tail}.` : `${C.planMonth} spends more than comes in. Drop a flagged subscription or use a cheaper swap to close it.`}${over > 0.005 ? ` Needs are ${fmt(over)} over the envelope.` : ""}</p>`;
 };
 OUT.stack = () => {
@@ -457,7 +794,7 @@ OUT.dropCard = () => {
       ${toggle}${UI.compare ? compareChart(now, now + swapSave, "With swaps") + `<button class="link" data-go="cheaper" type="button">See the swaps</button>` : ""}</section>`;
   }
   return `<section class="card"><p class="muted">If you drop what your rules flag</p>
-    <div style="font:600 1.875rem/1.1 var(--display);letter-spacing:-.025em" class="tnum bigsoft">${fmt(now + C.flaggedSave)}</div>
+    <div style="font:600 1.875rem/1.1 var(--display);letter-spacing:-.025em;${fitSize(fmt(now + C.flaggedSave), 1.875, 110)}" class="tnum bigsoft">${fmt(now + C.flaggedSave)}</div>
     <p>Savings finishes ${fmt(C.flaggedSave)} higher. The unused list is ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year.</p>
     <div class="linkrow"><button class="link" data-go="subs" type="button">Review subscriptions</button></div>
     ${toggle}${UI.compare ? compareChart(now, now + C.flaggedSave, "After cuts") : ""}</section>`;
@@ -558,7 +895,9 @@ function answer(q){
 // ---- Subs ----
 V.subs = () => `
   <h1>Subscriptions</h1>
+  <div data-out="reviewCard">${OUT.reviewCard()}</div>
   <div data-out="subsSummary">${OUT.subsSummary()}</div>
+  <button class="btn" type="button" data-import-open>Find subscriptions in a bank statement</button>
   <label class="field"><span>Flag anything unused for more than</span><span class="inline"><input id="rule-days" data-bind="ruleDays" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.ruleDays}" style="width:90px" aria-label="Days"><span class="muted">days, or a duplicate of one you use</span></span></label>
   <div data-out="subsList">${OUT.subsList()}</div>
   <details class="card"><summary>Add a subscription</summary>
@@ -587,7 +926,7 @@ OUT.subsList = () => {
     const f = C.flags[s.id], d = daysSince(s.last), k = s.keep;
     const q = encodeURIComponent(`how to cancel ${s.name}`);
     return `<div class="row" data-sub="${s.id}"><div class="row-top"><div><div class="name">${esc(s.name)}</div>
-      <div class="muted small">${d === 0 ? "Opened today" : d === 1 ? "Opened yesterday" : `Opened ${d} days ago`}${s.group ? ` · ${esc(s.group)}` : ""}</div></div>
+      <div class="muted small">${!s.last ? "Usage not checked yet" : d === 0 ? "Opened today" : d === 1 ? "Opened yesterday" : `Opened ${d} days ago`}${s.group ? ` · ${esc(s.group)}` : ""}</div>${s.since ? `<div class="muted small">${esc(paidFor(s))}</div>` : ""}</div>
       <div><div class="name tnum">${fmt(s.price)}<span class="muted small">/${s.cycle === "yr" ? "yr" : "mo"}</span></div>${s.cycle === "yr" ? `<div class="muted small tnum">${fmt(subMonthly(s))}/mo</div>` : ""}</div></div>
       ${f.length ? `<div class="inline">${f.map(r => `<span class="pill ${k === "keep" ? "grey" : "flag"}">${esc(r)}</span>`).join("")}</div>` : ""}
       <div class="inline" style="justify-content:space-between">
@@ -685,6 +1024,7 @@ V.plan = () => `
     <label class="field"><span>Leftover money goes to</span><select data-bind="priority"><option value="ef" ${S.priority==="ef"?"selected":""}>Emergency fund first</option><option value="goal" ${S.priority==="goal"?"selected":""}>My goal first</option><option value="split" ${S.priority==="split"?"selected":""}>Half and half</option></select></label>
     <div data-out="saveSplit">${OUT.saveSplit()}</div></section>
   <section class="card"><h2>Your data</h2><p class="muted small">Everything stays on this device. Nothing is sent anywhere.</p>
+    <button class="btn" type="button" data-import-open>Import a bank statement (CSV or PDF)</button>
     <div class="inline"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank">Start empty</button></div>
     <div id="reset-confirm"></div></section>`;
 OUT.envCheck = () => { const t = S.env.needs + S.env.misc + S.env.save; return t === 100 ? `<p class="muted small">Adds up to 100%.</p>` : `<p class="err">These add up to ${t}%. Make them total 100%.</p>`; };
@@ -737,7 +1077,7 @@ V.split = () => {
     <p class="muted">Add someone by hand, or import a contacts file (.vcf) from your phone. Names stay on this device.</p>
     <form class="inline" data-form="addPerson"><input name="name" placeholder="Name" aria-label="New person's name" enterkeyhint="done" style="flex:1 1 180px"><button class="btn" type="submit">Add</button></form>
     <button class="btn" type="button" data-import>Import contacts</button>
-    <div class="rows">${S.people.map(p => p.id === "me" ? `<div class="row"><div class="name">You</div></div>` : `<div class="row" data-person="${p.id}"><div class="inline"><input data-person-name value="${esc(p.name)}" aria-label="Name" enterkeyhint="done" style="flex:1 1 160px"><button class="btn small danger" type="button" data-del-person>Remove</button></div></div>`).join("")}</div>
+    <div class="rows">${S.people.filter(p => !p.archived).map(p => p.id === "me" ? `<div class="row"><div class="name">You</div></div>` : `<div class="row" data-person="${p.id}"><div class="inline"><input data-person-name value="${esc(p.name)}" aria-label="Name" enterkeyhint="done" style="flex:1 1 160px"><button class="btn small danger" type="button" data-del-person>Remove</button></div></div>`).join("")}</div>
   </section>`}`;
 };
 OUT.splitSum = () => {
@@ -777,7 +1117,8 @@ function historySection(c){
   </section>`;
 }
 function splitForm(){
-  const c = CTX(), d = splitDraft, others = c.people;
+  const c = CTX(), d = splitDraft, inSplit = id => id === d.paidBy || id === d.borrower || d.parts[id] !== undefined;
+  const others = c.people.filter(p => !p.archived || inSplit(p.id));
   const partRows = d.method === "borrow" ? `
     <label class="field"><span>${d.paidBy === c.me ? "Who borrowed from you" : "Who owes it"}</span><select data-d="borrower">${others.filter(p => p.id !== d.paidBy).map(p => `<option value="${esc(p.id)}" ${d.borrower===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>`
     : `<fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px"><legend class="field" style="font-weight:600;margin-bottom:6px">Split between</legend>
@@ -894,11 +1235,12 @@ async function markSeen(){
 
 /* ================= render ================= */
 function renderTabs(){
-  $("tabbar").innerHTML = TABS.map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${I[k]}<span>${n}</span></button>`).join("");
+  $("tabbar").innerHTML = TABS.map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k?'aria-current="page"':""}><span class="ti">${I[k]}</span><span>${n}</span></button>`).join("");
 }
 function render(keepScroll){
   const main = $("main"), top = main.scrollTop;
-  $("view").innerHTML = UI.inbox ? V.inbox() : V[S.tab]();
+  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.inbox ? V.inbox() : V[S.tab]();
+  if (!keepScroll){ v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   renderTabs(); renderBell();
   main.scrollTop = keepScroll ? top : 0;
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
@@ -916,6 +1258,7 @@ const numv = v => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g,"")); re
 /* ================= events ================= */
 const view = $("view");
 $("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; S.tab = b.dataset.tab; save(); render(false); });
+$("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; if (UI.inbox) markSeen(); render(false); });
 
 view.addEventListener("input", e => {
@@ -963,6 +1306,10 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-add-line-btn")){ const box = b.closest("[data-add-line]"), name = box.querySelector("[data-new-name]").value.trim(), amt = numv(box.querySelector("[data-new-amt]").value);
     if (!name){ toast("Give the line a name."); box.querySelector("[data-new-name]").focus(); return; }
     S.expenses.push({id:uid(), name, amount:amt, env:box.dataset.addLine}); save(); refreshOuts(); toast(`Added ${name}.`); return; }
+  if (b.hasAttribute("data-import-open")){ $("stmt").click(); return; }
+  if (b.hasAttribute("data-import-cancel")){ STMT.result = null; render(false); return; }
+  if (b.dataset.importApply){ const R = STMT.result; applyStatement(R, b.dataset.importApply); STMT.result = null; S.tab = "month"; save(); render(false); toast(`Plan updated from ${R.fileName}: ${R.subs.length} subscriptions, ${fmt(R.monthlyIncome)} coming in.`); return; }
+  if (b.dataset.review){ handleReview(b.dataset.review, b.closest("[data-review-id]").dataset.reviewId); return; }
   if (b.hasAttribute("data-hide-note")){ S.hideNote = true; save(); render(true); return; }
   if (b.hasAttribute("data-compare")){ UI.compare = !UI.compare; refreshOuts(); return; }
   if (b.classList.contains("cmp-col")){ const was = b.classList.contains("on"); b.parentElement.querySelectorAll(".cmp-col").forEach(c => c.classList.remove("on")); if (!was) b.classList.add("on"); return; }
@@ -1041,8 +1388,12 @@ view.addEventListener("click", async e => {
     splitErr = ""; render(false); return; }
   const pr = b.closest("[data-person]");
   if (pr && b.hasAttribute("data-del-person")){ const id = pr.dataset.person;
-    if (S.splits.some(x => x.paidBy === id || (x.parts && id in x.parts))){ toast(`${person(id).name} is in a split. Delete that split first.`); return; }
-    S.people = S.people.filter(p => p.id !== id); save(); render(true); return; }
+    const p = S.people.find(x => x.id === id); if (!p) return;
+    const bal = myBalances({kind:"local", me:"me", splits:S.splits, pays:S.settlements, people:S.people}).find(x => x.p.id === id);
+    if (bal){ toast(bal.net > 0 ? `${p.name} still owes you ${fmt(bal.net)}. Settle up first.` : `You still owe ${p.name} ${fmt(-bal.net)}. Settle up first.`); return; }
+    const inHistory = S.splits.some(x => x.paidBy === id || (x.parts && id in x.parts)) || S.settlements.some(x => x.from === id || x.to === id);
+    if (inHistory) p.archived = true; else S.people = S.people.filter(x => x.id !== id);  // settled people leave the list; past splits keep their name
+    save(); render(true); toast(inHistory ? `Removed ${p.name}. Past splits still show their name.` : `Removed ${p.name}.`); return; }
   if (b.hasAttribute("data-import")){
     if (navigator.contacts && navigator.contacts.select){
       try { const got = await navigator.contacts.select(["name"], {multiple:true}); addNames(got.map(c => (c.name||[])[0]).filter(Boolean)); return; } catch(err){ /* fall back to file */ }
@@ -1093,9 +1444,16 @@ view.addEventListener("submit", async e => {
 
 function addNames(names){
   let added = 0;
-  names.map(n => String(n).trim()).filter(Boolean).forEach(n => { if (!S.people.some(p => p.name.toLowerCase() === n.toLowerCase())){ S.people.push({id:uid(), name:n}); added++; } });
+  names.map(n => String(n).trim()).filter(Boolean).forEach(n => { const old = S.people.find(p => p.name.toLowerCase() === n.toLowerCase());
+    if (!old){ S.people.push({id:uid(), name:n}); added++; } else if (old.archived){ old.archived = false; added++; } });
   save(); render(true); toast(added ? `Added ${added} ${added === 1 ? "person" : "people"}.` : "Everyone there is already on your list.");
 }
+$("stmt").addEventListener("change", async e => {
+  const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+  toast("Reading your statement…");
+  try { STMT.result = await readStatementFile(file); UI.inbox = false; $("toast").hidden = true; render(false); }
+  catch(err){ toast(err && err.message ? err.message : "Couldn't read that file."); }
+});
 $("vcf").addEventListener("change", e => {
   const file = e.target.files[0]; if (!file) return;
   const rd = new FileReader();
@@ -1104,6 +1462,7 @@ $("vcf").addEventListener("change", e => {
 });
 
 save();
+applyTheme();
 render(false);
 initShared();
 })();

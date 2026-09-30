@@ -30,6 +30,13 @@ async def open_app(ctx, mock=False, w=390, h=844, scheme="light"):
     pg.on("pageerror", lambda e: pg.errors.append("pageerror: " + str(e)))
     pg.on("console", lambda m: m.type == "error" and "ERR_TUNNEL" not in m.text and "fonts.g" not in m.text and "net::" not in m.text and pg.errors.append("console: " + m.text))
     if mock: await pg.add_init_script(path=MOCK)
+    # pdf.js normally comes from cdnjs; serve the same version locally so tests run offline
+    async def serve_vendor(route):
+        name = route.request.url.rsplit("/", 1)[-1]
+        path = os.path.join(HERE, "vendor", name)
+        if os.path.exists(path): await route.fulfill(path=path, content_type="application/javascript")
+        else: await route.abort()
+    await pg.route("https://cdnjs.cloudflare.com/**", serve_vendor)
     await pg.emulate_media(color_scheme=scheme)
     await pg.goto(URL); await pg.wait_for_timeout(500)
     return pg
@@ -51,6 +58,69 @@ async def layout_tabbar_flush_every_size(ctx):
         assert g["top"] == 0, f"{w}x{h}: header not at top"
         assert g["sw"] <= g["cw"], f"{w}x{h}: horizontal scroll {g['sw']}>{g['cw']}"
         await pg.close()
+
+OVERFLOW = """(()=>{const vw=document.documentElement.clientWidth,bad=[];
+document.querySelectorAll('#view *, .app-header *, #tabbar *').forEach(el=>{
+  if(el.closest('svg')||el.closest('.sr'))return; const r=el.getBoundingClientRect(); if(!r.width)return;
+  if(r.left<-0.5||r.right>vw+0.5) bad.push((el.className||el.tagName)+':'+Math.round(r.left)+'-'+Math.round(r.right));
+  if(/^(SPAN|B|P|H1|H2|H3|BUTTON|DIV)$/.test(el.tagName)&&el.children.length===0&&getComputedStyle(el).textOverflow!=='ellipsis'&&el.scrollWidth>el.clientWidth+1&&getComputedStyle(el).overflowX!=='visible') bad.push('clipped '+el.textContent.slice(0,20));
+});
+const labels=[...document.querySelectorAll('#tabbar .tab span:last-child')].filter(s=>s.scrollWidth>s.clientWidth+1).map(s=>s.textContent);
+return {sw:document.documentElement.scrollWidth,vw,bad:bad.slice(0,6),labels}})()"""
+
+@test
+async def responsive_every_tab_every_size(ctx):
+    sizes = [(280, 653), (320, 568), (360, 740), (390, 844), (414, 896), (600, 960), (768, 1024), (1024, 768), (1440, 900), (844, 390)]
+    for w, h in sizes:
+        pg = await open_app(ctx, w=w, h=h)
+        for name in ["month", "subs", "cheaper", "codes", "plan", "split"]:
+            await tab(pg, name)
+            if name == "month":
+                await pg.click("[data-env-open=needs]"); await pg.click("[data-compare]"); await pg.wait_for_timeout(80)
+            if name == "split":
+                await pg.click("[data-new-split]"); await pg.select_option("[data-d=method]", "percent"); await pg.wait_for_timeout(80)
+            r = await pg.evaluate(OVERFLOW)
+            assert r["sw"] <= r["vw"], f"{w}x{h} {name}: page scrolls sideways ({r['sw']}>{r['vw']})"
+            assert not r["bad"], f"{w}x{h} {name}: overflow {r['bad']}"
+            assert not r["labels"], f"{w}x{h}: tab labels cut off {r['labels']}"
+            g = await pg.evaluate("[tabbar.getBoundingClientRect().bottom, innerHeight]")
+            assert abs(g[0] - g[1]) < 1, f"{w}x{h} {name}: tab bar not at bottom {g}"
+        await pg.close()
+
+COLLIDE = """(()=>{const bad=[];const boxes=[...document.querySelectorAll('.summary3 b, .legend span, .row-top > div, .cmp-val, .big, .bigsoft')];
+boxes.forEach(el=>{const r=document.createRange();r.selectNodeContents(el);const t=r.getBoundingClientRect(),b=el.getBoundingClientRect();if(t.width>b.width+1)bad.push(el.textContent.trim().slice(0,24))});
+const s=[...document.querySelectorAll('.summary3 b')].map(e=>e.getBoundingClientRect());for(let i=0;i<s.length;i++)for(let j=i+1;j<s.length;j++){const a=s[i],c=s[j];if(a.left<c.right&&c.left<a.right&&a.top<c.bottom&&c.top<a.bottom)bad.push('totals overlap')}
+return bad})()"""
+
+@test
+async def long_currency_amounts_never_collide(ctx):
+    for w in [320, 390, 768]:
+        pg = await open_app(ctx, w=w, h=844)
+        for cur in ["CAD", "PKR", "AED"]:
+            await tab(pg, "month"); await pg.select_option("#m-cur", cur); await pg.fill("#m-income", "125000"); await pg.wait_for_timeout(100)
+            for name in ["month", "subs", "cheaper", "split"]:
+                await tab(pg, name); bad = await pg.evaluate(COLLIDE)
+                assert not bad, f"{w}px {cur} {name}: {bad}"
+        await pg.close()
+
+@test
+async def theme_switch_light_dark_auto(ctx):
+    pg = await open_app(ctx, scheme="light")
+    bg = lambda: pg.evaluate("getComputedStyle(document.body).backgroundColor")
+    assert await bg() == "rgb(243, 239, 230)"
+    await pg.click("#theme-btn"); assert await pg.evaluate("document.documentElement.dataset.theme") == "light"
+    await pg.click("#theme-btn"); await pg.wait_for_timeout(50)
+    assert await pg.evaluate("document.documentElement.dataset.theme") == "dark" and await bg() == "rgb(20, 22, 19)"
+    assert await pg.evaluate("document.querySelector('meta[name=theme-color]').content") == "#141613"
+    await pg.reload(); await pg.wait_for_timeout(400)
+    assert await bg() == "rgb(20, 22, 19)", "dark choice must survive reload"
+    await pg.click("#theme-btn"); await pg.wait_for_timeout(50)   # back to auto
+    assert await pg.evaluate("document.documentElement.hasAttribute('data-theme')") is False and await bg() == "rgb(243, 239, 230)"
+    await pg.emulate_media(color_scheme="dark"); await pg.wait_for_timeout(100)
+    assert await bg() == "rgb(20, 22, 19)", "auto follows the phone"
+    # light forced while phone is dark
+    await pg.click("#theme-btn"); await pg.wait_for_timeout(50)
+    assert await bg() == "rgb(243, 239, 230)"
 
 @test
 async def layout_after_reload_and_resize(ctx):
@@ -104,6 +174,23 @@ async def month_currency_switch(ctx):
     await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150)
     assert "£" in await text(pg, ".big")
     assert (await state(pg))["cur"] == "GBP"
+
+CHECK_MONEY = """(()=>{const bad=[];document.querySelectorAll('.money-in').forEach(box=>{const em=box.querySelector('em'),i=box.querySelector('input');if(!em||!i)return;const e=em.getBoundingClientRect(),r=i.getBoundingClientRect(),b=box.getBoundingClientRect();const txt=r.left+parseFloat(getComputedStyle(i).paddingLeft);if(txt<e.right+4||r.right>b.right+0.5)bad.push(em.textContent+' '+i.value)});return {n:document.querySelectorAll('.money-in').length,bad}})()"""
+
+@test
+async def currency_label_never_overlaps_amount_anywhere(ctx):
+    pg = await open_app(ctx)
+    for cur in ["USD", "GBP", "PKR", "AED", "INR"]:
+        await tab(pg, "month"); await pg.select_option("#m-cur", cur); await pg.wait_for_timeout(120)
+        r = await pg.evaluate(CHECK_MONEY); assert r["n"] >= 1 and not r["bad"], f"{cur} month: {r}"
+        await tab(pg, "plan"); r = await pg.evaluate(CHECK_MONEY); assert r["n"] >= 10 and not r["bad"], f"{cur} plan: {r}"
+        await tab(pg, "split"); await pg.click("[data-new-split]"); await pg.wait_for_timeout(80)
+        r = await pg.evaluate(CHECK_MONEY); assert r["n"] >= 1 and not r["bad"], f"{cur} split form: {r}"
+        await pg.click("[data-cancel-split]")
+        await pg.locator("[data-settle-btn]").first.click(); await pg.wait_for_timeout(80)
+        await pg.click("#history [data-pay-edit]"); await pg.wait_for_timeout(80)
+        r = await pg.evaluate(CHECK_MONEY); assert not r["bad"], f"{cur} payment edit: {r}"
+        await pg.click("#history [data-pay-del]"); await pg.wait_for_timeout(80)
 
 @test
 async def month_compare_chart(ctx):
@@ -358,7 +445,18 @@ async def split_people_add_remove_import(ctx):
     await pg.fill("form[data-form=addPerson] [name=name]", "Zoe"); await pg.click("form[data-form=addPerson] button"); await pg.wait_for_timeout(100)
     assert any(p["name"] == "Zoe" for p in (await state(pg))["people"])
     await pg.locator("[data-person]").filter(has=pg.locator("input[value=Alex]")).locator("[data-del-person]").click()
-    assert "is in a split" in await pg.inner_text("#toast")
+    assert await pg.inner_text("#toast") == "Alex still owes you $21.50. Settle up first."
+    # settled people can be removed; their past splits keep the name
+    await pg.locator("[data-settle]", has_text="Priya").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(100)
+    await pg.locator("[data-person]").filter(has=pg.locator("input[value=Priya]")).locator("[data-del-person]").click(); await pg.wait_for_timeout(100)
+    assert await pg.inner_text("#toast") == "Removed Priya. Past splits still show their name."
+    assert await pg.locator("[data-person]").filter(has=pg.locator("input[value=Priya]")).count() == 0
+    assert "Priya owes you $12" in await text(pg, "[data-split]:has-text('Team lunch')")
+    await pg.click("[data-new-split]"); await pg.wait_for_timeout(80)
+    assert await pg.locator("[data-part=p6]").count() == 0, "removed person not offered in new splits"
+    await pg.click("[data-cancel-split]")
+    await pg.fill("form[data-form=addPerson] [name=name]", "priya"); await pg.click("form[data-form=addPerson] button"); await pg.wait_for_timeout(100)
+    assert await pg.locator("[data-person]").filter(has=pg.locator("input[value=Priya]")).count() == 1, "adding the name again brings them back"
     await pg.locator("[data-person]").filter(has=pg.locator("input[value=Zoe]")).locator("[data-del-person]").click(); await pg.wait_for_timeout(100)
     assert not any(p["name"] == "Zoe" for p in (await state(pg))["people"])
     vcf = os.path.join(TMP, "c.vcf")
@@ -424,6 +522,78 @@ async def shared_my_writes_go_to_db(ctx):
     assert (await pg.evaluate("[...__mock.store.entries()].find(([k])=>k.startsWith('splits/'))[1].deleted")) is True
     assert await pg.locator("[data-split]", has_text="Cab").count() == 0
     assert (await state(pg))["splits"][0]["title"] == "Dominos", "local splits untouched"
+
+# ---------------- bank statement import ----------------
+FIX = os.path.join(HERE, "fixtures")
+
+async def check_statement_review(pg):
+    v = await text(pg, "#view")
+    assert "Your statement" in v, v[:200]
+    assert "Acme Corp" in v and "$4,200/mo" in v and "usually on the 25th" in v, "salary and payday"
+    for name in ["Netflix", "Spotify", "Planet Fitness", "Adobe Creative", "iCloud", "Disney Plus"]:
+        assert name.lower() in v.lower(), f"subscription {name} missing"
+    assert "Paying since Apr 2026 · 6 charges · $107.94 so far" in v, "Netflix history"
+    assert "Paying since Jun 2026 · 4 charges" in v, "Disney+ history"
+    for bill in ["Rent Oakview", "Con Ed", "Verizon Wireless", "Geico Auto"]:
+        assert bill.lower() in v.lower(), f"bill {bill} missing"
+    assert "$700 in this statement" in v, "tax payments"
+    assert "Groceries" in v and "Eating out" in v and "Getting around" in v, "spending categories"
+    assert "Zelle" not in v, "transfers must not count as income"
+    return v
+
+@test
+async def import_csv_statement_and_apply(ctx):
+    pg = await open_app(ctx)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
+    await check_statement_review(pg)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(300)
+    st = await state(pg)
+    assert st["income"] == 4200 and st["payday"] == 25, (st["income"], st.get("payday"))
+    names = [s["name"] for s in st["subs"]]
+    assert "Netflix" in names and len(names) == 6, names
+    nf = [s for s in st["subs"] if s["name"] == "Netflix"][0]
+    assert nf["charges"] == 6 and nf["since"] == "2026-04-05" and nf["last"] is None
+    leg = await text(pg, ".legend"); needs, misc, sav = [money(x) for x in re.findall(r"\$[\d,.]+", leg)]
+    assert abs(4200 - needs - misc - sav) < 0.05, leg
+    await tab(pg, "subs"); sl = await text(pg, "[data-out=subsList]")
+    assert "Usage not checked yet" in sl and "Paying since" in sl
+    assert "Unused for" not in sl, "unknown usage must not be flagged as unused"
+
+@test
+async def import_pdf_statement(ctx):
+    pg = await open_app(ctx)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.pdf")); await pg.wait_for_timeout(3000)
+    await check_statement_review(pg)
+    await pg.click("[data-import-apply=merge]"); await pg.wait_for_timeout(300)
+    st = await state(pg)
+    assert st["income"] == 5200, "merge keeps existing income"
+    assert any(s["name"] == "Netflix" and s.get("charges") == 6 for s in st["subs"]), "merge updates history on matching subscription"
+
+@test
+async def import_rejects_bad_files(ctx):
+    pg = await open_app(ctx)
+    bad = os.path.join(TMP, "bad.csv"); open(bad, "w").write("hello,world\n1,2\n")
+    await pg.set_input_files("#stmt", bad); await pg.wait_for_timeout(300)
+    assert "header row" in await pg.inner_text("#toast")
+    assert "Your statement" not in await text(pg, "#view")
+
+@test
+async def subscription_check_in(ctx):
+    pg = await open_app(ctx)
+    card = pg.locator("[data-out=reviewCard] .review"); assert await card.count() == 1
+    name = re.search(r"use (.+)\?", await card.inner_text()).group(1)
+    await card.locator("[data-review=barely]").click(); await pg.wait_for_timeout(120)
+    s = [x for x in (await state(pg))["subs"] if x["name"] == name][0]
+    assert s["low"] is True and s["reviewedAt"]
+    await tab(pg, "subs")
+    assert "You said you barely use it" in await pg.locator(f"[data-sub={s['id']}]").inner_text()
+    await tab(pg, "month")
+    name2 = re.search(r"use (.+)\?", await pg.locator("[data-out=reviewCard] .review").inner_text()).group(1)
+    assert name2 != name, "a reviewed subscription is not asked again"
+    await pg.click("[data-out=reviewCard] [data-review=none]"); await pg.wait_for_timeout(120)
+    assert [x for x in (await state(pg))["subs"] if x["name"] == name2][0]["keep"] == "drop"
+    await pg.click("[data-out=reviewCard] [data-review=later]"); await pg.wait_for_timeout(120)
+    assert await pg.locator("[data-out=reviewCard] .review").count() == 0
 
 # ---------------- persistence ----------------
 @test
