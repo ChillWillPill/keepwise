@@ -442,22 +442,27 @@ async def split_settle_history_undo_edit(ctx):
 @test
 async def split_people_add_remove_import(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
-    await pg.fill("form[data-form=addPerson] [name=name]", "Zoe"); await pg.click("form[data-form=addPerson] button"); await pg.wait_for_timeout(100)
+    await pg.click("[data-add-person-open]"); await pg.fill("#new-person", "Zoe"); await pg.click("form[data-form=addPerson] button[type=submit]"); await pg.wait_for_timeout(100)
     assert any(p["name"] == "Zoe" for p in (await state(pg))["people"])
-    await pg.locator("[data-person]").filter(has=pg.locator("input[value=Alex]")).locator("[data-del-person]").click()
+    await pg.locator("[data-person]", has_text="Alex").locator("[data-person-open]").click(); await pg.wait_for_timeout(60)
+    assert "Owes you $21.50" in await pg.locator("[data-person]", has_text="Alex").inner_text()
+    await pg.locator("[data-person]", has_text="Alex").locator("[data-del-person]").click()
     assert await pg.inner_text("#toast") == "Alex still owes you $21.50. Settle up first."
     # settled people can be removed; their past splits keep the name
     await pg.locator("[data-settle]", has_text="Priya").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(100)
-    await pg.locator("[data-person]").filter(has=pg.locator("input[value=Priya]")).locator("[data-del-person]").click(); await pg.wait_for_timeout(100)
+    await pg.locator("[data-person]", has_text="Priya").locator("[data-person-open]").click(); await pg.wait_for_timeout(60)
+    assert "Settled up" in await pg.locator("[data-person]", has_text="Priya").inner_text()
+    await pg.locator("[data-person]", has_text="Priya").locator("[data-del-person]").click(); await pg.wait_for_timeout(100)
     assert await pg.inner_text("#toast") == "Removed Priya. Past splits still show their name."
-    assert await pg.locator("[data-person]").filter(has=pg.locator("input[value=Priya]")).count() == 0
+    assert await pg.locator("[data-person]", has_text="Priya").count() == 0
     assert "Priya owes you $12" in await text(pg, "[data-split]:has-text('Team lunch')")
     await pg.click("[data-new-split]"); await pg.wait_for_timeout(80)
     assert await pg.locator("[data-part=p6]").count() == 0, "removed person not offered in new splits"
     await pg.click("[data-cancel-split]")
-    await pg.fill("form[data-form=addPerson] [name=name]", "priya"); await pg.click("form[data-form=addPerson] button"); await pg.wait_for_timeout(100)
-    assert await pg.locator("[data-person]").filter(has=pg.locator("input[value=Priya]")).count() == 1, "adding the name again brings them back"
-    await pg.locator("[data-person]").filter(has=pg.locator("input[value=Zoe]")).locator("[data-del-person]").click(); await pg.wait_for_timeout(100)
+    await pg.click("[data-add-person-open]"); await pg.fill("#new-person", "priya"); await pg.click("form[data-form=addPerson] button[type=submit]"); await pg.wait_for_timeout(100)
+    assert await pg.locator("[data-person]", has_text="Priya").count() == 1, "adding the name again brings them back"
+    await pg.locator("[data-person]", has_text="Zoe").locator("[data-person-open]").click(); await pg.wait_for_timeout(60)
+    await pg.locator("[data-person]", has_text="Zoe").locator("[data-del-person]").click(); await pg.wait_for_timeout(100)
     assert not any(p["name"] == "Zoe" for p in (await state(pg))["people"])
     vcf = os.path.join(TMP, "c.vcf")
     open(vcf, "w").write("BEGIN:VCARD\nVERSION:3.0\nFN:Omar Khan\nEND:VCARD\nBEGIN:VCARD\nFN:Alex\nEND:VCARD\n")
