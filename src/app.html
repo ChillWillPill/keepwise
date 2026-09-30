@@ -207,6 +207,20 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .check{display:flex;gap:12px;align-items:flex-start;font-size:.93rem;line-height:1.45;cursor:pointer}
 .check input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--green)}
 .acc-legal{text-align:center}
+.moments-teaser{border-color:color-mix(in srgb,var(--gold) 35%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--gold-soft) 70%,var(--card)),var(--card) 60%)}
+.moment-chips{display:flex;flex-wrap:wrap;gap:6px}
+.moment-chips span{font-size:.78rem;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px 10px}
+.m-cover{position:relative;border-radius:20px;overflow:hidden;min-height:180px;display:flex;align-items:flex-end}
+.m-cover-art{position:absolute;inset:0;background:radial-gradient(circle at 75% 25%,#f6d27a 0 12%,transparent 13%),linear-gradient(180deg,#8fc3d9 0%,#cfe6ef 45%,#3f7f73 46%,#2d5f57 100%)}
+.m-cover-text{position:relative;padding:16px 18px;color:#fff;display:flex;flex-direction:column;text-shadow:0 1px 8px rgba(0,0,0,.35)}
+.m-cover-text b{font:600 1.5rem/1.1 var(--display)}
+.m-stats{display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
+.m-stats b{display:block;font:600 1.3rem/1.2 var(--display)}
+.m-stats span{font-size:.8rem;color:var(--muted)}
+.m-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.m-tile{aspect-ratio:1;border-radius:10px}
+.m-t1{background:linear-gradient(135deg,#f0b27a,#c0605a)} .m-t2{background:linear-gradient(135deg,#7fb8d6,#3d6f8f)} .m-t3{background:linear-gradient(135deg,#9ccf9a,#4d8b5f)}
+.m-t4{background:linear-gradient(135deg,#e7c6e8,#8c6aa8)} .m-t5{background:linear-gradient(135deg,#f5dc8a,#c79a3a)} .m-t6{background:linear-gradient(135deg,#a6c9c0,#4e7f7a)}
 .space-switch{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
 .space-switch button{appearance:none;border:0;background:none;font:600 .95rem var(--body);color:var(--muted);padding:11px 12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .space-switch button+button{border-left:1px solid var(--line)}
@@ -1173,10 +1187,44 @@ function sharedUnavailable(){
     <li><div><h3>Everyone adds splits</h3><p class="muted">When a friend adds, edits or deletes a split that includes you, or marks a payment, it shows up under the bell at the top.</p></div></li></ol>
     <p class="muted small">Until then, “On this phone” keeps working with names you add by hand.</p></div>`;
 }
+// Moments over money: a KeepWise Plus preview. The example album sits behind a waitlist panel.
+function momentsTeaser(){
+  return `<section class="card moments-teaser"><div class="inline" style="justify-content:space-between;flex-wrap:nowrap;gap:12px"><div><h2>Moments over money</h2><p class="muted small">Keep the wedding, the birthday, the trip. Not just the bill.</p></div><span class="pill gold" style="flex:none">Plus</span></div>
+    <div class="moment-chips" aria-hidden="true"><span>Wedding</span><span>Birthday</span><span>Trip</span><span>Pilgrimage</span><span>Graduation</span></div>
+    <button class="btn" type="button" data-moments>See Moments</button></section>`;
+}
+function momentsPreview(){
+  const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
+  const tile = (i) => `<div class="m-tile m-t${i}"></div>`;
+  return `<div class="biz-wrap">
+    <div class="biz-demo" aria-hidden="true" inert>
+      <section class="m-cover"><div class="m-cover-art"></div><div class="m-cover-text"><b>Lake cabin weekend</b><span>Aug 12 to 16 · 6 friends</span></div></section>
+      <section class="card"><div class="m-stats"><div><b>5</b><span>days</span></div><div><b>${fmt(2340)}</b><span>shared</span></div><div><b>All</b><span>settled</span></div></div></section>
+      <section class="card"><h2>Photos and notes</h2><div class="m-grid">${[1,2,3,4,5,6].map(tile).join("")}</div><p class="small">“Best sunrise of the year, worth the 5am start.”</p></section>
+      <section class="card"><h2>Splits in this moment</h2><ul class="biz-list"><li><div><b>Cabin</b><span class="muted small">Paid by Sam</span></div><span class="tnum">${fmt(900)}</span></li><li><div><b>Boat hire</b><span class="muted small">Paid by you</span></div><span class="tnum">${fmt(420)}</span></li><li><div><b>Dinners</b><span class="muted small">Paid by Alex</span></div><span class="tnum">${fmt(610)}</span></li><li><div><b>Fuel</b><span class="muted small">Paid by Priya</span></div><span class="tnum">${fmt(410)}</span></li></ul></section>
+    </div>
+    <section class="biz-panel card" role="dialog" aria-labelledby="mom-h">
+      <span class="pill gold" style="align-self:flex-start">KeepWise Plus</span>
+      <h2 id="mom-h">Moments over money</h2>
+      <p class="muted">Turn the splits from a wedding, birthday, trip or pilgrimage into a private album that everyone who was there can add to.</p>
+      <ul class="biz-feats">
+        <li><b>One place for the whole occasion</b>: every split, the total, and who has settled.</li>
+        <li><b>Photos and notes</b> from everyone in the moment.</li>
+        <li><b>Private by design.</b> Only the people in the split can see it. No public feed.</li>
+        <li><b>A share card</b> you can post, showing the memory rather than the amounts.</li>
+      </ul>
+      ${joined ? `<p><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p>`
+        : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`
+        : `<button class="btn primary" type="button" data-open-account>Sign in to join the waitlist</button>`}
+      <button class="link small" type="button" data-moments-close style="align-self:center">Back to splits</button>
+    </section>
+  </div>`;
+}
 V.split = () => {
+  if (UI.moments) return `<h1>Split</h1>${momentsPreview()}`;
   const c = CTX();
   const wantShared = S.splitMode === "shared";
-  if (wantShared && !shared()) return `<h1>Split</h1>${modeSwitch()}${sharedUnavailable()}`;
+  if (wantShared && !shared()) return `<h1>Split</h1>${modeSwitch()}${sharedUnavailable()}${momentsTeaser()}`;
   const tags = ["All", ...S.tags];
   const list = c.splits.filter(x => S.filter === "All" || x.tag === S.filter).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0) || (b.date||"").localeCompare(a.date||""));
   return `
@@ -1184,7 +1232,7 @@ V.split = () => {
   ${modeSwitch()}
   <div data-out="splitSum">${OUT.splitSum()}</div>
   <div class="chips" role="group" aria-label="Filter">${tags.map(t => `<button class="chip" type="button" data-filter="${esc(t)}" aria-pressed="${S.filter === t}">${esc(t)}</button>`).join("")}</div>
-  ${splitDraft ? splitForm() : `<button class="btn primary" type="button" data-new-split>New split</button>`}
+  ${splitDraft ? splitForm() : `<button class="btn primary" type="button" data-new-split>New split</button>${momentsTeaser()}`}
   ${list.length ? list.map(x => { const lines = splitLine(x, c);
     const by = c.kind === "shared" && x.createdBy && x.createdBy !== c.me ? ` · added by ${esc(person(x.createdBy, c).name)}` : "";
     return `<div class="card" data-split="${esc(x.id)}"><div class="entry"><div class="ico" aria-hidden="true">${tagIcon(x.tag)}</div>
@@ -1540,7 +1588,7 @@ function accProfile(){
   <section class="card"><h2>Profile</h2>
     <form data-form="acc-profile" class="acc-form" novalidate>${accFields(false)}${accErrBox()}<button class="btn primary" type="submit" ${ACC.busy ? "disabled" : ""}>Save changes</button></form></section>
   <section class="card plus-card"><div class="inline" style="justify-content:space-between"><h2>KeepWise Plus</h2><span class="pill gold">Coming soon</span></div>
-    <p class="small">Back up your budget with end-to-end encryption and use it on all your devices. Add receipt photos to splits, and keep business money in its own space. Only you can read your data.</p>
+    <p class="small">Back up your budget with end-to-end encryption and use it on all your devices. Add receipt photos to splits, keep business money in its own space, and turn shared occasions into Moments. Only you can read your data.</p>
     ${ACC.profile && ACC.profile.plusInterest ? `<p class="small"><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p><button class="link small" type="button" data-acc-plus-off style="align-self:flex-start">Leave the waitlist</button>`
       : `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`}
   </section>
@@ -1683,8 +1731,8 @@ renderAcctBtn();
 
 /* ================= events ================= */
 const view = $("view");
-$("home-link").addEventListener("click", e => { e.preventDefault(); UI.inbox = false; UI.account = false; UI.biz = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; UI.biz = false; S.tab = b.dataset.tab; save(); render(false); });
+$("home-link").addEventListener("click", e => { e.preventDefault(); UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; STMT.result = null; S.tab = "month"; save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; S.tab = b.dataset.tab; save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; if (UI.inbox) markSeen(); render(false); });
 
@@ -1785,6 +1833,8 @@ view.addEventListener("click", async e => {
   if (b.dataset.mode){ S.splitMode = b.dataset.mode; splitDraft = null; UI.editPay = null; save(); render(true); if (S.splitMode === "shared") joinCircle(); return; }
   if (b.hasAttribute("data-new-split")){ const me = CTX().me; splitDraft = {title:"", amount:"", paidBy:me, tag: S.filter !== "All" ? S.filter : S.tags[0], method:"equal", parts:{[me]:1}, borrower:""}; splitErr = ""; render(true); return; }
   if (b.hasAttribute("data-cancel-split")){ splitDraft = null; splitErr = ""; UI.receiptInfo = false; render(true); return; }
+  if (b.hasAttribute("data-moments")){ UI.moments = true; render(false); return; }
+  if (b.hasAttribute("data-moments-close")){ UI.moments = false; render(false); return; }
   if (b.dataset.space){ UI.biz = b.dataset.space === "business"; render(false); return; }
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
   if (b.hasAttribute("data-receipt-close")){ UI.receiptInfo = false; render(true); return; }

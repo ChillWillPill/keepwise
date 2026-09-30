@@ -851,6 +851,21 @@ async def business_space_is_a_plus_preview(ctx):
     await pg.click("[data-space=business]"); await tab(pg, "subs"); await tab(pg, "month")
     assert await pg.locator("#m-income").count() == 1, "leaving the tab returns to Personal"
 
+@test
+async def moments_is_a_plus_preview(ctx):
+    pg = await open_app(ctx)
+    await tab(pg, "split")
+    if await pg.locator("[data-mode=local]").count(): await pg.click("[data-mode=local]"); await pg.wait_for_timeout(120)
+    assert "Moments over money" in await text(pg, ".moments-teaser")
+    await pg.click("[data-moments]"); await pg.wait_for_timeout(150)
+    v = await text(pg, "#view")
+    assert "Private by design" in v and "Sign in to join the waitlist" in v and await pg.locator("[data-new-split]").count() == 0
+    assert await pg.get_attribute(".biz-demo", "aria-hidden") == "true"
+    sw = await pg.evaluate("[document.querySelector('#main').scrollWidth, document.querySelector('#main').clientWidth]")
+    assert sw[0] <= sw[1]
+    await pg.click("[data-moments-close]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-new-split]").count() == 1
+
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")
 SEED = {
