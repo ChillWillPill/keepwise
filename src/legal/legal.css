@@ -13,7 +13,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--body)}
 .wrap{max-width:720px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 20px) 16px calc(env(safe-area-inset-bottom,0px) + 48px)}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px}
 .brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font-weight:600}
-.logo{width:34px;height:34px;border-radius:10px;background:var(--green);display:grid;place-items:center;color:var(--bg);font-family:var(--display);font-weight:700}
+.logo{width:34px;height:34px;border-radius:50%;background:#fff;display:block;box-shadow:0 0 0 1px var(--line)}
 .top nav a{color:var(--muted);font-size:.92rem;margin-left:14px}
 h1{font-family:var(--display);font-weight:600;letter-spacing:-.025em;font-size:clamp(2rem,7vw,2.6rem);line-height:1.1;margin:0 0 8px}
 h2{font-family:var(--display);font-weight:600;letter-spacing:-.015em;font-size:1.3rem;line-height:1.25;margin:36px 0 8px}

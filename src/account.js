@@ -121,14 +121,14 @@ function accFields(first){
   const mk = "marketing" in d ? d.marketing : !!p.marketing;
   return `
     <label class="field"><span>Full name</span><input name="name" data-acc-field="name" type="text" autocomplete="name" enterkeyhint="next" value="${esc(name)}"></label>
-    <label class="field"><span>Date of birth</span><input name="dob" data-acc-field="dob" type="date" autocomplete="bday" max="${isoDaysAgo(0)}" value="${v("dob")}"><small class="muted small">You must be 18 or older. We use your birthday to send you a birthday treat, if you want one.</small></label>
+    <label class="field"><span>Date of birth</span><input name="dob" data-acc-field="dob" type="date" autocomplete="bday" max="${isoDaysAgo(0)}" value="${v("dob")}"><small class="muted small">You must be 18 or older to have an account.</small></label>
     <label class="field"><span>Phone number <span class="pill grey">Not yet verified</span></span><input name="phone" data-acc-field="phone" type="tel" autocomplete="tel" inputmode="tel" enterkeyhint="next" placeholder="Optional, e.g. +1 555 010 0123" value="${v("phone")}"><small class="muted small">Optional. Lets friends who have your number find you for splits.</small></label>
     <label class="field"><span>City</span><input name="city" data-acc-field="city" type="text" autocomplete="address-level2" enterkeyhint="done" placeholder="Optional" value="${v("city")}"></label>
-    <div class="field"><span>Location for birthday deals</span>
+    <div class="field"><span>Location for local offers</span>
       ${loc ? `<p class="small">Approximate location saved (to about 1 km).</p><div class="inline"><button class="btn small" type="button" data-acc-loc>Update</button><button class="btn small danger" type="button" data-acc-loc-clear>Remove</button></div>`
-            : `<p class="muted small">Optional. Lets us find a deal near you on your birthday. Without it, you’ll get offers from well known brands instead.</p><button class="btn small" type="button" data-acc-loc style="align-self:flex-start">Use my approximate location</button>`}
+            : `<p class="muted small">Optional. If you choose to get offers, we may use this to show deals available near you. We save only an approximate area, never your exact location.</p><button class="btn small" type="button" data-acc-loc style="align-self:flex-start">Use my approximate location</button>`}
     </div>
-    <label class="check"><input type="checkbox" name="marketing" data-acc-field="marketing" ${mk ? "checked" : ""}><span>Email me offers, birthday treats and news from Keepwise. You can unsubscribe at any time.</span></label>
+    <label class="check"><input type="checkbox" name="marketing" data-acc-field="marketing" ${mk ? "checked" : ""}><span>Email me offers, birthday deals and news from Keepwise. You can unsubscribe at any time.</span></label>
     ${first ? `<label class="check"><input type="checkbox" name="consent" data-acc-field="consent" ${d.consent ? "checked" : ""}><span>I’m 18 or older and I agree to the ${legalLinks}.</span></label>` : ""}`;
 }
 function accFinish(){
@@ -149,8 +149,13 @@ function accProfile(){
   </section>
   <section class="card"><h2>Profile</h2>
     <form data-form="acc-profile" class="acc-form" novalidate>${accFields(false)}${accErrBox()}<button class="btn primary" type="submit" ${ACC.busy ? "disabled" : ""}>Save changes</button></form></section>
+  <section class="card plus-card"><div class="inline" style="justify-content:space-between"><h2>Keepwise Plus</h2><span class="pill gold">Coming soon</span></div>
+    <p class="small">Back up your budget with end-to-end encryption and use it on all your devices. Only you can read your data.</p>
+    ${ACC.profile && ACC.profile.plusInterest ? `<p class="small"><span class="pill ok">You’re on the waitlist</span> We’ll email you when Keepwise Plus launches.</p><button class="link small" type="button" data-acc-plus-off style="align-self:flex-start">Leave the waitlist</button>`
+      : `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`}
+  </section>
   <section class="card"><h2>Account</h2>
-    <p class="muted small">Your budget and statements are not part of your account. They stay on this phone.</p>
+    <p class="muted small">Your budget and statements stay on this phone. They are not part of your account.</p>
     <button class="btn" type="button" data-acc-signout>Sign out</button>
     ${ACC.del ? `<div class="note"><p><b>Delete your account?</b> Your profile is erased for good. What’s saved on this phone stays until you clear it on the Plan tab.</p><div class="inline" style="margin-top:10px"><button class="btn danger" type="button" data-acc-delete-yes>Delete my account</button><button class="btn" type="button" data-acc-delete-no>Keep it</button></div></div>`
              : `<button class="btn danger" type="button" data-acc-delete>Delete account</button>`}
@@ -206,6 +211,12 @@ $("view").addEventListener("click", async e => {
     if (ACC.user.emailVerified){ try { await accDoc().set({emailVerified: true, updatedAt: Date.now()}, {merge: true}); ACC.profile.emailVerified = true; } catch(err){} toast("Email verified. Thank you."); }
     else toast("Not verified yet. Open the link in the email, then try again.");
     render(true); return;
+  }
+  if (has("data-acc-plus") || has("data-acc-plus-off")){
+    const on = has("data-acc-plus"), data = {plusInterest: on, plusInterestAt: Date.now(), updatedAt: Date.now()};
+    try { await accDoc().set(data, {merge: true}); Object.assign(ACC.profile, data); render(true); toast(on ? "You’re on the Keepwise Plus waitlist." : "You’ve left the Plus waitlist."); }
+    catch(err){ toast("Couldn’t save that. Check your connection and try again."); }
+    return;
   }
   if (has("data-acc-photo")){ photoIn.click(); return; }
   if (has("data-acc-photo-clear")){ ACC.draft.photo = ""; render(true); return; }

@@ -776,6 +776,11 @@ async def account_google_signout_and_delete(ctx):
     await pg.fill(f + " [name=dob]", "1990-07-04"); await pg.check(f + " [name=consent]")
     await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(400)
     assert (await fs_docs(pg))["users/g1"]["provider"] == "google.com"
+    await pg.click("[data-acc-plus]"); await pg.wait_for_timeout(300)
+    d = (await fs_docs(pg))["users/g1"]; assert d["plusInterest"] is True and d["plusInterestAt"]
+    assert "on the waitlist" in await text(pg, "#view")
+    await pg.click("[data-acc-plus-off]"); await pg.wait_for_timeout(300)
+    assert (await fs_docs(pg))["users/g1"]["plusInterest"] is False and await pg.locator("[data-acc-plus]").count() == 1
     await pg.click("[data-acc-signout]"); await pg.wait_for_timeout(300)
     assert "Continue with Google" in await text(pg, "#view")
     await pg.click("[data-acc-google]"); await pg.wait_for_timeout(400)
@@ -804,6 +809,14 @@ async def account_screens_fit_small_phones(ctx):
         await pg.screenshot(path=os.path.join(os.environ.get("SHOT_DIR", TMP), f"account-{scheme}.png"), full_page=False)
         await pg.click("[data-acc-delete]"); await pg.click("[data-acc-delete-yes]"); await pg.wait_for_timeout(300)
         await pg.close()
+
+@test
+async def logo_goes_back_to_month(ctx):
+    pg = await open_app(ctx)
+    await tab(pg, "codes"); await pg.click("#acct-btn"); await pg.wait_for_timeout(200)
+    await pg.click("#home-link"); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-tab=month][aria-current=page]").count() == 1 and await pg.locator("#m-income").count() == 1
+    assert (await state(pg))["tab"] == "month"
 
 # ---------------- persistence ----------------
 @test

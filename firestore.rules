@@ -5,7 +5,7 @@ service cloud.firestore {
     match /users/{uid} {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['name','dob','phone','phoneVerified','city','marketing','marketingUpdatedAt','email','emailVerified','updatedAt','createdAt','termsAcceptedAt','termsVersion','provider','photo','location'])
+        && request.resource.data.keys().hasOnly(['name','dob','phone','phoneVerified','city','marketing','marketingUpdatedAt','email','emailVerified','updatedAt','createdAt','termsAcceptedAt','termsVersion','provider','photo','location','plusInterest','plusInterestAt'])
         && request.resource.data.name is string && request.resource.data.name.size() <= 120
         && (!('photo' in request.resource.data) || request.resource.data.photo == null || request.resource.data.photo.size() < 200000);
     }
