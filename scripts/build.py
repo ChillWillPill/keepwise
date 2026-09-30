@@ -65,4 +65,6 @@ import shutil
 for f in ("privacy.html", "terms.html", "legal.css"):
     shutil.copy(os.path.join(ROOT, "src/legal", f), os.path.join(ROOT, "www", f))
 shutil.copy(os.path.join(ROOT, "src/admin/admin.html"), os.path.join(ROOT, "www/admin.html"))
+os.makedirs(os.path.join(ROOT, "www/admin"), exist_ok=True)
+shutil.copy(os.path.join(ROOT, "src/admin/redirect.html"), os.path.join(ROOT, "www/admin/index.html"))
 print("built www/ (version", version + ")")
