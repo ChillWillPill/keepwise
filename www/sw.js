@@ -1,5 +1,5 @@
-// KeepWise service worker, build 5b826cfb1b
-const CACHE = "keepwise-5b826cfb1b";
+// KeepWise service worker, build 13fcd90c41
+const CACHE = "keepwise-13fcd90c41";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -7,10 +7,16 @@ self.addEventListener("fetch", e => {
   const req = e.request; if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (req.mode === "navigate") {  // newest app when online, cached copy offline
-    e.respondWith(fetch(req).then(r => { caches.open(CACHE).then(c => c.put("index.html", r.clone())); return r; }).catch(() => caches.match("index.html")));
+    // Only the app page itself is saved as the offline copy, and only a good response: never an error page or another page.
+    const isApp = /\/(index\.html)?$/.test(url.pathname);
+    e.respondWith(fetch(req).then(r => {
+      if (isApp && r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put("index.html", copy)); return r; }
+      if (isApp && r.status >= 500) return caches.match("index.html").then(hit => hit || r);  // host hiccup: show the saved app
+      return r;
+    }).catch(() => isApp ? caches.match("index.html") : caches.match(req).then(hit => hit || caches.match("index.html"))));
     return;
   }
   if (url.origin === location.origin || url.host.endsWith("gstatic.com") || url.host.endsWith("googleapis.com")) {
-    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r; })));
+    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => { if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); } return r; })));
   }
 });

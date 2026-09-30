@@ -1009,6 +1009,50 @@ async def empty_start_says_true_things(ctx):
     assert "First add something you pay for" in await text(pg, "#view") and await pg.locator("form[data-form=addSwap]").count() == 0
     await tab(pg, "split"); assert "Just you" in await text(pg, "#view")
 
+
+@test
+async def offline_copy_is_always_the_app(ctx):
+    """The service worker must only save the app itself as the offline copy (never Privacy, Terms or an error page)."""
+    if not APP.endswith(os.path.join("www", "index.html")): return  # needs the built site with sw.js
+    import http.server, threading, functools, socket
+    root = os.path.dirname(APP)
+    sock = socket.socket(); sock.bind(("127.0.0.1", 0)); port = sock.getsockname()[1]; sock.close()
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a): pass
+    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", port), functools.partial(Quiet, directory=root))
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    try:
+        b = ctx.browser; c2 = await b.new_context(service_workers="allow"); pg = await c2.new_page()
+        await pg.add_init_script("window.KEEPWISE_FIREBASE = null;")
+        base = f"http://127.0.0.1:{port}/"
+        await pg.goto(base)  # the app registers the worker on https only; localhost is also a secure context
+        await pg.evaluate("navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready)")
+        await pg.reload(); await pg.wait_for_function("navigator.serviceWorker.controller !== null", timeout=15000)
+        await pg.goto(base + "privacy.html"); await pg.wait_for_timeout(500)
+        await pg.goto(base + "nope-404.html"); await pg.wait_for_timeout(500)
+        saved = await pg.evaluate("caches.keys().then(ks => caches.open(ks[0])).then(c => c.match('index.html')).then(r => r ? r.text() : '')")
+        assert 'id="tabbar"' in saved, "the offline copy is the app, not a page visited earlier: " + saved[:120]
+        await c2.close()
+    finally:
+        try: httpd.shutdown(); httpd.server_close()
+        except Exception: pass
+
+
+@test
+async def edit_cancel_keeps_the_card_in_view(ctx):
+    pg = await open_app(ctx, w=390, h=700); await tab(pg, "split")
+    card = pg.locator("[data-split]").nth(3); sid = await card.get_attribute("data-split")
+    await card.scroll_into_view_if_needed(); await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(300)
+    await pg.locator("form[data-form=split]").evaluate("f => f.scrollIntoView({block:'end'})"); await pg.wait_for_timeout(150)
+    await pg.click("[data-cancel-split]"); await pg.wait_for_timeout(250)
+    r = await pg.evaluate(f"(()=>{{const c=document.querySelector('[data-split=\"{sid}\"]').getBoundingClientRect(),m=document.getElementById('main').getBoundingClientRect();return [c.top,c.bottom,m.top,m.bottom]}})()")
+    assert r[0] >= r[2] - 1 and r[1] <= r[3] + 1, f"card is visible after Cancel: {r}"
+    await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(300)
+    await pg.locator("form[data-form=split]").evaluate("f => f.scrollIntoView({block:'end'})"); await pg.wait_for_timeout(150)
+    await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(250)
+    r = await pg.evaluate(f"(()=>{{const c=document.querySelector('[data-split=\"{sid}\"]').getBoundingClientRect(),m=document.getElementById('main').getBoundingClientRect();return [c.top,c.bottom,m.top,m.bottom]}})()")
+    assert r[0] >= r[2] - 1 and r[1] <= r[3] + 1, f"card is visible after Save: {r}"
+
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")
 SEED = {
