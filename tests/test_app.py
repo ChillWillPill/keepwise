@@ -422,7 +422,9 @@ async def split_new_equal_percent_exact_borrow(ctx):
         if method == "borrow":
             if borrower: await pg.select_option("[data-d=borrower]", borrower)
         else:
-            for p in parts: await pg.check(f"[data-part={p}]"); await pg.wait_for_timeout(40)
+            for p in parts:
+                await pg.click("[data-part-search]"); await pg.wait_for_timeout(60)
+                await pg.click(f"[data-part-add={p}]"); await pg.wait_for_timeout(60)
             for p, v in (vals or {}).items(): await pg.fill(f"[data-part-val={p}]", v)
         await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(120)
     # validation
@@ -499,7 +501,8 @@ async def split_people_add_remove_import(ctx):
     assert await pg.locator("[data-person]", has_text="Priya").count() == 0
     assert "Priya owes you $12" in await text(pg, "[data-split]:has-text('Team lunch')")
     await pg.click("[data-new-split]"); await pg.wait_for_timeout(80)
-    assert await pg.locator("[data-part=p6]").count() == 0, "removed person not offered in new splits"
+    await pg.fill("[data-part-search]", "pri"); await pg.wait_for_timeout(80)
+    assert await pg.locator("[data-part-add=p6]").count() == 0, "removed person not offered in new splits"
     await pg.click("[data-cancel-split]")
     await pg.click("[data-add-person-open]"); await pg.fill("#new-person", "priya"); await pg.click("form[data-form=addPerson] button[type=submit]"); await pg.wait_for_timeout(100)
     assert await pg.locator("[data-person]", has_text="Priya").count() == 1, "adding the name again brings them back"
@@ -556,7 +559,9 @@ async def shared_my_writes_go_to_db(ctx):
     await pg.evaluate("__mock.db.doc('members/u_sam').set({joinedAt:1});")
     await tab(pg, "split"); await pg.click("[data-mode=shared]"); await pg.wait_for_timeout(250)
     await pg.click("[data-new-split]"); await pg.fill("[data-d=title]", "Cab"); await pg.fill("[data-d=amount]", "20")
-    await pg.check("[data-part=u_sam]"); await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(250)
+    await pg.click("[data-part-search]"); await pg.click("[data-part-add=u_sam]"); await pg.wait_for_timeout(80)
+    assert await pg.locator("[data-part-new]").count() == 0
+    await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(250)
     splits = await pg.evaluate("[...__mock.store.entries()].filter(([k])=>k.startsWith('splits/')).map(([k,v])=>v)")
     assert len(splits) == 1 and splits[0]["createdBy"] == "u_me" and splits[0]["parts"] == {"u_me": 1, "u_sam": 1}, splits
     assert "Sam owes you $10" in await text(pg, "[data-out=splitSum]")
@@ -865,6 +870,31 @@ async def moments_is_a_plus_preview(ctx):
     assert sw[0] <= sw[1]
     await pg.click("[data-moments-close]"); await pg.wait_for_timeout(150)
     assert await pg.locator("[data-new-split]").count() == 1
+
+@test
+async def split_people_picker_search(ctx):
+    pg = await open_app(ctx); await tab(pg, "split")
+    if await pg.locator("[data-mode=local]").count(): await pg.click("[data-mode=local]"); await pg.wait_for_timeout(120)
+    await pg.click("[data-new-split]"); await pg.wait_for_timeout(100)
+    assert await pg.locator(".part-row").count() == 1 and await pg.locator("[data-part-add]").count() == 0, "only You is shown; no long list"
+    await pg.fill("[data-d=title]", "Brunch")
+    await pg.fill("[data-part-search]", "jor"); await pg.wait_for_timeout(100)
+    opts = await pg.locator("[data-part-add]").all_inner_texts()
+    assert len(opts) == 1 and "Jordan" in opts[0]
+    assert await pg.evaluate("document.activeElement.hasAttribute('data-part-search')"), "typing keeps focus"
+    await pg.keyboard.press("Enter"); await pg.wait_for_timeout(120)
+    assert "Jordan" in await text(pg, ".part-list")
+    await pg.fill("[data-part-search]", "Zara Q"); await pg.wait_for_timeout(100)
+    assert "Add “Zara Q” as a new person" in await text(pg, "[data-out=partResults]")
+    await pg.click("[data-part-new]"); await pg.wait_for_timeout(150)
+    assert "Zara Q" in await text(pg, ".part-list") and any(p["name"] == "Zara Q" for p in (await state(pg))["people"])
+    await pg.locator(".part-row", has_text="Jordan").locator("[data-part-remove]").click(); await pg.wait_for_timeout(100)
+    assert "Jordan" not in await text(pg, ".part-list")
+    assert await pg.input_value("[data-d=title]") == "Brunch", "typed split kept"
+    await pg.click("[data-part-search]"); await pg.wait_for_timeout(80)
+    assert await pg.locator("[data-part-add]").count() >= 5, "tapping search shows people to pick"
+    await pg.click("form[data-form=split] h2"); await pg.wait_for_timeout(100)
+    assert await pg.locator("[data-part-add]").count() == 0, "tapping elsewhere closes the list"
 
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")

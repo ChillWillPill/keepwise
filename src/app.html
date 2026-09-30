@@ -207,6 +207,21 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .check{display:flex;gap:12px;align-items:flex-start;font-size:.93rem;line-height:1.45;cursor:pointer}
 .check input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--green)}
 .acc-legal{text-align:center}
+.part-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
+.part-list > p{padding:12px 14px}
+.part-row{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 12px;border-top:1px solid var(--line);min-height:52px}
+.part-row:first-child{border-top:0}
+.part-row .part-name{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.part-row input{width:96px;flex:none;padding:8px 10px}
+.part-av{width:32px;height:32px;font-size:.78rem}
+.part-x{appearance:none;border:0;background:none;color:var(--muted);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;cursor:pointer;flex:none}
+.part-x:hover{background:var(--chip);color:var(--rust)}
+.part-search{position:relative;margin-top:8px}
+.part-results{margin-top:6px;border:1px solid var(--line);border-radius:14px;background:var(--card);max-height:260px;overflow:auto;box-shadow:var(--lift)}
+.part-opt{appearance:none;display:flex;align-items:center;gap:10px;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:600 .95rem var(--body);padding:10px 12px;cursor:pointer;text-align:left}
+.part-opt:first-child{border-top:0}
+.part-opt:hover,.part-opt:focus-visible{background:var(--chip)}
+.part-new{color:var(--green)}
 .moments-teaser{border-color:color-mix(in srgb,var(--gold) 35%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--gold-soft) 70%,var(--card)),var(--card) 60%)}
 .moment-chips{display:flex;flex-wrap:wrap;gap:6px}
 .moment-chips span{font-size:.78rem;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px 10px}
@@ -519,6 +534,7 @@ const I = {
 I.plus = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-3px;margin-right:4px"><path d="M12 5v14M5 12h14"/></svg>';
 I.contacts = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="vertical-align:-3px;margin-right:4px"><rect x="4" y="3" width="16" height="18" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M7.5 17a4.5 4.5 0 0 1 9 0"/></svg>';
 I.camera = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg>';
+I.x = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 I.chev = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>';
 const tagIcon = t => ({Dinner:I.food, Lunch:I.food, Family:I.bag, Borrow:I.cash, Movie:I.film, Work:I.work})[t] || I.receipt;
 const TABS = [["month","Month"],["subs","Subs"],["cheaper","Cheaper"],["codes","Codes"],["plan","Plan"],["split","Split"]];
@@ -1296,14 +1312,35 @@ function receiptBlock(){
     <div class="inline">${joined ? `<span class="pill ok">You’re on the waitlist</span>` : signedIn ? `<button class="btn small" type="button" data-acc-plus>Join the Plus waitlist</button>` : `<button class="btn small" type="button" data-open-account>Sign in to join the waitlist</button>`}
     <button class="link small" type="button" data-receipt-close>Not now</button></div></div>`;
 }
+// People picker for splits: search to add, instead of a long checkbox list.
+function partMatches(){
+  const c = CTX(), d = splitDraft; if (!d) return [];
+  const q = String(UI.partQ || "").trim().toLowerCase(), qd = q.replace(/\D/g, "");
+  return c.people.filter(p => !p.archived && d.parts[p.id] === undefined)
+    .filter(p => !q || String(p.name || "").toLowerCase().includes(q) || String(p.email || "").toLowerCase().includes(q) || (qd.length >= 3 && String(p.phone || "").replace(/\D/g, "").includes(qd)));
+}
+OUT.partResults = () => {
+  if (!splitDraft || !UI.partOpen) return "";
+  const c = CTX(), list = partMatches(), q = String(UI.partQ || "").trim();
+  const exact = q && c.people.some(p => String(p.name || "").toLowerCase() === q.toLowerCase());
+  const rows = list.slice(0, 30).map(p => `<button type="button" class="part-opt" data-part-add="${esc(p.id)}"><span class="avatar part-av" style="--h:${avatarHue(p.name)}" aria-hidden="true">${esc(initials(p.name))}</span><span>${esc(p.name)}</span></button>`).join("");
+  const addNew = q && !exact && c.kind !== "shared" ? `<button type="button" class="part-opt part-new" data-part-new>${I.plus}Add “${esc(q)}” as a new person</button>` : "";
+  const empty = !rows && !addNew ? `<p class="muted small" style="padding:10px 12px">${q ? "No one matches that." : "Everyone is already in this split."}</p>` : "";
+  return `<div class="part-results" role="listbox" aria-label="People">${rows}${addNew}${empty}</div>`;
+};
+function addPart(id){ splitDraft.parts[id] = splitDraft.method === "equal" ? 1 : ""; UI.partQ = ""; UI.partOpen = false; splitErr = ""; render(true); }
 function splitForm(){
   const c = CTX(), d = splitDraft, inSplit = id => id === d.paidBy || id === d.borrower || d.parts[id] !== undefined;
   const others = c.people.filter(p => !p.archived || inSplit(p.id));
   const partRows = d.method === "borrow" ? `
     <label class="field"><span>${d.paidBy === c.me ? "Who borrowed from you" : "Who owes it"}</span><select data-d="borrower">${others.filter(p => p.id !== d.paidBy).map(p => `<option value="${esc(p.id)}" ${d.borrower===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>`
-    : `<fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px"><legend class="field" style="font-weight:600;margin-bottom:6px">Split between</legend>
-    ${others.map(p => { const on = d.parts[p.id] !== undefined; return `<div class="inline" style="justify-content:space-between"><label class="inline"><input type="checkbox" data-part="${esc(p.id)}" ${on ? "checked" : ""} style="width:20px;height:20px"> ${esc(p.name)}</label>
-      ${on && d.method !== "equal" ? `<input data-part-val="${esc(p.id)}" type="text" inputmode="decimal" enterkeyhint="done" value="${d.parts[p.id] ?? ""}" placeholder="${d.method === "percent" ? "%" : sym()}" style="width:110px" aria-label="${esc(p.name)} share">` : on && d.amount ? `<span class="muted small tnum">${fmt((+d.amount||0) / Object.keys(d.parts).length)}</span>` : ""}</div>`; }).join("")}</fieldset>`;
+    : `<div class="field"><span>Split between</span>
+    <div class="part-list">${others.filter(p => d.parts[p.id] !== undefined).map(p => `<div class="part-row">
+      <span class="avatar part-av" style="--h:${avatarHue(p.name)}" aria-hidden="true">${esc(initials(p.id === c.me ? "You" : p.name))}</span><span class="part-name">${esc(p.name)}</span>
+      ${d.method !== "equal" ? `<input data-part-val="${esc(p.id)}" type="text" inputmode="decimal" enterkeyhint="done" value="${d.parts[p.id] ?? ""}" placeholder="${d.method === "percent" ? "%" : sym()}" aria-label="${esc(p.name)} share">` : d.amount ? `<span class="muted small tnum">${fmt((+d.amount||0) / Object.keys(d.parts).length)}</span>` : ""}
+      <button class="part-x" type="button" data-part-remove="${esc(p.id)}" aria-label="Remove ${esc(p.name)} from this split">${I.x}</button></div>`).join("") || `<p class="muted small">No one yet. Search below to add people.</p>`}</div>
+    <div class="part-search"><input data-part-search type="search" autocomplete="off" enterkeyhint="search" placeholder="Add people by name, phone or email" aria-label="Add people to this split" value="${esc(UI.partQ || "")}">
+    <div data-out="partResults">${OUT.partResults()}</div></div></div>`;
   return `<form class="card" data-form="split"><h2>${d.editId ? "Edit split" : "New split"}</h2>
     ${c.kind === "shared" ? `<p class="muted small">Everyone in the split gets a notification.</p>` : ""}
     <div class="grid2"><label class="field"><span>What for</span><input data-d="title" value="${esc(d.title)}" placeholder="e.g. Pizza night" enterkeyhint="next"></label>
@@ -1738,6 +1775,7 @@ $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = f
 
 view.addEventListener("input", e => {
   const t = e.target;
+  if (t.hasAttribute && t.hasAttribute("data-part-search")){ UI.partQ = t.value; UI.partOpen = true; refreshOuts(); return; }
   const lineBox = t.closest("[data-add-line]");
   if (lineBox){ const d = LINE_DRAFT[lineBox.dataset.addLine] = LINE_DRAFT[lineBox.dataset.addLine] || {}; if (t.hasAttribute("data-new-name")) d.n = t.value; if (t.hasAttribute("data-new-amt")) d.a = t.value; return; }
   if (t.dataset.bind){
@@ -1771,6 +1809,13 @@ view.addEventListener("change", e => {
   if (t.dataset.expEnv !== undefined || t.hasAttribute("data-exp-env") || t.dataset.alt || t.hasAttribute("data-exp-amt")) { refreshOuts(); }
 });
 
+view.addEventListener("focusin", e => { if (e.target.hasAttribute && e.target.hasAttribute("data-part-search") && !UI.partOpen){ UI.partOpen = true; refreshOuts(); } });
+document.addEventListener("pointerdown", e => { if (UI.partOpen && !(e.target.closest && e.target.closest(".part-search"))){ UI.partOpen = false; const r = document.querySelector('[data-out="partResults"]'); if (r) r.innerHTML = ""; } }, true);
+view.addEventListener("keydown", e => {
+  if (!e.target.hasAttribute || !e.target.hasAttribute("data-part-search")) return;
+  if (e.key === "Escape"){ UI.partOpen = false; refreshOuts(); return; }
+  if (e.key === "Enter"){ e.preventDefault(); const m = partMatches(); if (m.length === 1) addPart(m[0].id); else if (!m.length && document.querySelector("[data-part-new]")) document.querySelector("[data-part-new]").click(); }
+});
 view.addEventListener("keydown", e => {  // Enter in "Add a line" adds it, like tapping Add
   if (e.key !== "Enter") return; const box = e.target.closest && e.target.closest("[data-add-line]"); if (!box) return;
   e.preventDefault();
@@ -1832,7 +1877,11 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-go-split")){ UI.inbox = false; S.tab = "split"; S.splitMode = "shared"; save(); render(false); return; }
   if (b.dataset.mode){ S.splitMode = b.dataset.mode; splitDraft = null; UI.editPay = null; save(); render(true); if (S.splitMode === "shared") joinCircle(); return; }
   if (b.hasAttribute("data-new-split")){ const me = CTX().me; splitDraft = {title:"", amount:"", paidBy:me, tag: S.filter !== "All" ? S.filter : S.tags[0], method:"equal", parts:{[me]:1}, borrower:""}; splitErr = ""; render(true); return; }
-  if (b.hasAttribute("data-cancel-split")){ splitDraft = null; splitErr = ""; UI.receiptInfo = false; render(true); return; }
+  if (b.hasAttribute("data-cancel-split")){ splitDraft = null; splitErr = ""; UI.receiptInfo = false; UI.partQ = ""; UI.partOpen = false; render(true); return; }
+  if (b.dataset.partAdd){ addPart(b.dataset.partAdd); return; }
+  if (b.dataset.partRemove){ delete splitDraft.parts[b.dataset.partRemove]; splitErr = ""; render(true); return; }
+  if (b.hasAttribute("data-part-new")){ const n = String(UI.partQ || "").trim(); if (!n) return; const old = S.people.find(p => p.name.toLowerCase() === n.toLowerCase());
+    const person = old || {id: uid(), name: n}; if (old) old.archived = false; else S.people.push(person); save(); toast(`Added ${n}.`); addPart(person.id); return; }
   if (b.hasAttribute("data-moments")){ UI.moments = true; render(false); return; }
   if (b.hasAttribute("data-moments-close")){ UI.moments = false; render(false); return; }
   if (b.dataset.space){ UI.biz = b.dataset.space === "business"; render(false); return; }

@@ -1,5 +1,5 @@
-// KeepWise service worker, build 69e88e2bf0
-const CACHE = "keepwise-69e88e2bf0";
+// KeepWise service worker, build 785cd78431
+const CACHE = "keepwise-785cd78431";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
