@@ -1002,7 +1002,7 @@ async def empty_start_says_true_things(ctx):
     await pg.click("[data-reset=blank]"); await pg.click("[data-reset-yes]"); await pg.wait_for_timeout(200)
     await tab(pg, "month"); v = await text(pg, "#view")
     assert "Sample month" not in v and "Start with the money coming in" in v
-    assert "Every subscription was opened" not in v and "No subscriptions yet" in v
+    assert "Every subscription was used" not in v and "No subscriptions yet" in v
     assert "already using every swap" not in v and "shortfall" not in v
     await tab(pg, "codes"); assert "No codes yet." in await text(pg, "[data-out=codeList]") and "“”" not in await text(pg, "#view")
     await tab(pg, "cheaper"); await pg.click("text=Add your own comparison")
@@ -1052,6 +1052,23 @@ async def edit_cancel_keeps_the_card_in_view(ctx):
     await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(250)
     r = await pg.evaluate(f"(()=>{{const c=document.querySelector('[data-split=\"{sid}\"]').getBoundingClientRect(),m=document.getElementById('main').getBoundingClientRect();return [c.top,c.bottom,m.top,m.bottom]}})()")
     assert r[0] >= r[2] - 1 and r[1] <= r[3] + 1, f"card is visible after Save: {r}"
+
+
+@test
+async def used_today_shows_it_is_done(ctx):
+    pg = await open_app(ctx); await tab(pg, "subs")
+    row = pg.locator("[data-sub=s7]")   # iCloud+, used today in the example
+    btn = row.locator("[data-used]")
+    assert await btn.is_disabled() and "Used today" in await btn.inner_text(), "already used today: shows as done"
+    assert "Last used today" in await row.inner_text()
+    hulu = pg.locator("[data-sub=s4]")
+    assert "Unused for" in await hulu.inner_text()
+    await hulu.locator("[data-used]").click(); await pg.wait_for_timeout(150)
+    hulu = pg.locator("[data-sub=s4]")
+    t = await hulu.inner_text()
+    assert "Unused for" not in t and "Last used today" in t and await hulu.locator("[data-used]").is_disabled()
+    assert "no longer flagged" in await pg.inner_text("#toast")
+    assert "flash" in (await hulu.get_attribute("class"))
 
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")

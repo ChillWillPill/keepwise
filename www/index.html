@@ -165,6 +165,11 @@ a.btn{display:block;text-decoration:none}
 .toast-undo{pointer-events:auto;appearance:none;border:0;background:none;color:inherit;font:700 .92rem var(--body);text-decoration:underline;text-underline-offset:3px;margin-left:12px;padding:6px 4px;cursor:pointer}
 .toast{pointer-events:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:.92rem;z-index:30;max-width:calc(100% - 32px);text-align:center}
 details.card:not([open]){gap:0}
+.btn.small.done{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,var(--line));background:var(--green-soft);opacity:1;cursor:default;display:inline-flex;align-items:center;gap:4px}
+.btn.small.done svg{width:14px;height:14px}
+@keyframes kw-flash{from{background:var(--green-soft)}to{background:transparent}}
+.flash{animation:kw-flash 1.4s ease-out}
+@media (prefers-reduced-motion: reduce){.flash{animation:none}}
 details summary{cursor:pointer;font-weight:600;color:var(--green);list-style:none}
 details summary::-webkit-details-marker{display:none}
 .cmp-wrap{display:flex;flex-direction:column;gap:8px}
@@ -567,6 +572,7 @@ const I = {
 I.plus = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-3px;margin-right:4px"><path d="M12 5v14M5 12h14"/></svg>';
 I.contacts = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="vertical-align:-3px;margin-right:4px"><rect x="4" y="3" width="16" height="18" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M7.5 17a4.5 4.5 0 0 1 9 0"/></svg>';
 I.camera = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg>';
+I.check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 I.x = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 I.chev = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>';
 I.travel = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4 3 11l7 2.5L12.5 21z"/><path d="M10 13.5 21 4"/></svg>';
@@ -984,7 +990,7 @@ OUT.dropCard = () => {
   const toggle = `<div class="linkrow"><button class="link plain" data-compare type="button" aria-expanded="${UI.compare}">${UI.compare ? "Hide the comparison" : "Compare the close"}</button></div>`;
   if (!C.flagged.length){
     const swapSave = C.inactiveSwaps.reduce((a, x) => a + x.save, 0);
-    return `<section class="card"><p class="label">Your rules</p><p>${C.liveSubs.length ? `Nothing is flagged right now. Every subscription was opened in the last ${S.ruleDays} days and none overlap.` : "No subscriptions yet. Add them on the Subs tab or import a bank statement, and your rules will flag the ones you do not use."}</p>
+    return `<section class="card"><p class="label">Your rules</p><p>${C.liveSubs.length ? `Nothing is flagged right now. Every subscription was used in the last ${S.ruleDays} days and none overlap.` : "No subscriptions yet. Add them on the Subs tab or import a bank statement, and your rules will flag the ones you do not use."}</p>
       ${toggle}${UI.compare ? compareChart(now, now + swapSave, "With swaps") + `<button class="link" data-go="cheaper" type="button">See the swaps</button>` : ""}</section>`;
   }
   return `<section class="card"><p class="muted">If you drop what your rules flag, ${esc(C.planMonth)} ends with</p>
@@ -1037,7 +1043,7 @@ OUT.howto = () => {
   const list = names.length > 4 ? names.slice(0,4).join(", ") + ` and ${names.length-4} more` : names.join(", ");
   return `<ol class="steps">
     <li><div><h3>Where ${C.planMonth} ends</h3><p class="muted">Money coming in is ${fmt(C.income)}. Needs take ${fmt(C.needs)} and misc ${fmt(C.misc)}, so ${fmt(C.savings)} is left.${C.savings > 0 ? (S.priority === "ef" ? ` It goes to your emergency fund first: ${fmt(S.efSaved)} of ${fmt(C.efTarget)} so far.` : S.priority === "goal" ? ` It goes to ${esc(S.goalName || "your goal")} first.` : " Half goes to your emergency fund, half to your goal.") : ""}${C.misc < C.envMisc && C.savings > 0 ? ` Miscellaneous still has ${fmt(C.envMisc - C.misc)} of room if you choose to use it. That comes out of savings.` : ""}</p></div></li>
-    <li><div><h3>Drop what you don’t use</h3><p class="muted">${names.length ? `${esc(list)}. Rule: unused after ${S.ruleDays} days, or a duplicate of something you opened more recently. Dropping them keeps ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year. After the drop, savings can finish at ${fmt(C.endSaved + C.flaggedSave)}.` : (C.liveSubs.length ? `Nothing flagged. The rule is unused after ${S.ruleDays} days, or a duplicate of something you opened more recently.` : "No subscriptions yet. Once you add some, anything unused goes here.")}</p></div></li>
+    <li><div><h3>Drop what you don’t use</h3><p class="muted">${names.length ? `${esc(list)}. Rule: unused after ${S.ruleDays} days, or a duplicate of something you used more recently. Dropping them keeps ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year. After the drop, savings can finish at ${fmt(C.endSaved + C.flaggedSave)}.` : (C.liveSubs.length ? `Nothing flagged. The rule is unused after ${S.ruleDays} days, or a duplicate of something you used more recently.` : "No subscriptions yet. Once you add some, anything unused goes here.")}</p></div></li>
     <li><div><h3>The cheapest real swap</h3><p class="muted">${best ? `${esc(best.w.title)} → ${esc(best.w.alt)} keeps about ${fmt(best.save)} a month.` : (S.swaps.length ? "You’re already using every swap on the Cheaper tab." : "No swaps yet. Add a cheaper option for something you pay for on the Cheaper tab.")}</p></div></li>
     <li><div><h3>On payday</h3><p class="muted">${C.savings > 0 ? `Move ${fmt(C.savings)} to savings on payday and do not borrow it back.${S.priority !== "goal" && C.efGap > 0 ? ` Target: ${S.efMonths} months of needs (${fmt(C.efTarget)})${C.efMonthsLeft ? `, reached in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}` : ""}.` : ""} You have ${fmt(S.efSaved)} now; this month lands at ${fmt(C.endSaved)}.` : (C.savings < 0 ? "Fix the shortfall first: nothing is left to move this month." : "Nothing is left over yet. Add the money coming in and your costs, and this shows what to move.")}</p></div></li>
   </ol>`;
@@ -1071,7 +1077,7 @@ function answer(q){
     return b.map(x => x.net > 0 ? `${x.p.name} owes you ${fmt(x.net)}` : `You owe ${x.p.name} ${fmt(-x.net)}`).join("\n");
   }
   if (/cancel|drop|unused|subscri/.test(t)){
-    return C.flagged.length ? `Your rules flag ${C.flagged.length}:\n${C.flagged.map(s => `${s.name}, ${fmt(subMonthly(s))}/mo (${C.flags[s.id].join("; ")})`).join("\n")}\nTogether: ${fmt(C.flaggedSave)} a month.` : C.liveSubs.length ? `Nothing is flagged. Every subscription was opened in the last ${S.ruleDays} days.` : "You have no subscriptions on your list yet.";
+    return C.flagged.length ? `Your rules flag ${C.flagged.length}:\n${C.flagged.map(s => `${s.name}, ${fmt(subMonthly(s))}/mo (${C.flags[s.id].join("; ")})`).join("\n")}\nTogether: ${fmt(C.flaggedSave)} a month.` : C.liveSubs.length ? `Nothing is flagged. Every subscription was used in the last ${S.ruleDays} days.` : "You have no subscriptions on your list yet.";
   }
   if (/emergency|fund|cushion/.test(t)){
     if (C.efGap <= 0) return `Your emergency fund is full: ${fmt(S.efSaved)} covers ${S.efMonths} months of needs.`;
@@ -1101,7 +1107,7 @@ V.subs = () => `
       <label class="field"><span>Name</span><input name="name" required placeholder="e.g. YouTube Premium"></label>
       <div class="grid2"><label class="field"><span>Price</span><input name="price" required inputmode="decimal" placeholder="13.99"></label>
       <label class="field"><span>Billed</span><select name="cycle"><option value="mo">Monthly</option><option value="yr">Yearly</option></select></label></div>
-      <div class="grid2"><label class="field"><span>Last opened</span><input name="last" type="date" value="${isoDaysAgo(0)}"></label>
+      <div class="grid2"><label class="field"><span>Last used</span><input name="last" type="date" value="${isoDaysAgo(0)}"></label>
       <label class="field"><span>Kind</span><input name="group" placeholder="Video, Music, Fitness…" list="groups"></label></div>
       <datalist id="groups">${[...new Set(S.subs.map(s => s.group).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("")}</datalist>
       <button class="btn primary" type="submit">Add subscription</button>
@@ -1121,13 +1127,13 @@ OUT.subsList = () => {
   return `<div class="rows">${order.map(s => {
     const f = C.flags[s.id], d = daysSince(s.last), k = s.keep;
     const q = encodeURIComponent(`how to cancel ${s.name}`);
-    return `<div class="row" data-sub="${s.id}"><div class="row-top"><div><div class="name">${esc(s.name)}</div>
-      <div class="muted small">${!s.last ? "Usage not checked yet" : d === 0 ? "Opened today" : d === 1 ? "Opened yesterday" : `Opened ${d} days ago`}${s.group ? ` · ${esc(s.group)}` : ""}</div>${s.since ? `<div class="muted small">${esc(paidFor(s))}</div>` : ""}</div>
+    return `<div class="row${UI.flashSub === s.id ? " flash" : ""}" data-sub="${s.id}"><div class="row-top"><div><div class="name">${esc(s.name)}</div>
+      <div class="muted small">${!s.last ? "Usage not checked yet" : d === 0 ? "Last used today" : d === 1 ? "Last used yesterday" : `Last used ${d} days ago`}${s.group ? ` · ${esc(s.group)}` : ""}</div>${s.since ? `<div class="muted small">${esc(paidFor(s))}</div>` : ""}</div>
       <div><div class="name tnum">${fmt(s.price)}<span class="muted small">/${s.cycle === "yr" ? "yr" : "mo"}</span></div>${s.cycle === "yr" ? `<div class="muted small tnum">${fmt(subMonthly(s))}/mo</div>` : ""}</div></div>
       ${f.length ? `<div class="inline">${f.map(r => `<span class="pill ${k === "keep" ? "grey" : "flag"}">${esc(r)}</span>`).join("")}</div>` : ""}
       <div class="inline" style="justify-content:space-between">
         <div class="seg" role="group" aria-label="${esc(s.name)}"><button type="button" data-keep="keep" aria-pressed="${k === "keep"}">Keep</button><button type="button" data-keep="auto" aria-pressed="${k === "auto"}" title="Let your rules decide">Auto</button><button type="button" class="drop" data-keep="drop" aria-pressed="${k === "drop"}">Drop</button></div>
-        <span class="inline"><button class="btn small" type="button" data-used>Used today</button><button class="btn small danger" type="button" data-del-sub aria-label="Remove ${esc(s.name)}">Remove</button></span></div>
+        <span class="inline">${d === 0 ? `<button class="btn small done" type="button" data-used disabled aria-label="${esc(s.name)} is marked as used today">${I.check}Used today</button>` : `<button class="btn small" type="button" data-used aria-label="Mark ${esc(s.name)} as used today">I used it today</button>`}<button class="btn small danger" type="button" data-del-sub aria-label="Remove ${esc(s.name)}">Remove</button></span></div>
       ${k === "drop" ? `<p class="small">Cancel before it renews, in the app or site where you signed up. <a class="good" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Find the cancel page</a></p>` : ""}</div>`;}).join("")}</div>`;
 };
 
@@ -1891,7 +1897,10 @@ view.addEventListener("click", async e => {
   const subRow = b.closest("[data-sub]");
   if (subRow){ const s = S.subs.find(x => x.id === subRow.dataset.sub); if (!s) return;
     if (b.dataset.keep){ s.keep = b.dataset.keep; save(); render(true); if (s.keep === "drop") toast(`${s.name} marked to drop. Your month updated.`); return; }
-    if (b.hasAttribute("data-used")){ s.last = isoDaysAgo(0); save(); render(true); toast(`${s.name} marked as used today.`); return; }
+    if (b.hasAttribute("data-used")){ const wasFlagged = subFlags()[s.id].some(r => /^Unused|^Duplicate/.test(r)); s.last = isoDaysAgo(0); save(); render(true);
+      UI.flashSub = s.id; clearTimeout(UI.flashT); UI.flashT = setTimeout(() => { UI.flashSub = null; }, 1500);
+      const row = view.querySelector(`[data-sub="${s.id}"]`); if (row) row.classList.add("flash");
+      toast(wasFlagged ? `${s.name} marked as used today. It is no longer flagged.` : `${s.name} marked as used today.`); return; }
     if (b.hasAttribute("data-del-sub")){ const u = undoable(); S.subs = S.subs.filter(x => x !== s); S.swaps = S.swaps.filter(w => w.link !== `sub:${s.id}`); save(); render(true); toast(`Removed ${s.name}.`, u); return; }
   }
   const sw = b.closest("[data-swap]");
