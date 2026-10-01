@@ -1,3 +1,24 @@
+/* ---- contacts and groups ---- */
+.part-txt{display:flex;flex-direction:column;min-width:0;text-align:left}
+.part-txt small{font-size:.78rem}
+.part-sub{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 14px 4px}
+.part-find{color:var(--green)}
+.part-find svg{flex:none;width:22px;height:22px;margin:0 8px 0 4px}
+.group-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
+.group-chips::-webkit-scrollbar{display:none}
+.gchip{appearance:none;flex:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 .86rem var(--body);border-radius:99px;padding:8px 12px;min-height:38px;cursor:pointer;max-width:240px}
+.gchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gchip b{background:var(--chip);border-radius:99px;padding:1px 7px;font-size:.75rem}
+.gchip svg{flex:none;width:16px;height:16px;color:var(--green)}
+.gchip.on{border-color:var(--green);background:var(--green-soft);color:var(--green)}
+.group-save{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.group-save input{flex:1 1 180px}
+.link.group-save-link{display:inline-flex;align-items:center;gap:6px;color:var(--green);font-weight:600;margin-top:10px;align-self:flex-start}
+.group-save-link svg{width:16px;height:16px}
+.contacts-on{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 14px;box-shadow:var(--lift)}
+.co-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.co-act{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.contacts-card{gap:10px}
 /* ---- statements ---- */
 .hist-bars{display:flex;align-items:flex-end;gap:8px;min-height:150px;padding-top:4px}
 .hist-col{appearance:none;border:0;background:none;padding:0;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:var(--ink);font:inherit}

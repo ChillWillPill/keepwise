@@ -283,6 +283,27 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
   .summary3 b{margin-top:0;font-size:1.3rem;text-align:right}}
 .summary3 > div{min-width:0}.summary3 b{overflow-wrap:anywhere}
 @media (prefers-reduced-motion:no-preference){.meter i,.stack i{transition:width .25s ease}}
+/* ---- contacts and groups ---- */
+.part-txt{display:flex;flex-direction:column;min-width:0;text-align:left}
+.part-txt small{font-size:.78rem}
+.part-sub{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 14px 4px}
+.part-find{color:var(--green)}
+.part-find svg{flex:none;width:22px;height:22px;margin:0 8px 0 4px}
+.group-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
+.group-chips::-webkit-scrollbar{display:none}
+.gchip{appearance:none;flex:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 .86rem var(--body);border-radius:99px;padding:8px 12px;min-height:38px;cursor:pointer;max-width:240px}
+.gchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gchip b{background:var(--chip);border-radius:99px;padding:1px 7px;font-size:.75rem}
+.gchip svg{flex:none;width:16px;height:16px;color:var(--green)}
+.gchip.on{border-color:var(--green);background:var(--green-soft);color:var(--green)}
+.group-save{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.group-save input{flex:1 1 180px}
+.link.group-save-link{display:inline-flex;align-items:center;gap:6px;color:var(--green);font-weight:600;margin-top:10px;align-self:flex-start}
+.group-save-link svg{width:16px;height:16px}
+.contacts-on{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 14px;box-shadow:var(--lift)}
+.co-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.co-act{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.contacts-card{gap:10px}
 /* ---- statements ---- */
 .hist-bars{display:flex;align-items:flex-end;gap:8px;min-height:150px;padding-top:4px}
 .hist-col{appearance:none;border:0;background:none;padding:0;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:var(--ink);font:inherit}
@@ -669,6 +690,8 @@ I.ext = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 I.download = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
 I.share = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M6 12v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-7"/></svg>';
 I.lock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+I.users = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14a4.5 4.5 0 0 1 4.8 4.5"/></svg>';
+I.redo = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 0-2.3 5.7"/></svg>';
 I.x = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 I.chev = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>';
 I.travel = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4 3 11l7 2.5L12.5 21z"/><path d="M10 13.5 21 4"/></svg>';
@@ -1425,7 +1448,9 @@ V.split = () => {
     ${peopleList(c)}
     ${UI.addPerson ? `<form class="card add-person" data-form="addPerson"><label class="field"><span>Name</span><input name="name" id="new-person" placeholder="e.g. Sara" enterkeyhint="done" autocomplete="off"></label>
       <div class="grid2"><button class="btn" type="button" data-add-person-cancel>Cancel</button><button class="btn primary" type="submit" style="padding:10px">Add person</button></div></form>`
-    : `<div class="grid2"><button class="btn" type="button" data-add-person-open>${I.plus} Add person</button><button class="btn" type="button" data-import>${I.contacts} Import contacts</button></div>`}
+    : `<button class="btn" type="button" data-add-person-open>${I.plus} Add person</button>`}
+    ${contactsCard()}
+    ${(S.groups || []).length ? `<h3 class="label" style="margin-top:6px">Groups</h3><div class="rows">${S.groups.map(g => `<div class="row" data-grp="${esc(g.id)}"><div class="row-top"><div><div class="name">${esc(g.name)}</div><div class="muted small">${esc(g.ids.map(id => (S.people.find(p => p.id === id) || {}).name).filter(Boolean).join(", "))}</div></div><button class="btn small danger" type="button" data-group-del aria-label="Remove group ${esc(g.name)}">Remove</button></div></div>`).join("")}</div>` : ""}
   </section>`}`;
 };
 OUT.splitSum = () => {
@@ -1483,24 +1508,28 @@ OUT.partResults = () => {
   if (!splitDraft || !UI.partOpen) return "";
   const c = CTX(), list = partMatches(), q = String(UI.partQ || "").trim();
   const exact = q && c.people.some(p => String(p.name || "").toLowerCase() === q.toLowerCase());
-  const rows = list.slice(0, 30).map(p => `<button type="button" class="part-opt" data-part-add="${esc(p.id)}"><span class="avatar part-av" style="--h:${avatarHue(p.name)}" aria-hidden="true">${esc(initials(p.name))}</span><span>${esc(p.name)}</span></button>`).join("");
+  const rows = list.slice(0, 30).map(p => `<button type="button" class="part-opt" data-part-add="${esc(p.id)}"><span class="avatar part-av" style="--h:${avatarHue(p.name)}" aria-hidden="true">${esc(initials(p.name))}</span><span class="part-txt"><span>${esc(p.name)}</span>${p.phone ? `<small class="muted">${esc(showPhone(p.phone))}</small>` : ""}</span></button>`).join("")
+    + (c.kind !== "shared" ? (() => { const cm = contactMatches(q); return cm.length ? `<p class="part-sub">From your contacts</p>` + cm.map(x => `<button type="button" class="part-opt" data-part-contact="${esc(x.id)}"><span class="avatar part-av" style="--h:${avatarHue(x.n)}" aria-hidden="true">${esc(initials(x.n))}</span><span class="part-txt"><span>${esc(x.n)}</span>${x.p[0] || x.e[0] ? `<small class="muted">${esc(x.p[0] ? showPhone(x.p[0]) : x.e[0])}</small>` : ""}</span></button>`).join("") : ""; })() : "");
+  const findContacts = c.kind !== "shared" && !(S.contacts || []).length ? `<button type="button" class="part-opt part-find" data-contacts-sync>${I.users}<span class="part-txt"><span>Search your phone contacts</span><small class="muted">Find friends faster. Contacts stay on this phone.</small></span></button>` : "";
   const addNew = q && !exact && c.kind !== "shared" ? `<button type="button" class="part-opt part-new" data-part-new>${I.plus}Add “${esc(q)}” as a new person</button>` : "";
-  const empty = !rows && !addNew ? `<p class="muted small" style="padding:10px 12px">${q ? "No one matches that." : "Everyone is already in this split."}</p>` : "";
-  return `<div class="part-results" role="listbox" aria-label="People">${rows}${addNew}${empty}</div>`;
+  const empty = !rows && !addNew && !(c.kind !== "shared" && !(S.contacts || []).length) ? `<p class="muted small" style="padding:10px 12px">${q ? "No one matches that." : "Everyone is already in this split."}</p>` : "";
+  return `<div class="part-results" role="listbox" aria-label="People">${rows}${addNew}${q || !rows ? findContacts : ""}${empty}</div>`;
 };
-function addPart(id){ splitDraft.parts[id] = splitDraft.method === "equal" ? 1 : ""; UI.partQ = ""; UI.partOpen = false; splitErr = ""; render(true); }
+function addPart(id){ splitDraft.parts[id] = splitDraft.method === "equal" ? 1 : ""; UI.partQ = ""; UI.partOpen = true; splitErr = ""; render(true);
+  const i = view.querySelector("[data-part-search]"); if (i) i.focus({preventScroll: true}); }  // ready for the next friend
 function splitForm(){
   const c = CTX(), d = splitDraft, inSplit = id => id === d.paidBy || id === d.borrower || d.parts[id] !== undefined;
   const others = c.people.filter(p => !p.archived || inSplit(p.id));
   const partRows = d.method === "borrow" ? `
     <label class="field"><span>${d.paidBy === c.me ? "Who borrowed from you" : "Who owes it"}</span><select data-d="borrower">${others.filter(p => p.id !== d.paidBy).map(p => `<option value="${esc(p.id)}" ${d.borrower===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>`
     : `<div class="field"><span>Split between</span>
+    ${groupChips()}
     <div class="part-list">${others.filter(p => d.parts[p.id] !== undefined).map(p => `<div class="part-row">
       <span class="avatar part-av" style="--h:${avatarHue(p.name)}" aria-hidden="true">${esc(initials(p.id === c.me ? "You" : p.name))}</span><span class="part-name">${esc(p.name)}</span>
       ${d.method !== "equal" ? `<input data-part-val="${esc(p.id)}" type="text" inputmode="decimal" enterkeyhint="done" value="${d.parts[p.id] ?? ""}" placeholder="${d.method === "percent" ? "%" : sym()}" aria-label="${esc(p.name)} share">` : d.amount ? `<span class="muted small tnum">${fmt((+d.amount||0) / Object.keys(d.parts).length)}</span>` : ""}
       <button class="part-x" type="button" data-part-remove="${esc(p.id)}" aria-label="Remove ${esc(p.name)} from this split">${I.x}</button></div>`).join("") || `<p class="muted small">No one yet. Search below to add people.</p>`}</div>
     <div class="part-search"><input data-part-search type="search" autocomplete="off" enterkeyhint="search" placeholder="Add people by name, phone or email" aria-label="Add people to this split" value="${esc(UI.partQ || "")}">
-    <div data-out="partResults">${OUT.partResults()}</div></div></div>`;
+    <div data-out="partResults">${OUT.partResults()}</div></div>${saveGroupRow()}</div>`;
   return `<form class="card" data-form="split"><h2>${d.editId ? "Edit split" : "New split"}</h2>
     ${c.kind === "shared" ? `<p class="muted small">Everyone in the split gets a notification.</p>` : ""}
     <div class="grid2"><label class="field"><span>What for</span><input data-d="title" value="${esc(d.title)}" placeholder="e.g. Pizza night" enterkeyhint="next"></label>
@@ -1667,7 +1696,7 @@ V.statement = () => {
   const open = s.key === currentKey(), out = s.needs + s.misc;
   const row = (a, b, cls) => `<div class="st-line"><span>${a}</span><span class="tnum ${cls || ""}">${b}</span></div>`;
   const live = s.subs.filter(x => x.k !== "drop"), dropped = s.subs.filter(x => x.k === "drop");
-  return `<div class="inline no-print" style="justify-content:space-between"><button class="btn small" type="button" data-stmt-back>${I.chevl}Statements</button><button class="btn small" type="button" data-stmt-print>${IN_APP ? "Download" : "Save as PDF"}</button></div>
+  return `<div class="inline no-print" style="justify-content:space-between"><button class="btn small" type="button" data-stmt-back>${I.chevl}Statements</button><button class="btn small" type="button" data-stmt-print>${IN_APP ? "Download" : "Print or save PDF"}</button></div>
   <article class="stmt" aria-label="Statement for ${esc(keyLabel(s.key))}">
     <header class="st-head"><div class="st-brand"><b class="wordmark">Keep<span>Wise</span></b><span class="muted small">Monthly statement</span></div>
       <h2 class="st-title">${esc(keyLabel(s.key))}</h2><span class="st-status small ${open ? "open" : ""}">${open ? `In progress · updated ${esc(shortDate(s.updated))}` : `Closed · final numbers from ${esc(shortDate(s.updated))}`}</span></header>
@@ -1886,6 +1915,114 @@ function finishWelcome(){
   Object.assign(ex, {cur: DRAFT.cur, income: numv(DRAFT.income), efSaved: 0, expenses: numv(DRAFT.home) ? [{id: uid(), name: "Rent or mortgage", amount: numv(DRAFT.home), env: "needs"}] : [],
     subs: [], swaps: [], codes: [], splits: [], settlements: [], people: [{id: "me", name: "You"}], goalName: "", goalAmt: 0, statements: {}, example: false, hideNote: false, tab: "month", started: isoDaysAgo(0)});
   S = ex; UI.welcome = null; welcomeDone(); save();
+}
+
+/* ================= phone contacts and groups (kept on this device only) ================= */
+// The address book is copied into KeepWise on this device, so the split search can find anyone in it.
+// Nothing here is uploaded. People only join your People list when you add them to a split.
+const normPhone = p => String(p || "").replace(/[^\d+]/g, "");
+const showPhone = p => { const d = digits(p); if (/^\+?1\d{10}$/.test(p) || (d.length === 11 && d[0] === "1")) return `+1 (${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`; if (d.length === 10 && !String(p).startsWith("+")) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`; return String(p).replace(/^(\+\d{2})(\d{3,4})(\d{3})(\d+)$/, "$1 $2 $3 $4"); };
+const digits = p => String(p || "").replace(/\D/g, "");
+function mergeContacts(list, source){
+  const dir = S.contacts = S.contacts || [];
+  const key = c => (c.p[0] ? digits(c.p[0]).slice(-9) : "") || (c.e[0] || "").toLowerCase() || c.n.toLowerCase();
+  const seen = new Map(dir.map(c => [key(c), c]));
+  let added = 0;
+  list.forEach(raw => {
+    const n = String(raw.n || "").trim(); if (!n) return;
+    const c = {id: uid(), n, p: [...new Set((raw.p || []).map(normPhone).filter(x => digits(x).length >= 5))].slice(0, 3), e: [...new Set((raw.e || []).map(x => String(x).trim().toLowerCase()).filter(x => x.includes("@")))].slice(0, 2)};
+    const k = key(c), old = seen.get(k);
+    if (old){ old.n = old.n || c.n; old.p = [...new Set([...old.p, ...c.p])].slice(0, 3); old.e = [...new Set([...old.e, ...c.e])].slice(0, 2); return; }
+    dir.push(c); seen.set(k, c); added++;
+  });
+  dir.sort((a, b) => a.n.localeCompare(b.n));
+  S.contactsAt = isoDaysAgo(0); S.contactsFrom = source;
+  return added;
+}
+function parseVcf(text){
+  const out = []; let cur = null;
+  String(text).replace(/\r?\n[ \t]/g, "").split(/\r?\n/).forEach(line => {
+    if (/^BEGIN:VCARD/i.test(line)) cur = {n: "", p: [], e: []};
+    else if (/^END:VCARD/i.test(line)){ if (cur && cur.n) out.push(cur); cur = null; }
+    else if (cur){
+      const i = line.indexOf(":"); if (i < 0) return; const k = line.slice(0, i).toUpperCase(), v = line.slice(i + 1).replace(/\\,/g, ",").replace(/\\;/g, ";").trim();
+      if (/^FN\b/.test(k)) cur.n = v;
+      else if (/^N\b/.test(k) && !cur.n){ const [last, first] = v.split(";"); cur.n = [first, last].filter(Boolean).join(" ").trim(); }
+      else if (/(^|\.)TEL\b/.test(k)) cur.p.push(v);
+      else if (/(^|\.)EMAIL\b/.test(k)) cur.e.push(v);
+    }
+  });
+  return out;
+}
+const nativeContacts = () => { const C = window.Capacitor; if (!C) return null; return (C.Plugins && C.Plugins.Contacts) || (C.registerPlugin ? C.registerPlugin("Contacts") : null); };
+async function syncContacts(){
+  const P = IN_APP ? nativeContacts() : null;
+  if (P){  // Android app: read the address book on the phone, with permission
+    try {
+      const perm = await P.requestPermissions();
+      if (perm && perm.contacts && perm.contacts !== "granted" && perm.contacts !== "limited"){ toast("KeepWise needs permission to search your contacts. You can allow it in your phone’s settings."); return; }
+      const r = await P.getContacts({projection: {name: true, phones: true, emails: true}});
+      const list = (r.contacts || []).map(c => ({n: (c.name && (c.name.display || [c.name.given, c.name.family].filter(Boolean).join(" "))) || "", p: (c.phones || []).map(x => x.number), e: (c.emails || []).map(x => x.address)}));
+      const n = mergeContacts(list, "phone"); save(); refreshAfterContacts(); toast(n ? `${S.contacts.length} contacts ready to search.` : "Your contacts are up to date."); return;
+    } catch(e){ /* fall through to the picker or a file */ }
+  }
+  if (navigator.contacts && navigator.contacts.select){  // Chrome on Android: the phone's own picker, choose as many as you like
+    try {
+      const got = await navigator.contacts.select(["name", "tel", "email"], {multiple: true});
+      if (!got || !got.length) return;
+      const n = mergeContacts(got.map(c => ({n: (c.name || [])[0], p: c.tel || [], e: c.email || []})), "picker"); save(); refreshAfterContacts();
+      toast(`Added ${n} contact${n === 1 ? "" : "s"} to search.`); return;
+    } catch(e){ if (e && e.name === "AbortError") return; }
+  }
+  UI.contactsHelp = true; refreshAfterContacts();  // iPhone and computers: a contacts file
+}
+function refreshAfterContacts(){ if (splitDraft) { UI.partOpen = true; render(true); } else render(true); }
+function forgetContacts(){ S.contacts = []; S.contactsAt = null; S.contactsFrom = null; save(); render(true); toast("Contacts removed from this device."); }
+// Turn a contact into a person the first time they join a split.
+function personFromContact(c){
+  const ph = c.p[0] || "", d = digits(ph).slice(-9);
+  const old = S.people.find(p => (d && digits(p.phone).slice(-9) === d) || p.name.toLowerCase() === c.n.toLowerCase());
+  if (old){ old.archived = false; if (!old.phone && ph) old.phone = ph; if (!old.email && c.e[0]) old.email = c.e[0]; return old; }
+  const p = {id: uid(), name: c.n, phone: ph || undefined, email: c.e[0] || undefined}; S.people.push(p); return p;
+}
+function contactMatches(q){
+  if (!S.contacts || !S.contacts.length || !q) return [];
+  const t = q.toLowerCase(), d = digits(q);
+  const isPerson = c => S.people.some(p => !p.archived && (p.name.toLowerCase() === c.n.toLowerCase() || (c.p[0] && digits(p.phone).slice(-9) === digits(c.p[0]).slice(-9))));
+  return S.contacts.filter(c => (c.n.toLowerCase().includes(t) || c.e.some(e => e.includes(t)) || (d.length >= 3 && c.p.some(p => digits(p).includes(d)))) && !isPerson(c)).slice(0, 20);
+}
+// ---- groups: the same friends again in one tap ----
+function lastSplitPeople(){
+  const last = [...S.splits].sort((a, b) => (b.date || "").localeCompare(a.date || ""))[0];
+  if (!last) return null; const ids = last.method === "borrow" ? [last.paidBy, ...Object.keys(last.parts)] : Object.keys(last.parts);
+  const uniq = [...new Set(ids)].filter(id => S.people.some(p => p.id === id && !p.archived));
+  return uniq.length >= 2 ? {name: `Same as ${last.title}`, ids: uniq, last: true} : null;
+}
+function groupChips(){
+  if (CTX().kind === "shared" || splitDraft.method === "borrow") return "";
+  const groups = (S.groups || []).map(g => ({...g, ids: g.ids.filter(id => S.people.some(p => p.id === id && !p.archived))})).filter(g => g.ids.length >= 2);
+  const last = lastSplitPeople(); if (last && !groups.some(g => g.ids.length === last.ids.length && g.ids.every(id => last.ids.includes(id)))) groups.push(last);
+  if (!groups.length) return "";
+  return `<div class="group-chips" role="group" aria-label="Add a group">${groups.map(g => { const all = g.ids.every(id => splitDraft.parts[id] !== undefined);
+    return `<button type="button" class="gchip${all ? " on" : ""}" ${g.last ? "data-group-last" : `data-group="${esc(g.id)}"`} aria-pressed="${all}">${g.last ? I.redo : I.users}<span>${esc(g.name)}</span><b>${g.ids.length}</b></button>`; }).join("")}</div>`;
+}
+function addGroup(ids){ const m = splitDraft.method === "equal"; ids.forEach(id => { if (splitDraft.parts[id] === undefined) splitDraft.parts[id] = m ? 1 : ""; }); splitErr = ""; render(true); }
+function saveGroupRow(){
+  if (CTX().kind === "shared" || splitDraft.method === "borrow") return "";
+  const ids = Object.keys(splitDraft.parts).filter(id => id !== CTX().me);
+  if (ids.length < 2) return "";
+  const exists = (S.groups || []).some(g => g.ids.length === ids.length && ids.every(id => g.ids.includes(id)));
+  if (exists) return "";
+  if (UI.groupName !== undefined) return `<div class="group-save"><input data-group-name placeholder="Group name, e.g. Movie crew" value="${esc(UI.groupName)}" enterkeyhint="done" aria-label="Group name"><button class="btn small" type="button" data-group-save>Save</button><button class="link plain small" type="button" data-group-cancel>Cancel</button></div>`;
+  return `<button class="link plain small group-save-link" type="button" data-group-new>${I.users}Save these ${ids.length + 1} as a group</button>`;
+}
+function contactsCard(){
+  const n = (S.contacts || []).length;
+  if (UI.contactsHelp) return `<div class="card contacts-card"><b>Add your contacts from a file</b>
+    <p class="muted small">${IS_IOS ? "On iPhone, open iCloud.com on a computer, go to Contacts, select all, then choose Export vCard. Send the file to this phone and pick it here." : "Export your contacts as a vCard (.vcf) file from your phone or email app, then pick it here."} KeepWise reads the file on this device and keeps names, phone numbers and emails only for searching.</p>
+    <div class="grid2"><button class="btn" type="button" data-contacts-help-close>Not now</button><button class="btn primary" type="button" data-contacts-file>Choose a contacts file</button></div></div>`;
+  if (!n) return `<button class="w-choice contacts-cta" type="button" data-contacts-sync><span class="w-ic">${I.users}</span><span><b>Find friends from your contacts</b><span class="muted small">Search your phone contacts when you add people to a split. They stay on this phone.</span></span>${I.chev}</button>`;
+  return `<div class="contacts-on"><span class="w-ic">${I.users}</span><div class="co-txt"><b>${n} contact${n === 1 ? "" : "s"} ready to search</b><span class="muted small">They stay on this phone.</span></div><div class="co-act"><button class="link small" type="button" data-contacts-sync>Refresh</button><button class="link plain small" type="button" data-contacts-forget>Remove</button></div></div>`;
 }
 
 /* ================= render ================= */
@@ -2215,6 +2352,7 @@ view.addEventListener("input", e => {
   const t = e.target;
   if (t.dataset && t.dataset.w){ DRAFT[t.dataset.w] = t.value; if (t.dataset.w === "cur") render(false); return; }
   if (t.hasAttribute && t.hasAttribute("data-part-search")){ UI.partQ = t.value; UI.partOpen = true; refreshOuts(); return; }
+  if (t.hasAttribute && t.hasAttribute("data-group-name")){ UI.groupName = t.value; return; }
   const lineBox = t.closest("[data-add-line]");
   if (lineBox){ const d = LINE_DRAFT[lineBox.dataset.addLine] = LINE_DRAFT[lineBox.dataset.addLine] || {}; if (t.hasAttribute("data-new-name")) d.n = t.value; if (t.hasAttribute("data-new-amt")) d.a = t.value; return; }
   if (t.dataset.bind){
@@ -2255,12 +2393,15 @@ view.addEventListener("change", e => {
 });
 
 view.addEventListener("focusin", e => { if (e.target.hasAttribute && e.target.hasAttribute("data-part-search") && !UI.partOpen){ UI.partOpen = true; refreshOuts(); } });
-document.addEventListener("pointerdown", e => { if (UI.partOpen && !(e.target.closest && e.target.closest(".part-search"))){ UI.partOpen = false; const r = document.querySelector('[data-out="partResults"]'); if (r) r.innerHTML = ""; } }, true);
+document.addEventListener("click", e => { if (UI.partOpen && !(e.target.closest && e.target.closest(".part-search, .group-chips, .part-list"))){ UI.partOpen = false; const r = document.querySelector('[data-out="partResults"]'); if (r) r.innerHTML = ""; } }, true);
 view.addEventListener("keydown", e => {
   if (!e.target.hasAttribute || !e.target.hasAttribute("data-part-search")) return;
   if (e.key === "Escape"){ UI.partOpen = false; refreshOuts(); return; }
-  if (e.key === "Enter"){ e.preventDefault(); const m = partMatches(); if (m.length === 1) addPart(m[0].id); else if (!m.length && document.querySelector("[data-part-new]")) document.querySelector("[data-part-new]").click(); }
+  if (e.key === "Enter"){ e.preventDefault(); const m = partMatches(), cm = CTX().kind !== "shared" ? contactMatches(String(UI.partQ || "").trim()) : [];
+    if (m.length + cm.length === 1){ if (m.length) addPart(m[0].id); else { const p = personFromContact(cm[0]); save(); addPart(p.id); } }
+    else if (!m.length && !cm.length && document.querySelector("[data-part-new]")) document.querySelector("[data-part-new]").click(); }
 });
+view.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.hasAttribute && e.target.hasAttribute("data-group-name")){ e.preventDefault(); const sv = view.querySelector("[data-group-save]"); if (sv) sv.click(); } });
 view.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.dataset && (e.target.dataset.w === "income" || e.target.dataset.w === "home")){ e.preventDefault(); const n = view.querySelector("[data-w-next]"); if (n) n.click(); } });
 view.addEventListener("keydown", e => {  // Enter in "Add a line" adds it, like tapping Add
   if (e.key !== "Enter") return; const box = e.target.closest && e.target.closest("[data-add-line]"); if (!box) return;
@@ -2362,6 +2503,18 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-cancel-split")){ const was = splitDraft && splitDraft.editId; splitDraft = null; splitErr = ""; UI.receiptInfo = false; UI.partQ = ""; UI.partOpen = false; render(true); showSplitCard(was); return; }
   if (b.dataset.icon !== undefined && splitDraft && b.classList.contains("icon-opt")){ splitDraft.icon = b.dataset.icon; render(true); return; }
   if (b.dataset.partAdd){ addPart(b.dataset.partAdd); return; }
+  if (b.dataset.partContact){ const x = (S.contacts || []).find(c => c.id === b.dataset.partContact); if (!x) return; const p = personFromContact(x); save(); addPart(p.id); return; }
+  if (b.hasAttribute("data-contacts-sync")){ syncContacts(); return; }
+  if (b.hasAttribute("data-contacts-forget")){ forgetContacts(); return; }
+  if (b.hasAttribute("data-contacts-file")){ $("vcf").click(); return; }
+  if (b.hasAttribute("data-contacts-help-close")){ UI.contactsHelp = false; render(true); return; }
+  if (b.dataset.group && splitDraft){ const g = (S.groups || []).find(x => x.id === b.dataset.group); if (g) addGroup(g.ids.filter(id => S.people.some(p => p.id === id && !p.archived))); return; }
+  if (b.hasAttribute("data-group-last") && splitDraft){ const g = lastSplitPeople(); if (g) addGroup(g.ids); return; }
+  if (b.hasAttribute("data-group-new")){ UI.groupName = ""; render(true); const i = view.querySelector("[data-group-name]"); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-group-cancel")){ delete UI.groupName; render(true); return; }
+  if (b.hasAttribute("data-group-save") && splitDraft){ const name = String(UI.groupName || "").trim(); if (!name){ toast("Give the group a name."); return; }
+    (S.groups = S.groups || []).push({id: uid(), name, ids: Object.keys(splitDraft.parts).filter(id => id !== CTX().me)}); delete UI.groupName; save(); render(true); toast(`Saved ${name}. Add them all in one tap next time.`); return; }
+  if (b.hasAttribute("data-group-del")){ const id = b.closest("[data-grp]").dataset.grp, u = undoable(); const g = S.groups.find(x => x.id === id); S.groups = S.groups.filter(x => x.id !== id); save(); render(true); toast(`Removed ${g ? g.name : "group"}.`, u); return; }
   if (b.dataset.partRemove){ delete splitDraft.parts[b.dataset.partRemove]; splitErr = ""; render(true); return; }
   if (b.hasAttribute("data-part-new")){ const n = String(UI.partQ || "").trim(); if (!n) return; const old = S.people.find(p => p.name.toLowerCase() === n.toLowerCase());
     const person = old || {id: uid(), name: n}; if (old) old.archived = false; else S.people.push(person); save(); toast(`Added ${n}.`); addPart(person.id); return; }
@@ -2491,7 +2644,10 @@ $("restore-in").addEventListener("change", async e => {
 $("vcf").addEventListener("change", e => {
   const file = e.target.files[0]; if (!file) return;
   const rd = new FileReader();
-  rd.onload = () => { const names = String(rd.result).split(/\r?\n/).filter(l => /^FN[:;]/i.test(l)).map(l => l.replace(/^FN[^:]*:/i, "").replace(/\\,/g, ",").trim()); if (!names.length) toast("No names found in that file."); else addNames(names); e.target.value = ""; };
+  rd.onload = () => { const list = parseVcf(rd.result); e.target.value = "";
+    if (!list.length){ toast("No contacts found in that file."); return; }
+    const n = mergeContacts(list, "file"); UI.contactsHelp = false; save(); refreshAfterContacts();
+    toast(n ? `${n} contact${n === 1 ? "" : "s"} ready to search when you add people to a split.` : "Those contacts are already here."); };
   rd.readAsText(file);
 });
 

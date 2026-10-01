@@ -53,7 +53,7 @@ V.statement = () => {
   const open = s.key === currentKey(), out = s.needs + s.misc;
   const row = (a, b, cls) => `<div class="st-line"><span>${a}</span><span class="tnum ${cls || ""}">${b}</span></div>`;
   const live = s.subs.filter(x => x.k !== "drop"), dropped = s.subs.filter(x => x.k === "drop");
-  return `<div class="inline no-print" style="justify-content:space-between"><button class="btn small" type="button" data-stmt-back>${I.chevl}Statements</button><button class="btn small" type="button" data-stmt-print>${IN_APP ? "Download" : "Save as PDF"}</button></div>
+  return `<div class="inline no-print" style="justify-content:space-between"><button class="btn small" type="button" data-stmt-back>${I.chevl}Statements</button><button class="btn small" type="button" data-stmt-print>${IN_APP ? "Download" : "Print or save PDF"}</button></div>
   <article class="stmt" aria-label="Statement for ${esc(keyLabel(s.key))}">
     <header class="st-head"><div class="st-brand"><b class="wordmark">Keep<span>Wise</span></b><span class="muted small">Monthly statement</span></div>
       <h2 class="st-title">${esc(keyLabel(s.key))}</h2><span class="st-status small ${open ? "open" : ""}">${open ? `In progress · updated ${esc(shortDate(s.updated))}` : `Closed · final numbers from ${esc(shortDate(s.updated))}`}</span></header>

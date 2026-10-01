@@ -513,8 +513,8 @@ async def split_people_add_remove_import(ctx):
     vcf = os.path.join(TMP, "c.vcf")
     open(vcf, "w").write("BEGIN:VCARD\nVERSION:3.0\nFN:Omar Khan\nEND:VCARD\nBEGIN:VCARD\nFN:Alex\nEND:VCARD\n")
     await pg.set_input_files("#vcf", vcf); await pg.wait_for_timeout(200)
-    names = [p["name"] for p in (await state(pg))["people"]]
-    assert "Omar Khan" in names and names.count("Alex") == 1, names
+    st = await state(pg)
+    assert [c["n"] for c in st["contacts"]] == ["Alex", "Omar Khan"] and not any(p["name"] == "Omar Khan" for p in st["people"]), "a contacts file fills the search, not the People list"
 
 # ---------------- shared circle + notifications (mocked Claude storage) ----------------
 @test
@@ -1232,6 +1232,61 @@ async def import_sets_renewal_dates(ctx):
     n = [x for x in (await state(pg))["subs"] if x["name"].lower().startswith("netflix")][0]
     assert n["renewDay"] == 4 and (await state(pg))["example"] is False
 
+
+@test
+async def contacts_search_quick_add_and_groups(ctx):
+    pg = await open_app(ctx); await tab(pg, "split")
+    vcf = os.path.join(TMP, "friends.vcf")
+    open(vcf, "w").write("BEGIN:VCARD\nVERSION:3.0\nFN:Omar Khan\nTEL;TYPE=CELL:+1 (555) 010-2233\nEMAIL:omar@example.com\nEND:VCARD\n"
+                         "BEGIN:VCARD\nVERSION:3.0\nN:Lee;Bella;;;\nTEL:555 010 7788\nEND:VCARD\n"
+                         "BEGIN:VCARD\nVERSION:3.0\nFN:Chen Wu\nEMAIL:chen@example.com\nEND:VCARD\n")
+    assert "Find friends from your contacts" in await text(pg, "#view")
+    await pg.set_input_files("#vcf", vcf); await pg.wait_for_timeout(200)
+    assert len((await state(pg))["contacts"]) == 3 and "3 contacts" in await text(pg, ".contacts-on")
+    await pg.click("[data-new-split]"); await pg.fill("[data-d=title]", "Movie night"); await pg.fill("[data-d=amount]", "120")
+    await pg.fill("[data-part-search]", "omar"); await pg.wait_for_timeout(100)
+    assert "from your contacts" in (await text(pg, ".part-results")).lower()
+    await pg.click(".part-results [data-part-contact]"); await pg.wait_for_timeout(150)
+    om = [p for p in (await state(pg))["people"] if p["name"] == "Omar Khan"][0]
+    assert om["phone"] == "+15550102233" and om["email"] == "omar@example.com"
+    assert await pg.evaluate("document.activeElement.hasAttribute('data-part-search')") and await pg.locator(".part-results").count() == 1, "ready for the next person"
+    await pg.keyboard.type("7788"); await pg.wait_for_timeout(100)
+    assert "Bella Lee" in await text(pg, ".part-results"), "find by phone number"
+    await pg.keyboard.press("Enter"); await pg.wait_for_timeout(150)
+    for name in ["Alex", "Sam", "Jordan", "chen"]:
+        await pg.keyboard.type(name); await pg.wait_for_timeout(80); await pg.keyboard.press("Enter"); await pg.wait_for_timeout(120)
+    parts = await pg.locator(".part-row").count(); assert parts == 7, f"you plus six friends, typed in a row: {parts}"
+    await pg.click("[data-group-new]"); await pg.fill("[data-group-name]", "Movie crew"); await pg.keyboard.press("Enter"); await pg.wait_for_timeout(150)
+    g = (await state(pg))["groups"]; assert g[0]["name"] == "Movie crew" and len(g[0]["ids"]) == 6
+    await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(200)
+    await pg.click("[data-new-split]"); await pg.wait_for_timeout(100)
+    chips = await text(pg, ".group-chips"); assert "Movie crew" in chips
+    await pg.click("[data-group]"); await pg.wait_for_timeout(120)
+    assert await pg.locator(".part-row").count() == 7 and await pg.get_attribute("[data-group]", "aria-pressed") == "true", "a whole group in one tap"
+    await pg.click("[data-cancel-split]"); await pg.wait_for_timeout(100)
+    assert "Movie crew" in await text(pg, "#view")
+    await pg.click(".contacts-on [data-contacts-forget]"); await pg.wait_for_timeout(120)
+    assert (await state(pg))["contacts"] == [] and "Omar Khan" in [p["name"] for p in (await state(pg))["people"]], "removing contacts keeps people already in splits"
+
+@test
+async def contacts_from_phone_picker_and_app(ctx):
+    pg = await ctx.new_page(); pg.errors = []
+    await pg.add_init_script("""window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;
+      navigator.contacts = {select: async (props, opts) => { window.__asked = [props, opts]; return [{name: ['Dina Park'], tel: ['+44 7700 900123'], email: []}, {name: ['Eli Roth'], tel: [], email: ['eli@example.com']}]; }};""")
+    await pg.set_viewport_size({"width": 390, "height": 844}); await pg.goto(URL); await pg.wait_for_timeout(400); await tab(pg, "split")
+    await pg.click("[data-contacts-sync]"); await pg.wait_for_timeout(200)
+    asked = await pg.evaluate("window.__asked"); assert asked[0] == ["name", "tel", "email"] and asked[1]["multiple"] is True
+    assert [c["n"] for c in (await state(pg))["contacts"]] == ["Dina Park", "Eli Roth"]
+    # the Android app reads the address book with permission
+    pg2 = await ctx.new_page(); pg2.errors = []
+    await pg2.add_init_script("""window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;
+      window.Capacitor = {Plugins: {Contacts: {requestPermissions: async () => ({contacts: 'granted'}),
+        getContacts: async () => ({contacts: [{name: {display: 'Faisal Ali'}, phones: [{number: '0300 1234567'}], emails: []}, {name: {display: null, given: 'Gia', family: 'Moss'}, phones: [], emails: [{address: 'gia@example.com'}]}]})}}};""")
+    await pg2.set_viewport_size({"width": 390, "height": 844}); await pg2.goto(URL); await pg2.wait_for_timeout(400); await tab(pg2, "split")
+    await pg2.click("[data-contacts-sync]"); await pg2.wait_for_timeout(200)
+    names = [c["n"] for c in (await state(pg2))["contacts"]]
+    assert "Faisal Ali" in names and "Gia Moss" in names, names
+
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")
 SEED = {
@@ -1312,7 +1367,7 @@ async def main():
                 passed += 1; print(f"PASS  {fn.__name__}")
             except Exception as e:
                 failed.append(fn.__name__); print(f"FAIL  {fn.__name__}: {e}")
-                traceback.print_exc(limit=1)
+                traceback.print_exc(limit=-1)
             await ctx.close()
         await b.close()
     print(f"\n{passed} passed, {len(failed)} failed" + (f": {', '.join(failed)}" if failed else ""))

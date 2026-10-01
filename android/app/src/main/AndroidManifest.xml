@@ -32,4 +32,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lets KeepWise search your contacts when you add people to a split. Contacts stay on the phone. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 </manifest>
