@@ -11,7 +11,7 @@ const FB_PROJECT = {
 };
 const FB_CONFIG = "KEEPWISE_FIREBASE" in window ? window.KEEPWISE_FIREBASE : FB_PROJECT;
 const FB_BASE = "https://cdn.jsdelivr.net/npm/firebase@10.14.1/";
-const TERMS_VERSION = "2026-09-30";
+const TERMS_VERSION = "2026-10-01";
 const IN_APP = !!window.Capacitor; // Google blocks its sign-in page inside app web views
 // Inside the Claude preview the page runs in a locked frame where sign-in windows cannot open.
 const PREVIEW = !!window.claude && !("KEEPWISE_FIREBASE" in window);

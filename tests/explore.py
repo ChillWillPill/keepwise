@@ -79,6 +79,7 @@ async def new_page(ctx, w=390, h=844, scheme="light"):
         else: await route.abort()
     await pg.route("https://cdnjs.cloudflare.com/**", serve_vendor)
     await pg.add_init_script("window.KEEPWISE_FIREBASE = {apiKey:'t',authDomain:'t.firebaseapp.com',projectId:'t'};")
+    if not os.environ.get("XWELCOME"): await pg.add_init_script("window.KEEPWISE_NO_SETUP = true;")
     async def serve_fb(route):
         if route.request.url.endswith("firebase-app-compat.js"): await route.fulfill(path=os.path.join(HERE, "mock_firebase.js"), content_type="application/javascript")
         else: await route.fulfill(body="", content_type="application/javascript")
@@ -100,6 +101,15 @@ async def goto_screen(pg, screen):
     await pg.evaluate("document.activeElement&&document.activeElement.blur()")
     if screen in ("month", "subs", "cheaper", "codes", "plan", "split"): await pg.click(f"[data-tab={screen}]")
     elif screen == "account": await pg.click("#acct-btn")
+    elif screen in ("history", "statement"):
+        await pg.click("[data-tab=month]"); await pg.wait_for_timeout(100); await pg.locator("[data-history]").first.click(); await pg.wait_for_timeout(120)
+        if screen == "statement": await pg.locator(".stmt-row").first.click()
+    elif screen == "share":
+        await pg.click("[data-tab=month]"); await pg.wait_for_timeout(100)
+        if not await pg.locator("[data-share-open]").count(): return False
+        await pg.locator("[data-share-open]").first.click(); await pg.wait_for_timeout(600)
+    elif screen == "welcome":
+        if not await pg.locator(".welcome").count(): return False
     elif screen == "inbox":
         if not await pg.locator("#bell").is_visible(): return False
         await pg.click("#bell")
@@ -134,7 +144,7 @@ async def click_key(pg, key):
     await pg.wait_for_timeout(180)
     return True
 
-SCREENS = os.environ.get('XSCREENS','').split(',') if os.environ.get('XSCREENS') else ["month", "subs", "cheaper", "codes", "plan", "split", "account", "inbox"]
+SCREENS = os.environ.get('XSCREENS','').split(',') if os.environ.get('XSCREENS') else (["welcome"] if os.environ.get("XWELCOME") else ["month", "subs", "cheaper", "codes", "plan", "split", "account", "history", "statement", "share", "inbox"])
 IGNORE_DEAD = re.compile(r"legal|privacy|terms|mailto|http|#main|download", re.I)
 
 async def sweep(browser, w, h, scheme, prep=None, label=""):

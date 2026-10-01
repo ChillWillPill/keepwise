@@ -23,7 +23,7 @@ def money(s):  # "$1,456.99" -> 1456.99 ; handles "−"
     v = float(m.group(2).replace(",", ""))
     return -v if m.group(1) else v
 
-async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False, preview=False):
+async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False, preview=False, welcome=False):
     pg = await ctx.new_page()
     await pg.set_viewport_size({"width": w, "height": h})
     pg.errors = []
@@ -37,6 +37,7 @@ async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False, prev
         if os.path.exists(path): await route.fulfill(path=path, content_type="application/javascript")
         else: await route.abort()
     await pg.route("https://cdnjs.cloudflare.com/**", serve_vendor)
+    if welcome is False: await pg.add_init_script("window.KEEPWISE_NO_SETUP = true;")  # most tests start on the example month
     if not fb and not preview: await pg.add_init_script("window.KEEPWISE_FIREBASE = null;")  # no network sign-in in ordinary tests
     if fb:  # sign-in tests: a project config plus an offline stand-in for the Firebase SDK
         await pg.add_init_script("window.KEEPWISE_FIREBASE = {apiKey: 'test', authDomain: 'test.firebaseapp.com', projectId: 'test'};")
@@ -1069,6 +1070,167 @@ async def used_today_shows_it_is_done(ctx):
     assert "Unused for" not in t and "Last used today" in t and await hulu.locator("[data-used]").is_disabled()
     assert "no longer flagged" in await pg.inner_text("#toast")
     assert "flash" in (await hulu.get_attribute("class"))
+
+
+# ---------------- first-run setup, statements, backup, renewals, cancel help, share ----------------
+@test
+async def first_run_setup_flow(ctx):
+    pg = await open_app(ctx, welcome=True)
+    assert await pg.locator(".welcome .w-title").count() == 1 and not await pg.locator("#tabbar").is_visible(), "setup first, no tab bar"
+    assert (await state(pg)) is None, "nothing saved until setup is finished"
+    await pg.click("[data-w-next]"); await pg.click("[data-w-next]")
+    assert "Enter what comes in" in await pg.inner_text("#toast"), "income is needed"
+    await pg.select_option("[data-w=cur]", "GBP"); await pg.wait_for_timeout(80)
+    assert "£" in await text(pg, ".w-big em")
+    await pg.fill("[data-w=income]", "4200"); await pg.keyboard.press("Enter"); await pg.wait_for_timeout(100)
+    await pg.fill("[data-w=home]", "1500"); await pg.click("[data-w-next]")
+    await pg.click("[data-w-finish]"); await pg.wait_for_timeout(200)
+    st = await state(pg)
+    assert st["income"] == 4200 and st["cur"] == "GBP" and st["example"] is False and [e["amount"] for e in st["expenses"]] == [1500] and st["subs"] == []
+    assert await pg.locator("#tabbar").is_visible() and "£2,700" in await text(pg, "[data-out=headline]")
+    await pg.reload(); await pg.wait_for_timeout(300)
+    assert await pg.locator(".welcome").count() == 0, "setup shows once"
+
+@test
+async def first_run_can_explore_the_example(ctx):
+    pg = await open_app(ctx, welcome=True)
+    await pg.click("[data-w-example]"); await pg.wait_for_timeout(200)
+    assert (await state(pg))["example"] is True and "example month" in await text(pg, "#view")
+    await pg.click("[data-w-start]"); await pg.wait_for_timeout(100)
+    assert await pg.locator(".welcome [data-w=income]").count() == 1, "set up later from the example"
+    await pg.reload(); await pg.wait_for_timeout(300)
+    assert await pg.locator(".welcome").count() == 0, "leaving the setup keeps the example"
+
+@test
+async def existing_people_never_see_setup(ctx):
+    pg = await open_app(ctx, welcome=True)
+    await pg.evaluate("localStorage.setItem('keepwise-app-v1', JSON.stringify({v:1, tab:'subs', cur:'USD', income:100, env:{needs:50,misc:30,save:20}, efSaved:0, efMonths:3, goalName:'', goalAmt:0, priority:'ef', ruleDays:45, filter:'All', expenses:[], subs:[], swaps:[], codes:[], people:[{id:'me',name:'You'}], tags:['Friends'], splits:[], settlements:[]})); localStorage.removeItem('keepwise-welcome-done')")
+    await pg.reload(); await pg.wait_for_timeout(300)
+    assert await pg.locator(".welcome").count() == 0 and await pg.locator("[data-tab=subs][aria-current=page]").count() == 1
+
+@test
+async def monthly_statements(ctx):
+    pg = await open_app(ctx)
+    st = await state(pg); keys = sorted(st["statements"])
+    assert len(keys) == 3 and sum(1 for k in keys if st["statements"][k].get("example")) == 2, keys
+    cur = st["statements"][keys[-1]]
+    assert abs(cur["kept"] - money(await text(pg, "[data-out=headline] .big"))) < 0.01
+    assert await pg.locator("[data-out=historyCard] .hist-col").count() == 3
+    await pg.fill("#m-income", "6000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(250)
+    assert (await state(pg))["statements"][keys[-1]]["income"] == 6000, "this month's statement follows the plan"
+    assert (await state(pg))["statements"][keys[0]]["income"] == 5200, "closed months do not change"
+    await pg.click("[data-history]"); await pg.wait_for_timeout(150)
+    assert await pg.locator(".stmt-row").count() == 3 and "In progress" in await text(pg, ".stmt-row:first-child")
+    await pg.locator(".stmt-row").nth(2).click(); await pg.wait_for_timeout(150)
+    v = await text(pg, ".stmt")
+    assert "Monthly statement" in v and "Closed" in v and "example statement" in v and "Rent" in v
+    assert await pg.locator("[data-stmt-print]").count() == 1
+    await pg.click("[data-stmt-back]"); await pg.click("[data-history-close]"); await pg.wait_for_timeout(100)
+    assert await pg.locator("[data-out=headline]").count() == 1
+    await pg.locator("[data-out=historyCard] .hist-col").last.click(); await pg.wait_for_timeout(150)
+    assert "In progress" in await text(pg, ".stmt")
+    await tab(pg, "subs"); assert await pg.locator(".stmt").count() == 0, "tabs leave the statement"
+
+@test
+async def statement_prints_cleanly(ctx):
+    pg = await open_app(ctx)
+    await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(150)
+    await pg.emulate_media(media="print")
+    hidden = await pg.evaluate("['.app-header','#tabbar','.no-print'].map(s => getComputedStyle(document.querySelector(s)).display)")
+    assert hidden == ["none", "none", "none"], hidden
+    pdf = await pg.pdf(); assert len(pdf) > 5000
+
+@test
+async def backup_download_and_restore(ctx):
+    pg = await open_app(ctx); await tab(pg, "plan")
+    assert "No backup yet" in await text(pg, "[data-out=backupBox]")
+    async with pg.expect_download() as dl: await pg.click("[data-out=backupBox] [data-backup]")
+    d = await dl.value; assert re.match(r"keepwise-backup-\d{4}-\d\d-\d\d\.json", d.suggested_filename)
+    j = json.load(open(await d.path())); assert j["app"] == "KeepWise" and j["kind"] == "backup" and j["data"]["income"] == 5200
+    await pg.wait_for_timeout(150); assert "Last backup today" in await text(pg, "[data-out=backupBox]")
+    await pg.fill("[data-bind=income]", "99"); await pg.locator("[data-bind=income]").blur(); await pg.wait_for_timeout(200)
+    bad = os.path.join(TMP, "notbackup.json"); open(bad, "w").write('{"hello":1}')
+    await pg.set_input_files("#restore-in", bad); await pg.wait_for_timeout(200)
+    assert "isn’t a KeepWise backup" in await pg.inner_text("#toast") and (await state(pg))["income"] == 99
+    await pg.set_input_files("#restore-in", await d.path()); await pg.wait_for_timeout(200)
+    assert "Replace everything" in await text(pg, "[data-out=backupBox]")
+    await pg.click("[data-restore-no]"); await pg.wait_for_timeout(100); assert (await state(pg))["income"] == 99
+    await pg.set_input_files("#restore-in", await d.path()); await pg.wait_for_timeout(200)
+    await pg.click("[data-restore-yes]"); await pg.wait_for_timeout(200)
+    assert (await state(pg))["income"] == 5200 and "Backup restored" in await pg.inner_text("#toast")
+
+@test
+async def keep_data_safe_reminders(ctx):
+    pg = await ctx.new_page(); pg.errors = []
+    await pg.add_init_script("Object.defineProperty(navigator, 'userAgent', {get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'}); window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;")
+    await pg.set_viewport_size({"width": 390, "height": 844}); await pg.goto(URL); await pg.wait_for_timeout(400)
+    assert "Add to Home Screen" in await text(pg, "[data-out=keepSafe]")
+    await pg.click("[data-a2hs-hide]"); await pg.wait_for_timeout(100)
+    assert await text(pg, "[data-out=keepSafe]") == "" and (await state(pg))["a2hsHide"] is True
+    # a real plan, a few days in, with no backup: a gentle reminder that can wait
+    pg2 = await open_app(ctx); await tab(pg2, "plan")
+    await pg2.click("[data-reset=blank]"); await pg2.click("[data-reset-yes]"); await pg2.wait_for_timeout(150)
+    await pg2.click("[data-add-exp]"); await pg2.wait_for_timeout(100); await tab(pg2, "month")
+    assert await text(pg2, "[data-out=keepSafe]") == "", "not on day one"
+    await pg2.close()
+    import datetime
+    pg2 = await ctx.new_page(); pg2.errors = []
+    await pg2.clock.install(time=datetime.datetime.now() + datetime.timedelta(days=5))
+    await pg2.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;"); await pg2.set_viewport_size({"width": 390, "height": 844}); await pg2.goto(URL); await pg2.wait_for_timeout(400)
+    assert "Back up your KeepWise data" in await text(pg2, "[data-out=keepSafe]")
+    await pg2.click("[data-backup-later]"); await pg2.wait_for_timeout(100)
+    assert await text(pg2, "[data-out=keepSafe]") == ""
+
+@test
+async def coming_up_renewals(ctx):
+    pg = await open_app(ctx)
+    card = await text(pg, "[data-out=comingUp]")
+    assert "Hulu Premium" in card and "Tomorrow" in card and "Netflix" in card and "In 3 days" in card and "Spotify" in card and "Audible" not in card
+    assert "$48.97 will be charged this week" in card
+    await tab(pg, "subs")
+    assert "Renews tomorrow" in await text(pg, "[data-sub=s4]")
+    await pg.click("[data-sub=s4] [data-keep=drop]"); await pg.wait_for_timeout(100)
+    assert "How to cancel Hulu Premium" in await text(pg, "[data-sub=s4]")
+    await pg.click("[data-sub=s5] [data-renew-open]"); await pg.wait_for_timeout(80)
+    await pg.select_option("[data-sub=s5] [data-renew-day]", "28"); await pg.wait_for_timeout(120)
+    assert (await state(pg))["subs"][4]["renewDay"] == 28 and "Disney+ renews" in await pg.inner_text("#toast")
+    f = pg.locator("form[data-form=addSub]"); await pg.click("text=Add a subscription")
+    await f.locator("[name=name]").fill("Crunchyroll"); await f.locator("[name=price]").fill("7.99"); await f.locator("[name=renew]").fill("2026-12-09")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(120)
+    assert [x for x in (await state(pg))["subs"] if x["name"] == "Crunchyroll"][0]["renewDay"] == 9
+    await tab(pg, "month")
+    c = await text(pg, "[data-out=comingUp]"); assert "You chose to drop it" in c and "$29.98 will be charged" in c
+
+@test
+async def cancel_help_links(ctx):
+    pg = await open_app(ctx); await tab(pg, "subs")
+    await pg.click("[data-sub=s1] [data-keep=drop]"); await pg.click("[data-sub=s6] [data-keep=drop]"); await pg.wait_for_timeout(120)
+    assert await pg.get_attribute("[data-sub=s1] .cancel-link", "href") == "https://help.netflix.com/en/node/407"
+    assert await pg.get_attribute("[data-sub=s1] .cancel-link", "target") == "_blank"
+    assert "google.com/search" in await pg.get_attribute("[data-sub=s6] .cancel-link", "href"), "no official page known: a search"
+    assert await pg.locator("[data-sub=s3] .cancel-link").count() == 0, "only shown once you choose Drop"
+
+@test
+async def share_what_you_found(ctx):
+    pg = await open_app(ctx)
+    await pg.click("[data-share-open]"); await pg.wait_for_timeout(900)
+    size = await pg.evaluate("new Promise(r => { const i = document.querySelector('.share-img'); const go = () => r([i.naturalWidth, i.naturalHeight]); i.complete ? go() : i.onload = go; })")
+    assert size == [1080, 1080], size
+    assert "No names, no income" in await text(pg, "#view")
+    async with pg.expect_download() as dl: await pg.click("[data-share-save]")
+    assert (await dl.value).suggested_filename == "keepwise.png"
+    await pg.click("[data-share-close]"); await pg.wait_for_timeout(100)
+    assert await pg.locator("[data-out=headline]").count() == 1
+
+@test
+async def import_sets_renewal_dates(ctx):
+    pg = await open_app(ctx)
+    csv = os.path.join(TMP, "renew.csv")
+    open(csv, "w").write("Date,Description,Amount\n2026-07-04,NETFLIX.COM,-15.49\n2026-08-04,NETFLIX.COM,-15.49\n2026-09-04,NETFLIX.COM,-15.49\n2026-09-01,PAYROLL ACME,3000\n")
+    await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(400)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(200)
+    n = [x for x in (await state(pg))["subs"] if x["name"].lower().startswith("netflix")][0]
+    assert n["renewDay"] == 4 and (await state(pg))["example"] is False
 
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")

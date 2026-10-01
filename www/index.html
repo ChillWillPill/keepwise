@@ -299,6 +299,100 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
   .summary3 b{margin-top:0;font-size:1.3rem;text-align:right}}
 .summary3 > div{min-width:0}.summary3 b{overflow-wrap:anywhere}
 @media (prefers-reduced-motion:no-preference){.meter i,.stack i{transition:width .25s ease}}
+/* ---- statements ---- */
+.hist-bars{display:flex;align-items:flex-end;gap:8px;min-height:150px;padding-top:4px}
+.hist-col{appearance:none;border:0;background:none;padding:0;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:var(--ink);font:inherit}
+.hist-v{font-size:.72rem;font-weight:600;color:var(--muted);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.hist-bar{width:100%;max-width:44px;border-radius:10px 10px 4px 4px;background:color-mix(in srgb,var(--green) 55%,var(--card))}
+.hist-bar.now{background:var(--green)}
+.hist-bar.neg{background:color-mix(in srgb,var(--rust) 60%,var(--card))}
+.hist-m{font-size:.78rem;color:var(--muted);font-weight:600}
+.hist-col:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:10px}
+.stmt-row{appearance:none;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);font:inherit;color:inherit;cursor:pointer}
+.stmt-row:last-child{border-bottom:0}
+.stmt-row:hover{background:color-mix(in srgb,var(--chip) 40%,transparent)}
+.stmt{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px 20px;display:flex;flex-direction:column;gap:18px;box-shadow:var(--lift)}
+.st-head{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.st-brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.st-brand b{font:600 1.15rem/1.1 var(--display);letter-spacing:-.025em}
+.st-title{font:600 1.75rem/1.1 var(--display);letter-spacing:-.025em;margin-top:6px}
+.st-status{color:var(--muted);font-weight:600}
+.st-status.open{color:var(--green)}
+.st-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.st-sum>div{background:var(--bg);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.st-sum b{font:600 1.15rem/1.15 var(--display);white-space:nowrap}
+@media (max-width:380px){.st-sum{grid-template-columns:1fr}.st-sum>div{flex-direction:row;justify-content:space-between;align-items:baseline}}
+.stmt h3{font:600 .8rem/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.st-line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:.95rem}
+.st-line span:first-child{min-width:0;overflow-wrap:anywhere}
+.st-foot{padding-top:12px;border-top:1px solid var(--line)}
+/* ---- coming up ---- */
+.st-one{display:flex;justify-content:space-between;align-items:baseline;gap:12px;background:var(--bg);border-radius:14px;padding:14px}
+.st-one b{font:600 1.35rem var(--display)}
+.up-list{display:flex;flex-direction:column}
+.up-row{display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
+.up-row:first-child{border-top:0;padding-top:2px}
+.up-date{width:48px;flex:none;border-radius:12px;background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:6px 0;line-height:1.05}
+.up-date b{font:600 1.25rem var(--display)}
+.up-date span{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.up-row.drop .up-date{background:var(--rust-soft);color:var(--rust)}
+.up-main{flex:1;min-width:0}
+.renew-set{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.renew-set select,.renew-set input{width:auto;flex:1 1 160px;min-height:38px;padding:6px 10px}
+/* ---- cancel help ---- */
+.drop-help{display:flex;flex-direction:column;gap:6px;background:var(--rust-soft);border-radius:12px;padding:10px 12px}
+.link.renew-btn{color:var(--green);font-weight:600;font-size:.84rem}
+.link.renew-btn.add{color:var(--muted);font-weight:500}
+.renew-set{background:var(--bg);border-radius:12px;padding:8px 10px}
+.cancel-link{display:inline-flex;align-items:center;gap:4px;font-weight:600;color:var(--green);text-decoration:none;font-size:.9rem}
+.cancel-link:hover{text-decoration:underline}
+.cancel-link svg{width:14px;height:14px}
+/* ---- backup ---- */
+.backup{display:flex;flex-direction:column;gap:12px}
+.backup>div:first-child{display:flex;flex-direction:column;gap:2px}
+.backup.due>div:first-child b{color:var(--rust)}
+.btn svg{width:18px;height:18px;vertical-align:-4px;margin-right:6px}
+.keep-safe{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.keep-safe p{margin-top:4px}
+.keep-safe svg{width:16px;height:16px;vertical-align:-3px;margin:0 3px}
+/* ---- share ---- */
+.share-img{width:100%;max-width:440px;align-self:center;border-radius:22px;box-shadow:var(--lift);border:1px solid var(--line)}
+.share-btn{align-self:flex-start}
+/* ---- first-run setup ---- */
+.app.welcoming .tabbar{display:none}
+.welcome{max-width:440px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-top:6px}
+.w-logo{width:84px;height:84px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px var(--line),var(--lift);align-self:center;margin-top:8px}
+.w-title{font:600 clamp(1.9rem,8vw,2.4rem)/1.08 var(--display);letter-spacing:-.03em;text-align:center}
+.w-sub{color:var(--muted);text-align:center;font-size:1.02rem;margin-top:-6px}
+.w-points{list-style:none;display:flex;flex-direction:column;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px 18px;box-shadow:var(--lift)}
+.w-points li{display:flex;gap:14px;align-items:center}
+.w-points svg{width:26px;height:26px;flex:none;color:var(--green)}
+.w-safe{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:.9rem}
+.w-safe svg{width:16px;height:16px}
+.w-cta{padding:15px;font-size:1.02rem}
+.w-alt{align-self:center;padding:10px 4px;margin:-4px 0}
+.w-dots{display:flex;gap:6px;justify-content:center}
+.w-dots i{width:26px;height:5px;border-radius:9px;background:var(--line)}
+.w-dots i.on{background:var(--green)}
+.w-big{min-height:60px}
+.w-big input{font:600 1.5rem var(--display)}
+.w-big em{font:600 1.3rem var(--display)}
+.w-choice{appearance:none;display:flex;align-items:center;gap:14px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;cursor:pointer;color:var(--ink);font:inherit;box-shadow:var(--lift)}
+.w-choice>span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:3px}
+.w-choice:hover{border-color:color-mix(in srgb,var(--green) 45%,var(--line))}
+.w-ic{width:44px;height:44px;border-radius:12px;background:var(--green-soft);color:var(--green);display:grid;place-items:center;flex:none}
+.w-ic svg{width:24px;height:24px}
+.w-choice>svg{color:var(--muted);flex:none}
+/* ---- print a statement ---- */
+@media print{
+  .app-header,.tabbar,.no-print,.toast{display:none!important}
+  html,body{background:#fff!important}
+  .app{position:static!important;height:auto!important}
+  .app-main{overflow:visible!important}
+  .view{padding:0!important;max-width:none}
+  .stmt{box-shadow:none;border:0;padding:0}
+  .st-sum>div{border:1px solid #ddd}
+}
 </style>
 
 <div class="app" id="app">
@@ -316,6 +410,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <input type="file" id="stmt" accept=".csv,.pdf,text/csv,application/pdf" class="sr" tabindex="-1" aria-hidden="true">
+<input type="file" id="restore-in" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true" aria-label="Backup file">
 <input type="file" id="vcf" accept=".vcf,text/vcard,text/x-vcard" class="sr" tabindex="-1" aria-hidden="true">
 
 <script>
@@ -371,7 +466,8 @@ const undoable = () => { const snap = JSON.stringify(S); return () => { const ke
 
 /* ================= example data ================= */
 function example(){
-  return {
+  const dayIn = n => { const d = todayMid(); d.setDate(d.getDate() + n); return d.getDate(); };
+  const ex = {
     v:1, tab:"month", cur:"USD", income:5200, env:{needs:60, misc:20, save:20},
     efSaved:2400, efMonths:3, goalName:"New laptop", goalAmt:1200, priority:"ef", ruleDays:45, filter:"All",
     expenses:[
@@ -388,15 +484,15 @@ function example(){
       {id:"fun",  name:"Clothes and gifts", amount:70, env:"misc"}
     ],
     subs:[
-      {id:"s1", name:"Netflix", price:17.99, cycle:"mo", last:isoDaysAgo(2),  group:"Video",   env:"misc", keep:"auto"},
-      {id:"s2", name:"Spotify", price:11.99, cycle:"mo", last:isoDaysAgo(1),  group:"Music",   env:"misc", keep:"auto"},
+      {id:"s1", name:"Netflix", price:17.99, cycle:"mo", last:isoDaysAgo(2),  group:"Video",   env:"misc", keep:"auto", renewDay:dayIn(3)},
+      {id:"s2", name:"Spotify", price:11.99, cycle:"mo", last:isoDaysAgo(1),  group:"Music",   env:"misc", keep:"auto", renewDay:dayIn(5)},
       {id:"s3", name:"Apple Music", price:10.99, cycle:"mo", last:isoDaysAgo(20), group:"Music", env:"misc", keep:"auto"},
-      {id:"s4", name:"Hulu Premium", price:18.99, cycle:"mo", last:isoDaysAgo(52), group:"Video", env:"misc", keep:"auto"},
+      {id:"s4", name:"Hulu Premium", price:18.99, cycle:"mo", last:isoDaysAgo(52), group:"Video", env:"misc", keep:"auto", renewDay:dayIn(1)},
       {id:"s5", name:"Disney+", price:9.99, cycle:"mo", last:isoDaysAgo(70), group:"Video",     env:"misc", keep:"auto"},
       {id:"s6", name:"Planet Fitness Black Card", price:24.99, cycle:"mo", last:isoDaysAgo(88), group:"Fitness", env:"misc", keep:"auto"},
       {id:"s7", name:"iCloud+ 200 GB", price:2.99, cycle:"mo", last:isoDaysAgo(0), group:"Storage", env:"misc", keep:"auto"},
       {id:"s8", name:"Adobe Photoshop", price:22.99, cycle:"mo", last:isoDaysAgo(61), group:"Apps", env:"misc", keep:"auto"},
-      {id:"s9", name:"Audible", price:14.95, cycle:"mo", last:isoDaysAgo(6), group:"Books",     env:"misc", keep:"auto"},
+      {id:"s9", name:"Audible", price:14.95, cycle:"mo", last:isoDaysAgo(6), group:"Books",     env:"misc", keep:"auto", renewDay:dayIn(12)},
       {id:"s10",name:"Duolingo Super", price:83.99, cycle:"yr", last:isoDaysAgo(49), group:"Learning", env:"misc", keep:"auto"}
     ],
     swaps:[
@@ -424,8 +520,18 @@ function example(){
       {id:"x4", title:"Movie tickets", amount:48, tag:"Movie", paidBy:"p1", method:"equal", parts:{me:1,p1:1,p6:1}, date:isoDaysAgo(9)},
       {id:"x5", title:"Team lunch", amount:36, tag:"Lunch", paidBy:"me", method:"exact", parts:{me:12,p6:12,p5:12}, date:isoDaysAgo(12)}
     ],
-    settlements:[]
+    settlements:[], example:true, statements:{}
   };
+  // Two finished example months, so the statements screen has something to show. Your own replace them as months pass.
+  const base = (() => { const n = new Date(), dim = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate(); return dim - n.getDate() <= 2 ? new Date(n.getFullYear(), n.getMonth() + 1, 1) : n; })();
+  const k0 = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, "0")}`;
+  const back = n => { const d = new Date(base.getFullYear(), base.getMonth() - n, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
+  const subsEx = ex.subs.map(x => ({n: x.name, m: x.cycle === "yr" ? Math.round(x.price / 12 * 100) / 100 : x.price, k: "auto"}));
+  const linesEx = ex.expenses.map(e => ({n: e.name, a: e.amount, e: e.env}));
+  [[2, 3402.18, 448.27, 0], [1, 3388.14, 431.10, 900]].forEach(([n, needs, misc, aside]) => { const k = back(n);
+    ex.statements[k] = {key: k, updated: `${k}-28`, income: 5200, needs, misc, kept: Math.round((5200 - needs - misc) * 100) / 100, setAside: aside, efSaved: 1500 + aside, cur: "USD", lines: linesEx, subs: subsEx, swaps: [], splits: {count: 2, total: 186}, settled: {count: 1, total: 40}, example: true}; });
+  void k0;
+  return ex;
 }
 
 /* ================= state ================= */
@@ -433,6 +539,7 @@ const KEY = "keepwise-app-v1";
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e) { S = null; }
 if (!S || S.v !== 1) S = example();
+if (!S.started) S.started = isoDaysAgo(0);
 const THEMES = ["system","light","dark"];
 const THEME_ICON = {
   system:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
@@ -449,7 +556,7 @@ function applyTheme(){
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
 (S.settlements || (S.settlements = [])).forEach(x => { if (!x.id) x.id = uid(); });
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+const save = () => { if (UI.welcome != null) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
 window.addEventListener("pagehide", save);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
 
@@ -573,6 +680,11 @@ I.plus = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="cu
 I.contacts = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="vertical-align:-3px;margin-right:4px"><rect x="4" y="3" width="16" height="18" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M7.5 17a4.5 4.5 0 0 1 9 0"/></svg>';
 I.camera = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg>';
 I.check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+I.chevl = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-3px;margin-right:2px"><path d="M15 6l-6 6 6 6"/></svg>';
+I.ext = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+I.download = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
+I.share = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M6 12v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-7"/></svg>';
+I.lock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 I.x = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 I.chev = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>';
 I.travel = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4 3 11l7 2.5L12.5 21z"/><path d="M10 13.5 21 4"/></svg>';
@@ -820,15 +932,16 @@ function applyStatement(R, mode){
     ...R.spending.filter(s => s.cat !== "Transfers").map(s => ({id: uid(), name: s.name, amount: s.monthly, env: s.env, source: "statement"}))
   ];
   const subs = R.subs.map(s => ({id: uid(), name: s.name, price: s.price, cycle: s.cycle, last: null, group: "", env: "misc", keep: "auto", since: s.since, charges: s.charges, paid: s.paid, lastCharge: s.lastCharge, source: "statement"}));
+  subs.forEach(s => setRenewalFrom(s, s.lastCharge));
   if (mode === "replace"){
     if (R.monthlyIncome) S.income = R.monthlyIncome;
     S.expenses = expenses; S.subs = subs;
-    S.swaps = S.swaps.filter(w => linkedItem(w));
+    S.swaps = S.swaps.filter(w => linkedItem(w)); S.example = false;
   } else {
     if (R.monthlyIncome && !S.income) S.income = R.monthlyIncome;
     const has = (list, n) => list.some(x => x.name.toLowerCase() === n.toLowerCase());
     expenses.forEach(e => { if (!has(S.expenses, e.name)) S.expenses.push(e); });
-    subs.forEach(s => { const old = S.subs.find(x => x.name.toLowerCase() === s.name.toLowerCase()); if (old) Object.assign(old, {since: s.since, charges: s.charges, paid: s.paid, lastCharge: s.lastCharge}); else S.subs.push(s); });
+    subs.forEach(s => { const old = S.subs.find(x => x.name.toLowerCase() === s.name.toLowerCase()); if (old){ Object.assign(old, {since: s.since, charges: s.charges, paid: s.paid, lastCharge: s.lastCharge}); if (!old.renewDay && !old.renewDate) setRenewalFrom(old, s.lastCharge); } else S.subs.push(s); });
   }
   S.payday = R.income[0] ? R.income[0].payday : S.payday;
   S.imported = {file: R.fileName, when: isoDaysAgo(0), from: R.first, to: R.last};
@@ -935,9 +1048,11 @@ function bizPreview(){
 V.month = () => {
   if (UI.biz) return spaceSwitch() + bizPreview();
   const C = compute();
-  return `${spaceSwitch()}${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap"><p>${S.expenses.length || S.subs.length || +S.income ? "Sample month for one person, stored only on this device. Change the income and the list. The month-end number follows." : "Start with the money coming in below, then add your bills on the Plan tab, or import a bank statement. Everything stays on this device."}</p><button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
+  return `${spaceSwitch()}${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on the Plan tab, or import a bank statement. Everything stays on this device." : "Add your other bills on the Plan tab and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>
+  <div data-out="keepSafe">${OUT.keepSafe()}</div>
+  <div data-out="comingUp">${OUT.comingUp()}</div>
   <div data-out="reviewCard">${OUT.reviewCard()}</div>
   ${importCard()}
   <div class="grid2">
@@ -948,6 +1063,7 @@ V.month = () => {
   <div data-out="stack">${OUT.stack()}</div>
   <div data-out="dropCard">${OUT.dropCard()}</div>
   <div data-out="envelopes">${OUT.envelopes()}</div>
+  <div data-out="historyCard">${OUT.historyCard()}</div>
   <section class="card"><h2>How to use it</h2><div data-out="howto">${OUT.howto()}</div></section>
   <section class="card" aria-labelledby="askh">
     <h2 id="askh">Ask KeepWise</h2>
@@ -985,19 +1101,20 @@ function compareChart(now, after, afterLabel){
     <div class="cmp-labels"><span>Now</span><span>${esc(afterLabel)}</span></div>
     <p class="small ${diff > 0 ? "good" : "muted"} tnum" style="text-align:center">${diff > 0 ? `+${fmt(diff)} a month, ${fmt(diff * 12)} a year` : "No difference yet"}</p></div>`;
 }
+const shareRow = () => shareFacts() ? `<div class="linkrow"><button class="link" type="button" data-share-open>${I.share.replace('aria-hidden="true"', 'aria-hidden="true" width="18" height="18" style="vertical-align:-3px;margin-right:6px"')}Share what you found</button></div>` : "";
 OUT.dropCard = () => {
   const C = compute(), now = C.endSaved;
   const toggle = `<div class="linkrow"><button class="link plain" data-compare type="button" aria-expanded="${UI.compare}">${UI.compare ? "Hide the comparison" : "Compare the close"}</button></div>`;
   if (!C.flagged.length){
     const swapSave = C.inactiveSwaps.reduce((a, x) => a + x.save, 0);
     return `<section class="card"><p class="label">Your rules</p><p>${C.liveSubs.length ? `Nothing is flagged right now. Every subscription was used in the last ${S.ruleDays} days and none overlap.` : "No subscriptions yet. Add them on the Subs tab or import a bank statement, and your rules will flag the ones you do not use."}</p>
-      ${toggle}${UI.compare ? compareChart(now, now + swapSave, "With swaps") + `<button class="link" data-go="cheaper" type="button">See the swaps</button>` : ""}</section>`;
+      ${toggle}${UI.compare ? compareChart(now, now + swapSave, "With swaps") + `<button class="link" data-go="cheaper" type="button">See the swaps</button>` : ""}${shareRow()}</section>`;
   }
   return `<section class="card"><p class="muted">If you drop what your rules flag, ${esc(C.planMonth)} ends with</p>
     <div style="font:600 1.875rem/1.1 var(--display);letter-spacing:-.025em;${fitSize(fmt(now + C.flaggedSave), 1.875, 110)}" class="tnum bigsoft">${fmt(now + C.flaggedSave)}</div>
     <p>Savings finishes ${fmt(C.flaggedSave)} higher. The unused list is ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year.</p>
     <div class="linkrow"><button class="link" data-go="subs" type="button">Review subscriptions</button></div>
-    ${toggle}${UI.compare ? compareChart(now, now + C.flaggedSave, "After cuts") : ""}</section>`;
+    ${toggle}${shareRow()}${UI.compare ? compareChart(now, now + C.flaggedSave, "After cuts") : ""}</section>`;
 };
 // What is typed in "Add a line" is kept here until it is added, so redrawing the list (after tapping away or closing the keyboard) never wipes it.
 const LINE_DRAFT = {};
@@ -1108,7 +1225,8 @@ V.subs = () => `
       <div class="grid2"><label class="field"><span>Price</span><input name="price" required inputmode="decimal" placeholder="13.99"></label>
       <label class="field"><span>Billed</span><select name="cycle"><option value="mo">Monthly</option><option value="yr">Yearly</option></select></label></div>
       <div class="grid2"><label class="field"><span>Last used</span><input name="last" type="date" value="${isoDaysAgo(0)}"></label>
-      <label class="field"><span>Kind</span><input name="group" placeholder="Video, Music, Fitness…" list="groups"></label></div>
+      <label class="field"><span>Next charge <span class="muted small">(optional)</span></span><input name="renew" type="date"></label></div>
+      <label class="field"><span>Kind</span><input name="group" placeholder="Video, Music, Fitness…" list="groups"></label>
       <datalist id="groups">${[...new Set(S.subs.map(s => s.group).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("")}</datalist>
       <button class="btn primary" type="submit">Add subscription</button>
     </form></details>`;
@@ -1126,15 +1244,20 @@ OUT.subsList = () => {
   const order = [...S.subs].sort((a,b) => (C.flags[b.id].length - C.flags[a.id].length) || subMonthly(b) - subMonthly(a));
   return `<div class="rows">${order.map(s => {
     const f = C.flags[s.id], d = daysSince(s.last), k = s.keep;
-    const q = encodeURIComponent(`how to cancel ${s.name}`);
+    const nr = nextRenewal(s), nd = nr ? daysUntil(nr) : null;
+    const editing = UI.renewEdit === s.id;
+    const renewEditor = !editing ? "" : `<div class="renew-set"><span class="small muted">Renews on</span>${s.cycle === "yr" ? `<input type="date" data-renew-date value="${esc(s.renewDate || "")}" aria-label="Next renewal date for ${esc(s.name)}">` : `<select data-renew-day aria-label="Renewal day for ${esc(s.name)}"><option value="">Pick a day</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${s.renewDay === i + 1 ? "selected" : ""}>${ordinal(i + 1)} of each month</option>`).join("")}</select>`}<button class="link plain small" type="button" data-renew-cancel>Done</button></div>`;
+    const renew = editing ? "" : nr ? `<button class="link plain small renew-btn" type="button" data-renew-open aria-label="Change renewal date for ${esc(s.name)}">Renews ${nd === 0 ? "today" : nd === 1 ? "tomorrow" : nr.toLocaleDateString("en-US", {month: "short", day: "numeric"})}</button>`
+      : `<button class="link plain small renew-btn add" type="button" data-renew-open aria-label="Add renewal date for ${esc(s.name)}">+ Renewal date</button>`;
     return `<div class="row${UI.flashSub === s.id ? " flash" : ""}" data-sub="${s.id}"><div class="row-top"><div><div class="name">${esc(s.name)}</div>
-      <div class="muted small">${!s.last ? "Usage not checked yet" : d === 0 ? "Last used today" : d === 1 ? "Last used yesterday" : `Last used ${d} days ago`}${s.group ? ` · ${esc(s.group)}` : ""}</div>${s.since ? `<div class="muted small">${esc(paidFor(s))}</div>` : ""}</div>
+      <div class="muted small">${!s.last ? "Usage not checked yet" : d === 0 ? "Last used today" : d === 1 ? "Last used yesterday" : `Last used ${d} days ago`}${s.group ? ` · ${esc(s.group)}` : ""}</div>${s.since ? `<div class="muted small">${esc(paidFor(s))}</div>` : ""}<div>${renew}</div></div>
       <div><div class="name tnum">${fmt(s.price)}<span class="muted small">/${s.cycle === "yr" ? "yr" : "mo"}</span></div>${s.cycle === "yr" ? `<div class="muted small tnum">${fmt(subMonthly(s))}/mo</div>` : ""}</div></div>
+      ${renewEditor}
       ${f.length ? `<div class="inline">${f.map(r => `<span class="pill ${k === "keep" ? "grey" : "flag"}">${esc(r)}</span>`).join("")}</div>` : ""}
       <div class="inline" style="justify-content:space-between">
         <div class="seg" role="group" aria-label="${esc(s.name)}"><button type="button" data-keep="keep" aria-pressed="${k === "keep"}">Keep</button><button type="button" data-keep="auto" aria-pressed="${k === "auto"}" title="Let your rules decide">Auto</button><button type="button" class="drop" data-keep="drop" aria-pressed="${k === "drop"}">Drop</button></div>
         <span class="inline">${d === 0 ? `<button class="btn small done" type="button" data-used disabled aria-label="${esc(s.name)} is marked as used today">${I.check}Used today</button>` : `<button class="btn small" type="button" data-used aria-label="Mark ${esc(s.name)} as used today">I used it today</button>`}<button class="btn small danger" type="button" data-del-sub aria-label="Remove ${esc(s.name)}">Remove</button></span></div>
-      ${k === "drop" ? `<p class="small">Cancel before it renews, in the app or site where you signed up. <a class="good" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Find the cancel page</a></p>` : ""}</div>`;}).join("")}</div>`;
+      ${k === "drop" ? `<div class="drop-help"><p class="small">Cancel ${nr ? `before ${nd === 0 ? "today ends" : nr.toLocaleDateString("en-US", {month: "short", day: "numeric"})}` : "before it renews"}, in the app or site where you signed up.</p>${cancelLink(s)}</div>` : ""}</div>`;}).join("")}</div>`;
 };
 
 // ---- Cheaper ----
@@ -1226,7 +1349,11 @@ V.plan = () => `
     <label class="field"><span>Leftover money goes to</span><select data-bind="priority"><option value="ef" ${S.priority==="ef"?"selected":""}>Emergency fund first</option><option value="goal" ${S.priority==="goal"?"selected":""}>My goal first</option><option value="split" ${S.priority==="split"?"selected":""}>Half and half</option></select></label>
     <div data-out="saveSplit">${OUT.saveSplit()}</div></section>
   <section class="card"><h2>Your data</h2><p class="muted small">Your money data stays on this device and is never uploaded. KeepWise gives estimates, not financial advice.</p>
+    <div data-out="backupBox">${OUT.backupBox()}</div>
+    <div data-out="installBtn">${OUT.installBtn()}</div>
+    <button class="btn" type="button" data-history>Monthly statements</button>
     <button class="btn" type="button" data-import-open>Import a bank statement (CSV or PDF)</button>
+    ${S.example ? `<button class="btn primary" type="button" data-w-start>Set up my month</button>` : ""}
     <div class="inline"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank">Start empty</button></div>
     <div id="reset-confirm"></div>
     <p class="small legal-links"><a href="https://chillwillpill.github.io/keepwise/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://chillwillpill.github.io/keepwise/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`;
@@ -1501,13 +1628,290 @@ async function markSeen(){
   if (SH.state === "ready") { try { await SH.db.doc(`data/users/${SH.me}/state`).set({lastSeen: t}); } catch(e){} }
 }
 
+/* ================= monthly statements (made and kept on this device) ================= */
+const monthKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+const keyDate = k => { const [y, m] = k.split("-").map(Number); return new Date(y, m - 1, 1); };
+const keyLabel = (k, short) => keyDate(k).toLocaleString("en-US", short ? {month:"short"} : {month:"long", year:"numeric"});
+const shiftKey = (k, n) => { const d = keyDate(k); d.setMonth(d.getMonth() + n); return monthKey(d); };
+const inMonth = (iso, k) => !!iso && iso.slice(0, 7) === k;
+// What a month looked like, saved as you go. Past months stop changing once the plan moves on to the next month.
+function buildStatement(){
+  const C = compute(), k = C.planKey;
+  const live = S.subs.map(s => { const w = swapFor("sub", s.id); return {n: s.name, m: r2(w ? +w.altCost : subMonthly(s)), k: s.keep}; });
+  const lines = S.expenses.map(e => { const w = swapFor("expense", e.id); return {n: e.name, a: r2(w ? +w.altCost : +e.amount || 0), e: e.env}; });
+  const swaps = S.swaps.filter(w => w.on && linkedItem(w)).map(w => ({t: w.title || linkedItem(w).name, a: w.alt, s: r2(swapSaving(w))}));
+  const splits = S.splits.filter(x => inMonth(x.date, k)), pays = (S.settlements || []).filter(x => inMonth(x.date, k));
+  return {key: k, updated: isoDaysAgo(0), income: r2(C.income), needs: r2(C.needs), misc: r2(C.misc), kept: r2(C.savings),
+    setAside: r2(C.setAside), efSaved: r2(S.efSaved), cur: S.cur, lines, subs: live, swaps,
+    splits: {count: splits.length, total: r2(splits.reduce((a, x) => a + (+x.amount || 0), 0))},
+    settled: {count: pays.length, total: r2(pays.reduce((a, x) => a + (+x.amount || 0), 0))}};
+}
+function recordStatement(){
+  if (UI.welcome != null) return;  // nothing to record while setting up
+  try { const st = buildStatement(); S.statements = S.statements || {}; const old = S.statements[st.key];
+    if (old && old.example) return;
+    S.statements[st.key] = st; } catch(e){}
+}
+const statementKeys = () => Object.keys(S.statements || {}).sort().reverse();
+const currentKey = () => compute().planKey;
+function keptBars(keys){
+  const list = keys.slice(0, 6).reverse(), vals = list.map(k => S.statements[k].kept), max = Math.max(1, ...vals.map(Math.abs));
+  return `<div class="hist-bars" role="img" aria-label="Money kept, last ${list.length} months">${list.map((k, i) => { const v = vals[i];
+    return `<button type="button" class="hist-col" data-stmt="${k}" aria-label="${esc(keyLabel(k))}: kept ${fmt(v)}"><span class="hist-v tnum ${v < 0 ? "bad" : ""}">${fmt(v)}</span><span class="hist-bar ${v < 0 ? "neg" : ""}${k === currentKey() ? " now" : ""}" style="height:${Math.max(6, Math.abs(v) / max * 96)}px"></span><span class="hist-m">${esc(keyLabel(k, true))}</span></button>`; }).join("")}</div>`;
+}
+OUT.historyCard = () => {
+  const keys = statementKeys(); if (!keys.length) return "";
+  const cur = S.statements[keys[0]], prev = S.statements[keys[1]];
+  const diff = prev ? cur.kept - prev.kept : 0;
+  return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Monthly statements</h2>${keys.some(k => S.statements[k].example) ? `<span class="pill grey">Example</span>` : ""}</div>
+    ${keys.length > 1 ? keptBars(keys) : `<div class="st-one"><span class="muted small">${esc(keyLabel(keys[0]))} so far</span><b class="tnum ${cur.kept < 0 ? "bad" : "good"}">${fmt(cur.kept)} kept</b></div>`}
+    <p class="small ${diff > 0.005 ? "good" : "muted"}">${prev ? (Math.abs(diff) < 0.005 ? `Same as ${keyLabel(prev.key, true)}.` : diff > 0 ? `On track to keep ${fmt(diff)} more than ${keyLabel(prev.key).split(" ")[0]}.` : `${fmt(-diff)} less than ${keyLabel(prev.key).split(" ")[0]} so far.`) : "KeepWise writes a statement for every month. Your first one is in progress."}</p>
+    <button class="btn" type="button" data-history>See all statements</button></section>`;
+};
+V.history = () => {
+  const keys = statementKeys(), now = currentKey();
+  return `<div class="inline" style="justify-content:space-between"><h1>Statements</h1><button class="btn small" type="button" data-history-close>Done</button></div>
+  <p class="muted">A statement for every month, written by KeepWise on this device. Nothing is uploaded.</p>
+  ${keys.length ? `${keys.length > 1 ? `<section class="card">${keptBars(keys)}</section>` : ""}
+  <div class="rows">${keys.map(k => { const s = S.statements[k];
+    return `<button type="button" class="row stmt-row" data-stmt="${k}"><div class="row-top"><div><div class="name">${esc(keyLabel(k))}</div><div class="muted small">${k === now ? "In progress" : "Closed"}${s.example ? " · Example" : ""} · ${fmt(s.income)} in, ${fmt(s.needs + s.misc)} out</div></div>
+      <div class="inline" style="gap:6px"><span class="name tnum ${s.kept < 0 ? "bad" : "good"}">${fmt(s.kept)}</span>${I.chev}</div></div></button>`; }).join("")}</div>` : `<p class="empty">No statements yet. Your first one starts this month.</p>`}`;
+};
+V.statement = () => {
+  const s = S.statements && S.statements[UI.stmt]; if (!s) { UI.stmt = null; return V.history(); }
+  const f = v => { try { return new Intl.NumberFormat("en-US", {style:"currency", currency: s.cur || S.cur, minimumFractionDigits: Math.abs(v % 1) < 0.005 ? 0 : 2, maximumFractionDigits: 2}).format(v); } catch(e){ return fmt(v); } };
+  const open = s.key === currentKey(), out = s.needs + s.misc;
+  const row = (a, b, cls) => `<div class="st-line"><span>${a}</span><span class="tnum ${cls || ""}">${b}</span></div>`;
+  const live = s.subs.filter(x => x.k !== "drop"), dropped = s.subs.filter(x => x.k === "drop");
+  return `<div class="inline no-print" style="justify-content:space-between"><button class="btn small" type="button" data-stmt-back>${I.chevl}Statements</button><button class="btn small" type="button" data-stmt-print>${IN_APP ? "Download" : "Save as PDF"}</button></div>
+  <article class="stmt" aria-label="Statement for ${esc(keyLabel(s.key))}">
+    <header class="st-head"><div class="st-brand"><b class="wordmark">Keep<span>Wise</span></b><span class="muted small">Monthly statement</span></div>
+      <h2 class="st-title">${esc(keyLabel(s.key))}</h2><span class="st-status small ${open ? "open" : ""}">${open ? `In progress · updated ${esc(shortDate(s.updated))}` : `Closed · final numbers from ${esc(shortDate(s.updated))}`}</span></header>
+    ${s.example ? `<p class="note small">This is an example statement. Your own appear here as the months go by.</p>` : ""}
+    <div class="st-sum"><div><span class="label">In</span><b class="tnum">${f(s.income)}</b></div><div><span class="label">Out</span><b class="tnum">${f(out)}</b></div><div><span class="label">Kept</span><b class="tnum ${s.kept < 0 ? "bad" : "good"}">${f(s.kept)}</b></div></div>
+    <section><h3>What went out</h3>
+      ${s.lines.filter(l => l.e === "needs").map(l => row(esc(l.n), f(l.a))).join("")}
+      ${row("<b>Expenditures</b>", `<b>${f(s.needs)}</b>`)}
+      ${s.lines.filter(l => l.e !== "needs").map(l => row(esc(l.n), f(l.a))).join("")}
+      ${live.length ? row(`Subscriptions (${live.length})`, f(live.reduce((a, x) => a + x.m, 0))) : ""}
+      ${row("<b>Miscellaneous</b>", `<b>${f(s.misc)}</b>`)}</section>
+    ${s.subs.length ? `<section><h3>Subscriptions</h3>${live.map(x => row(esc(x.n), f(x.m) + "/mo")).join("")}${dropped.length ? dropped.map(x => row(`${esc(x.n)} <span class="pill flag">Dropped</span>`, `<s class="muted">${f(x.m)}</s>`)).join("") : ""}</section>` : ""}
+    ${s.swaps.length ? `<section><h3>Cheaper swaps in use</h3>${s.swaps.map(x => row(`${esc(x.t)} → ${esc(x.a)}`, `<span class="good">${f(x.s)}/mo kept</span>`)).join("")}</section>` : ""}
+    <section><h3>Savings</h3>${row("Set aside this month", f(s.setAside))}${row("Emergency fund balance", f(s.efSaved))}</section>
+    ${s.splits.count || s.settled.count ? `<section><h3>Splits</h3>${s.splits.count ? row(`${s.splits.count} new split${s.splits.count > 1 ? "s" : ""}`, f(s.splits.total)) : ""}${s.settled.count ? row(`${s.settled.count} payment${s.settled.count > 1 ? "s" : ""} settled`, f(s.settled.total)) : ""}</section>` : ""}
+    <footer class="st-foot muted small">Written by KeepWise on your device from the numbers in your plan. Estimates, not financial advice.</footer>
+  </article>`;
+};
+function statementFile(){
+  const css = [...document.querySelectorAll("style")].map(x => x.textContent).join("\n");
+  const art = document.querySelector(".stmt"); if (!art) return;
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KeepWise statement ${esc(keyLabel(UI.stmt))}</title><style>${css}body{padding:16px;background:#fff}</style></head><body>${art.outerHTML}</body></html>`;
+  saveFile(new Blob([html], {type:"text/html"}), `keepwise-statement-${UI.stmt}.html`);
+}
+
+/* ================= renewals ================= */
+const daysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
+function nextRenewal(s){
+  const t = todayMid();
+  if (s.cycle === "yr"){
+    if (!s.renewDate) return null; const [y, m, d] = s.renewDate.split("-").map(Number); let r = new Date(y, m - 1, d);
+    while (r < t) r.setFullYear(r.getFullYear() + 1); return r;
+  }
+  if (!s.renewDay) return null;
+  let r = new Date(t.getFullYear(), t.getMonth(), Math.min(s.renewDay, daysInMonth(t.getFullYear(), t.getMonth())));
+  if (r < t) r = new Date(t.getFullYear(), t.getMonth() + 1, Math.min(s.renewDay, daysInMonth(t.getFullYear(), t.getMonth() + 1)));
+  return r;
+}
+const daysUntil = d => Math.round((d - todayMid()) / DAY);
+const whenLabel = n => n === 0 ? "Today" : n === 1 ? "Tomorrow" : `In ${n} days`;
+function setRenewalFrom(s, iso){  // iso date of a charge
+  if (!iso) return; const [y, m, d] = iso.split("-").map(Number);
+  if (s.cycle === "yr") s.renewDate = isoOf(new Date(y + 1, m - 1, d)); else s.renewDay = d;
+}
+OUT.comingUp = () => {
+  const soon = S.subs.map(s => ({s, d: nextRenewal(s)})).filter(x => x.d && daysUntil(x.d) <= 7).sort((a, b) => a.d - b.d);
+  if (!soon.length) return "";
+  const total = soon.filter(x => x.s.keep !== "drop").reduce((a, x) => a + x.s.price, 0);
+  return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Coming up</h2><span class="muted small">Next 7 days</span></div>
+    <div class="up-list">${soon.map(({s, d}) => { const n = daysUntil(d), drop = s.keep === "drop";
+      return `<div class="up-row${drop ? " drop" : ""}"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
+        <div class="up-main"><div class="name">${esc(s.name)}</div><div class="small ${drop ? "bad" : "muted"}">${drop ? `You chose to drop it. Cancel before ${n === 0 ? "today ends" : "it renews"}.` : whenLabel(n)}</div></div>
+        <div class="tnum name">${fmt(s.price)}</div></div>`; }).join("")}</div>
+    ${total ? `<p class="small muted">${fmt(total)} will be charged this week.</p>` : ""}
+    <div class="linkrow"><button class="link" type="button" data-go="subs">All subscriptions</button></div></section>`;
+};
+
+/* ================= how to cancel (official help pages, checked by hand) ================= */
+const CANCEL_HELP = [
+  [/netflix/i, "https://help.netflix.com/en/node/407"],
+  [/spotify/i, "https://support.spotify.com/us/article/cancel-premium/"],
+  [/hulu/i, "https://help.hulu.com/article/hulu-cancel-hulu-subscription"],
+  [/disney/i, "https://help.disneyplus.com/article/disneyplus-account-management-faq"],
+  [/youtube/i, "https://support.google.com/youtube/answer/6308278"],
+  [/google one/i, "https://support.google.com/googleone/answer/9056360"],
+  [/apple|icloud|itunes/i, "https://support.apple.com/en-us/118428"],
+  [/adobe|photoshop|lightroom|acrobat/i, "https://helpx.adobe.com/manage-account/using/cancel-subscription.html"],
+  [/chatgpt|openai/i, "https://help.openai.com/en/articles/7232927-how-do-i-cancel-my-chatgpt-plus-subscription"],
+  [/claude|anthropic/i, "https://support.claude.com/en/articles/8325617-cancel-your-pro-or-max-subscription"],
+  [/audible/i, "https://help.audible.com/s/article/cancel-membership?language=en_US"],
+  [/amazon prime|prime video|^prime\b/i, "https://www.amazon.com/gp/help/customer/display.html?nodeId=TvpAfjoQat32uK1VwP"],
+  [/paramount/i, "https://support.paramountplus.com/s/article/PI-How-do-I-cancel-my-subscription?language=en_US"],
+  [/peacock/i, "https://www.peacocktv.com/help/article/cancellation"],
+  [/microsoft 365|office 365/i, "https://support.microsoft.com/en-us/accounts-billing/subscriptions/cancel-a-microsoft-365-subscription"],
+  [/duolingo/i, "https://www.duolingo.com/help/cancel-my-super-duolingo-subscription"],
+  [/dropbox/i, "https://help.dropbox.com/plans/downgrade-dropbox-individual-plans"],
+  [/uber one/i, "https://help.uber.com/en/riders/article/how-can-i-cancel-my-uber-one-membership?nodeId=8f62fc7a-6cc9-4ac7-a59a-3f5627bf616c"],
+  [/dashpass|doordash/i, "https://help.doordash.com/en-us/consumers/article/how-do-i-cancel-my-dashpass-subscription"],
+  [/playstation|ps plus/i, "https://www.playstation.com/en-us/support/subscriptions/cancel-playstation-plus/"],
+  [/linkedin/i, "https://www.linkedin.com/help/linkedin/answer/a545578"],
+  [/peloton/i, "https://support.onepeloton.com/s/article/Peloton-Membership-How-to-Manage-Your-All-Access-Membership?language=en_US"]
+];
+const cancelHelp = name => { const hit = CANCEL_HELP.find(([re]) => re.test(name)); return hit ? hit[1] : null; };
+function cancelLink(s){
+  const url = cancelHelp(s.name);
+  return url ? `<a class="cancel-link" href="${url}" target="_blank" rel="noopener">How to cancel ${esc(s.name)}${I.ext}</a>`
+             : `<a class="cancel-link" href="https://www.google.com/search?q=${encodeURIComponent("how to cancel " + s.name)}" target="_blank" rel="noopener">Find how to cancel${I.ext}</a>`;
+}
+
+/* ================= files: backup, restore, saving ================= */
+async function saveFile(blob, name){
+  try {
+    const file = new File([blob], name, {type: blob.type});
+    if (IN_APP && navigator.canShare && navigator.canShare({files: [file]})){ await navigator.share({files: [file], title: name}); return true; }
+  } catch(e){ if (e && e.name === "AbortError") return false; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); return true;
+}
+async function downloadBackup(){
+  const data = JSON.parse(JSON.stringify(S)); delete data.tab;
+  const body = JSON.stringify({app: "KeepWise", kind: "backup", version: 1, made: new Date().toISOString(), data}, null, 1);
+  const ok = await saveFile(new Blob([body], {type: "application/json"}), `keepwise-backup-${isoDaysAgo(0)}.json`);
+  if (ok){ S.lastBackup = isoDaysAgo(0); save(); render(true); toast("Backup saved. Keep the file somewhere safe."); }
+}
+function readBackup(text){
+  let j; try { j = JSON.parse(text); } catch(e){ throw new Error("That file isn’t a KeepWise backup."); }
+  const d = j && j.app === "KeepWise" && j.kind === "backup" ? j.data : null;
+  if (!d || d.v !== 1 || !Array.isArray(d.expenses) || !Array.isArray(d.subs) || !Array.isArray(d.splits) || typeof d.env !== "object")
+    throw new Error("That file isn’t a KeepWise backup.");
+  return {data: d, made: j.made};
+}
+OUT.backupBox = () => {
+  if (UI.restore) return `<div class="note"><p><b>Replace everything on this device</b> with the backup from ${esc(new Date(UI.restore.made || Date.now()).toLocaleDateString("en-US", {month:"long", day:"numeric", year:"numeric"}))}?</p>
+    <div class="inline" style="margin-top:10px"><button class="btn" type="button" data-restore-no>Keep what’s here</button><button class="btn primary" type="button" data-restore-yes>Restore backup</button></div></div>`;
+  const b = S.lastBackup, d = b ? daysSince(b) : null;
+  return `<div class="backup ${b && d <= 30 ? "" : "due"}"><div><b>${b ? `Last backup ${d === 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`}` : "No backup yet"}</b><span class="muted small">A backup is a file with everything in KeepWise. Restore it on any phone or browser.</span></div>
+    <div class="grid2"><button class="btn" type="button" data-backup>${I.download}Download a backup</button><button class="btn" type="button" data-restore>Restore from a backup</button></div></div>`;
+};
+// iPhone clears website data after about a week away unless the site is on the Home Screen.
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const STANDALONE = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+let installEvt = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (S.tab === "plan" || S.tab === "month") refreshOuts(); });
+OUT.keepSafe = () => {
+  if (IN_APP || STANDALONE) return "";
+  if (IS_IOS && !S.a2hsHide) return `<div class="note keep-safe"><div><b>Keep your data safe on iPhone</b><p class="small">Safari can clear website data after about a week away. Tap ${I.share}<b>Share</b>, then <b>Add to Home Screen</b>.</p></div><button class="link plain" type="button" data-a2hs-hide>Got it</button></div>`;
+  const real = !S.example && (S.expenses.length || S.subs.length || S.splits.length) && daysSince(S.started) >= 3;  // give a new person a few days first
+  if (real && (!S.lastBackup || daysSince(S.lastBackup) > 30) && !(S.backupSnooze && daysSince(S.backupSnooze) < 30))
+    return `<div class="note keep-safe"><div><b>${S.lastBackup ? "Time for a fresh backup" : "Back up your KeepWise data"}</b><p class="small">Everything lives on this device. A backup file keeps it safe if you clear your browser or change phones.</p></div><div class="inline" style="flex-direction:column;align-items:flex-end;gap:6px"><button class="btn small" type="button" data-backup style="white-space:nowrap">Back up</button><button class="link plain small" type="button" data-backup-later>Later</button></div></div>`;
+  return "";
+};
+OUT.installBtn = () => installEvt && !STANDALONE ? `<button class="btn" type="button" data-install>${I.download}Install KeepWise on this device</button>` : "";
+
+/* ================= share what you found (image made on this device) ================= */
+function shareFacts(){
+  const C = compute(), dropped = S.subs.filter(s => s.keep === "drop"), droppedAmt = dropped.reduce((a, s) => a + subMonthly(s), 0);
+  const swapsOn = S.swaps.filter(w => w.on).reduce((a, w) => a + swapSaving(w), 0);
+  if (droppedAmt + swapsOn >= 1) return {kicker: "With KeepWise I cut", amount: droppedAmt + swapsOn, line: `${dropped.length ? `${dropped.length} subscription${dropped.length > 1 ? "s" : ""} I didn’t use` : ""}${dropped.length && swapsOn >= 1 ? " and " : ""}${swapsOn >= 1 ? "a few cheaper swaps" : ""}.`};
+  if (C.flaggedSave >= 1) return {kicker: "KeepWise found", amount: C.flaggedSave, line: "in subscriptions I barely use."};
+  const best = C.inactiveSwaps.reduce((a, x) => a + x.save, 0);
+  if (best >= 1) return {kicker: "KeepWise found", amount: best, line: "I could keep with cheaper swaps."};
+  return null;
+}
+async function drawShareCard(F){
+  const W = 1080, H = 1080, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  try { await Promise.all(["600 150px Fraunces", "700 44px Figtree", "500 40px Figtree"].map(f => document.fonts.load(f))); } catch(e){}
+  const ser = 'Fraunces, Georgia, serif', sans = 'Figtree, system-ui, sans-serif';
+  g.fillStyle = "#f3efe6"; g.fillRect(0, 0, W, H);
+  const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+  g.fillStyle = "#fbf8f2"; rr(70, 70, W - 140, H - 140, 56); g.fill(); g.strokeStyle = "#e0d5c5"; g.lineWidth = 3; g.stroke();
+  const logo = document.querySelector("img.logo");
+  if (logo && logo.complete) { g.save(); g.beginPath(); g.arc(178, 182, 58, 0, Math.PI * 2); g.clip(); g.drawImage(logo, 120, 124, 116, 116); g.restore(); }
+  g.textBaseline = "alphabetic"; g.font = `700 54px ${ser}`; g.fillStyle = "#0e8571"; g.fillText("Keep", 262, 200); const kw = g.measureText("Keep").width; g.fillStyle = "#a57d2c"; g.fillText("Wise", 262 + kw, 200);
+  g.fillStyle = "#4d564e"; g.font = `500 44px ${sans}`; g.fillText(F.kicker, 130, 430);
+  const amt = new Intl.NumberFormat("en-US", {style: "currency", currency: S.cur, maximumFractionDigits: F.amount % 1 < 0.005 ? 0 : 2, minimumFractionDigits: F.amount % 1 < 0.005 ? 0 : 2}).format(r2(F.amount));
+  let size = 190; g.font = `600 ${size}px ${ser}`; while (g.measureText(amt).width > W - 260 && size > 80){ size -= 8; g.font = `600 ${size}px ${ser}`; }
+  g.fillStyle = "#1b6843"; g.fillText(amt, 124, 430 + size * 0.95);
+  g.fillStyle = "#1c2420"; g.font = `600 52px ${sans}`; g.fillText("a month", 130, 430 + size * 0.95 + 80);
+  g.fillStyle = "#4d564e"; g.font = `500 40px ${sans}`;
+  const words = F.line.split(" "); let ln = "", y = 430 + size * 0.95 + 150;
+  for (const w of words){ const t = ln ? ln + " " + w : w; if (g.measureText(t).width > W - 260){ g.fillText(ln, 130, y); ln = w; y += 54; } else ln = t; } if (ln) g.fillText(ln, 130, y);
+  g.fillStyle = "#1b6843"; g.font = `600 40px ${sans}`; g.fillText(`That’s ${new Intl.NumberFormat("en-US", {style: "currency", currency: S.cur, maximumFractionDigits: 0}).format(Math.round(F.amount * 12))} a year.`, 130, y + 76);
+  g.fillStyle = "#e0d5c5"; g.fillRect(130, H - 220, W - 260, 3);
+  { const foot = "Free and private. It stays on your phone."; let fs = 36; g.font = `500 ${fs}px ${sans}`; while (g.measureText(foot).width > W - 260 && fs > 22){ fs -= 2; g.font = `500 ${fs}px ${sans}`; } g.fillStyle = "#4d564e"; g.fillText(foot, 130, H - 150); }
+  return new Promise(ok => c.toBlob(b => ok(b), "image/png"));
+}
+const SHARE = {blob: null, url: "", facts: null};
+async function openShare(){
+  const F = shareFacts(); if (!F) { toast("Drop a subscription or turn on a swap first, then share what you saved."); return; }
+  SHARE.facts = F; SHARE.blob = await drawShareCard(F); if (SHARE.url) URL.revokeObjectURL(SHARE.url); SHARE.url = URL.createObjectURL(SHARE.blob);
+  UI.share = true; render(false);
+}
+V.share = () => `<div class="inline" style="justify-content:space-between"><h1>Share</h1><button class="btn small" type="button" data-share-close>Done</button></div>
+  <img class="share-img" src="${SHARE.url}" alt="${esc(SHARE.facts.kicker)} ${fmt(SHARE.facts.amount)} a month">
+  <p class="muted small" style="text-align:center">Only this amount is shown. No names, no income, no list of what you pay for.</p>
+  <div class="grid2"><button class="btn" type="button" data-share-save>${I.download}Save image</button><button class="btn primary" type="button" data-share-go>${I.share}Share</button></div>`;
+async function doShare(){
+  const file = new File([SHARE.blob], "keepwise.png", {type: "image/png"});
+  const text = `${SHARE.facts.kicker} ${fmt(SHARE.facts.amount)} a month. ${SITE_URL}`;
+  try {
+    if (navigator.canShare && navigator.canShare({files: [file]})) { await navigator.share({files: [file], text}); return; }
+    if (navigator.share) { await navigator.share({text}); return; }
+  } catch(e){ if (e && e.name === "AbortError") return; }
+  saveFile(SHARE.blob, "keepwise.png"); toast("Image saved. Attach it to your post.");
+}
+
+/* ================= first-run setup ================= */
+const WELCOME_KEY = "keepwise-welcome-done";
+const welcomeDone = () => { try { localStorage.setItem(WELCOME_KEY, "1"); } catch(e){} };
+const DRAFT = {cur: "USD", income: "", home: ""};
+V.welcome = () => {
+  const step = UI.welcome, dots = n => `<div class="w-dots" aria-label="Step ${n} of 3">${[1,2,3].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</div>`;
+  if (step === 0) return `<div class="welcome"><img class="w-logo" src="${document.querySelector("img.logo").src}" alt="">
+    <h1 class="w-title">See what you keep.</h1><p class="w-sub">KeepWise shows where your money goes each month and where to keep more of it.</p>
+    <ul class="w-points">
+      <li>${I.subs}<span><b>Finds subscriptions</b> you forgot you pay for</span></li>
+      <li>${I.cheaper}<span><b>Shows cheaper swaps</b> for what you already buy</span></li>
+      <li>${I.split}<span><b>Splits bills</b> with friends and family</span></li></ul>
+    <p class="w-safe">${I.lock}Everything stays on your phone. No bank login.</p>
+    <button class="btn primary w-cta" type="button" data-w-next>Set up my month</button>
+    <button class="link plain w-alt" type="button" data-w-example>Look around with an example first</button></div>`;
+  if (step === 1) return `<div class="welcome">${dots(1)}<h1 class="w-title">What comes in each month?</h1><p class="w-sub">Your take-home pay after tax, from everything you earn.</p>
+    <label class="field"><span>Currency</span><select data-w="cur">${CURRENCIES.map(([c, n]) => `<option value="${c}" ${c === DRAFT.cur ? "selected" : ""}>${c} · ${n}</option>`).join("")}</select></label>
+    <label class="field"><span>Money coming in</span><span class="money-in w-big"><em>${esc((() => { try { return new Intl.NumberFormat("en-US", {style:"currency", currency: DRAFT.cur, maximumFractionDigits:0}).formatToParts(0).find(p => p.type === "currency").value; } catch(e){ return "$"; } })())}</em><input data-w="income" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(DRAFT.income)}" aria-label="Money coming in each month"></span></label>
+    <button class="btn primary w-cta" type="button" data-w-next>Continue</button><button class="link plain w-alt" type="button" data-w-back>Back</button></div>`;
+  if (step === 2) return `<div class="welcome">${dots(2)}<h1 class="w-title">What do you pay for your home?</h1><p class="w-sub">Rent or mortgage each month. Usually the biggest bill.</p>
+    <label class="field"><span>Rent or mortgage</span><span class="money-in w-big"><em>${esc((() => { try { return new Intl.NumberFormat("en-US", {style:"currency", currency: DRAFT.cur, maximumFractionDigits:0}).formatToParts(0).find(p => p.type === "currency").value; } catch(e){ return "$"; } })())}</em><input data-w="home" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(DRAFT.home)}" aria-label="Rent or mortgage each month"></span></label>
+    <button class="btn primary w-cta" type="button" data-w-next>Continue</button><button class="link plain w-alt" type="button" data-w-skip>I don’t pay rent</button><button class="link plain w-alt" type="button" data-w-back>Back</button></div>`;
+  return `<div class="welcome">${dots(3)}<h1 class="w-title">Add the rest your way</h1><p class="w-sub">You can always do the other one later.</p>
+    <button class="w-choice" type="button" data-w-import><span class="w-ic">${I.receipt}</span><span><b>Import a bank statement</b><span class="muted small">CSV or PDF. KeepWise finds your bills and every subscription. Read on this phone only.</span></span>${I.chev}</button>
+    <button class="w-choice" type="button" data-w-finish><span class="w-ic">${I.plan}</span><span><b>Add things myself</b><span class="muted small">Start with what you entered and add bills as you go.</span></span>${I.chev}</button>
+    <button class="link plain w-alt" type="button" data-w-back>Back</button></div>`;
+};
+function finishWelcome(){
+  const ex = example();
+  Object.assign(ex, {cur: DRAFT.cur, income: numv(DRAFT.income), efSaved: 0, expenses: numv(DRAFT.home) ? [{id: uid(), name: "Rent or mortgage", amount: numv(DRAFT.home), env: "needs"}] : [],
+    subs: [], swaps: [], codes: [], splits: [], settlements: [], people: [{id: "me", name: "You"}], goalName: "", goalAmt: 0, statements: {}, example: false, hideNote: false, tab: "month", started: isoDaysAgo(0)});
+  S = ex; UI.welcome = null; welcomeDone(); save();
+}
+
 /* ================= render ================= */
 function renderTabs(){
   $("tabbar").innerHTML = TABS.map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k?'aria-current="page"':""}><span class="ti">${I[k]}</span><span>${n}</span></button>`).join("");
 }
 function render(keepScroll){
   const main = $("main"), top = main.scrollTop;
-  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.account ? V.account() : UI.inbox ? V.inbox() : V[S.tab]();
+  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : V[S.tab]();
+  appEl.classList.toggle("welcoming", UI.welcome != null && !UI.account && !STMT.result);
   if (!keepScroll){ v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   renderTabs(); renderBell();
   main.scrollTop = keepScroll ? top : 0;
@@ -1536,7 +1940,7 @@ const FB_PROJECT = {
 };
 const FB_CONFIG = "KEEPWISE_FIREBASE" in window ? window.KEEPWISE_FIREBASE : FB_PROJECT;
 const FB_BASE = "https://cdn.jsdelivr.net/npm/firebase@10.14.1/";
-const TERMS_VERSION = "2026-09-30";
+const TERMS_VERSION = "2026-10-01";
 const IN_APP = !!window.Capacitor; // Google blocks its sign-in page inside app web views
 // Inside the Claude preview the page runs in a locked frame where sign-in windows cannot open.
 const PREVIEW = !!window.claude && !("KEEPWISE_FIREBASE" in window);
@@ -1818,13 +2222,14 @@ renderAcctBtn();
 
 /* ================= events ================= */
 const view = $("view");
-$("home-link").addEventListener("click", e => { e.preventDefault(); UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; S.tab = b.dataset.tab; save(); render(false); });
+$("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; S.tab = b.dataset.tab; save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; if (UI.inbox) markSeen(); render(false); });
 
 view.addEventListener("input", e => {
   const t = e.target;
+  if (t.dataset && t.dataset.w){ DRAFT[t.dataset.w] = t.value; if (t.dataset.w === "cur") render(false); return; }
   if (t.hasAttribute && t.hasAttribute("data-part-search")){ UI.partQ = t.value; UI.partOpen = true; refreshOuts(); return; }
   const lineBox = t.closest("[data-add-line]");
   if (lineBox){ const d = LINE_DRAFT[lineBox.dataset.addLine] = LINE_DRAFT[lineBox.dataset.addLine] || {}; if (t.hasAttribute("data-new-name")) d.n = t.value; if (t.hasAttribute("data-new-amt")) d.a = t.value; return; }
@@ -1856,6 +2261,11 @@ view.addEventListener("input", e => {
 });
 view.addEventListener("change", e => {
   const t = e.target;
+  if (t.hasAttribute && (t.hasAttribute("data-renew-day") || t.hasAttribute("data-renew-date"))){
+    const s = S.subs.find(x => x.id === t.closest("[data-sub]").dataset.sub); if (!s) return;
+    if (t.hasAttribute("data-renew-day")) s.renewDay = +t.value || undefined; else s.renewDate = t.value || undefined;
+    UI.renewEdit = null; save(); render(true); const n = nextRenewal(s);
+    toast(n ? `${s.name} renews ${n.toLocaleDateString("en-US", {month: "long", day: "numeric"})}.` : `Renewal date cleared for ${s.name}.`); return; }
   if (splitDraft && t.dataset.part){ if (t.checked) splitDraft.parts[t.dataset.part] = splitDraft.method === "equal" ? 1 : ""; else delete splitDraft.parts[t.dataset.part]; render(true); return; }
   if (t.dataset.expEnv !== undefined || t.hasAttribute("data-exp-env") || t.dataset.alt || t.hasAttribute("data-exp-amt")) { refreshOuts(); }
 });
@@ -1867,6 +2277,7 @@ view.addEventListener("keydown", e => {
   if (e.key === "Escape"){ UI.partOpen = false; refreshOuts(); return; }
   if (e.key === "Enter"){ e.preventDefault(); const m = partMatches(); if (m.length === 1) addPart(m[0].id); else if (!m.length && document.querySelector("[data-part-new]")) document.querySelector("[data-part-new]").click(); }
 });
+view.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.dataset && (e.target.dataset.w === "income" || e.target.dataset.w === "home")){ e.preventDefault(); const n = view.querySelector("[data-w-next]"); if (n) n.click(); } });
 view.addEventListener("keydown", e => {  // Enter in "Add a line" adds it, like tapping Add
   if (e.key !== "Enter") return; const box = e.target.closest && e.target.closest("[data-add-line]"); if (!box) return;
   e.preventDefault();
@@ -1876,7 +2287,37 @@ view.addEventListener("keydown", e => {  // Enter in "Add a line" adds it, like 
 view.addEventListener("click", async e => {
   const t = e.target, b = t.closest("button, a");
   if (!b) return;
-  if (b.dataset.go){ S.tab = b.dataset.go; save(); render(false); return; }
+  if (b.dataset.go){ S.tab = b.dataset.go; UI.history = false; UI.stmt = null; save(); render(false); return; }
+  // ---- first-run setup
+  if (b.hasAttribute("data-w-start")){ DRAFT.cur = S.cur; DRAFT.income = ""; DRAFT.home = ""; UI.welcome = 1; render(false); return; }
+  if (b.hasAttribute("data-w-next")){
+    if (UI.welcome === 1 && !numv(DRAFT.income)){ toast("Enter what comes in each month."); const i = view.querySelector('[data-w="income"]'); if (i) i.focus(); return; }
+    UI.welcome = Math.min(3, UI.welcome + 1); render(false); const i = view.querySelector("[data-w=income],[data-w=home]"); if (i && !IS_IOS) i.focus(); return; }
+  if (b.hasAttribute("data-w-back")){ UI.welcome = Math.max(0, UI.welcome - 1); render(false); return; }
+  if (b.hasAttribute("data-w-skip")){ DRAFT.home = ""; UI.welcome = 3; render(false); return; }
+  if (b.hasAttribute("data-w-example")){ UI.welcome = null; welcomeDone(); S.tab = "month"; save(); render(false); return; }
+  if (b.hasAttribute("data-w-finish")){ finishWelcome(); render(false); toast("Your month is ready. Add bills on Plan as you go."); return; }
+  if (b.hasAttribute("data-w-import")){ finishWelcome(); render(false); $("stmt").click(); return; }
+  // ---- statements
+  if (b.hasAttribute("data-history")){ UI.history = true; UI.stmt = null; render(false); return; }
+  if (b.hasAttribute("data-history-close")){ UI.history = false; UI.stmt = null; render(false); return; }
+  if (b.dataset.stmt){ UI.stmt = b.dataset.stmt; UI.history = true; render(false); return; }
+  if (b.hasAttribute("data-stmt-back")){ UI.stmt = null; render(false); return; }
+  if (b.hasAttribute("data-stmt-print")){ if (IN_APP) statementFile(); else window.print(); return; }
+  // ---- backup and keeping data safe
+  if (b.hasAttribute("data-backup")){ downloadBackup(); return; }
+  if (b.hasAttribute("data-backup-later")){ S.backupSnooze = isoDaysAgo(0); save(); refreshOuts(); return; }
+  if (b.hasAttribute("data-restore")){ $("restore-in").click(); return; }
+  if (b.hasAttribute("data-restore-no")){ UI.restore = null; refreshOuts(); return; }
+  if (b.hasAttribute("data-restore-yes")){ const d = UI.restore && UI.restore.data; if (!d) return; UI.restore = null;
+    S = d; S.tab = "plan"; S.settlements = S.settlements || []; S.statements = S.statements || {}; welcomeDone(); save(); render(false); toast("Backup restored."); return; }
+  if (b.hasAttribute("data-a2hs-hide")){ S.a2hsHide = true; save(); refreshOuts(); return; }
+  if (b.hasAttribute("data-install")){ if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch(e){} installEvt = null; refreshOuts(); return; }
+  // ---- share what you found
+  if (b.hasAttribute("data-share-open")){ openShare(); return; }
+  if (b.hasAttribute("data-share-close")){ UI.share = false; render(false); return; }
+  if (b.hasAttribute("data-share-save")){ saveFile(SHARE.blob, "keepwise.png"); return; }
+  if (b.hasAttribute("data-share-go")){ doShare(); return; }
   if (b.dataset.envOpen){ UI.openEnv = UI.openEnv === b.dataset.envOpen ? null : b.dataset.envOpen; refreshOuts(); return; }
   if (b.hasAttribute("data-set-aside")){ const C = compute(), amt = C.toSetAside; if (amt <= 0) return;
     (S.deposits = S.deposits || []).push({id:uid(), amount:amt, month:C.planKey, label:C.planMonth, date:isoDaysAgo(0)}); S.efSaved = r2(S.efSaved + amt); save(); refreshOuts(); toast(`Set aside ${fmt(amt)}. Your account is at ${fmt(S.efSaved)}.`); return; }
@@ -1901,6 +2342,8 @@ view.addEventListener("click", async e => {
       UI.flashSub = s.id; clearTimeout(UI.flashT); UI.flashT = setTimeout(() => { UI.flashSub = null; }, 1500);
       const row = view.querySelector(`[data-sub="${s.id}"]`); if (row) row.classList.add("flash");
       toast(wasFlagged ? `${s.name} marked as used today. It is no longer flagged.` : `${s.name} marked as used today.`); return; }
+    if (b.hasAttribute("data-renew-open")){ UI.renewEdit = s.id; render(true); const el = view.querySelector(`[data-sub="${s.id}"] [data-renew-day],[data-sub="${s.id}"] [data-renew-date]`); if (el) el.focus(); return; }
+    if (b.hasAttribute("data-renew-cancel")){ UI.renewEdit = null; render(true); return; }
     if (b.hasAttribute("data-del-sub")){ const u = undoable(); S.subs = S.subs.filter(x => x !== s); S.swaps = S.swaps.filter(w => w.link !== `sub:${s.id}`); save(); render(true); toast(`Removed ${s.name}.`, u); return; }
   }
   const sw = b.closest("[data-swap]");
@@ -1924,7 +2367,8 @@ view.addEventListener("click", async e => {
     $("reset-confirm").innerHTML = `<div class="note" style="margin-top:10px"><p>${kind === "blank" ? "Clear everything and start empty?" : "Replace your numbers with the example?"} This can’t be undone.</p><div class="inline" style="margin-top:10px"><button class="btn" type="button" data-reset-no>Keep my data</button><button class="btn danger" type="button" data-reset-yes="${kind}">${kind === "blank" ? "Clear it" : "Load example"}</button></div></div>`; return; }
   if (b.hasAttribute("data-reset-no")){ $("reset-confirm").innerHTML = ""; return; }
   if (b.dataset.resetYes){ const ex = example();
-    if (b.dataset.resetYes === "blank"){ Object.assign(ex, {income:0, efSaved:0, expenses:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0}); }
+    if (b.dataset.resetYes === "blank"){ Object.assign(ex, {income:0, efSaved:0, expenses:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0, example:false, statements:{}}); }
+    welcomeDone(); ex.lastBackup = S.lastBackup; ex.a2hsHide = S.a2hsHide; ex.started = S.started;
     ex.tab = "plan"; S = ex; save(); render(false); toast(b.dataset.resetYes === "blank" ? "Started empty." : "Example loaded."); return; }
   if (b.dataset.filter){ S.filter = b.dataset.filter; save(); render(true); return; }
   if (b.hasAttribute("data-close-inbox")){ UI.inbox = false; render(false); return; }
@@ -2005,7 +2449,9 @@ view.addEventListener("submit", async e => {
   const f = e.target, kind = f.dataset.form, fd = new FormData(f);
   if (kind === "ask"){ const q = $("ask-in").value.trim(); if (!q) return; ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
   if (kind === "addSub"){ const name = String(fd.get("name")).trim(), price = numv(fd.get("price")); if (!name || !price){ toast("Add a name and a price."); return; }
-    S.subs.push({id:uid(), name, price, cycle:fd.get("cycle"), last:fd.get("last") || isoDaysAgo(0), group:String(fd.get("group")||"").trim(), env:"misc", keep:"auto"}); save(); render(true); toast(`Added ${name}.`); return; }
+    const ns = {id:uid(), name, price, cycle:fd.get("cycle"), last:fd.get("last") || isoDaysAgo(0), group:String(fd.get("group")||"").trim(), env:"misc", keep:"auto"};
+    const rn = String(fd.get("renew") || ""); if (rn){ if (ns.cycle === "yr") ns.renewDate = rn; else ns.renewDay = +rn.slice(8, 10); }
+    S.subs.push(ns); save(); render(true); toast(`Added ${name}.`); return; }
   if (kind === "addSwap"){ const link = fd.get("link"), alt = String(fd.get("alt")).trim(); if (!link || !alt){ toast("Pick what you pay for and name the cheaper option."); return; }
     const [type,id] = link.split(":"), src = type === "expense" ? S.expenses.find(x=>x.id===id) : S.subs.find(x=>x.id===id);
     S.swaps.push({id:uid(), link, title: src ? src.name : "", alt, altCost:numv(fd.get("altCost")), note:"", on:false}); save(); render(true); toast("Comparison added."); return; }
@@ -2052,6 +2498,12 @@ $("stmt").addEventListener("change", async e => {
   try { STMT.result = await readStatementFile(file); UI.inbox = false; $("toast").hidden = true; render(false); }
   catch(err){ toast(err && err.message ? err.message : "Couldn't read that file."); }
 });
+$("restore-in").addEventListener("change", async e => {
+  const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+  try { UI.restore = readBackup(await file.text()); UI.history = false; UI.stmt = null; UI.account = false; UI.inbox = false; S.tab = "plan"; render(false);
+    const box = view.querySelector('[data-out="backupBox"]'); if (box) box.scrollIntoView({block: "center"}); }
+  catch(err){ toast(err.message || "Couldn’t read that file."); }
+});
 $("vcf").addEventListener("change", e => {
   const file = e.target.files[0]; if (!file) return;
   const rd = new FileReader();
@@ -2059,6 +2511,9 @@ $("vcf").addEventListener("change", e => {
   rd.readAsText(file);
 });
 
+// A first visit gets the short setup instead of someone else's numbers. People who already use KeepWise never see it.
+let firstRun = false; try { if (localStorage.getItem(KEY)) welcomeDone(); else firstRun = !localStorage.getItem(WELCOME_KEY) && !window.KEEPWISE_NO_SETUP; } catch(e){}  // tests can skip the setup
+if (firstRun) UI.welcome = 0;
 save();
 applyTheme();
 render(false);

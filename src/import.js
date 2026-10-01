@@ -203,15 +203,16 @@ function applyStatement(R, mode){
     ...R.spending.filter(s => s.cat !== "Transfers").map(s => ({id: uid(), name: s.name, amount: s.monthly, env: s.env, source: "statement"}))
   ];
   const subs = R.subs.map(s => ({id: uid(), name: s.name, price: s.price, cycle: s.cycle, last: null, group: "", env: "misc", keep: "auto", since: s.since, charges: s.charges, paid: s.paid, lastCharge: s.lastCharge, source: "statement"}));
+  subs.forEach(s => setRenewalFrom(s, s.lastCharge));
   if (mode === "replace"){
     if (R.monthlyIncome) S.income = R.monthlyIncome;
     S.expenses = expenses; S.subs = subs;
-    S.swaps = S.swaps.filter(w => linkedItem(w));
+    S.swaps = S.swaps.filter(w => linkedItem(w)); S.example = false;
   } else {
     if (R.monthlyIncome && !S.income) S.income = R.monthlyIncome;
     const has = (list, n) => list.some(x => x.name.toLowerCase() === n.toLowerCase());
     expenses.forEach(e => { if (!has(S.expenses, e.name)) S.expenses.push(e); });
-    subs.forEach(s => { const old = S.subs.find(x => x.name.toLowerCase() === s.name.toLowerCase()); if (old) Object.assign(old, {since: s.since, charges: s.charges, paid: s.paid, lastCharge: s.lastCharge}); else S.subs.push(s); });
+    subs.forEach(s => { const old = S.subs.find(x => x.name.toLowerCase() === s.name.toLowerCase()); if (old){ Object.assign(old, {since: s.since, charges: s.charges, paid: s.paid, lastCharge: s.lastCharge}); if (!old.renewDay && !old.renewDate) setRenewalFrom(old, s.lastCharge); } else S.subs.push(s); });
   }
   S.payday = R.income[0] ? R.income[0].payday : S.payday;
   S.imported = {file: R.fileName, when: isoDaysAgo(0), from: R.first, to: R.last};
