@@ -1,3 +1,32 @@
+/* ---- cheaper: now and new cost side by side ---- */
+.swap{gap:12px}
+.swap-cmp{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1.15fr);align-items:stretch;gap:8px}
+.swap-box{background:var(--bg);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;justify-content:center;min-width:0}
+.swap-box b{font:600 1.2rem/1.2 var(--display);white-space:nowrap}
+.swap-box b small{font:500 .8rem var(--body);color:var(--muted)}
+.swap-box.new{background:var(--green-soft)}
+.swap-box.new .money-in{min-height:40px;padding:0 10px;border-radius:10px}
+.swap-box.new .money-in input{padding:7px 0;font-weight:600;font-size:1.05rem}
+.swap-arrow{display:grid;place-items:center;color:var(--muted)}
+.swap-save{font-size:.95rem}
+.swap-use{display:inline-flex;align-items:center;gap:6px}
+.swap-use svg{width:14px;height:14px;margin:0}
+.swap-use[aria-pressed="true"]{background:var(--green-soft);color:var(--green);border-color:transparent}
+.swap.on{background:color-mix(in srgb,var(--green-soft) 35%,transparent)}
+/* ---- other income, month close ---- */
+.link.inc-add{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;color:var(--green);font-weight:600}
+.link.inc-add .muted{font-weight:500;margin-left:6px}
+.inc-card{gap:14px}
+.inc-row{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--bg)}
+.inc-row.editing{background:var(--card)}
+.inc-form{display:flex;flex-direction:column;gap:12px}
+.inc-log{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.inc-log input[type=date]{min-height:48px}
+.inc-pays .line{padding:8px 0}
+.inc-avg{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;background:var(--gold-soft);border-radius:12px;padding:8px 12px}
+.up-row.in .up-date{background:var(--green-soft);color:var(--green)}
+.close-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--gold-soft) 55%,var(--card)),var(--card))}
+.close-card h3{font:600 1.2rem/1.25 var(--display);letter-spacing:-.01em}
 /* ---- contacts and groups ---- */
 .part-txt{display:flex;flex-direction:column;min-width:0;text-align:left}
 .part-txt small{font-size:.78rem}

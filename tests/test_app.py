@@ -1287,6 +1287,100 @@ async def contacts_from_phone_picker_and_app(ctx):
     names = [c["n"] for c in (await state(pg2))["contacts"]]
     assert "Faisal Ali" in names and "Gia Moss" in names, names
 
+
+@test
+async def other_income_counts_and_logs(ctx):
+    pg = await open_app(ctx)
+    base = money(await text(pg, "[data-out=headline] .big"))
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]")
+    await f.locator("button[type=submit]").click(); assert "where the money comes from" in await pg.inner_text("#toast")
+    await f.locator("[name=name]").fill("YouTube"); await f.locator("[name=kind]").select_option("creator"); await f.locator("[name=amount]").fill("400")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    x = (await state(pg))["extras"][0]; assert x["name"] == "YouTube" and x["when"] == "any" and x["amount"] == 400
+    assert abs(money(await text(pg, "[data-out=headline] .big")) - (base + 400)) < 0.01, "the plan counts it"
+    assert await text(pg, "[data-out=incomeLabel]") == "Regular pay"
+    await pg.click("[data-inc-log]"); lf = pg.locator("form[data-form=incomeLog]")
+    await lf.locator("[name=amount]").fill("150"); await lf.locator("button[type=submit]").click(); await pg.wait_for_timeout(150)
+    row = await text(pg, "[data-inc]"); assert "$150" in row and "received in" in row
+    assert "$150 of $400" in await text(pg, ".inc-card")
+    await pg.click("[data-inc-pay-del]"); await pg.wait_for_timeout(100); await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(150)
+    assert len((await state(pg))["extras"][0]["got"]) == 1, "removing a payment can be undone"
+    # scheduled: every Friday, 100 each, shows up in Coming up
+    await pg.click("[data-inc-edit]"); f = pg.locator("form[data-form=income]")
+    await f.locator("[name=when]").select_option("weekly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=income]"); assert "Each payment" in await f.inner_text()
+    await f.locator("[name=wd]").select_option("5"); await f.locator("[name=amount]").fill("100")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    x = (await state(pg))["extras"][0]; assert x["when"] == "weekly" and x["wd"] == 5
+    assert abs(money(await text(pg, "[data-out=headline] .big")) - (base + 100 * 52 / 12)) < 0.01
+    up = await text(pg, "[data-out=comingUp]"); assert "YouTube" in up and "money in" in up and "+$100" in up
+    # trading gets a careful note; the statement lists what came in
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]")
+    await f.locator("[name=kind]").select_option("trading"); await pg.wait_for_timeout(100)
+    assert "not gains on paper" in await pg.locator("form[data-form=income]").inner_text()
+    await pg.click("[data-inc-cancel]")
+    await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(150)
+    v = await text(pg, ".stmt"); assert "what came in" in v.lower() and "Regular pay" in v and "YouTube" in v and "$150 received" in v
+
+@test
+async def month_start_check_in(ctx):
+    import datetime
+    pg = await open_app(ctx); await pg.wait_for_timeout(100)
+    assert await text(pg, "[data-out=monthClose]") == "", "nothing to close in the first month"
+    kept = money(await text(pg, "[data-out=headline] .big")); saved = (await state(pg))["efSaved"]
+    await pg.close()
+    async def later():
+        p2 = await ctx.new_page(); p2.errors = []
+        await p2.clock.install(time=datetime.datetime.now() + datetime.timedelta(days=40))
+        await p2.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;"); await p2.set_viewport_size({"width": 390, "height": 844}); await p2.goto(URL); await p2.wait_for_timeout(400)
+        return p2
+    p2 = await later()
+    card = await text(p2, "[data-out=monthClose]"); assert "is closed" in card.lower() and "You planned to keep" in card and "Did you?" in card
+    await p2.click("[data-close-other]"); await p2.fill("form[data-form=closeMonth] [name=amount]", "1000"); await p2.click("form[data-form=closeMonth] button[type=submit]"); await p2.wait_for_timeout(200)
+    st = await state(p2); assert abs(st["efSaved"] - (saved + 1000)) < 0.01
+    closed = [v for v in st["statements"].values() if v.get("actual") == 1000]; assert len(closed) == 1 and abs(closed[0]["kept"] - kept) < 0.01
+    assert await text(p2, "[data-out=monthClose]") == "", "asked once"
+    await p2.click("#toast .toast-undo"); await p2.wait_for_timeout(200)
+    assert abs((await state(p2))["efSaved"] - saved) < 0.01 and "is closed" in (await text(p2, "[data-out=monthClose]")).lower(), "undo brings the question back"
+    await p2.click("[data-close-yes]"); await p2.wait_for_timeout(200)
+    assert abs((await state(p2))["efSaved"] - (saved + kept)) < 0.01 and "Added" in await p2.inner_text("#toast")
+    await p2.click("[data-history]"); await p2.wait_for_timeout(150)
+    assert "Closed" in await text(p2, ".stmt-row:nth-child(2)")
+
+
+@test
+async def keepwise_never_flags_itself(ctx):
+    pg = await open_app(ctx); await tab(pg, "subs")
+    await pg.click("text=Add a subscription"); f = pg.locator("form[data-form=addSub]")
+    await f.locator("[name=name]").fill("KeepWise Plus"); await f.locator("[name=price]").fill("15"); await f.locator("[name=last]").fill("2025-01-01"); await f.locator("[name=group]").fill("Video")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(150)
+    row = pg.locator("[data-sub]", has_text="KeepWise Plus"); t = await row.inner_text()
+    assert "Unused for" not in t and "Duplicate" not in t, t
+    assert "$94.95" in await text(pg, "[data-out=subsSummary]"), "the flagged total does not include it"
+    assert "Duplicate of KeepWise" not in await text(pg, "[data-out=subsList]")
+    for _ in range(3):
+        q = await text(pg, "[data-out=reviewCard]"); assert "KeepWise" not in q
+
+
+@test
+async def chosen_currency_shows_everywhere(ctx):
+    pg = await open_app(ctx)
+    await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(200)
+    async def clean(where):
+        v = await pg.inner_text("#view"); assert "$" not in v, f"{where}: " + v[max(0, v.index("$") - 40): v.index("$") + 20].replace("\n", " ")
+    await clean("month"); await pg.click("[data-plain]"); await pg.locator("[data-ask]").nth(2).click(); await clean("ask")
+    await pg.click("[data-inc-add]"); await clean("income form"); await pg.click("[data-inc-cancel]")
+    await pg.click("[data-space=business]"); await clean("business"); await pg.click("[data-space=personal]")
+    await pg.click("[data-history]"); await clean("statements")
+    for i in range(3):
+        await pg.locator(".stmt-row").nth(i).click(); await pg.wait_for_timeout(80); await clean(f"statement {i}"); await pg.click("[data-stmt-back]")
+    for tb in ["subs", "cheaper", "codes", "plan", "split"]:
+        await tab(pg, tb); await clean(tb)
+    await pg.click("[data-new-split]"); await clean("split form"); await pg.click("[data-cancel-split]")
+    await pg.click("[data-moments]"); await clean("moments"); await pg.click("[data-moments-close]")
+    csv = os.path.join(TMP, "gbp.csv"); open(csv, "w").write("Date,Description,Amount\n01/09/2026,NETFLIX.COM,-10.99\n03/09/2026,PAYROLL ACME,2500\n")
+    await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(400); await clean("import review")
+
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")
 SEED = {

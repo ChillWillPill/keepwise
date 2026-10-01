@@ -11,7 +11,9 @@ function buildStatement(){
   const lines = S.expenses.map(e => { const w = swapFor("expense", e.id); return {n: e.name, a: r2(w ? +w.altCost : +e.amount || 0), e: e.env}; });
   const swaps = S.swaps.filter(w => w.on && linkedItem(w)).map(w => ({t: w.title || linkedItem(w).name, a: w.alt, s: r2(swapSaving(w))}));
   const splits = S.splits.filter(x => inMonth(x.date, k)), pays = (S.settlements || []).filter(x => inMonth(x.date, k));
-  return {key: k, updated: isoDaysAgo(0), income: r2(C.income), needs: r2(C.needs), misc: r2(C.misc), kept: r2(C.savings),
+  const old = (S.statements || {})[k] || {};
+  const inc = (S.extras || []).length ? [{n: "Regular pay", a: r2(+S.income || 0)}, ...S.extras.map(x => ({n: x.name, a: r2(extraMonthly(x)), got: r2(gotIn(x, k))}))] : undefined;
+  return {key: k, updated: isoDaysAgo(0), income: r2(C.income), incomeLines: inc, confirmed: old.confirmed, actual: old.actual, needs: r2(C.needs), misc: r2(C.misc), kept: r2(C.savings),
     setAside: r2(C.setAside), efSaved: r2(S.efSaved), cur: S.cur, lines, subs: live, swaps,
     splits: {count: splits.length, total: r2(splits.reduce((a, x) => a + (+x.amount || 0), 0))},
     settled: {count: pays.length, total: r2(pays.reduce((a, x) => a + (+x.amount || 0), 0))}};
@@ -25,14 +27,14 @@ function recordStatement(){
 const statementKeys = () => Object.keys(S.statements || {}).sort().reverse();
 const currentKey = () => compute().planKey;
 function keptBars(keys){
-  const list = keys.slice(0, 6).reverse(), vals = list.map(k => S.statements[k].kept), max = Math.max(1, ...vals.map(Math.abs));
+  const list = keys.slice(0, 6).reverse(), vals = list.map(k => keptOf(S.statements[k])), max = Math.max(1, ...vals.map(Math.abs));
   return `<div class="hist-bars" role="img" aria-label="Money kept, last ${list.length} months">${list.map((k, i) => { const v = vals[i];
     return `<button type="button" class="hist-col" data-stmt="${k}" aria-label="${esc(keyLabel(k))}: kept ${fmt(v)}"><span class="hist-v tnum ${v < 0 ? "bad" : ""}">${fmt(v)}</span><span class="hist-bar ${v < 0 ? "neg" : ""}${k === currentKey() ? " now" : ""}" style="height:${Math.max(6, Math.abs(v) / max * 96)}px"></span><span class="hist-m">${esc(keyLabel(k, true))}</span></button>`; }).join("")}</div>`;
 }
 OUT.historyCard = () => {
   const keys = statementKeys(); if (!keys.length) return "";
   const cur = S.statements[keys[0]], prev = S.statements[keys[1]];
-  const diff = prev ? cur.kept - prev.kept : 0;
+  const diff = prev ? cur.kept - keptOf(prev) : 0;
   return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Monthly statements</h2>${keys.some(k => S.statements[k].example) ? `<span class="pill grey">Example</span>` : ""}</div>
     ${keys.length > 1 ? keptBars(keys) : `<div class="st-one"><span class="muted small">${esc(keyLabel(keys[0]))} so far</span><b class="tnum ${cur.kept < 0 ? "bad" : "good"}">${fmt(cur.kept)} kept</b></div>`}
     <p class="small ${diff > 0.005 ? "good" : "muted"}">${prev ? (Math.abs(diff) < 0.005 ? `Same as ${keyLabel(prev.key, true)}.` : diff > 0 ? `On track to keep ${fmt(diff)} more than ${keyLabel(prev.key).split(" ")[0]}.` : `${fmt(-diff)} less than ${keyLabel(prev.key).split(" ")[0]} so far.`) : "KeepWise writes a statement for every month. Your first one is in progress."}</p>
@@ -45,11 +47,11 @@ V.history = () => {
   ${keys.length ? `${keys.length > 1 ? `<section class="card">${keptBars(keys)}</section>` : ""}
   <div class="rows">${keys.map(k => { const s = S.statements[k];
     return `<button type="button" class="row stmt-row" data-stmt="${k}"><div class="row-top"><div><div class="name">${esc(keyLabel(k))}</div><div class="muted small">${k === now ? "In progress" : "Closed"}${s.example ? " · Example" : ""} · ${fmt(s.income)} in, ${fmt(s.needs + s.misc)} out</div></div>
-      <div class="inline" style="gap:6px"><span class="name tnum ${s.kept < 0 ? "bad" : "good"}">${fmt(s.kept)}</span>${I.chev}</div></div></button>`; }).join("")}</div>` : `<p class="empty">No statements yet. Your first one starts this month.</p>`}`;
+      <div class="inline" style="gap:6px"><span class="name tnum ${keptOf(s) < 0 ? "bad" : "good"}">${fmt(keptOf(s))}</span>${I.chev}</div></div></button>`; }).join("")}</div>` : `<p class="empty">No statements yet. Your first one starts this month.</p>`}`;
 };
 V.statement = () => {
   const s = S.statements && S.statements[UI.stmt]; if (!s) { UI.stmt = null; return V.history(); }
-  const f = v => { try { return new Intl.NumberFormat("en-US", {style:"currency", currency: s.cur || S.cur, minimumFractionDigits: Math.abs(v % 1) < 0.005 ? 0 : 2, maximumFractionDigits: 2}).format(v); } catch(e){ return fmt(v); } };
+  const f = fmt;  // statements use the currency you have selected, like every other number
   const open = s.key === currentKey(), out = s.needs + s.misc;
   const row = (a, b, cls) => `<div class="st-line"><span>${a}</span><span class="tnum ${cls || ""}">${b}</span></div>`;
   const live = s.subs.filter(x => x.k !== "drop"), dropped = s.subs.filter(x => x.k === "drop");
@@ -58,7 +60,9 @@ V.statement = () => {
     <header class="st-head"><div class="st-brand"><b class="wordmark">Keep<span>Wise</span></b><span class="muted small">Monthly statement</span></div>
       <h2 class="st-title">${esc(keyLabel(s.key))}</h2><span class="st-status small ${open ? "open" : ""}">${open ? `In progress · updated ${esc(shortDate(s.updated))}` : `Closed · final numbers from ${esc(shortDate(s.updated))}`}</span></header>
     ${s.example ? `<p class="note small">This is an example statement. Your own appear here as the months go by.</p>` : ""}
-    <div class="st-sum"><div><span class="label">In</span><b class="tnum">${f(s.income)}</b></div><div><span class="label">Out</span><b class="tnum">${f(out)}</b></div><div><span class="label">Kept</span><b class="tnum ${s.kept < 0 ? "bad" : "good"}">${f(s.kept)}</b></div></div>
+    <div class="st-sum"><div><span class="label">In</span><b class="tnum">${f(s.income)}</b></div><div><span class="label">Out</span><b class="tnum">${f(out)}</b></div><div><span class="label">Kept</span><b class="tnum ${keptOf(s) < 0 ? "bad" : "good"}">${f(keptOf(s))}</b></div></div>
+    ${s.actual != null && Math.abs(s.actual - s.kept) > 0.005 ? `<p class="muted small" style="margin-top:-8px">You confirmed ${f(s.actual)} kept. The plan was ${f(s.kept)}.</p>` : ""}
+    ${s.incomeLines ? `<section><h3>What came in</h3>${s.incomeLines.map(l => row(esc(l.n), f(l.a) + (l.got != null ? ` <span class="muted small">(${f(l.got)} received)</span>` : ""))).join("")}</section>` : ""}
     <section><h3>What went out</h3>
       ${s.lines.filter(l => l.e === "needs").map(l => row(esc(l.n), f(l.a))).join("")}
       ${row("<b>Expenditures</b>", `<b>${f(s.needs)}</b>`)}
@@ -100,15 +104,18 @@ function setRenewalFrom(s, iso){  // iso date of a charge
 }
 OUT.comingUp = () => {
   const soon = S.subs.map(s => ({s, d: nextRenewal(s)})).filter(x => x.d && daysUntil(x.d) <= 7).sort((a, b) => a.d - b.d);
-  if (!soon.length) return "";
+  const arriving = (S.extras || []).map(x => ({x, d: nextIncome(x)})).filter(v => v.d && daysUntil(v.d) <= 7).sort((a, b) => a.d - b.d);
+  if (!soon.length && !arriving.length) return "";
+  const inRows = arriving.map(({x, d}) => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
+        <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(x.amount)}</div></div>`).join("");
   const total = soon.filter(x => x.s.keep !== "drop").reduce((a, x) => a + x.s.price, 0);
   return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Coming up</h2><span class="muted small">Next 7 days</span></div>
     <div class="up-list">${soon.map(({s, d}) => { const n = daysUntil(d), drop = s.keep === "drop";
       return `<div class="up-row${drop ? " drop" : ""}"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
         <div class="up-main"><div class="name">${esc(s.name)}</div><div class="small ${drop ? "bad" : "muted"}">${drop ? `You chose to drop it. Cancel before ${n === 0 ? "today ends" : "it renews"}.` : whenLabel(n)}</div></div>
-        <div class="tnum name">${fmt(s.price)}</div></div>`; }).join("")}</div>
+        <div class="tnum name">${fmt(s.price)}</div></div>`; }).join("")}${inRows}</div>
     ${total ? `<p class="small muted">${fmt(total)} will be charged this week.</p>` : ""}
-    <div class="linkrow"><button class="link" type="button" data-go="subs">All subscriptions</button></div></section>`;
+    ${soon.length ? `<div class="linkrow"><button class="link" type="button" data-go="subs">All subscriptions</button></div>` : ""}</section>`;
 };
 
 /* ================= how to cancel (official help pages, checked by hand) ================= */

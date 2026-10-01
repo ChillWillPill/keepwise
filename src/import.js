@@ -260,7 +260,7 @@ const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th","st","nd
 function reviewPick(){
   const today = isoDaysAgo(0);
   if (S.reviewSnooze === today) return null;
-  const cands = S.subs.filter(s => s.keep !== "drop" && (!s.reviewedAt || daysSince(s.reviewedAt) > 30)).sort((a, b) => subMonthly(b) - subMonthly(a)).slice(0, 5);
+  const cands = S.subs.filter(s => s.keep !== "drop" && !isOurs(s) && (!s.reviewedAt || daysSince(s.reviewedAt) > 30)).sort((a, b) => subMonthly(b) - subMonthly(a)).slice(0, 5);
   if (!cands.length) return null;
   let h = 0; for (const ch of today) h = (h * 31 + ch.charCodeAt(0)) >>> 0; // same pick all day, a different one tomorrow
   return cands[h % cands.length];
