@@ -224,9 +224,43 @@ async function readStatementFile(file){
   const name = file.name || "statement";
   if (/\.pdf$/i.test(name) || file.type === "application/pdf"){
     const buf = await file.arrayBuffer();
-    return analyzeStatement(txFromLines(await pdfLines(buf)), name);
+    const lines = await pdfLines(buf), R = analyzeStatement(txFromLines(lines), name); R.cur = detectCurrency(lines.join(" ")); return R;
   }
-  return analyzeStatement(txFromCSV(await file.text()), name);
+  const text = await file.text(), R = analyzeStatement(txFromCSV(text), name); R.cur = detectCurrency(text); return R;
+}
+// ---- statements in another currency ----
+// Guess the statement's currency from symbols and codes in the file. Dollars and rupees are shared by several
+// currencies, so those only count as different when the plan is not in one of them.
+const CUR_FAMILY = {USD: "$", CAD: "$", AUD: "$", INR: "Rs", PKR: "Rs"};
+function detectCurrency(text){
+  const t = String(text).slice(0, 200000), n = re => (t.match(re) || []).length;
+  const score = {GBP: n(/£|\bGBP\b/g), EUR: n(/€|\bEUR\b/g), AED: n(/\bAED\b|\bDhs?\b/g), USD: n(/\bUSD\b|US\$/g), CAD: n(/\bCAD\b|C\$|CA\$/g), AUD: n(/\bAUD\b|A\$|AU\$/g), INR: n(/₹|\bINR\b/g), PKR: n(/\bPKR\b/g)};
+  const dollars = n(/\$/g), rupees = n(/\bRs\.?\s?\d/g);
+  const best = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
+  if (best[1] >= 2 && best[1] >= dollars / 2) return best[0];
+  if (dollars >= 2) return CUR_FAMILY[S.cur] === "$" ? S.cur : "USD";
+  if (rupees >= 2) return CUR_FAMILY[S.cur] === "Rs" ? S.cur : "PKR";
+  return best[1] >= 1 ? best[0] : null;
+}
+const curName = c => (CURRENCIES.find(x => x[0] === c) || [c, c])[1];
+function fxScaled(R){  // the statement's numbers in the plan's currency
+  const fx = STMT.fx, k = fx && fx.mode === "convert" ? numv(fx.rate) : 1; if (!k || k === 1) return R;
+  const m = v => r2((+v || 0) * k);
+  return {...R, monthlyIncome: m(R.monthlyIncome), otherIn: m(R.otherIn), taxMonthly: m(R.taxMonthly), monthlyOut: m(R.monthlyOut),
+    income: R.income.map(x => ({...x, monthly: m(x.monthly)})), subs: R.subs.map(x => ({...x, price: m(x.price), monthly: m(x.monthly), paid: m(x.paid)})),
+    bills: R.bills.map(x => ({...x, monthly: m(x.monthly)})), taxes: R.taxes.map(x => ({...x, total: m(x.total), monthly: m(x.monthly)})), spending: R.spending.map(x => ({...x, monthly: m(x.monthly)}))};
+}
+const fxReady = () => { const fx = STMT.fx; return !fx || fx.mode !== "convert" || numv(fx.rate) > 0; };
+function fxCard(){
+  const fx = STMT.fx, R = STMT.result;
+  if (!fx) return `<button class="link plain small" type="button" data-fx-open style="align-self:center">Is this statement in another currency?</button>`;
+  const opt = (mode, title, body) => `<label class="fx-opt${fx.mode === mode ? " on" : ""}"><input type="radio" name="fxmode" value="${mode}" ${fx.mode === mode ? "checked" : ""}><span><b>${title}</b>${body || ""}</span></label>`;
+  return `<section class="card fx-card"><h3>${R.cur && R.cur === fx.from ? `This statement looks like it’s in ${esc(curName(fx.from))}s.` : "Which currency is this statement in?"}</h3>
+    <p class="muted small">Your plan is in ${esc(curName(S.cur))}s (${S.cur}). Choose what to do with these numbers.</p>
+    <label class="field"><span>Statement currency</span><select data-fx-from>${CURRENCIES.filter(([c]) => c !== S.cur).map(([c, n]) => `<option value="${c}" ${c === fx.from ? "selected" : ""}>${c} · ${n}</option>`).join("")}</select></label>
+    ${opt("convert", `Convert to ${S.cur}`, `<span class="fx-rate">1 ${esc(fx.from)} = <input data-fx-rate inputmode="decimal" enterkeyhint="done" placeholder="rate" value="${esc(fx.rate)}" aria-label="How many ${S.cur} one ${esc(fx.from)} is worth"> ${S.cur}</span><small class="muted">Use the rate your bank gave you. KeepWise does not look rates up.</small>`)}
+    ${opt("same", "Use the numbers as they are", `<small class="muted">Pick this if the statement is really in ${S.cur}.</small>`)}
+    ${opt("switch", `Switch my plan to ${esc(fx.from)}`, `<small class="muted">Your existing numbers stay as typed. Only the currency label changes.</small>`)}</section>`;
 }
 
 // ---- review screen ----
@@ -235,11 +269,17 @@ function paidFor(s){ if (!s.since) return ""; const [y, m, d] = s.since.split("-
 V.importReview = () => {
   const R = STMT.result;
   if (!R) return "";
-  const row = (a, b, c) => `<div class="line"><div><div>${esc(a)}</div>${c ? `<div class="muted small">${esc(c)}</div>` : ""}</div><span class="tnum">${b}</span></div>`;
-  const left = R.monthlyIncome - R.monthlyOut;
   return `<div class="inline" style="justify-content:space-between"><h1>Your statement</h1><button class="btn small" type="button" data-import-cancel>Cancel</button></div>
   <p class="muted" style="text-align:center">${esc(R.fileName)} · ${R.count} transactions · ${monthsLabel(R.first)} to ${monthsLabel(R.last)} (${R.months} month${R.months > 1 ? "s" : ""}). Read on this phone only.</p>
-  <section class="hero"><p class="label">A typical month</p>
+  <div data-out="fxCard">${fxCard()}</div>
+  <div data-out="importBody" class="import-body">${OUT.importBody()}</div>`;
+};
+OUT.fxCard = fxCard;
+OUT.importBody = () => {
+  const R = fxScaled(STMT.result), fx = STMT.fx; FMT_CUR = fx && fx.mode === "switch" ? fx.from : null;
+  const row = (a, b, c) => `<div class="line"><div><div>${esc(a)}</div>${c ? `<div class="muted small">${esc(c)}</div>` : ""}</div><span class="tnum">${b}</span></div>`;
+  const left = R.monthlyIncome - R.monthlyOut;
+  const html = `  <section class="hero"><p class="label">A typical month</p>
     <div class="big tnum" style="${fitSize(fmt(left), 3, 88)}${left < 0 ? ";color:var(--rust)" : ""}">${fmt(left)}</div>
     <p class="muted">${fmt(R.monthlyIncome)} comes in, ${fmt(R.monthlyOut)} goes out${R.taxMonthly ? `, including ${fmt(R.taxMonthly)} of tax payments` : ""}.</p></section>
   <section class="card"><h2>Money coming in</h2>
@@ -251,8 +291,10 @@ V.importReview = () => {
   <section class="card"><h2>Bills</h2>${R.bills.length ? R.bills.map(b => row(b.name, fmt(b.monthly) + "/mo", b.cat)).join("") : `<p class="muted">No regular bills found.</p>`}
     ${R.taxes.length ? R.taxes.map(t => row(t.name, fmt(t.monthly) + "/mo", `Tax · ${fmt(t.total)} in this statement`)).join("") : ""}</section>
   <section class="card"><h2>Everyday spending</h2>${R.spending.length ? R.spending.map(s => row(s.name, fmt(s.monthly) + "/mo", s.env === "needs" ? "Expenditures" : "Miscellaneous")).join("") : `<p class="muted">Nothing else found.</p>`}</section>
-  <div class="grid2"><button class="btn" type="button" data-import-apply="merge">Add to my plan</button><button class="btn primary" type="button" data-import-apply="replace" style="padding:10px">Use this as my plan</button></div>
+  ${fxReady() ? "" : `<p class="err" style="text-align:center">Type the exchange rate above, or pick another option, before adding this to your plan.</p>`}
+  <div class="grid2"><button class="btn" type="button" data-import-apply="merge" ${fxReady() ? "" : "disabled"}>Add to my plan</button><button class="btn primary" type="button" data-import-apply="replace" style="padding:10px" ${fxReady() ? "" : "disabled"}>Use this as my plan</button></div>
   <p class="muted small" style="text-align:center">“Use this as my plan” replaces your income, lines and subscriptions. Splits, codes and savings stay.</p>`;
+  FMT_CUR = null; return html;
 };
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th","st","nd","rd"][n % 10] || "th");
 

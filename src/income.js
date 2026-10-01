@@ -19,9 +19,9 @@ function nextIncome(x){
 }
 const whenText = x => x.when === "monthly" && x.day ? `on the ${ordinal(x.day)}` : x.when === "weekly" && x.wd != null ? `every ${WEEKDAYS[x.wd]}` : x.when === "biweekly" ? "every 2 weeks" : "no fixed day";
 const gotIn = (x, k) => (x.got || []).filter(p => inMonth(p.date, k)).reduce((a, p) => a + (+p.amount || 0), 0);
-const todayKey = () => monthKey(new Date());
+const todayKey = () => periodOf(new Date()).key;
 function extraAverage(x){  // the last three finished months that have payments
-  const by = {}; (x.got || []).forEach(p => { const k = (p.date || "").slice(0, 7); if (k && k < todayKey()) by[k] = (by[k] || 0) + (+p.amount || 0); });
+  const by = {}; (x.got || []).forEach(p => { const k = periodKeyOfIso(p.date); if (k && k < todayKey()) by[k] = (by[k] || 0) + (+p.amount || 0); });
   const keys = Object.keys(by).sort().slice(-3); if (keys.length < 2) return null;
   return {avg: r2(keys.reduce((a, k) => a + by[k], 0) / keys.length), n: keys.length};
 }
@@ -39,7 +39,7 @@ function incomeForm(x){
     ${x ? `<button class="link plain small" type="button" data-inc-cancel style="align-self:center">Cancel</button>` : ""}</form>`;
 }
 OUT.extraIncome = () => {
-  const list = S.extras || [], k = todayKey(), mName = new Date().toLocaleString("en-US", {month: "long"});
+  const list = S.extras || [], k = todayKey(), mName = periodOf(new Date()).name;
   if (!list.length && !UI.incAdd) return `<button class="link small inc-add" type="button" data-inc-add>${I.plus}Add other income <span class="muted">side job, creator, trading, rental</span></button>`;
   const rows = list.map(x => {
     if (UI.incEdit === x.id) return `<div class="inc-row editing" data-inc="${x.id}">${incomeForm(x)}</div>`;

@@ -3,7 +3,7 @@ const monthKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0
 const keyDate = k => { const [y, m] = k.split("-").map(Number); return new Date(y, m - 1, 1); };
 const keyLabel = (k, short) => keyDate(k).toLocaleString("en-US", short ? {month:"short"} : {month:"long", year:"numeric"});
 const shiftKey = (k, n) => { const d = keyDate(k); d.setMonth(d.getMonth() + n); return monthKey(d); };
-const inMonth = (iso, k) => !!iso && iso.slice(0, 7) === k;
+const inMonth = (iso, k) => !!iso && periodKeyOfIso(iso) === k;
 // What a month looked like, saved as you go. Past months stop changing once the plan moves on to the next month.
 function buildStatement(){
   const C = compute(), k = C.planKey;
@@ -12,9 +12,9 @@ function buildStatement(){
   const swaps = S.swaps.filter(w => w.on && linkedItem(w)).map(w => ({t: w.title || linkedItem(w).name, a: w.alt, s: r2(swapSaving(w))}));
   const splits = S.splits.filter(x => inMonth(x.date, k)), pays = (S.settlements || []).filter(x => inMonth(x.date, k));
   const old = (S.statements || {})[k] || {};
-  const inc = (S.extras || []).length ? [{n: "Regular pay", a: r2(+S.income || 0)}, ...S.extras.map(x => ({n: x.name, a: r2(extraMonthly(x)), got: r2(gotIn(x, k))}))] : undefined;
+  const inc = (S.extras || []).length || C.payBonus.extra > 0 ? [{n: "Regular pay", a: r2(+S.income || 0)}, ...(C.payBonus.extra > 0 ? [{n: "Extra paycheck", a: r2(C.payBonus.extra)}] : []), ...(S.extras || []).map(x => ({n: x.name, a: r2(extraMonthly(x)), got: r2(gotIn(x, k))}))] : undefined;
   return {key: k, updated: isoDaysAgo(0), income: r2(C.income), incomeLines: inc, confirmed: old.confirmed, actual: old.actual, needs: r2(C.needs), misc: r2(C.misc), kept: r2(C.savings),
-    setAside: r2(C.setAside), efSaved: r2(S.efSaved), cur: S.cur, lines, subs: live, swaps,
+    setAside: r2(C.setAside), efSaved: r2(S.efSaved), cur: S.cur, range: monthStartDay() !== 1 ? rangeText(C.planPeriod) : undefined, lines, subs: live, swaps,
     splits: {count: splits.length, total: r2(splits.reduce((a, x) => a + (+x.amount || 0), 0))},
     settled: {count: pays.length, total: r2(pays.reduce((a, x) => a + (+x.amount || 0), 0))}};
 }
@@ -58,7 +58,7 @@ V.statement = () => {
   return `<div class="inline no-print" style="justify-content:space-between"><button class="btn small" type="button" data-stmt-back>${I.chevl}Statements</button><button class="btn small" type="button" data-stmt-print>${IN_APP ? "Download" : "Print or save PDF"}</button></div>
   <article class="stmt" aria-label="Statement for ${esc(keyLabel(s.key))}">
     <header class="st-head"><div class="st-brand"><b class="wordmark">Keep<span>Wise</span></b><span class="muted small">Monthly statement</span></div>
-      <h2 class="st-title">${esc(keyLabel(s.key))}</h2><span class="st-status small ${open ? "open" : ""}">${open ? `In progress · updated ${esc(shortDate(s.updated))}` : `Closed · final numbers from ${esc(shortDate(s.updated))}`}</span></header>
+      <h2 class="st-title">${esc(keyLabel(s.key))}</h2>${s.range ? `<span class="muted small">${esc(s.range)}</span>` : ""}<span class="st-status small ${open ? "open" : ""}">${open ? `In progress · updated ${esc(shortDate(s.updated))}` : `Closed · final numbers from ${esc(shortDate(s.updated))}`}</span></header>
     ${s.example ? `<p class="note small">This is an example statement. Your own appear here as the months go by.</p>` : ""}
     <div class="st-sum"><div><span class="label">In</span><b class="tnum">${f(s.income)}</b></div><div><span class="label">Out</span><b class="tnum">${f(out)}</b></div><div><span class="label">Kept</span><b class="tnum ${keptOf(s) < 0 ? "bad" : "good"}">${f(keptOf(s))}</b></div></div>
     ${s.actual != null && Math.abs(s.actual - s.kept) > 0.005 ? `<p class="muted small" style="margin-top:-8px">You confirmed ${f(s.actual)} kept. The plan was ${f(s.kept)}.</p>` : ""}
@@ -105,7 +105,10 @@ function setRenewalFrom(s, iso){  // iso date of a charge
 OUT.comingUp = () => {
   const soon = S.subs.map(s => ({s, d: nextRenewal(s)})).filter(x => x.d && daysUntil(x.d) <= 7).sort((a, b) => a.d - b.d);
   const arriving = (S.extras || []).map(x => ({x, d: nextIncome(x)})).filter(v => v.d && daysUntil(v.d) <= 7).sort((a, b) => a.d - b.d);
-  if (!soon.length && !arriving.length) return "";
+  const t0 = todayMid(), t7 = new Date(t0); t7.setDate(t7.getDate() + 7);
+  const payRows = (payOn() ? paydaysBetween(t0, t7) : []).map(d => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
+        <div class="up-main"><div class="name">Payday</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(+S.pay.amount || 0)}</div></div>`).join("");
+  if (!soon.length && !arriving.length && !payRows) return "";
   const inRows = arriving.map(({x, d}) => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
         <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(x.amount)}</div></div>`).join("");
   const total = soon.filter(x => x.s.keep !== "drop").reduce((a, x) => a + x.s.price, 0);
@@ -113,7 +116,7 @@ OUT.comingUp = () => {
     <div class="up-list">${soon.map(({s, d}) => { const n = daysUntil(d), drop = s.keep === "drop";
       return `<div class="up-row${drop ? " drop" : ""}"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
         <div class="up-main"><div class="name">${esc(s.name)}</div><div class="small ${drop ? "bad" : "muted"}">${drop ? `You chose to drop it. Cancel before ${n === 0 ? "today ends" : "it renews"}.` : whenLabel(n)}</div></div>
-        <div class="tnum name">${fmt(s.price)}</div></div>`; }).join("")}${inRows}</div>
+        <div class="tnum name">${fmt(s.price)}</div></div>`; }).join("")}${payRows}${inRows}</div>
     ${total ? `<p class="small muted">${fmt(total)} will be charged this week.</p>` : ""}
     ${soon.length ? `<div class="linkrow"><button class="link" type="button" data-go="subs">All subscriptions</button></div>` : ""}</section>`;
 };
@@ -250,7 +253,7 @@ async function doShare(){
 /* ================= first-run setup ================= */
 const WELCOME_KEY = "keepwise-welcome-done";
 const welcomeDone = () => { try { localStorage.setItem(WELCOME_KEY, "1"); } catch(e){} };
-const DRAFT = {cur: "USD", income: "", home: ""};
+const DRAFT = {cur: "USD", income: "", home: "", pay: "monthly"};
 V.welcome = () => {
   const step = UI.welcome, dots = n => `<div class="w-dots" aria-label="Step ${n} of 3">${[1,2,3].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</div>`;
   if (step === 0) return `<div class="welcome"><img class="w-logo" src="${document.querySelector("img.logo").src}" alt="">
@@ -262,9 +265,11 @@ V.welcome = () => {
     <p class="w-safe">${I.lock}Everything stays on your phone. No bank login.</p>
     <button class="btn primary w-cta" type="button" data-w-next>Set up my month</button>
     <button class="link plain w-alt" type="button" data-w-example>Look around with an example first</button></div>`;
-  if (step === 1) return `<div class="welcome">${dots(1)}<h1 class="w-title">What comes in each month?</h1><p class="w-sub">Your take-home pay after tax, from everything you earn.</p>
-    <label class="field"><span>Currency</span><select data-w="cur">${CURRENCIES.map(([c, n]) => `<option value="${c}" ${c === DRAFT.cur ? "selected" : ""}>${c} · ${n}</option>`).join("")}</select></label>
-    <label class="field"><span>Money coming in</span><span class="money-in w-big"><em>${esc((() => { try { return new Intl.NumberFormat("en-US", {style:"currency", currency: DRAFT.cur, maximumFractionDigits:0}).formatToParts(0).find(p => p.type === "currency").value; } catch(e){ return "$"; } })())}</em><input data-w="income" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(DRAFT.income)}" aria-label="Money coming in each month"></span></label>
+  if (step === 1) return `<div class="welcome">${dots(1)}<h1 class="w-title">What comes in?</h1><p class="w-sub">Your take-home pay, after tax.</p>
+    <div class="grid2"><label class="field"><span>Currency</span><select data-w="cur">${CURRENCIES.map(([c, n]) => `<option value="${c}" ${c === DRAFT.cur ? "selected" : ""}>${c} · ${n}</option>`).join("")}</select></label>
+    <label class="field"><span>How often you’re paid</span><select data-w="pay">${PAY_WHEN.map(([k, n]) => `<option value="${k}" ${k === DRAFT.pay ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
+    <label class="field"><span>${DRAFT.pay === "monthly" ? "Money coming in each month" : "Each paycheck"}</span><span class="money-in w-big"><em>${esc((() => { try { return new Intl.NumberFormat("en-US", {style:"currency", currency: DRAFT.cur, maximumFractionDigits:0}).formatToParts(0).find(p => p.type === "currency").value; } catch(e){ return "$"; } })())}</em><input data-w="income" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(DRAFT.income)}" aria-label="${DRAFT.pay === "monthly" ? "Money coming in each month" : "Each paycheck"}"></span>
+      ${DRAFT.pay !== "monthly" && numv(DRAFT.income) ? `<small class="muted small">That is ${new Intl.NumberFormat("en-US", {style:"currency", currency: DRAFT.cur, maximumFractionDigits: 0}).format(numv(DRAFT.income) * PAY_BASE[DRAFT.pay])} in an ordinary month.</small>` : ""}</label>
     <button class="btn primary w-cta" type="button" data-w-next>Continue</button><button class="link plain w-alt" type="button" data-w-back>Back</button></div>`;
   if (step === 2) return `<div class="welcome">${dots(2)}<h1 class="w-title">What do you pay for your home?</h1><p class="w-sub">Rent or mortgage each month. Usually the biggest bill.</p>
     <label class="field"><span>Rent or mortgage</span><span class="money-in w-big"><em>${esc((() => { try { return new Intl.NumberFormat("en-US", {style:"currency", currency: DRAFT.cur, maximumFractionDigits:0}).formatToParts(0).find(p => p.type === "currency").value; } catch(e){ return "$"; } })())}</em><input data-w="home" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(DRAFT.home)}" aria-label="Rent or mortgage each month"></span></label>
@@ -276,7 +281,7 @@ V.welcome = () => {
 };
 function finishWelcome(){
   const ex = example();
-  Object.assign(ex, {cur: DRAFT.cur, income: numv(DRAFT.income), efSaved: 0, expenses: numv(DRAFT.home) ? [{id: uid(), name: "Rent or mortgage", amount: numv(DRAFT.home), env: "needs"}] : [],
+  Object.assign(ex, {cur: DRAFT.cur, income: r2(numv(DRAFT.income) * (PAY_BASE[DRAFT.pay] || 1)), pay: DRAFT.pay !== "monthly" ? {when: DRAFT.pay, amount: numv(DRAFT.income), day: DRAFT.pay === "twice" ? 1 : undefined, day2: DRAFT.pay === "twice" ? 15 : undefined} : null, efSaved: 0, expenses: numv(DRAFT.home) ? [{id: uid(), name: "Rent or mortgage", amount: numv(DRAFT.home), env: "needs"}] : [],
     subs: [], swaps: [], codes: [], splits: [], settlements: [], people: [{id: "me", name: "You"}], goalName: "", goalAmt: 0, statements: {}, example: false, hideNote: false, tab: "month", started: isoDaysAgo(0)});
   S = ex; UI.welcome = null; welcomeDone(); save();
 }

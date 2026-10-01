@@ -1381,6 +1381,86 @@ async def chosen_currency_shows_everywhere(ctx):
     csv = os.path.join(TMP, "gbp.csv"); open(csv, "w").write("Date,Description,Amount\n01/09/2026,NETFLIX.COM,-10.99\n03/09/2026,PAYROLL ACME,2500\n")
     await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(400); await clean("import review")
 
+
+@test
+async def statement_in_another_currency(ctx):
+    pg = await open_app(ctx)
+    gbp = os.path.join(TMP, "uk.csv")
+    open(gbp, "w").write("Date,Description,Amount\n2026-07-01,PAYROLL ACME,£2000.00\n2026-07-04,NETFLIX.COM,-£10.00\n2026-08-01,PAYROLL ACME,£2000.00\n2026-08-04,NETFLIX.COM,-£10.00\n2026-09-01,PAYROLL ACME,£2000.00\n2026-09-04,NETFLIX.COM,-£10.00\n")
+    await pg.set_input_files("#stmt", gbp); await pg.wait_for_timeout(400)
+    card = await text(pg, ".fx-card"); assert "British pound" in card and "Your plan is in US dollar" in card
+    assert await pg.locator("[data-import-apply=replace]").is_disabled(), "a rate is needed before converting"
+    await pg.fill("[data-fx-rate]", "1.25"); await pg.wait_for_timeout(150)
+    body = await text(pg, "[data-out=importBody]"); assert "$12.50/mo" in body and "$2,500" in body and "£" not in body
+    assert await pg.evaluate("document.activeElement.hasAttribute('data-fx-rate')"), "typing the rate is not interrupted"
+    await pg.locator(".fx-opt input[value=switch]").check(); await pg.wait_for_timeout(150)
+    body = await text(pg, "[data-out=importBody]"); assert "£10/mo" in body and "$" not in body, "previewed in the statement's own currency"
+    await pg.locator(".fx-opt input[value=convert]").check(); await pg.wait_for_timeout(120)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(250)
+    st = await state(pg); n = [x for x in st["subs"] if x["name"].lower().startswith("netflix")][0]
+    assert n["price"] == 12.5 and st["income"] == 2500 and st["cur"] == "USD" and st["imported"]["cur"] == "GBP" and st["imported"]["rate"] == 1.25
+    # switching the plan instead
+    await pg.set_input_files("#stmt", gbp); await pg.wait_for_timeout(400)
+    await pg.locator(".fx-opt input[value=switch]").check(); await pg.wait_for_timeout(120)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(250)
+    st = await state(pg); assert st["cur"] == "GBP" and [x for x in st["subs"] if x["name"].lower().startswith("netflix")][0]["price"] == 10
+    # no symbols in the file: nothing is assumed, but the question is one tap away
+    plain = os.path.join(TMP, "plain.csv"); open(plain, "w").write("Date,Description,Amount\n2026-09-04,NETFLIX.COM,-10.00\n2026-09-01,PAYROLL ACME,2000.00\n")
+    await pg.set_input_files("#stmt", plain); await pg.wait_for_timeout(400)
+    assert await pg.locator(".fx-card").count() == 0 and not await pg.locator("[data-import-apply=replace]").is_disabled()
+    await pg.click("[data-fx-open]"); await pg.wait_for_timeout(120); assert await pg.locator(".fx-card").count() == 1
+    await pg.locator(".fx-opt input[value=same]").check(); await pg.wait_for_timeout(100)
+    assert not await pg.locator("[data-import-apply=merge]").is_disabled()
+
+async def open_at(ctx, when):
+    import datetime
+    pg = await ctx.new_page(); pg.errors = []
+    pg.on("pageerror", lambda e: pg.errors.append("pageerror: " + str(e)))
+    await pg.clock.install(time=datetime.datetime(*when))
+    await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;"); await pg.set_viewport_size({"width": 390, "height": 844}); await pg.goto(URL); await pg.wait_for_timeout(400)
+    return pg
+
+@test
+async def pay_schedule_and_extra_paycheck(ctx):
+    pg = await open_at(ctx, (2026, 10, 5, 10, 0))
+    assert "How are you paid?" in await text(pg, "[data-out=payBox]")
+    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
+    await f.locator("[name=when]").select_option("biweekly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=pay]"); await f.locator("[name=next]").fill("2026-10-02"); await f.locator("[name=amount]").fill("2600")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    st = await state(pg); assert st["income"] == 5200 and st["pay"]["when"] == "biweekly"
+    head = await text(pg, "[data-out=headline]"); assert "October has 3 paydays, so an extra $2,600 is counted" in head, head
+    assert abs(money(await text(pg, "[data-out=headline] .big")) - (1456.99 + 2600)) < 0.01
+    box = await text(pg, "[data-out=payBox]"); assert "every 2 weeks" in box and "next payday" in box and "Oct 16" in box
+    how = await text(pg, "[data-out=howto]"); assert "Your next payday is Friday, Oct 16" in how and "each of October’s 3 paychecks" in how
+    # the monthly number and the paycheck stay in step
+    await pg.fill("#m-income", "6000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(200)
+    assert (await state(pg))["pay"]["amount"] == 3000
+    await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(120)
+    assert "Extra paycheck" in await text(pg, ".stmt")
+    await pg.click("[data-stmt-back]"); await pg.click("[data-history-close]")
+    await pg.click("[data-payday-edit]"); await pg.click("[data-payday-clear]"); await pg.wait_for_timeout(150)
+    assert (await state(pg))["pay"] is None and "extra" not in await text(pg, "[data-out=headline]")
+
+@test
+async def month_can_start_on_payday(ctx):
+    pg = await open_at(ctx, (2026, 10, 5, 10, 0))
+    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
+    await f.locator("[name=day]").select_option("25"); await f.locator("[name=amount]").fill("5200"); await f.locator("[name=monthStart]").select_option("25")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    note = await text(pg, "[data-out=planNote]"); assert "19 days left in October" in note and "Your October runs Sep 25 to Oct 24" in note, note
+    st = await state(pg); assert st["monthStart"] == 25 and "2026-10" in st["statements"] and st["statements"]["2026-10"]["range"] == "Sep 25 to Oct 24"
+    up = await text(pg, "[data-out=payBox]"); assert "on the 25th" in up and "Oct 25" in up
+    # a payment logged on Sep 26 belongs to this October; one on Sep 20 does not
+    await pg.click("[data-inc-add]"); g = pg.locator("form[data-form=income]"); await g.locator("[name=name]").fill("Tutoring"); await g.locator("[name=amount]").fill("300"); await g.locator("button[type=submit]").click(); await pg.wait_for_timeout(150)
+    for d, a in [("2026-09-26", "80"), ("2026-09-20", "50")]:
+        await pg.click("[data-inc-log]"); lf = pg.locator("form[data-form=incomeLog]"); await lf.locator("[name=amount]").fill(a); await lf.locator("[name=date]").fill(d); await lf.locator("button[type=submit]").click(); await pg.wait_for_timeout(150)
+    assert "$80 of $300" in await text(pg, ".inc-card")
+    await pg.close()
+    p2 = await open_at(ctx, (2026, 10, 26, 10, 0))
+    assert "is closed" in (await text(p2, "[data-out=monthClose]")).lower(), "the month closes on the 24th, not the 31st"
+    assert "November" in await text(p2, "[data-out=planNote]")
+
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")
 SEED = {
