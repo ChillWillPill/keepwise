@@ -718,7 +718,7 @@ function swapSaving(w){ const it = linkedItem(w); return it ? Math.max(0, it.cos
 
 /* ================= split math (works on this phone's list or the shared circle) ================= */
 const SH = {state:"loading", db:null, user:null, me:null, splits:[], pays:[], members:[], names:{}, lastSeen:0, loaded:{splits:false, pays:false, members:false}, known:null, joinTried:false};
-const shared = () => S.splitMode === "shared" && SH.state === "ready";
+const shared = () => !!window.claude && S.splitMode === "shared" && SH.state === "ready";
 function CTX(){
   if (shared()){
     const ids = [SH.me, ...SH.members.filter(m => m !== SH.me)];
@@ -1221,8 +1221,8 @@ V.month = () => {
   <div data-out="historyCard">${OUT.historyCard()}</div>
   <section class="card"><h2>How to use it</h2><div data-out="howto">${OUT.howto()}</div></section>
   <section class="card" aria-labelledby="askh">
-    <h2 id="askh">Ask KeepWise</h2>
-    <p class="muted small">The plan above is already worked out from your settings. This answers questions about the same numbers in plain language.</p>
+    <h2 id="askh" class="h-info">Ask KeepWise${infoBtn("ask", "About Ask KeepWise")}</h2>
+    ${infoTip("ask", "Ask about your plan in plain words. Answers use the same numbers shown above.")}
     <button class="btn primary" type="button" data-plain style="width:auto;align-self:flex-start;padding:12px 20px">Say it plainly</button>
     <div class="chips">${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
     <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask about your month" aria-label="Ask KeepWise" style="flex:1 1 200px"><button class="btn" type="submit">Ask</button></form>
@@ -1423,8 +1423,8 @@ OUT.subsList = () => {
 
 // ---- Cheaper ----
 V.cheaper = () => `
-  <h1>Cheaper</h1>
-  <p class="muted">Close alternatives to what you already pay for. Turn one on and your month updates. Prices are estimates; check before you switch.</p>
+  <h1 class="h-info">Cheaper${infoBtn("cheaper", "About Cheaper")}</h1>
+  ${infoTip("cheaper", "Lower-cost alternatives to what you already pay for. Turn one on and your month updates. Prices are estimates, so check before you switch.")}
   <div data-out="cheapSummary">${OUT.cheapSummary()}</div>
   <div data-out="cheapList">${OUT.cheapList()}</div>
   <details class="card"><summary>Add your own comparison</summary>
@@ -1455,8 +1455,8 @@ OUT.cheapList = () => {
 // ---- Codes ----
 let codeQ = "";
 V.codes = () => `
-  <h1>Codes</h1>
-  <p class="muted">Codes marked Likely worked for someone in the last week. Tap a code to copy it, then tell KeepWise if it worked.</p>
+  <h1 class="h-info">Codes${infoBtn("codes", "About Codes")}</h1>
+  ${infoTip("codes", "Tap a code to copy it. “Likely” means it worked for someone in the past week. Afterwards, mark whether it worked for you.")}
   <div class="note small">Example codes are placeholders until KeepWise connects to affiliate feeds. Codes you add are real and stay on this device.</div>
   <input id="code-q" type="search" enterkeyhint="search" placeholder="Search a store" aria-label="Search codes" value="${esc(codeQ)}">
   <div data-out="codeList">${OUT.codeList()}</div>
@@ -1491,7 +1491,7 @@ V.plan = () => `
     <label class="field"><span>${OUT.incomeLabel()}</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}"></span>${(S.extras || []).length ? `<small class="muted small">Plus ${fmt(extraExpected())} other income, on the Month tab.</small>` : ""}</label>
     <label class="field"><span>Currency</span><select data-bind="cur">${CURRENCIES.map(([c,n]) => `<option value="${c}" ${c===S.cur?"selected":""}>${c} · ${n}</option>`).join("")}</select></label>
   </div>
-  <section class="card"><h2>Envelopes</h2><p class="muted small">Percent of money coming in each envelope should hold.</p>
+  <section class="card"><h2 class="h-info">Envelopes${infoBtn("envelopes", "About Envelopes")}</h2>${infoTip("envelopes", "The share of your income each envelope should hold. Subscriptions are managed on the Subs tab and count toward Miscellaneous.")}
     <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr));align-items:end">
       ${[["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => `<label class="field"><span>${n}</span><span class="money-in"><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"><em>%</em></span></label>`).join("")}
     </div><div data-out="envCheck">${OUT.envCheck()}</div></section>
@@ -1502,8 +1502,7 @@ V.plan = () => `
       <div class="inline"><span class="money-in" style="flex:1 1 100px"><em>${esc(sym())}</em><input data-exp-amt type="text" inputmode="decimal" enterkeyhint="done" value="${e.amount}" aria-label="Amount for ${esc(e.name)}"></span>
       <select data-exp-env style="flex:1 1 150px" aria-label="Envelope"><option value="needs" ${e.env==="needs"?"selected":""}>Expenditures</option><option value="misc" ${e.env==="misc"?"selected":""}>Misc</option></select>
       <button class="btn small danger" type="button" data-del-exp aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>
-    <button class="btn" type="button" data-add-exp>Add a line</button>
-    <p class="muted small">Subscriptions live on the Subs tab and count toward Misc.</p></section>
+    <button class="btn" type="button" data-add-exp>Add a line</button></section>
   <section class="card"><h2>Savings</h2>
     <div class="grid2"><label class="field"><span>Emergency fund so far</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="efSaved" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.efSaved}"></span></label>
     <label class="field"><span>Target, months of needs</span><input data-bind="efMonths" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.efMonths}"></label></div>
@@ -1527,14 +1526,12 @@ OUT.saveSplit = () => { const C = compute(); return C.savings > 0 ? `<p class="s
 // ---- Split ----
 let splitDraft = null, splitErr = "";
 function modeSwitch(){
+  if (!window.claude) return "";  // shared splits need live sync, which the public app does not have yet: no switch, no promise
   const m = S.splitMode === "shared" ? "shared" : "local";
   return `<div class="seg" role="group" aria-label="Which splits" style="align-self:flex-start"><button type="button" data-mode="shared" aria-pressed="${m === "shared"}">Shared with friends</button><button type="button" data-mode="local" aria-pressed="${m === "local"}">On this phone</button></div>`;
 }
 function sharedUnavailable(){
   if (SH.state === "loading") return `<div class="card"><p class="muted">Connecting to your shared circle…</p></div>`;
-  if (!window.claude) return `<div class="card"><h2>Friend sync is coming to the app</h2>
-    <p>Right now, shared splits with live notifications work in the Claude version of KeepWise. In this app, your splits stay on this phone.</p>
-    <p class="muted small">Switch to “On this phone” to keep splitting with names you add by hand.</p></div>`;
   return `<div class="card"><h2>Share splits with friends</h2>
     <p>Shared splits work when this page is opened in Claude while you’re signed in. Friends need a Claude account too.</p>
     <ol class="steps"><li><div><h3>Invite them</h3><p class="muted">In the Claude app, open this page’s Share menu and invite each friend by email as an Editor. Leave public link sharing off, or they can view but not add.</p></div></li>
@@ -1578,7 +1575,7 @@ function momentsPreview(){
 V.split = () => {
   if (UI.moments) return `<h1>Split</h1>${momentsPreview()}`;
   const c = CTX();
-  const wantShared = S.splitMode === "shared";
+  const wantShared = !!window.claude && S.splitMode === "shared";
   if (wantShared && !shared()) return `<h1>Split</h1>${modeSwitch()}${sharedUnavailable()}${momentsTeaser()}`;
   const tags = ["All", ...S.tags];
   const list = c.splits.filter(x => S.filter === "All" || x.tag === S.filter).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0) || (b.date||"").localeCompare(a.date||""));
@@ -1597,8 +1594,8 @@ V.split = () => {
       <div class="name tnum" style="font-size:1.1rem">${fmt(x.amount)}</div></div>
       <div class="inline" style="justify-content:flex-end"><button class="btn small" type="button" data-edit-split aria-label="Edit ${esc(x.title)}">Edit</button><button class="btn small danger" type="button" data-del-split aria-label="Delete ${esc(x.title)}">Delete</button></div></div>${c.kind === "local" && UI.tell && UI.tell.at === x.id ? tellCard() : ""}`; }).join("") : `<p class="empty">No splits${S.filter !== "All" ? ` tagged ${esc(S.filter)}` : ""} yet.</p>`}
   ${historySection(c)}
-  ${c.kind === "shared" ? `<section style="display:flex;flex-direction:column;gap:12px"><h2>Your circle</h2>
-    <p class="muted">Everyone who opened this page and joined. Invite more people from the Share menu.</p>
+  ${c.kind === "shared" ? `<section style="display:flex;flex-direction:column;gap:12px"><h2 class="h-info">Your circle${infoBtn("circle", "About your circle")}</h2>
+    ${infoTip("circle", "Everyone who has opened this page and joined. To invite more people, use the Share menu.")}
     ${peopleList(c)}</section>` : `
   <section style="display:flex;flex-direction:column;gap:12px">
     <div class="inline" style="justify-content:space-between"><h2>People</h2><span class="muted small">${(n => n === 0 ? "Just you" : n === 1 ? "1 person" : n + " people")(S.people.filter(p => !p.archived && p.id !== "me").length)} · stay on this phone</span></div>
@@ -1740,8 +1737,8 @@ function renderBell(){
 }
 V.inbox = () => {
   const list = notifications(), seen = UI.inboxSeen || 0;
-  return `<div class="inline" style="justify-content:space-between"><h1>Notifications</h1><button class="btn small" type="button" data-close-inbox>Done</button></div>
-    <p class="muted">What friends did in your shared circle: splits that include you, and payments.</p>
+  return `<div class="inline" style="justify-content:space-between"><h1 class="h-info">Notifications${infoBtn("inbox", "About notifications")}</h1><button class="btn small" type="button" data-close-inbox>Done</button></div>
+    ${infoTip("inbox", "Activity from your shared circle: splits that include you, and payments.")}
     ${list.length ? `<div class="rows">${list.map(n => `<div class="row"><div class="row-top"><div>${n.t > seen ? `<span class="pill ok" style="margin-right:6px">New</span>` : ""}<span class="name">${esc(n.text)}</span>${n.detail ? `<div class="muted small">${esc(n.detail)}</div>` : ""}</div><div class="muted small">${ago(n.t)}</div></div></div>`).join("")}</div>
     <button class="btn" type="button" data-go-split>Open shared splits</button>` : `<p class="empty">Nothing yet. When a friend adds a split with you in it, it shows here.</p>`}`;
 };
@@ -1846,8 +1843,8 @@ OUT.historyCard = () => {
 };
 V.history = () => {
   const keys = statementKeys(), now = currentKey();
-  return `<div class="inline" style="justify-content:space-between"><h1>Statements</h1><button class="btn small" type="button" data-history-close>Done</button></div>
-  <p class="muted">A statement for every month, written by KeepWise on this device. Nothing is uploaded.</p>
+  return `<div class="inline" style="justify-content:space-between"><h1 class="h-info">Statements${infoBtn("statements", "About statements")}</h1><button class="btn small" type="button" data-history-close>Done</button></div>
+  ${infoTip("statements", "KeepWise writes a statement for every month on this device. Nothing is uploaded.")}
   ${keys.length ? `${keys.length > 1 ? `<section class="card">${keptBars(keys)}</section>` : ""}
   <div class="rows">${keys.map(k => { const s = S.statements[k];
     return `<button type="button" class="row stmt-row" data-stmt="${k}"><div class="row-top"><div><div class="name">${esc(keyLabel(k))}</div><div class="muted small">${k === now ? "In progress" : "Closed"}${s.example ? " · Example" : ""} · ${fmt(s.income)} in, ${fmt(s.needs + s.misc)} out</div></div>
@@ -2419,7 +2416,7 @@ function tellGroup(x, kind){
   return `${x.title}${kind === "edit" ? " (updated)" : ""}: ${fmt(x.amount)}, paid by ${x.paidBy === "me" ? "me" : tellName(x.paidBy)}.\n${Object.keys(sh).map(id => `${who(id)}: ${fmt(sh[id])}`).join("\n")}${TELL_FOOT}`;
 }
 function tellAbout(kind, x, old){  // kind: add, edit, delete
-  if (S.splitMode === "shared" || !x) { UI.tell = null; return; }
+  if (shared() || !x) { UI.tell = null; return; }
   const now = tellOthers(x), before = old ? tellOthers(old) : [], rows = [];
   now.forEach(id => {
     let text;
@@ -2434,7 +2431,7 @@ function tellAbout(kind, x, old){  // kind: add, edit, delete
   UI.tell = {kind, title: x.title, at: kind === "edit" ? x.id : null, rows, group: now.length >= 2 && x.method !== "borrow" ? tellGroup(x, kind) : null, each: false};
 }
 function tellSettled(pid, amount, gotPaid){
-  if (S.splitMode === "shared"){ UI.tell = null; return; }
+  if (shared()){ UI.tell = null; return; }
   const name = tellName(pid);
   UI.tell = {kind: "settle", title: name, at: null, group: null, each: false,
     rows: [{id: pid, name, text: gotPaid ? `Got your ${fmt(amount)}, thank you. We are all square.` : `I paid you ${fmt(amount)}. We are all square.`}]};
@@ -2853,7 +2850,7 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; S.tab = b.dataset.tab; if (S.tab === "subs") remindSeen(); save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; if (UI.inbox) markSeen(); render(false); });
 

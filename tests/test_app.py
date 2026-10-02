@@ -521,8 +521,11 @@ async def split_people_add_remove_import(ctx):
 @test
 async def shared_off_shows_setup(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
-    await pg.click("[data-mode=shared]"); await pg.wait_for_timeout(100)
-    assert "Friend sync is coming to the app" in await text(pg, "#view")  # standalone app, no Claude storage
+    assert await pg.locator("[data-mode]").count() == 0, "the public app has no shared mode to switch to"
+    await pg.evaluate("(() => { const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.splitMode = 'shared'; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); })()")
+    for name in ("month", "subs", "cheaper", "codes", "plan", "split"):   # and it never names the tool it was built with
+        await tab(pg, name); assert "Claude" not in await pg.inner_text("#app"), name
+    assert await pg.locator("[data-new-split]").count() == 1, "splits on this phone are simply there"
     assert await pg.evaluate("document.getElementById('bell').hidden")
     await pg.close()
     pg = await ctx.new_page(); await pg.add_init_script("window.claude = {use: async () => null}")  # in Claude but signed out
@@ -1515,6 +1518,31 @@ async def data_moves_from_browser_to_home_screen_app(ctx):
     await app.click("[data-move-paste]"); await app.wait_for_timeout(250)
     assert (await state(app))["income"] == 4321
     await c3.close()
+
+@test
+async def explanations_sit_behind_info_buttons_everywhere(ctx):
+    pg = await open_app(ctx)
+    async def check(key, words):
+        b = pg.locator(f"[data-info={key}]"); assert await b.count() == 1, key
+        assert await pg.locator("[data-info-tip]").count() == 0, f"{key}: nothing is open before a tap"
+        await b.scroll_into_view_if_needed(); await b.click(); await pg.wait_for_timeout(120)
+        tip = await pg.inner_text(f"[data-info-tip={key}]"); assert words in tip and len(tip) <= 190, (key, tip)
+        box, m = await pg.locator(f"[data-info-tip={key}]").bounding_box(), await pg.locator("#main").bounding_box()
+        assert box["x"] >= 0 and box["x"] + box["width"] <= 390 and box["y"] + box["height"] <= m["y"] + m["height"] + 1, f"{key}: the tip is on screen"
+        await pg.locator(f"[data-info={key}]").click(); await pg.wait_for_timeout(100)
+        assert await pg.locator("[data-info-tip]").count() == 0
+    await check("ask", "same numbers")
+    await tab(pg, "cheaper"); await check("cheaper", "Prices are estimates")
+    await tab(pg, "codes"); await check("codes", "Tap a code to copy it")
+    await tab(pg, "plan"); await check("envelopes", "count toward Miscellaneous")
+    await tab(pg, "split"); await check("history", "Put back in the list")
+    await tab(pg, "month"); await pg.click("[data-history]"); await pg.wait_for_timeout(150); await check("statements", "Nothing is uploaded")
+    # an open tip does not follow you to another tab
+    await pg.click("[data-history-close]"); await tab(pg, "cheaper"); await pg.click("[data-info=cheaper]"); await pg.wait_for_timeout(100)
+    await tab(pg, "codes"); await tab(pg, "cheaper"); assert await pg.locator("[data-info-tip]").count() == 0
+    for old in ("Close alternatives to what you already pay for", "Codes marked Likely worked", "Percent of money coming in"):
+        assert old not in await text(pg, "#view")
+    assert not pg.errors, pg.errors
 
 @test
 async def cancel_help_links(ctx):

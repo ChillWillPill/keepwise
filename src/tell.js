@@ -19,7 +19,7 @@ function tellGroup(x, kind){
   return `${x.title}${kind === "edit" ? " (updated)" : ""}: ${fmt(x.amount)}, paid by ${x.paidBy === "me" ? "me" : tellName(x.paidBy)}.\n${Object.keys(sh).map(id => `${who(id)}: ${fmt(sh[id])}`).join("\n")}${TELL_FOOT}`;
 }
 function tellAbout(kind, x, old){  // kind: add, edit, delete
-  if (S.splitMode === "shared" || !x) { UI.tell = null; return; }
+  if (shared() || !x) { UI.tell = null; return; }
   const now = tellOthers(x), before = old ? tellOthers(old) : [], rows = [];
   now.forEach(id => {
     let text;
@@ -34,7 +34,7 @@ function tellAbout(kind, x, old){  // kind: add, edit, delete
   UI.tell = {kind, title: x.title, at: kind === "edit" ? x.id : null, rows, group: now.length >= 2 && x.method !== "borrow" ? tellGroup(x, kind) : null, each: false};
 }
 function tellSettled(pid, amount, gotPaid){
-  if (S.splitMode === "shared"){ UI.tell = null; return; }
+  if (shared()){ UI.tell = null; return; }
   const name = tellName(pid);
   UI.tell = {kind: "settle", title: name, at: null, group: null, each: false,
     rows: [{id: pid, name, text: gotPaid ? `Got your ${fmt(amount)}, thank you. We are all square.` : `I paid you ${fmt(amount)}. We are all square.`}]};
