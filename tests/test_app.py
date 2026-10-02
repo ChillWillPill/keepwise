@@ -521,11 +521,13 @@ async def split_people_add_remove_import(ctx):
 @test
 async def shared_off_shows_setup(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
-    assert await pg.locator("[data-mode]").count() == 0, "the public app has no shared mode to switch to"
-    await pg.evaluate("(() => { const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.splitMode = 'shared'; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); })()")
-    for name in ("month", "subs", "cheaper", "codes", "plan", "split"):   # and it never names the tool it was built with
+    await pg.click("[data-mode=shared]"); await pg.wait_for_timeout(120)
+    soon = await text(pg, "[data-shared-soon]")
+    assert "Coming soon".upper() in soon.upper() and "Split with friends, live" in soon and "Tell them" in soon, soon
+    for name in ("month", "subs", "cheaper", "codes", "plan", "split"):   # the public app never names the tool it was built with
         await tab(pg, name); assert "Claude" not in await pg.inner_text("#app"), name
-    assert await pg.locator("[data-new-split]").count() == 1, "splits on this phone are simply there"
+    await pg.click("[data-shared-soon] [data-mode=local]"); await pg.wait_for_timeout(120)
+    assert await pg.locator("[data-new-split]").count() == 1 and (await state(pg))["splitMode"] == "local", "one tap back to splitting on this phone"
     assert await pg.evaluate("document.getElementById('bell').hidden")
     await pg.close()
     pg = await ctx.new_page(); await pg.add_init_script("window.claude = {use: async () => null}")  # in Claude but signed out

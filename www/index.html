@@ -356,6 +356,9 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .move-box{display:flex;flex-direction:column;gap:8px}
 .move-box textarea{width:100%;font:16px/1.4 var(--body);border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);color:var(--ink);resize:none}
 .idea{gap:10px}
+.soon-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.soon-list li{display:flex;gap:12px;align-items:flex-start}
+.soon-list svg{flex:none;width:20px;height:20px;color:var(--green);margin-top:2px}
 .remind-card h3{font:600 1.15rem/1.25 var(--display);letter-spacing:-.01em}
 .tell-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
 .tell-card h3{font:600 1.15rem/1.25 var(--display);letter-spacing:-.01em}
@@ -1568,11 +1571,17 @@ OUT.saveSplit = () => { const C = compute(); return C.savings > 0 ? `<p class="s
 // ---- Split ----
 let splitDraft = null, splitErr = "";
 function modeSwitch(){
-  if (!window.claude) return "";  // shared splits need live sync, which the public app does not have yet: no switch, no promise
   const m = S.splitMode === "shared" ? "shared" : "local";
   return `<div class="seg" role="group" aria-label="Which splits" style="align-self:flex-start"><button type="button" data-mode="shared" aria-pressed="${m === "shared"}">Shared with friends</button><button type="button" data-mode="local" aria-pressed="${m === "local"}">On this phone</button></div>`;
 }
 function sharedUnavailable(){
+  if (!window.claude) return `<section class="card soon-card" data-shared-soon><span class="pill gold" style="align-self:flex-start">Coming soon</span>
+    <h2>Split with friends, live</h2>
+    <ul class="soon-list"><li>${I.users}<span>Everyone in a split sees the same list on their own phone.</span></li>
+      <li>${BELL}<span>Friends are notified when a split is added, changed or settled.</span></li>
+      <li>${I.check}<span>Balances stay in step, with no messages to send.</span></li></ul>
+    <p class="muted small">Until then, your splits stay on this phone, and “Tell them” writes the message for you.</p>
+    <button class="btn primary" type="button" data-mode="local">Split on this phone</button></section>`;
   if (SH.state === "loading") return `<div class="card"><p class="muted">Connecting to your shared circle…</p></div>`;
   return `<div class="card"><h2>Share splits with friends</h2>
     <p>Shared splits work when this page is opened in Claude while you’re signed in. Friends need a Claude account too.</p>
@@ -1617,7 +1626,7 @@ function momentsPreview(){
 V.split = () => {
   if (UI.moments) return `<h1>Split</h1>${momentsPreview()}`;
   const c = CTX();
-  const wantShared = !!window.claude && S.splitMode === "shared";
+  const wantShared = S.splitMode === "shared";
   if (wantShared && !shared()) return `<h1>Split</h1>${modeSwitch()}${sharedUnavailable()}${momentsTeaser()}`;
   const tags = ["All", ...S.tags];
   const list = c.splits.filter(x => S.filter === "All" || x.tag === S.filter).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0) || (b.date||"").localeCompare(a.date||""));
