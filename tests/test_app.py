@@ -15,6 +15,7 @@ URL = "file://" + PAGE
 MOCK = os.path.join(HERE, "mock_claude.js")
 
 TESTS = []
+FONTS = os.environ.get("KEEPWISE_FONTS")
 def test(fn): TESTS.append(fn); return fn
 
 def money(s):  # "$1,456.99" -> 1456.99 ; handles "−"
@@ -1195,9 +1196,9 @@ async def coming_up_renewals(ctx):
     await pg.select_option("[data-sub=s5] [data-renew-day]", "28"); await pg.wait_for_timeout(120)
     assert (await state(pg))["subs"][4]["renewDay"] == 28 and "Disney+ renews" in await pg.inner_text("#toast")
     f = pg.locator("form[data-form=addSub]"); await pg.click("text=Add a subscription")
-    await f.locator("[name=name]").fill("Crunchyroll"); await f.locator("[name=price]").fill("7.99"); await f.locator("[name=renew]").fill("2026-12-09")
+    await f.locator("[name=name]").fill("Crunchyroll"); await f.locator("[name=price]").fill("7.99"); far = await pg.evaluate("(() => { const d = new Date(); d.setDate(d.getDate() + 15); return [`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`, d.getDate()]; })()"); await f.locator("[name=renew]").fill(far[0])  # outside the week, whatever today is
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(120)
-    assert [x for x in (await state(pg))["subs"] if x["name"] == "Crunchyroll"][0]["renewDay"] == 9
+    assert [x for x in (await state(pg))["subs"] if x["name"] == "Crunchyroll"][0]["renewDay"] == far[1]
     await tab(pg, "month")
     c = await text(pg, "[data-out=comingUp]"); assert "You chose to drop it" in c and "$29.98 will be charged" in c
 
@@ -1534,6 +1535,10 @@ async def main():
         b = await p.chromium.launch()
         async def run(fn):
             ctx = await b.new_context(is_mobile=False)
+            if FONTS:  # the real typefaces, when a machine cannot reach Google Fonts (set KEEPWISE_FONTS to a folder of woff2 files)
+                css = "".join(f"@font-face{{font-family:'{fam}';font-style:normal;font-weight:100 900;src:url(https://fonts.gstatic.com/local/{f}) format('woff2')}}" for fam, f in [("Figtree", "figtree-latin-wght-normal.woff2"), ("Fraunces", "fraunces-latin-opsz-normal.woff2")])
+                await ctx.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(body=css, content_type="text/css"))
+                await ctx.route("https://fonts.gstatic.com/local/**", lambda r: r.fulfill(path=os.path.join(FONTS, r.request.url.rsplit("/", 1)[-1]), content_type="font/woff2"))
             try:
                 await fn(ctx)
                 errs = [e for pg in ctx.pages for e in getattr(pg, "errors", [])]

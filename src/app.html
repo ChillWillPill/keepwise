@@ -495,7 +495,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const r2 = v => Math.round(v * 100) / 100;
 const DAY = 864e5;
 const todayMid = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
-const isoDaysAgo = n => { const d = todayMid(); d.setDate(d.getDate() - n); return d.toISOString().slice(0,10); };
+const isoDaysAgo = n => { const d = todayMid(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };  // local date, not UTC
 const daysSince = iso => { if (!iso) return 999; const [y,m,d] = iso.split("-").map(Number); return Math.round((todayMid() - new Date(y, m-1, d)) / DAY); };
 const CURRENCIES = [["USD","US dollar"],["GBP","British pound"],["EUR","Euro"],["CAD","Canadian dollar"],["AUD","Australian dollar"],["INR","Indian rupee"],["PKR","Pakistani rupee"],["AED","UAE dirham"]];
 let FMT_CUR = null;  // set only while a statement is previewed in its own currency
