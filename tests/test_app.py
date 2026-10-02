@@ -1349,6 +1349,57 @@ async def reminders_before_payday(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def double_tap_never_zooms(ctx):
+    # iPhone zooms the page on a quick double tap unless the page opts out. Pinch to zoom must stay available.
+    pg = await open_app(ctx)
+    for sel in ("html", "[data-tab=subs]", "#view", ".btn"):
+        ta = await pg.evaluate(f"(() => {{ let e = document.querySelector('{sel}'), all = []; for (; e; e = e.parentElement) all.push(getComputedStyle(e).touchAction); return all; }})()")
+        assert "manipulation" in ta and "none" not in ta, (sel, ta)
+    vp = await pg.get_attribute("meta[name=viewport]", "content")
+    assert "user-scalable=no" not in vp and "maximum-scale=1" not in vp, "pinch to zoom stays on for people who need it"
+    for name in ("month", "subs", "cheaper", "codes", "plan", "split"):
+        await tab(pg, name)
+        if name == "split": await pg.click("[data-new-split]"); await pg.wait_for_timeout(100)
+        small = await pg.evaluate("[...document.querySelectorAll('input, select, textarea')].filter(e => e.offsetParent && !['checkbox', 'radio', 'file'].includes(e.type) && parseFloat(getComputedStyle(e).fontSize) < 16).map(e => e.id || e.name || e.className).slice(0, 5)")
+        assert not small, f"{name}: fields under 16px make iPhone zoom in when you tap them: {small}"
+
+@test
+async def field_stays_above_the_keyboard(ctx):
+    inside = "(() => { const r = document.activeElement.getBoundingClientRect(), m = document.getElementById('main').getBoundingClientRect(); return [document.activeElement.tagName, r.top >= m.top && r.bottom <= m.bottom, Math.round(r.top), Math.round(m.top), Math.round(m.bottom)]; })()"
+    pg = await open_app(ctx)
+    # a field low on the page gets focus (as a tap does), then the keyboard takes the bottom half of the screen
+    await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(150)
+    f = pg.locator("[data-out=envelopes] input").first
+    await f.evaluate("e => { document.getElementById('main').scrollTop = 0; e.focus({preventScroll: true}); }"); await pg.wait_for_timeout(800)
+    r = await pg.evaluate(inside); assert r[0] == "INPUT" and r[1], f"focused field is on screen: {r}"
+    await pg.set_viewport_size({"width": 390, "height": 420}); await pg.wait_for_timeout(500)
+    r = await pg.evaluate(inside); assert r[1], f"field is still visible once the keyboard is up: {r}"
+    await pg.set_viewport_size({"width": 390, "height": 844}); await pg.wait_for_timeout(300)
+    # every tab: focusing the last field brings it into view
+    for name in ("subs", "cheaper", "codes", "plan", "split"):
+        await tab(pg, name)
+        if name == "split": await pg.click("[data-new-split]"); await pg.wait_for_timeout(100)
+        ok = await pg.evaluate("(() => { const f = [...document.querySelectorAll('#view input:not([type=checkbox]):not([type=radio]):not([type=file]), #view select')].filter(e => e.offsetParent && !e.closest('details:not([open])') && !e.disabled); if (!f.length) return null; document.getElementById('main').scrollTop = 0; f[f.length - 1].focus({preventScroll: true}); return document.activeElement === f[f.length - 1]; })()")
+        assert ok, f"{name}: could not focus a field"
+        await pg.set_viewport_size({"width": 390, "height": 420}); await pg.wait_for_timeout(800)
+        r = await pg.evaluate(inside); assert r[1], f"{name}: {r}"
+        await pg.evaluate("document.activeElement.blur()"); await pg.set_viewport_size({"width": 390, "height": 844}); await pg.wait_for_timeout(250)
+
+@test
+async def opening_details_does_not_jump(ctx):
+    pg = await open_app(ctx)
+    top = "k => Math.round(document.querySelector(`[data-env-open='${k}']`).getBoundingClientRect().top)"
+    keys = await pg.evaluate("[...document.querySelectorAll('[data-env-open]')].map(e => e.dataset.envOpen)")
+    assert len(keys) >= 3, keys
+    await pg.click(f"[data-env-open='{keys[1]}']"); await pg.wait_for_timeout(150)   # a tall group is open above
+    await pg.locator(f"[data-env-open='{keys[2]}']").scroll_into_view_if_needed(); await pg.wait_for_timeout(100)
+    before = await pg.evaluate(top, keys[2])
+    await pg.click(f"[data-env-open='{keys[2]}']"); await pg.wait_for_timeout(200)
+    after = await pg.evaluate(top, keys[2])
+    assert abs(after - before) <= 2, f"the row you tapped moved from {before} to {after}"
+    assert "Hide details" in await text(pg, f"[data-env-open='{keys[2]}']") or await pg.locator("[data-out=envelopes] input").count() > 0
+
+@test
 async def cancel_help_links(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
     await pg.click("[data-sub=s1] [data-keep=drop]"); await pg.click("[data-sub=s6] [data-keep=drop]"); await pg.wait_for_timeout(120)

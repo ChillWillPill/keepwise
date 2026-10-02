@@ -23,6 +23,7 @@
 *{box-sizing:border-box}
 .brand b,h1,h2,.big,.summary3 b,.bigsoft{font-optical-sizing:auto;font-weight:600;letter-spacing:-.025em}
 html,body{margin:0;overflow:hidden;overscroll-behavior:none}
+html{touch-action:manipulation}  /* a quick double tap (on a tab, a button) must never zoom the page; pinch to zoom still works */
 body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-text-size-adjust:100%}
 .app{position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100%);display:flex;flex-direction:column;background:var(--bg)}
 .app-header{flex:none;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);position:relative;z-index:3}
@@ -145,6 +146,7 @@ a.btn{display:block;text-decoration:none}
 .code{font:600 .95rem ui-monospace,"SFMono-Regular",Menlo,monospace;background:var(--bg);border:1px dashed var(--line);border-radius:10px;padding:6px 10px;cursor:pointer;color:var(--ink)}
 .ask-out{background:var(--bg);border-radius:14px;padding:12px 14px;white-space:pre-line}
 .note{background:var(--chip);color:var(--ink);border-radius:16px;padding:14px 16px;font-size:.95rem}
+.note>.link,.note>button{white-space:nowrap;flex:none}  /* "Got it" and "Hide" stay on one line */
 .err{color:var(--rust);font-size:.9rem;font-weight:600}
 .empty{color:var(--muted);padding:6px 0}
 .toast-undo{pointer-events:auto;appearance:none;border:0;background:none;color:inherit;font:700 .92rem var(--body);text-decoration:underline;text-underline-offset:3px;margin-left:12px;padding:6px 4px;cursor:pointer}
@@ -481,11 +483,20 @@ function fit(){
   rootStyle.setProperty("--vv-h", (vv ? vv.height : window.innerHeight) + "px");
   rootStyle.setProperty("--vv-top", (vv ? vv.offsetTop : 0) + "px");
 }
-let fitRaf; const refit = () => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(fit); };
+// The field being typed in must stay above the keyboard: when the visible area shrinks (keyboard opens) or a field
+// gets focus, bring it to the middle of what is left of the screen.
+function showField(){
+  const el = document.activeElement, m = document.getElementById("main");
+  if (!m || !el || !el.matches || !el.matches("input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select") || !m.contains(el)) return;
+  const r = el.getBoundingClientRect(), b = m.getBoundingClientRect();
+  if (r.top < b.top + 12 || r.bottom > b.bottom - 12) m.scrollTop += (r.top + r.height / 2) - (b.top + b.height / 2);
+}
+let fitRaf; const refit = () => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(() => { fit(); showField(); }); };
 if (vv){ vv.addEventListener("resize", refit); vv.addEventListener("scroll", refit); }
 ["resize","orientationchange","pageshow","load"].forEach(e => window.addEventListener(e, refit));
 const isField = el => !!(el && el.matches && el.matches("input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select"));
-document.addEventListener("focusin", e => { if (isField(e.target) && e.target.tagName !== "SELECT") appEl.classList.add("typing"); });
+document.addEventListener("focusin", e => { if (isField(e.target) && e.target.tagName !== "SELECT") appEl.classList.add("typing");
+  if (isField(e.target)) [120, 350, 650].forEach(ms => setTimeout(showField, ms)); });  // the keyboard slides in over about half a second
 // Leaving a field redraws the numbers, but never in the middle of a tap: redrawing between press and release
 // would swap out the button being pressed (Add, Save) and the tap would be lost along with what was typed.
 let ptrDown = false, blurPending = false;
@@ -2898,7 +2909,11 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-share-close")){ UI.share = false; render(false); return; }
   if (b.hasAttribute("data-share-save")){ saveFile(SHARE.blob, "keepwise.png"); return; }
   if (b.hasAttribute("data-share-go")){ doShare(); return; }
-  if (b.dataset.envOpen){ UI.openEnv = UI.openEnv === b.dataset.envOpen ? null : b.dataset.envOpen; refreshOuts(); return; }
+  if (b.dataset.envOpen){ const key = b.dataset.envOpen, was = b.getBoundingClientRect().top;
+    UI.openEnv = UI.openEnv === key ? null : key; refreshOuts();
+    // Opening one group closes the one above it. Keep the row that was tapped where the finger is, so the page does not jump.
+    const now = view.querySelector(`[data-env-open="${key}"]`), m = $("main"); if (now && m) m.scrollTop += now.getBoundingClientRect().top - was;
+    return; }
   if (b.hasAttribute("data-set-aside")){ const C = compute(), amt = C.toSetAside; if (amt <= 0) return;
     (S.deposits = S.deposits || []).push({id:uid(), amount:amt, month:C.planKey, label:C.planMonth, date:isoDaysAgo(0)}); S.efSaved = r2(S.efSaved + amt); save(); refreshOuts(); toast(`Set aside ${fmt(amt)}. Your account is at ${fmt(S.efSaved)}.`); return; }
   if (b.hasAttribute("data-undo-dep")){ const id = b.closest("[data-dep]").dataset.dep, x = (S.deposits || []).find(d => d.id === id); if (!x) return;
