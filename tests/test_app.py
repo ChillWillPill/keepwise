@@ -766,6 +766,28 @@ async def account_email_signup_and_profile(ctx):
     assert "users/u1" in await fs_docs(pg) and "income" not in (await fs_docs(pg))["users/u1"], "money data is not in the account"
 
 @test
+async def location_refused_shows_how_to_turn_it_on(ctx):
+    pg = await open_app(ctx, fb=True)
+    await open_account(pg)
+    await pg.click("[data-acc-mode=create]"); await pg.wait_for_timeout(120)
+    await pg.fill("#acc-email", "ada@example.com"); await pg.fill("#acc-pass", "longenough1")
+    await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(400)
+    await pg.evaluate("void (navigator.geolocation.getCurrentPosition = (ok, no) => no({code: 1}))")
+    await pg.click("[data-acc-loc]"); await pg.wait_for_timeout(200)
+    h = await text(pg, "[data-loc-help]")
+    assert "Location is turned off for KeepWise" in h and "allow Location" in h and "type your city" in h, h
+    await pg.evaluate("void (navigator.geolocation.getCurrentPosition = ok => ok({coords: {latitude: 31.5204, longitude: 74.3587}}))")
+    await pg.click("[data-loc-help] [data-acc-loc]"); await pg.wait_for_timeout(200)
+    v = await text(pg, "#view")
+    assert await pg.locator("[data-loc-help]").count() == 0 and "Approximate location saved" in v
+    await pg.click("[data-acc-loc-clear]"); await pg.wait_for_timeout(120)
+    await pg.evaluate("void (navigator.geolocation.getCurrentPosition = (ok, no) => no({code: 3}))")
+    await pg.click("[data-acc-loc]"); await pg.wait_for_timeout(200)
+    assert "We couldn’t find your location" in await text(pg, "[data-loc-help]")
+    await pg.click("[data-loc-help-close]"); await pg.wait_for_timeout(120)
+    assert await pg.locator("[data-loc-help]").count() == 0
+
+@test
 async def account_sign_in_errors_and_reset(ctx):
     pg = await open_app(ctx, fb=True)
     await open_account(pg)

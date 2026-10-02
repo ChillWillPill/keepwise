@@ -2793,6 +2793,10 @@ const IN_APP = !!window.Capacitor; // Google blocks its sign-in page inside app 
 // Inside the Claude preview the page runs in a locked frame where sign-in windows cannot open.
 const PREVIEW = !!window.claude && !("KEEPWISE_FIREBASE" in window);
 const SITE_URL = "https://mykeepwise.com/";
+const locHow = code => code !== 1 ? "Check that Location is switched on in your phone’s settings and that you are connected, then try again. You can also just type your city above."
+  : IN_APP ? "Open your phone’s Settings, then Apps, KeepWise, Permissions, and allow Location. Then come back and try again. You can also just type your city above."
+  : IS_IOS ? "Open the Settings app, then Privacy & Security, Location Services, and make sure it is on. In the same list, choose Safari Websites and pick While Using the App. Then come back and try again. You can also just type your city above."
+  : "Tap the lock or settings icon beside the web address, choose Permissions or Site settings, and allow Location. Then try again. You can also just type your city above.";
 const ACC = {state: PREVIEW ? "preview" : FB_CONFIG ? "idle" : "off", user: null, profile: null, mode: "signin", err: "", email: "", draft: {}, del: false, busy: false};
 I.user = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>';
 I.google = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px;margin-right:8px" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.7 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1A11 11 0 0 0 2.1 7.1l3.6 2.8C6.6 7.3 9.1 5.4 12 5.4z"/></svg>';
@@ -2904,7 +2908,7 @@ function accFields(first){
     <label class="field"><span>City</span><input name="city" data-acc-field="city" type="text" autocomplete="address-level2" enterkeyhint="done" placeholder="Optional" value="${v("city")}"></label>
     <div class="field"><span>Location for local offers</span>
       ${loc ? `<p class="small">Approximate location saved (to about 1 km).</p><div class="inline"><button class="btn small" type="button" data-acc-loc>Update</button><button class="btn small danger" type="button" data-acc-loc-clear>Remove</button></div>`
-            : `<p class="muted small">Optional. If you choose to get offers, we may use this to show deals available near you. We save only an approximate area, never your exact location.</p><button class="btn small" type="button" data-acc-loc style="align-self:flex-start">Use my approximate location</button>`}
+            : `<p class="muted small">Optional. If you choose to get offers, we may use this to show deals available near you. We save only an approximate area, never your exact location.</p>${ACC.locHelp ? `<div class="part-help" data-loc-help style="border-radius:14px"><b>${ACC.locHelp === 1 ? "Location is turned off for KeepWise" : "We couldn’t find your location"}</b><p class="muted small">${locHow(ACC.locHelp)}</p><div class="grid2"><button class="btn small" type="button" data-loc-help-close>Not now</button><button class="btn small primary" type="button" data-acc-loc>Try again</button></div></div>` : `<button class="btn small" type="button" data-acc-loc style="align-self:flex-start">Use my approximate location</button>`}`}
     </div>
     <label class="check"><input type="checkbox" name="marketing" data-acc-field="marketing" ${mk ? "checked" : ""}><span>Email me offers, birthday deals and news from KeepWise. You can unsubscribe at any time.</span></label>
     ${first ? `<label class="check"><input type="checkbox" name="consent" data-acc-field="consent" ${d.consent ? "checked" : ""}><span>I’m 18 or older and I agree to the ${legalLinks}.</span></label>` : ""}`;
@@ -3004,10 +3008,12 @@ $("view").addEventListener("click", async e => {
     navigator.geolocation.getCurrentPosition(pos => {
       const r = x => Math.round(x * 100) / 100; // about 1 km: enough for nearby deals, not an exact address
       ACC.draft.location = {lat: r(pos.coords.latitude), lng: r(pos.coords.longitude)};
+      ACC.locHelp = 0;
       render(true); toast("Approximate location added. Tap Save to keep it.");
-    }, () => toast("Location wasn’t shared. You can still add your city."), {enableHighAccuracy: false, timeout: 15000, maximumAge: 600000});
+    }, err => { ACC.locHelp = err && err.code === 1 ? 1 : 2; render(true); }, {enableHighAccuracy: false, timeout: 15000, maximumAge: 600000});
     return;
   }
+  if (has("data-loc-help-close")){ ACC.locHelp = 0; render(true); return; }
   if (has("data-acc-loc-clear")){ ACC.draft.location = null; render(true); return; }
   if (has("data-acc-delete")){ ACC.del = true; render(true); return; }
   if (has("data-acc-delete-no")){ ACC.del = false; render(true); return; }
