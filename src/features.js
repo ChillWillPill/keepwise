@@ -180,16 +180,56 @@ OUT.backupBox = () => {
     <div class="inline" style="margin-top:10px"><button class="btn" type="button" data-restore-no>Keep what’s here</button><button class="btn primary" type="button" data-restore-yes>Restore backup</button></div></div>`;
   const b = S.lastBackup, d = b ? daysSince(b) : null;
   return `<div class="backup ${b && d <= 30 ? "" : "due"}"><div><b>${b ? `Last backup ${d === 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`}` : "No backup yet"}</b><span class="muted small">A backup is a file with everything in KeepWise. Restore it on any phone or browser.</span></div>
-    <div class="grid2"><button class="btn" type="button" data-backup>${I.download}Download a backup</button><button class="btn" type="button" data-restore>Restore from a backup</button></div></div>`;
+    <div class="grid2"><button class="btn" type="button" data-backup>${I.download}Download a backup</button><button class="btn" type="button" data-restore>Restore from a backup</button></div>
+    ${IS_IOS && !IN_APP && !STANDALONE && hasRealData() ? `<button class="link small" type="button" data-move-copy style="align-self:flex-start">${UI.moveCopied ? "✓ Copied. Paste it in the Home Screen app" : "Copy my data for the Home Screen app"}</button>` : ""}</div>`;
 };
 // iPhone clears website data after about a week away unless the site is on the Home Screen.
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const STANDALONE = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
 let installEvt = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (S.tab === "plan" || S.tab === "month") refreshOuts(); });
+// ---- moving into the Home Screen app ----
+// iPhone gives the Home Screen app its own empty storage, separate from the browser tab. Nothing is shared between
+// them, so the data is carried across on the clipboard: copy it in the browser, paste it in the app.
+const hasRealData = () => !S.example && !!(S.expenses.length || S.subs.length || S.splits.length || +S.income);
+const moveCode = () => { const data = JSON.parse(JSON.stringify(S)); delete data.tab; delete data.a2hsHide;
+  return "KEEPWISE:" + btoa(unescape(encodeURIComponent(JSON.stringify({app: "KeepWise", kind: "backup", version: 1, made: new Date().toISOString(), data})))); };
+function readMoveCode(text){
+  const m = String(text || "").replace(/\s+/g, "").match(/KEEPWISE:([A-Za-z0-9+/=]+)/);
+  if (!m) throw new Error("That isn’t KeepWise data. Go back to your browser and tap Copy my data again.");
+  let json; try { json = decodeURIComponent(escape(atob(m[1]))); } catch(e){ throw new Error("That copy is incomplete. Tap Copy my data again in your browser."); }
+  return readBackup(json);
+}
+async function moveCopy(){
+  const code = moveCode(); let ok = false;
+  try { await navigator.clipboard.writeText(code); ok = true; } catch(e){}
+  if (!ok) try { const ta = document.createElement("textarea"); ta.value = code; ta.style.cssText = "position:fixed;opacity:0"; document.body.append(ta); ta.select(); ok = document.execCommand("copy"); ta.remove(); } catch(e){}
+  if (!ok){ toast("Couldn’t copy. Use Download a backup on the Plan tab instead."); return; }
+  UI.moveCopied = true; refreshOuts(); toast("Copied. Now add KeepWise to your Home Screen and paste it there.");
+}
+function moveApply(text){
+  let r; try { r = readMoveCode(text); } catch(e){ toast(e.message); return false; }
+  S = r.data; S.tab = "month"; S.settlements = S.settlements || []; S.statements = S.statements || {}; S.a2hsHide = true;
+  UI.movePaste = false; UI.welcome = null; welcomeDone(); save(); render(false); toast("Your data is here now."); return true;
+}
+async function movePaste(){
+  let text = ""; try { text = await navigator.clipboard.readText(); } catch(e){}
+  if (text && /KEEPWISE:/.test(text)){ moveApply(text); return; }
+  UI.movePaste = true; render(true);  // the phone did not hand over the clipboard: paste by hand instead
+  const f = document.querySelector("[data-move-field]"); if (f) f.focus();
+}
+const moveBox = () => UI.movePaste
+  ? `<div class="note move-box" data-move><b>Paste your data</b><p class="small">Press and hold in the box, then tap Paste.</p><textarea data-move-field rows="2" placeholder="Paste here" aria-label="Paste your KeepWise data"></textarea>
+      <div class="grid2"><button class="btn small" type="button" data-move-cancel>Cancel</button><button class="btn small primary" type="button" data-move-apply>Bring it in</button></div></div>`
+  : `<div class="note keep-safe" data-move><div><b>Used KeepWise in your browser?</b><p class="small">This app starts empty. In your browser, tap Copy my data, then paste it here.</p></div><div class="inline" style="flex-direction:column;align-items:flex-end;gap:6px"><button class="btn small" type="button" data-move-paste>Paste my data</button><button class="link plain small" type="button" data-move-hide>Not now</button></div></div>`;
 OUT.keepSafe = () => {
-  if (IN_APP || STANDALONE) return "";
-  if (IS_IOS && !S.a2hsHide) return `<div class="note keep-safe"><div><b>Keep your data safe on iPhone</b><p class="small">Safari can clear website data after about a week away. Tap ${I.share}<b>Share</b>, then <b>Add to Home Screen</b>.</p></div><button class="link plain" type="button" data-a2hs-hide>Got it</button></div>`;
+  if (IN_APP) return "";
+  if (STANDALONE) return IS_IOS && !hasRealData() && !S.moveHide ? moveBox() : "";
+  if (IS_IOS && !S.a2hsHide) return hasRealData()
+    ? `<div class="note" data-a2hs><b>Keep your data safe on iPhone</b><p class="small" style="margin-top:4px">Safari can clear website data after about a week away. The Home Screen app keeps it, but it starts empty, so bring your data with you:</p>
+        <ol class="a2hs-steps"><li>Tap <b>Copy my data</b>.</li><li>Tap ${I.share}<b>Share</b>, then <b>Add to Home Screen</b>.</li><li>Open KeepWise from your Home Screen and tap <b>Paste my data</b>.</li></ol>
+        <div class="inline" style="justify-content:space-between;margin-top:8px"><button class="btn small ${UI.moveCopied ? "done" : "primary"}" type="button" data-move-copy style="width:auto;padding:8px 16px">${UI.moveCopied ? "✓ Copied" : "Copy my data"}</button><button class="link plain small" type="button" data-a2hs-hide>Got it</button></div></div>`
+    : `<div class="note keep-safe" data-a2hs><div><b>Keep your data safe on iPhone</b><p class="small">Safari can clear website data after about a week away. Before you start, tap ${I.share}<b>Share</b>, then <b>Add to Home Screen</b>, and use KeepWise from there.</p></div><button class="link plain" type="button" data-a2hs-hide>Got it</button></div>`;
   const real = !S.example && (S.expenses.length || S.subs.length || S.splits.length) && daysSince(S.started) >= 3;  // give a new person a few days first
   if (real && (!S.lastBackup || daysSince(S.lastBackup) > 30) && !(S.backupSnooze && daysSince(S.backupSnooze) < 30))
     return `<div class="note keep-safe"><div><b>${S.lastBackup ? "Time for a fresh backup" : "Back up your KeepWise data"}</b><p class="small">Everything lives on this device. A backup file keeps it safe if you clear your browser or change phones.</p></div><div class="inline" style="flex-direction:column;align-items:flex-end;gap:6px"><button class="btn small" type="button" data-backup style="white-space:nowrap">Back up</button><button class="link plain small" type="button" data-backup-later>Later</button></div></div>`;
@@ -264,7 +304,8 @@ V.welcome = () => {
       <li>${I.split}<span><b>Splits bills</b> with friends and family</span></li></ul>
     <p class="w-safe">${I.lock}Everything stays on your phone. No bank login.</p>
     <button class="btn primary w-cta" type="button" data-w-next>Set up my month</button>
-    <button class="link plain w-alt" type="button" data-w-example>Look around with an example first</button></div>`;
+    <button class="link plain w-alt" type="button" data-w-example>Look around with an example first</button>
+    ${IS_IOS && STANDALONE ? (UI.movePaste ? moveBox() : `<button class="link small w-alt" type="button" data-move-paste>I already use KeepWise in my browser</button>`) : ""}</div>`;
   if (step === 1) return `<div class="welcome">${dots(1)}<h1 class="w-title">What comes in?</h1><p class="w-sub">Your take-home pay, after tax.</p>
     <div class="grid2"><label class="field"><span>Currency</span><select data-w="cur">${CURRENCIES.map(([c, n]) => `<option value="${c}" ${c === DRAFT.cur ? "selected" : ""}>${c} · ${n}</option>`).join("")}</select></label>
     <label class="field"><span>How often you’re paid</span><select data-w="pay">${PAY_WHEN.map(([k, n]) => `<option value="${k}" ${k === DRAFT.pay ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>

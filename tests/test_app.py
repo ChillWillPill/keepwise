@@ -1469,6 +1469,53 @@ async def statement_dates_follow_the_file_not_the_currency(ctx):
     today = await pg.evaluate("new Date().toISOString().slice(0, 10)")
     assert all((x.get("since") or "0") <= today for x in (await state(pg))["subs"])
 
+IPHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+
+@test
+async def data_moves_from_browser_to_home_screen_app(ctx):
+    # iPhone keeps the Home Screen app's storage apart from the browser tab, so the data is carried on the clipboard.
+    br = ctx.browser
+    # 1. in the browser, with real data: the note explains the three steps and offers Copy my data
+    c1 = await br.new_context(user_agent=IPHONE_UA, viewport={"width": 390, "height": 844}); pg = await c1.new_page(); pg.errors = []
+    pg.on("pageerror", lambda e: pg.errors.append(str(e)))
+    await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true; window.__clip = ''; Object.defineProperty(navigator, 'clipboard', {value: {writeText: async t => { window.__clip = t; }, readText: async () => window.__clip}, configurable: true});")
+    await pg.goto(URL); await pg.wait_for_timeout(400)
+    note = await text(pg, "[data-a2hs]"); assert "Add to Home Screen" in note and "Copy my data" not in note, "the example month has nothing to carry"
+    csv = os.path.join(TMP, "move.csv")
+    open(csv, "w").write("Date,Description,Amount\n2026-07-01,PAYROLL ACME,4321\n2026-07-04,NETFLIX.COM,-15.49\n2026-08-01,PAYROLL ACME,4321\n2026-08-04,NETFLIX.COM,-15.49\n2026-09-01,PAYROLL ACME,4321\n2026-09-04,NETFLIX.COM,-15.49\n")
+    await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(500)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(300)
+    assert (await state(pg))["example"] is False and (await state(pg))["income"] == 4321
+    note = await text(pg, "[data-a2hs]")
+    assert "it starts empty" in note and "Copy my data" in note and "Paste my data" in note, note
+    await pg.click("[data-a2hs] [data-move-copy]"); await pg.wait_for_timeout(150)
+    code = await pg.evaluate("window.__clip"); assert code.startswith("KEEPWISE:") and "Copied" in await text(pg, "[data-a2hs]")
+    await tab(pg, "plan"); assert await pg.locator("[data-out=backupBox] [data-move-copy]").count() == 1, "also reachable from Plan after the note is dismissed"
+    await c1.close()
+    # 2. the Home Screen app: empty storage, first run
+    c2 = await br.new_context(user_agent=IPHONE_UA, viewport={"width": 390, "height": 844}); app = await c2.new_page(); app.errors = []
+    app.on("pageerror", lambda e: app.errors.append(str(e)))
+    await app.add_init_script("window.KEEPWISE_FIREBASE = null; Object.defineProperty(Navigator.prototype, 'standalone', {get: () => true}); window.__clip = ''; Object.defineProperty(navigator, 'clipboard', {value: {writeText: async t => { window.__clip = t; }, readText: async () => window.__clip}, configurable: true});")
+    await app.goto(URL); await app.wait_for_timeout(400)
+    assert "I already use KeepWise in my browser" in await text(app, "#view")
+    # the phone would not hand over the clipboard: a box to paste into appears instead
+    await app.click("[data-move-paste]"); await app.wait_for_timeout(150)
+    assert await app.locator("[data-move-field]").count() == 1
+    await app.fill("[data-move-field]", "hello"); await app.click("[data-move-apply]"); await app.wait_for_timeout(120)
+    assert "isn’t KeepWise data" in await app.inner_text("#toast")
+    await app.fill("[data-move-field]", code); await app.click("[data-move-apply]"); await app.wait_for_timeout(250)
+    st = await state(app); assert st["income"] == 4321 and st["example"] is False, "the same data is now in the app"
+    assert "Your data is here now" in await app.inner_text("#toast") and await app.locator("[data-move]").count() == 0 and await app.locator("[data-a2hs]").count() == 0
+    assert not app.errors, app.errors
+    await c2.close()
+    # 3. when the phone does hand over the clipboard, one tap is enough
+    c3 = await br.new_context(user_agent=IPHONE_UA, viewport={"width": 390, "height": 844}); app = await c3.new_page()
+    await app.add_init_script("window.KEEPWISE_FIREBASE = null; Object.defineProperty(Navigator.prototype, 'standalone', {get: () => true}); Object.defineProperty(navigator, 'clipboard', {value: {readText: async () => " + json.dumps(code) + "}, configurable: true});")
+    await app.goto(URL); await app.wait_for_timeout(400)
+    await app.click("[data-move-paste]"); await app.wait_for_timeout(250)
+    assert (await state(app))["income"] == 4321
+    await c3.close()
+
 @test
 async def cancel_help_links(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
