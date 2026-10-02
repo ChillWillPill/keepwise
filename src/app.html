@@ -39,6 +39,19 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .pw-rules li{display:flex;gap:6px;align-items:center}
 .pw-rules svg{width:13px;height:13px;flex:none;opacity:.3}
 .pw-rules li.ok{color:var(--green)} .pw-rules li.ok svg{opacity:1}
+.lockscreen{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));text-align:center;overflow:auto}
+.lockscreen[hidden]{display:none}
+.app.locked{visibility:hidden}
+.lock-dots{display:flex;gap:14px;justify-content:center;min-height:16px}
+.lock-dots i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--muted)}
+.lock-dots i.on{background:var(--green);border-color:var(--green)}
+.lock-dots.shake{animation:lockshake .35s}
+@keyframes lockshake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.lock-pad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;justify-content:center}
+.lock-pad button{appearance:none;width:72px;height:72px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 1.5rem var(--body);cursor:pointer}
+.lock-pad button:active{background:var(--chip)}
+.lock-pad button.ghost{border-color:transparent;background:none;font-size:.95rem;font-weight:500}
+@media (max-height:620px){.lock-pad{grid-template-columns:repeat(3,60px);gap:8px}.lock-pad button{width:60px;height:60px;font-size:1.25rem}}
 .note-row{gap:6px}
 .note-main{appearance:none;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:0;display:flex;gap:10px;align-items:flex-start;width:100%;cursor:pointer}
 .note-txt{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
@@ -519,6 +532,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
   <main class="app-main" id="main"><div class="view" id="view"></div></main>
   <nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
 </div>
+<div class="lockscreen" id="lockscreen" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <input type="file" id="stmt" accept=".csv,.pdf,text/csv,application/pdf" class="sr" tabindex="-1" aria-hidden="true">
 <input type="file" id="restore-in" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true" aria-label="Backup file">
@@ -684,7 +698,7 @@ function applyTheme(){
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
 (S.settlements || (S.settlements = [])).forEach(x => { if (!x.id) x.id = uid(); });
-const save = () => { if (UI.welcome != null) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} remindSync(); };
+const save = () => { if (UI.welcome != null || window.__kwErasing) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} remindSync(); };
 window.addEventListener("pagehide", save);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
 
@@ -1700,6 +1714,7 @@ V.plan = () => `
   <button class="w-choice plus-entry" type="button" data-plus-open><span class="pill gold">Plus</span><span><b>KeepWise Plus</b><span class="muted small">Live splits with friends, every device, and more.</span></span>${I.chev}</button>
   <section class="card"><h2>Your data</h2><p class="muted small">Your money data stays on this device and is never uploaded. KeepWise gives estimates, not financial advice.</p>
     <div data-out="backupBox">${OUT.backupBox()}</div>
+    <div data-out="lockBox">${OUT.lockBox()}</div>
     <div data-out="installBtn">${OUT.installBtn()}</div>
     <button class="btn" type="button" data-history>Monthly statements</button>
     <button class="btn" type="button" data-import-open>Import a bank statement (CSV or PDF)</button>
@@ -2920,6 +2935,92 @@ async function remindTurnOn(){
   S.remind = {on: true}; save(); render(true); toast("Reminders are on.");
 }
 
+/* ================= app lock (a passcode, and Face ID or fingerprint, checked on this phone) ================= */
+// The lock keeps out someone who picks up an unlocked phone. Only a salted, slow hash of the passcode is kept, in its
+// own storage key, so backups and "Copy my data" never carry it. It is a screen lock, not encryption of the data.
+const LOCK_KEY = "keepwise-lock-v1", LOCK_AWAY = 60000;
+const LOCK = {on: false, cfg: null, entry: "", fails: 0, until: 0, forgot: false, bioOk: false, hiddenAt: 0, busy: false};
+const lockCan = () => !!(window.crypto && crypto.subtle && crypto.getRandomValues);
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf))), unb64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+const randBytes = n => crypto.getRandomValues(new Uint8Array(n));
+async function pinHash(pin, salt){
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveBits"]);
+  return b64(await crypto.subtle.deriveBits({name: "PBKDF2", hash: "SHA-256", salt: unb64(salt), iterations: 120000}, key, 256));
+}
+function lockLoad(){ try { const c = JSON.parse(localStorage.getItem(LOCK_KEY) || "null"); LOCK.cfg = c && c.hash && c.salt ? c : null; } catch(e){ LOCK.cfg = null; } return LOCK.cfg; }
+function lockStore(c){ LOCK.cfg = c; try { if (c) localStorage.setItem(LOCK_KEY, JSON.stringify(c)); else localStorage.removeItem(LOCK_KEY); } catch(e){} }
+async function lockSetPin(pin){ const salt = b64(randBytes(16)); lockStore({v: 1, salt, hash: await pinHash(pin, salt), len: pin.length, bio: LOCK.cfg && LOCK.cfg.bio || null}); }
+const lockPinOk = async pin => !!LOCK.cfg && (await pinHash(pin, LOCK.cfg.salt)) === LOCK.cfg.hash;
+// Face ID, Touch ID or fingerprint, through the phone's own check. KeepWise only learns that it passed.
+async function bioAvailable(){ try { return !!(window.PublicKeyCredential && navigator.credentials && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch(e){ return false; } }
+async function bioEnroll(){
+  const cred = await navigator.credentials.create({publicKey: {challenge: randBytes(32), rp: {name: "KeepWise"}, user: {id: randBytes(16), name: "KeepWise on this device", displayName: "KeepWise"},
+    pubKeyCredParams: [{type: "public-key", alg: -7}, {type: "public-key", alg: -257}], authenticatorSelection: {authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged"}, timeout: 60000, attestation: "none"}});
+  return b64(cred.rawId);
+}
+async function bioCheck(){
+  if (!LOCK.cfg || !LOCK.cfg.bio) return false;
+  try { return !!(await navigator.credentials.get({publicKey: {challenge: randBytes(32), allowCredentials: [{type: "public-key", id: unb64(LOCK.cfg.bio), transports: ["internal"]}], userVerification: "required", timeout: 60000}})); } catch(e){ return false; }
+}
+function lockDraw(){
+  const el = $("lockscreen"), c = LOCK.cfg; if (!el) return;
+  el.hidden = !LOCK.on; appEl.classList.toggle("locked", LOCK.on); if (LOCK.on) appEl.setAttribute("inert", ""); else appEl.removeAttribute("inert");
+  if (!LOCK.on || !c) return;
+  const wait = Math.max(0, Math.ceil((LOCK.until - Date.now()) / 1000));
+  if (LOCK.forgot){ el.innerHTML = `<h1 style="font-size:1.6rem">Forgot your passcode?</h1>
+    <p class="muted" style="max-width:340px">A passcode cannot be recovered, because it never leaves this phone. You can erase KeepWise on this phone and start again. If you saved a backup file, you can restore it afterwards.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px"><button class="btn danger" type="button" data-lock-erase>${LOCK.forgot === 2 ? "Tap again to erase everything" : "Erase KeepWise on this phone"}</button><button class="btn" type="button" data-lock-back>Back</button></div>`; return; }
+  el.innerHTML = `<img src="${document.querySelector(".logo").src}" alt="" width="64" height="64" style="border-radius:50%">
+    <h1 style="font-size:1.6rem" id="lock-h">Enter your passcode</h1>
+    <div class="lock-dots" data-lock-dots role="status" aria-label="${LOCK.entry.length} of ${c.len} digits entered">${Array.from({length: c.len}, (_, i) => `<i class="${i < LOCK.entry.length ? "on" : ""}"></i>`).join("")}</div>
+    <p class="small ${wait ? "err" : "muted"}" data-lock-msg style="min-height:1.4em">${wait ? `Too many tries. Wait ${wait} seconds.` : LOCK.fails ? "That passcode is not right." : ""}</p>
+    <div class="lock-pad" role="group" aria-labelledby="lock-h">${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" data-lock-key="${n}">${n}</button>`).join("")}
+      ${c.bio ? `<button type="button" class="ghost" data-lock-bio aria-label="Unlock with ${IS_IOS ? "Face ID" : "fingerprint"}">${IS_IOS ? "Face ID" : "Fingerprint"}</button>` : `<span></span>`}<button type="button" data-lock-key="0">0</button><button type="button" class="ghost" data-lock-del aria-label="Delete">Delete</button></div>
+    <button class="link plain small" type="button" data-lock-forgot>Forgot passcode?</button>`;
+}
+function lockNow(){ if (!LOCK.cfg || LOCK.on) return; LOCK.on = true; LOCK.entry = ""; LOCK.forgot = false; if (isField(document.activeElement)) document.activeElement.blur(); lockDraw(); if (LOCK.cfg.bio) lockBio(); }
+function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; lockDraw(); }
+async function lockBio(){ if (LOCK.busy || !LOCK.on) return; LOCK.busy = true; const ok = await bioCheck(); LOCK.busy = false; if (ok && LOCK.on) lockOpen(); }
+async function lockKey(d){
+  if (!LOCK.on || LOCK.busy || Date.now() < LOCK.until || LOCK.forgot) return;
+  if (d === "del"){ LOCK.entry = LOCK.entry.slice(0, -1); lockDraw(); return; }
+  if (LOCK.entry.length >= LOCK.cfg.len) return;
+  LOCK.entry += d; lockDraw();
+  if (LOCK.entry.length < LOCK.cfg.len) return;
+  LOCK.busy = true; const ok = await lockPinOk(LOCK.entry); LOCK.busy = false;
+  if (ok){ lockOpen(); return; }
+  LOCK.fails++; LOCK.entry = ""; if (LOCK.fails >= 5){ LOCK.until = Date.now() + 30000; LOCK.fails = 0; const tick = setInterval(() => { if (Date.now() >= LOCK.until || !LOCK.on){ clearInterval(tick); } lockDraw(); }, 1000); }
+  lockDraw(); const dots = document.querySelector("[data-lock-dots]"); if (dots) dots.classList.add("shake");
+}
+$("lockscreen").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.lockKey) lockKey(b.dataset.lockKey);
+  else if (b.hasAttribute("data-lock-del")) lockKey("del");
+  else if (b.hasAttribute("data-lock-bio")) lockBio();
+  else if (b.hasAttribute("data-lock-forgot")){ LOCK.forgot = 1; lockDraw(); }
+  else if (b.hasAttribute("data-lock-back")){ LOCK.forgot = false; lockDraw(); }
+  else if (b.hasAttribute("data-lock-erase")){ if (LOCK.forgot !== 2){ LOCK.forgot = 2; lockDraw(); return; }
+    try { Object.keys(localStorage).filter(k => k.startsWith("keepwise")).forEach(k => localStorage.removeItem(k)); } catch(err){}
+    window.__kwErasing = true; location.reload(); } });
+document.addEventListener("keydown", e => { if (!LOCK.on) return; if (/^\d$/.test(e.key)) lockKey(e.key); else if (e.key === "Backspace") lockKey("del"); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") LOCK.hiddenAt = Date.now(); else if (LOCK.cfg && LOCK.hiddenAt && Date.now() - LOCK.hiddenAt >= LOCK_AWAY) lockNow(); });
+// ---- the setting, on Plan ----
+OUT.lockBox = () => {
+  if (!lockCan()) return "";
+  const c = LOCK.cfg, m = UI.lockForm, pin = (name, label, ac) => `<label class="field"><span>${label}</span><input name="${name}" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="${ac}" enterkeyhint="next"></label>`;
+  const head = `<div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">App lock${infoBtn("lock", "About the app lock")}</h2>${c ? `<span class="pill ok">On</span>` : ""}</div>
+    ${infoTip("lock", "Ask for a passcode when KeepWise opens, and again after a minute away. The passcode is checked on this phone and cannot be recovered if you forget it, so keep a backup file.")}`;
+  if (m === "set" || m === "change") return `<section class="card" data-lock-card>${head}<form class="inc-form" data-form="lockSet">
+      ${m === "change" ? pin("old", "Current passcode", "current-password") : ""}<div class="grid2">${pin("pin", "New passcode", "new-password")}${pin("pin2", "Repeat it", "new-password")}</div>
+      <p class="muted small">4 to 8 digits.</p>
+      <div class="grid2"><button class="btn" type="button" data-lock-cancel>Cancel</button><button class="btn primary" type="submit" style="padding:10px">Save passcode</button></div></form></section>`;
+  if (m === "off") return `<section class="card" data-lock-card>${head}<form class="inc-form" data-form="lockOff">${pin("old", "Enter your passcode to turn the lock off", "current-password")}
+      <div class="grid2"><button class="btn" type="button" data-lock-cancel>Cancel</button><button class="btn danger" type="submit">Turn off</button></div></form></section>`;
+  if (!c) return `<section class="card" data-lock-card>${head}<p class="muted small">Keep your numbers private if someone else picks up your phone.</p><button class="btn" type="button" data-lock-set>Set a passcode</button></section>`;
+  return `<section class="card" data-lock-card>${head}<p class="muted small">KeepWise asks for your passcode when it opens.</p>
+    ${LOCK.bioOk ? `<div class="pay-line"><span><b>Face ID or fingerprint</b><br><span class="muted small">${c.bio ? "On. Your passcode still works." : "Unlock without typing."}</span></span><button class="link small" type="button" data-lock-bio-toggle>${c.bio ? "Turn off" : "Turn on"}</button></div>` : ""}
+    <div class="grid2"><button class="btn" type="button" data-lock-change>Change passcode</button><button class="btn" type="button" data-lock-off>Turn off</button></div></section>`;
+};
+
 /* ================= render ================= */
 function renderTabs(){
   $("tabbar").innerHTML = TABS.map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k?'aria-current="page"':""}><span class="ti">${I[k]}</span><span>${n}</span></button>`).join("");
@@ -2933,7 +3034,7 @@ function render(keepScroll){
   main.scrollTop = keepScroll ? top : 0;
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
 }
-const OPEN_FORMS = 'form[data-form="loan"],form[data-form="exp"],form[data-form="subEdit"],form[data-form="codeEdit"]';
+const OPEN_FORMS = 'form[data-form="lockSet"],form[data-form="lockOff"],form[data-form="loan"],form[data-form="exp"],form[data-form="subEdit"],form[data-form="codeEdit"]';
 function refreshOuts(){
   const active = document.activeElement;
   document.querySelectorAll("#view [data-out]").forEach(el => {
@@ -3424,6 +3525,15 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-add-line-btn")){ const box = b.closest("[data-add-line]"), name = box.querySelector("[data-new-name]").value.trim(), amt = numv(box.querySelector("[data-new-amt]").value);
     if (!name){ toast("Give the line a name."); box.querySelector("[data-new-name]").focus(); return; }
     S.expenses.push({id:uid(), name, amount:amt, env:box.dataset.addLine}); delete LINE_DRAFT[box.dataset.addLine]; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Added ${name}.`); return; }
+  if (b.hasAttribute("data-lock-set")){ UI.lockForm = "set"; render(true); const i = view.querySelector('[data-form="lockSet"] input'); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-lock-change")){ UI.lockForm = "change"; render(true); return; }
+  if (b.hasAttribute("data-lock-off")){ UI.lockForm = "off"; render(true); return; }
+  if (b.hasAttribute("data-lock-cancel")){ UI.lockForm = null; render(true); return; }
+  if (b.hasAttribute("data-lock-bio-toggle")){ const c = LOCK.cfg; if (!c) return;
+    if (c.bio){ lockStore({...c, bio: null}); render(true); toast("Face ID and fingerprint unlock is off."); return; }
+    try { const id = await bioEnroll(); lockStore({...c, bio: id}); render(true); toast("Done. You can unlock without typing."); }
+    catch(err){ toast("That did not work. Your passcode still unlocks KeepWise."); }
+    return; }
   if (b.hasAttribute("data-pdf-cancel")){ UI.pdfLock = null; render(false); return; }
   if (b.hasAttribute("data-import-open")){ $("stmt").click(); return; }
   if (b.hasAttribute("data-import-cancel")){ STMT.result = null; STMT.fx = null; render(false); return; }
@@ -3623,6 +3733,13 @@ view.addEventListener("submit", async e => {
     (x.got = x.got || []).push({id: uid(), date: String(fd.get("date") || isoDaysAgo(0)), amount: a}); UI.incLog = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Logged ${fmt(a)} from ${x.name}.`); return; }
   if (kind === "closeMonth"){ const key = f.closest("[data-close]").dataset.close; closeMonth(key, numv(fd.get("amount"))); return; }
   if (kind === "ask"){ const q = $("ask-in").value.trim(); if (!q) return; ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
+  if (kind === "lockSet"){ const old = String(fd.get("old") || ""), pin = String(fd.get("pin") || ""), pin2 = String(fd.get("pin2") || "");
+    if (UI.lockForm === "change" && !(await lockPinOk(old))){ toast("The current passcode is not right."); return; }
+    if (!/^\d{4,8}$/.test(pin)){ toast("Use 4 to 8 digits."); return; }
+    if (pin !== pin2){ toast("The two passcodes do not match."); return; }
+    await lockSetPin(pin); UI.lockForm = null; if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast("App lock is on. Keep a backup file in case you forget the passcode."); return; }
+  if (kind === "lockOff"){ if (!(await lockPinOk(String(fd.get("old") || "")))){ toast("That passcode is not right."); return; }
+    lockStore(null); UI.lockForm = null; if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast("App lock is off."); return; }
   if (kind === "pdfLock"){ const pw = String(fd.get("pw") || ""); if (!pw){ toast("Enter the statement password."); return; } const file = UI.pdfLock && UI.pdfLock.file; if (file) openStatement(file, pw); return; }
   if (kind === "exp"){ const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), env = fd.get("env") === "misc" ? "misc" : "needs";
     if (!name){ toast("Give the line a name."); f.querySelector("[name=name]").focus(); return; }
@@ -3729,7 +3846,10 @@ if (firstRun) UI.welcome = 0;
 if (S.tab === "subs") remindSeen();  // opening straight onto Subs counts as checking them
 save();
 applyTheme();
+lockLoad();
 render(false);
+if (LOCK.cfg && !window.KEEPWISE_NO_LOCK) lockNow();
+bioAvailable().then(ok => { LOCK.bioOk = ok; if (S && S.tab === "plan" && !LOCK.on) refreshOuts(); });
 initShared();
 })();
 </script>

@@ -1440,6 +1440,75 @@ async def android_reminders_for_income_and_each_renewal(ctx):
     assert (await state(pg))["tab"] == "month"
     assert not pg.errors, pg.errors
 
+BIO_MOCK = """window.__bio = {made: 0, asked: 0, pass: true};
+window.PublicKeyCredential = {isUserVerifyingPlatformAuthenticatorAvailable: async () => true};
+Object.defineProperty(navigator, 'credentials', {configurable: true, value: {
+  create: async () => { window.__bio.made++; return {rawId: new Uint8Array([1,2,3,4]).buffer}; },
+  get: async () => { window.__bio.asked++; if (!window.__bio.pass || window.__bioFail) throw new Error('NotAllowedError'); return {id: 'x'}; }}});"""
+
+@test
+async def app_lock_with_passcode_and_biometrics(ctx):
+    pg = await open_app(ctx); await pg.add_init_script(BIO_MOCK); await pg.reload(); await pg.wait_for_timeout(400)
+    locked = lambda: pg.evaluate("!document.getElementById('lockscreen').hidden")
+    async def tap(code):
+        for d in code: await pg.click(f"[data-lock-key='{d}']"); await pg.wait_for_timeout(40)
+        await pg.wait_for_timeout(500)
+    assert not await locked(), "no lock until you set one"
+    await tab(pg, "plan"); card = pg.locator("[data-lock-card]"); await card.scroll_into_view_if_needed()
+    assert "App lock" in await card.inner_text() and "Set a passcode" in await card.inner_text()
+    await pg.click("[data-lock-set]"); f = "form[data-form=lockSet] "
+    await pg.fill(f + "[name=pin]", "12"); await pg.fill(f + "[name=pin2]", "12"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(200); assert "4 to 8 digits" in await pg.inner_text("#toast")
+    await pg.fill(f + "[name=pin]", "2468"); await pg.fill(f + "[name=pin2]", "2469"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(200); assert "do not match" in await pg.inner_text("#toast")
+    await pg.fill(f + "[name=pin2]", "2468"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(600)
+    assert "App lock is on" in await pg.inner_text("#toast") and "On" in await pg.locator("[data-lock-card]").inner_text()
+    stored = await pg.evaluate("localStorage.getItem('keepwise-lock-v1')")
+    assert "2468" not in stored and json.loads(stored)["len"] == 4 and "2468" not in await pg.evaluate("localStorage.getItem('keepwise-app-v1')"), "only a hash is kept, apart from your data"
+    # it locks when the app opens, hides the app behind it, and only the right passcode opens it
+    await pg.reload(); await pg.wait_for_timeout(500)
+    assert await locked() and await pg.evaluate("getComputedStyle(document.getElementById('app')).visibility") == "hidden" and "Enter your passcode" in await pg.inner_text("#lockscreen")
+    await tap("1111"); assert await locked() and "not right" in await pg.inner_text("#lockscreen") and await pg.locator(".lock-dots i.on").count() == 0
+    await tap("24"); await pg.click("[data-lock-del]"); await pg.wait_for_timeout(60); assert await pg.locator(".lock-dots i.on").count() == 1
+    await tap("468"); assert not await locked() and await pg.evaluate("getComputedStyle(document.getElementById('app')).visibility") == "visible"
+    # five wrong tries make you wait
+    await pg.reload(); await pg.wait_for_timeout(500)
+    for _ in range(5): await tap("0000")
+    assert "Too many tries" in await pg.inner_text("#lockscreen")
+    await tap("2468"); assert await locked(), "even the right passcode waits out the pause"
+    await pg.evaluate("void 0"); await pg.reload(); await pg.wait_for_timeout(500); await tap("2468"); assert not await locked()
+    # a minute away locks it again; a short glance away does not
+    await pg.evaluate("Object.defineProperty(document, 'visibilityState', {configurable: true, get: () => window.__vis || 'visible'}); window.__vis = 'hidden'; document.dispatchEvent(new Event('visibilitychange'))")
+    await pg.evaluate("window.__vis = 'visible'; document.dispatchEvent(new Event('visibilitychange'))"); assert not await locked()
+    await pg.evaluate("window.__vis = 'hidden'; document.dispatchEvent(new Event('visibilitychange'))")
+    await pg.evaluate("const n = Date.now; Date.now = () => n() + 61000; window.__vis = 'visible'; document.dispatchEvent(new Event('visibilitychange')); Date.now = n"); await pg.wait_for_timeout(150)
+    assert await locked(); await tap("2468"); assert not await locked()
+    # Face ID or fingerprint: turn it on, and it unlocks without typing; the passcode still works when it fails
+    await tab(pg, "plan"); await pg.locator("[data-lock-bio-toggle]").scroll_into_view_if_needed(); await pg.click("[data-lock-bio-toggle]"); await pg.wait_for_timeout(300)
+    assert await pg.evaluate("window.__bio.made") == 1 and json.loads(await pg.evaluate("localStorage.getItem('keepwise-lock-v1')"))["bio"]
+    await pg.reload(); await pg.wait_for_timeout(700); assert not await locked() and await pg.evaluate("window.__bio.asked") == 1, "the phone's own check opens it"
+    await pg.add_init_script("window.__bioFail = true"); await pg.reload(); await pg.wait_for_timeout(700)
+    assert await locked() and await pg.locator("[data-lock-bio]").count() == 1, "when the phone's check fails it stays locked and offers the passcode"
+    await pg.click("[data-lock-bio]"); await pg.wait_for_timeout(200); assert await locked()
+    await tap("2468"); assert not await locked()
+    # changing needs the current passcode; turning off needs it too
+    await tab(pg, "plan"); await pg.locator("[data-lock-change]").scroll_into_view_if_needed(); await pg.click("[data-lock-change]"); f = "form[data-form=lockSet] "
+    await pg.fill(f + "[name=old]", "0000"); await pg.fill(f + "[name=pin]", "135790"); await pg.fill(f + "[name=pin2]", "135790"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(500)
+    assert "current passcode is not right" in await pg.inner_text("#toast")
+    await pg.fill(f + "[name=old]", "2468"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(600); assert json.loads(await pg.evaluate("localStorage.getItem('keepwise-lock-v1')"))["len"] == 6
+    await pg.click("[data-lock-off]"); await pg.fill("form[data-form=lockOff] [name=old]", "2468"); await pg.click("form[data-form=lockOff] [type=submit]"); await pg.wait_for_timeout(500)
+    assert "not right" in await pg.inner_text("#toast") and await pg.evaluate("localStorage.getItem('keepwise-lock-v1')")
+    await pg.fill("form[data-form=lockOff] [name=old]", "135790"); await pg.click("form[data-form=lockOff] [type=submit]"); await pg.wait_for_timeout(500)
+    assert await pg.evaluate("localStorage.getItem('keepwise-lock-v1')") is None and "Set a passcode" in await pg.locator("[data-lock-card]").inner_text()
+    # forgotten passcode: nothing can recover it; erasing takes two taps and clears the phone
+    await pg.click("[data-lock-set]"); f = "form[data-form=lockSet] "; await pg.fill(f + "[name=pin]", "9999"); await pg.fill(f + "[name=pin2]", "9999"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(600)
+    await pg.reload(); await pg.wait_for_timeout(500); assert await locked()
+    await pg.click("[data-lock-forgot]"); v = await pg.inner_text("#lockscreen"); assert "cannot be recovered" in v and "backup file" in v
+    await pg.click("[data-lock-back]"); assert "Enter your passcode" in await pg.inner_text("#lockscreen")
+    await pg.click("[data-lock-forgot]"); await pg.click("[data-lock-erase]"); await pg.wait_for_timeout(100)
+    assert await pg.evaluate("localStorage.getItem('keepwise-lock-v1')"), "one tap is not enough"
+    await pg.click("[data-lock-erase]"); await pg.wait_for_timeout(800)
+    assert await pg.evaluate("localStorage.getItem('keepwise-lock-v1')") is None and not await locked()
+    assert not pg.errors, pg.errors
+
 @test
 async def locked_pdf_statement_asks_for_its_password(ctx):
     pg = await open_app(ctx)
