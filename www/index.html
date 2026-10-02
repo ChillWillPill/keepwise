@@ -65,6 +65,10 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .bell{appearance:none;position:relative;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
 .bell[hidden],[data-loan-cardrow][hidden],[data-loan-cardother][hidden]{display:none}
 .bell:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.pw-rules{list-style:none;margin:4px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:.8rem;color:var(--muted)}
+.pw-rules li{display:flex;gap:6px;align-items:center}
+.pw-rules svg{width:13px;height:13px;flex:none;opacity:.3}
+.pw-rules li.ok{color:var(--green)} .pw-rules li.ok svg{opacity:1}
 .note-row{gap:6px}
 .note-main{appearance:none;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:0;display:flex;gap:10px;align-items:flex-start;width:100%;cursor:pointer}
 .note-txt{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
@@ -1018,9 +1022,11 @@ async function pdfLib(){
   await loadScript(base + "pdf.worker.min.js"); // runs on the page itself, no separate worker needed
   return window.pdfjsLib;
 }
-async function pdfLines(buf){
+async function pdfLines(buf, password){
   const lib = await pdfLib();
-  const doc = await lib.getDocument({data: buf, isEvalSupported: false, disableFontFace: true}).promise;
+  let doc;
+  try { doc = await lib.getDocument({data: buf, isEvalSupported: false, disableFontFace: true, ...(password ? {password} : {})}).promise; }
+  catch(e){ if (e && e.name === "PasswordException"){ const x = new Error("locked"); x.locked = true; x.wrong = !!password; throw x; } throw e; }
   const lines = [];
   for (let p = 1; p <= doc.numPages; p++){
     const page = await doc.getPage(p), content = await page.getTextContent(), rows = new Map();
@@ -1164,11 +1170,11 @@ function applyStatement(R, mode){
   save();
 }
 
-async function readStatementFile(file){
+async function readStatementFile(file, password){
   const name = file.name || "statement";
   if (/\.pdf$/i.test(name) || file.type === "application/pdf"){
     const buf = await file.arrayBuffer();
-    const lines = await pdfLines(buf), R = analyzeStatement(txFromLines(lines), name, holderName(lines.join("\n"))); R.cur = detectCurrency(lines.join(" ")); return R;
+    const lines = await pdfLines(buf, password), R = analyzeStatement(txFromLines(lines), name, holderName(lines.join("\n"))); R.cur = detectCurrency(lines.join(" ")); return R;
   }
   const text = await file.text(), R = analyzeStatement(txFromCSV(text), name, holderName(text)); R.cur = detectCurrency(text); return R;
 }
@@ -2950,7 +2956,7 @@ function renderTabs(){
 }
 function render(keepScroll){
   const main = $("main"), top = main.scrollTop;
-  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : V[S.tab]();
+  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : V[S.tab]();
   appEl.classList.toggle("welcoming", UI.welcome != null && !UI.account && !STMT.result);
   if (!keepScroll){ v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   renderTabs(); renderBell();
@@ -2992,6 +2998,10 @@ const locHow = code => code !== 1 ? "Check that Location is switched on in your 
   : IN_APP ? "Open your phone’s Settings, then Apps, KeepWise, Permissions, and allow Location. Then come back and try again. You can also just type your city above."
   : IS_IOS ? "Open the Settings app, then Privacy & Security, Location Services, and make sure it is on. In the same list, choose Safari Websites (or KeepWise, if it is listed) and pick While Using the App. If you tapped Don’t Allow earlier, close KeepWise fully and open it again so it can ask once more. You can also just type your city above."
   : "Tap the lock or settings icon beside the web address, choose Permissions or Site settings, and allow Location. Then try again. You can also just type your city above.";
+// A new password needs 8 or more characters with a capital letter, a number and a special character.
+const PW_RULES = [["8 or more characters", p => p.length >= 8, "at least 8 characters"], ["A capital letter", p => /[A-Z]/.test(p), "a capital letter"], ["A number", p => /\d/.test(p), "a number"], ["A special character, like ! or #", p => /[^A-Za-z0-9\s]/.test(p), "a special character"]];
+const pwMissing = p => PW_RULES.filter(r => !r[1](p)).map(r => r[2]);
+const pwRulesHtml = p => PW_RULES.map(([t, ok]) => `<li class="${ok(p) ? "ok" : ""}">${I.check}<span>${t}</span></li>`).join("");
 const ACC = {state: PREVIEW ? "preview" : FB_CONFIG ? "idle" : "off", user: null, profile: null, mode: "signin", err: "", email: "", draft: {}, del: false, busy: false};
 I.user = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>';
 I.google = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px;margin-right:8px" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.7 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1A11 11 0 0 0 2.1 7.1l3.6 2.8C6.6 7.3 9.1 5.4 12 5.4z"/></svg>';
@@ -3034,7 +3044,7 @@ function accErrText(e){
   return ({
     "auth/invalid-email": "That email address doesn’t look right.",
     "auth/missing-password": "Enter your password.",
-    "auth/weak-password": "Use at least 8 characters for your password.",
+    "auth/weak-password": "Use at least 8 characters, with a capital letter, a number and a special character.",
     "auth/email-already-in-use": "An account already uses this email. Sign in instead.",
     "auth/invalid-credential": "The email or password is incorrect.",
     "auth/wrong-password": "The email or password is incorrect.",
@@ -3079,7 +3089,7 @@ function accSignIn(){
       : `<div class="seg acc-seg" role="group" aria-label="Sign in or create an account"><button type="button" data-acc-mode="signin" aria-pressed="${m === "signin"}">Sign in</button><button type="button" data-acc-mode="create" aria-pressed="${m === "create"}">Create account</button></div>`}
     <form data-form="acc-email" class="acc-form" novalidate>
       <label class="field"><span>Email</span><input id="acc-email" name="email" type="email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" enterkeyhint="${m === "reset" ? "send" : "next"}" value="${esc(ACC.email)}"></label>
-      ${m === "reset" ? "" : `<label class="field"><span>Password</span><input id="acc-pass" name="password" type="password" autocomplete="${m === "create" ? "new-password" : "current-password"}" enterkeyhint="go" ${m === "create" ? 'minlength="8"' : ""}>${m === "create" ? `<small class="muted small">At least 8 characters.</small>` : ""}</label>`}
+      ${m === "reset" ? "" : `<label class="field"><span>Password</span><input id="acc-pass" name="password" type="password" autocomplete="${m === "create" ? "new-password" : "current-password"}" enterkeyhint="go" ${m === "create" ? 'minlength="8" data-pw-new' : ""}>${m === "create" ? `<ul class="pw-rules" data-pw-rules>${pwRulesHtml("")}</ul>` : ""}</label>`}
       ${accErrBox()}
       <button class="btn primary" type="submit" ${ACC.busy ? "disabled" : ""}>${m === "create" ? "Create account" : m === "reset" ? "Send reset link" : "Sign in"}</button>
     </form>
@@ -3233,7 +3243,7 @@ $("view").addEventListener("submit", async e => {
     ACC.email = email;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setAccErr("Enter a valid email address."); return; }
     if (ACC.mode !== "reset" && !pw){ setAccErr("Enter your password."); return; }
-    if (ACC.mode === "create" && pw.length < 8){ setAccErr("Use at least 8 characters for your password."); return; }
+    if (ACC.mode === "create" && pwMissing(pw).length){ setAccErr("Your password needs " + pwMissing(pw).join(", ") + "."); return; }
     ACC.err = ""; refreshOuts(); accBusy(true);
     try {
       if (ACC.mode === "reset"){ await ACC.auth.sendPasswordResetEmail(email); ACC.mode = "signin"; accBusy(false); render(true); toast("If an account uses that email, a reset link is on its way."); return; }
@@ -3277,7 +3287,7 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; UI.plus = false; if (UI.inbox){ pruneNotes(allNotes()); save(); } render(false); });
 
@@ -3293,6 +3303,7 @@ view.addEventListener("input", e => {
   const payForm = t.closest && t.closest('form[data-form="pay"]');
   if (payForm && t.name && UI.payDraft){ UI.payDraft[t.name] = t.value; if (t.name === "when"){ const box = view.querySelector('[data-out="payBox"]'); if (box) box.innerHTML = OUT.payBox(); } return; }
   const loanF = t.closest && t.closest('form[data-form="loan"]');
+  if (t.hasAttribute && t.hasAttribute("data-pw-new")){ const r = view.querySelector("[data-pw-rules]"); if (r) r.innerHTML = pwRulesHtml(t.value); }
   if (loanF){ if (t.name && UI.loanDraft && t.name !== "rate") UI.loanDraft[t.name] = t.value; loanCalc(loanF); return; }
   const incForm = t.closest && t.closest('form[data-form="income"]');
   if (incForm && t.name && UI.incDraft){ UI.incDraft[t.name] = t.value;
@@ -3443,6 +3454,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-add-line-btn")){ const box = b.closest("[data-add-line]"), name = box.querySelector("[data-new-name]").value.trim(), amt = numv(box.querySelector("[data-new-amt]").value);
     if (!name){ toast("Give the line a name."); box.querySelector("[data-new-name]").focus(); return; }
     S.expenses.push({id:uid(), name, amount:amt, env:box.dataset.addLine}); delete LINE_DRAFT[box.dataset.addLine]; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Added ${name}.`); return; }
+  if (b.hasAttribute("data-pdf-cancel")){ UI.pdfLock = null; render(false); return; }
   if (b.hasAttribute("data-import-open")){ $("stmt").click(); return; }
   if (b.hasAttribute("data-import-cancel")){ STMT.result = null; STMT.fx = null; render(false); return; }
   if (b.hasAttribute("data-fx-open")){ STMT.fx = {from: (CURRENCIES.find(([c]) => c !== S.cur) || ["USD"])[0], mode: "convert", rate: ""}; refreshOuts(); return; }
@@ -3641,6 +3653,7 @@ view.addEventListener("submit", async e => {
     (x.got = x.got || []).push({id: uid(), date: String(fd.get("date") || isoDaysAgo(0)), amount: a}); UI.incLog = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Logged ${fmt(a)} from ${x.name}.`); return; }
   if (kind === "closeMonth"){ const key = f.closest("[data-close]").dataset.close; closeMonth(key, numv(fd.get("amount"))); return; }
   if (kind === "ask"){ const q = $("ask-in").value.trim(); if (!q) return; ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
+  if (kind === "pdfLock"){ const pw = String(fd.get("pw") || ""); if (!pw){ toast("Enter the statement password."); return; } const file = UI.pdfLock && UI.pdfLock.file; if (file) openStatement(file, pw); return; }
   if (kind === "exp"){ const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), env = fd.get("env") === "misc" ? "misc" : "needs";
     if (!name){ toast("Give the line a name."); f.querySelector("[name=name]").focus(); return; }
     const old = UI.expEdit && S.expenses.find(x => x.id === UI.expEdit);
@@ -3706,13 +3719,24 @@ function addNames(names){
     if (!old){ S.people.push({id:uid(), name:n}); added++; } else if (old.archived){ old.archived = false; added++; } });
   save(); render(true); toast(added ? `Added ${added} ${added === 1 ? "person" : "people"}.` : "Everyone there is already on your list.");
 }
-$("stmt").addEventListener("change", async e => {
-  const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+$("stmt").addEventListener("change", e => { const file = e.target.files[0]; e.target.value = ""; if (file) openStatement(file); });
+// Some banks lock the PDF with a password. KeepWise asks for it, uses it once on this phone to open the file, and keeps
+// neither the password nor the file.
+async function openStatement(file, password){
   toast("Reading your statement…");
-  try { STMT.result = await readStatementFile(file); const rc = STMT.result.cur;
+  try { STMT.result = await readStatementFile(file, password); UI.pdfLock = null; const rc = STMT.result.cur;
     STMT.fx = rc && rc !== S.cur && !(CUR_FAMILY[rc] && CUR_FAMILY[rc] === CUR_FAMILY[S.cur]) ? {from: rc, mode: "convert", rate: ""} : null; UI.inbox = false; $("toast").hidden = true; render(false); }
-  catch(err){ toast(err && err.message ? err.message : "Couldn't read that file."); }
-});
+  catch(err){
+    if (err && err.locked){ UI.pdfLock = {file, wrong: !!err.wrong}; UI.inbox = false; UI.account = false; $("toast").hidden = true; render(false); const i = view.querySelector("[data-form=pdfLock] input"); if (i) i.focus(); return; }
+    toast(err && err.message ? err.message : "Couldn't read that file."); }
+}
+V.pdfLock = () => `<div class="inline" style="justify-content:space-between"><h1>Locked statement</h1><button class="btn small" type="button" data-pdf-cancel>Cancel</button></div>
+  <section class="card"><p><b>${esc(UI.pdfLock.file.name || "This statement")}</b> is protected with a password.</p>
+    <p class="muted small">Banks often use part of your account number, your ID number or your date of birth. The email that came with the statement usually says which.</p>
+    <form data-form="pdfLock" style="display:flex;flex-direction:column;gap:12px"><label class="field"><span>Statement password</span><input name="pw" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go"></label>
+      ${UI.pdfLock.wrong ? `<p class="err" role="alert" data-pdf-wrong>That password did not open the file. Check it and try again.</p>` : ""}
+      <button class="btn primary" type="submit">Unlock and read</button></form>
+    <p class="muted small">The password is used once, on this phone, to open the file. KeepWise does not save it or send it anywhere.</p></section>`;
 $("restore-in").addEventListener("change", async e => {
   const file = e.target.files[0]; e.target.value = ""; if (!file) return;
   try { UI.restore = readBackup(await file.text()); UI.history = false; UI.stmt = null; UI.account = false; UI.inbox = false; S.tab = "plan"; render(false);

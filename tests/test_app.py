@@ -767,7 +767,14 @@ async def account_email_signup_and_profile(ctx):
     await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(120)
     assert "at least 8" in await acc_err(pg)
     assert await pg.input_value("#acc-email") == "ada@example.com", "email kept after an error"
-    await pg.fill("#acc-pass", "longenough1"); await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(400)
+    # a new password needs 8 characters, a capital letter, a number and a special character; the list ticks off as you type
+    for pw, missing in (("longenough", "a capital letter, a number, a special character"), ("Longenough", "a number, a special character"), ("Longenough1", "a special character"), ("Lo1!", "at least 8 characters")):
+        await pg.fill("#acc-pass", pw); await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(120)
+        assert ("Your password needs " + missing + ".") in await acc_err(pg), (pw, await acc_err(pg))
+    await pg.fill("#acc-pass", "Longenough1"); await pg.wait_for_timeout(80)
+    assert await pg.locator("[data-pw-rules] li.ok").count() == 3 and await pg.locator("[data-pw-rules] li").count() == 4
+    await pg.fill("#acc-pass", "Longenough1!"); await pg.wait_for_timeout(80); assert await pg.locator("[data-pw-rules] li.ok").count() == 4
+    await pg.fill("#acc-pass", "Longenough1!"); await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(400)
     assert await pg.evaluate("window.__mockMail.some(m => m.type === 'verify' && m.to === 'ada@example.com')"), "verification email sent"
     v = await text(pg, "#view")
     assert "Finish your profile" in v and "Verify your email" in v
@@ -806,7 +813,7 @@ async def location_refused_shows_how_to_turn_it_on(ctx):
     pg = await open_app(ctx, fb=True)
     await open_account(pg)
     await pg.click("[data-acc-mode=create]"); await pg.wait_for_timeout(120)
-    await pg.fill("#acc-email", "ada@example.com"); await pg.fill("#acc-pass", "longenough1")
+    await pg.fill("#acc-email", "ada@example.com"); await pg.fill("#acc-pass", "Longenough1!")
     await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(400)
     await pg.evaluate("void (navigator.geolocation.getCurrentPosition = (ok, no) => no({code: 1}))")
     await pg.click("[data-acc-loc]"); await pg.wait_for_timeout(200)
@@ -1431,6 +1438,25 @@ async def android_reminders_for_income_and_each_renewal(ctx):
     # tapping an income reminder opens Month
     await tab(pg, "codes"); await pg.evaluate("window.__n.listener({actionId: 'tap', notification: {extra: {kind: 'income'}}})"); await pg.wait_for_timeout(150)
     assert (await state(pg))["tab"] == "month"
+    assert not pg.errors, pg.errors
+
+@test
+async def locked_pdf_statement_asks_for_its_password(ctx):
+    pg = await open_app(ctx)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement-locked.pdf")); await pg.wait_for_timeout(2500)
+    v = await text(pg, "#view"); assert "Locked statement" in v and "sample-bank-statement-locked.pdf" in v and "does not save it or send it anywhere" in v, v
+    assert await pg.locator("[data-form=pdfLock] input").get_attribute("type") == "password"
+    await pg.click("[data-form=pdfLock] [type=submit]"); await pg.wait_for_timeout(120); assert "Enter the statement password" in await pg.inner_text("#toast")
+    await pg.fill("[data-form=pdfLock] input", "0000"); await pg.click("[data-form=pdfLock] [type=submit]"); await pg.wait_for_timeout(2000)
+    assert await pg.locator("[data-pdf-wrong]").count() == 1 and "did not open the file" in await text(pg, "#view")
+    await pg.fill("[data-form=pdfLock] input", "4471"); await pg.click("[data-form=pdfLock] [type=submit]"); await pg.wait_for_timeout(3000)
+    v = await text(pg, "#view"); assert "Locked statement" not in v and await pg.locator("[data-pdf-wrong]").count() == 0
+    assert "Netflix" in v or "subscription" in v.lower(), "the unlocked statement is read like any other: " + v[:300]
+    assert "4471" not in json.dumps(await state(pg)) and "4471" not in await pg.evaluate("JSON.stringify(Object.assign({}, localStorage))"), "the password is never stored"
+    # cancelling leaves no trace
+    await pg.reload(); await pg.wait_for_timeout(400)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement-locked.pdf")); await pg.wait_for_timeout(2500)
+    await pg.click("[data-pdf-cancel]"); await pg.wait_for_timeout(150); assert "Locked statement" not in await text(pg, "#view")
     assert not pg.errors, pg.errors
 
 @test
