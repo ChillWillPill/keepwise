@@ -791,6 +791,9 @@ async def location_refused_shows_how_to_turn_it_on(ctx):
     await pg.click("[data-acc-loc]"); await pg.wait_for_timeout(200)
     h = await text(pg, "[data-loc-help]")
     assert "Location is turned off for KeepWise" in h and "allow Location" in h and "type your city" in h, h
+    # Try again is never a dead button: it says so when Location is still off
+    await pg.click("[data-loc-help] [data-acc-loc]"); await pg.wait_for_timeout(200)
+    assert "still turned off" in await pg.inner_text("#toast") and await pg.locator("[data-loc-help]").count() == 1
     await pg.evaluate("void (navigator.geolocation.getCurrentPosition = ok => ok({coords: {latitude: 31.5204, longitude: 74.3587}}))")
     await pg.click("[data-loc-help] [data-acc-loc]"); await pg.wait_for_timeout(200)
     v = await text(pg, "#view")
@@ -1645,9 +1648,12 @@ async def plus_screen_gives_reasons_and_prices(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     await pg.locator("[data-plus-open]").first.scroll_into_view_if_needed(); await pg.locator("[data-plus-open]").first.click(); await pg.wait_for_timeout(200)
     v = await text(pg, "#view")
-    for reason in ("Live splits with friends", "Your money on every device", "Business Account", "A shared household", "Offers near you", "Reminders on every phone", "Receipt photos", "Moments"):
+    for reason in ("Live splits with friends", "Your money on every device", "Business Account", "Receipt photos", "Moments"):
         assert reason in v, reason
     assert "straight from your contacts" in v
+    for unbuilt in ("shared household", "Offers near you", "Reminders on every phone", "only you can unlock", "birthday"):   # only promises we can keep
+        assert unbuilt not in v, unbuilt
+    assert await pg.locator(".plus-list li").count() == 5
     # prices exactly as set: 12 from 15 for the first six months, 140 from 180 a year
     m = await text(pg, ".plus-price:not(.best)"); y = await text(pg, ".plus-price.best")
     assert "$15" in m and "$12" in m and "a month" in m and "first 6 months, then $15 a month" in m, m

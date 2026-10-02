@@ -18,7 +18,7 @@ const PREVIEW = !!window.claude && !("KEEPWISE_FIREBASE" in window);
 const SITE_URL = "https://mykeepwise.com/";
 const locHow = code => code !== 1 ? "Check that Location is switched on in your phone’s settings and that you are connected, then try again. You can also just type your city above."
   : IN_APP ? "Open your phone’s Settings, then Apps, KeepWise, Permissions, and allow Location. Then come back and try again. You can also just type your city above."
-  : IS_IOS ? "Open the Settings app, then Privacy & Security, Location Services, and make sure it is on. In the same list, choose Safari Websites and pick While Using the App. Then come back and try again. You can also just type your city above."
+  : IS_IOS ? "Open the Settings app, then Privacy & Security, Location Services, and make sure it is on. In the same list, choose Safari Websites (or KeepWise, if it is listed) and pick While Using the App. If you tapped Don’t Allow earlier, close KeepWise fully and open it again so it can ask once more. You can also just type your city above."
   : "Tap the lock or settings icon beside the web address, choose Permissions or Site settings, and allow Location. Then try again. You can also just type your city above.";
 const ACC = {state: PREVIEW ? "preview" : FB_CONFIG ? "idle" : "off", user: null, profile: null, mode: "signin", err: "", email: "", draft: {}, del: false, busy: false};
 I.user = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>';
@@ -131,9 +131,9 @@ function accFields(first){
     <label class="field"><span>City</span><input name="city" data-acc-field="city" type="text" autocomplete="address-level2" enterkeyhint="done" placeholder="Optional" value="${v("city")}"></label>
     <div class="field"><span>Location for local offers</span>
       ${loc ? `<p class="small">Approximate location saved (to about 1 km).</p><div class="inline"><button class="btn small" type="button" data-acc-loc>Update</button><button class="btn small danger" type="button" data-acc-loc-clear>Remove</button></div>`
-            : `<p class="muted small">Optional. Offers near you are coming with KeepWise Plus. We save only an approximate area, never your exact location.</p>${ACC.locHelp ? `<div class="part-help" data-loc-help style="border-radius:14px"><b>${ACC.locHelp === 1 ? "Location is turned off for KeepWise" : "We couldn’t find your location"}</b><p class="muted small">${locHow(ACC.locHelp)}</p><div class="grid2"><button class="btn small" type="button" data-loc-help-close>Not now</button><button class="btn small primary" type="button" data-acc-loc>Try again</button></div></div>` : `<button class="btn small" type="button" data-acc-loc style="align-self:flex-start">Use my approximate location</button>`}`}
+            : `<p class="muted small">Optional. We save only an approximate area, never your exact location.</p>${ACC.locHelp ? `<div class="part-help" data-loc-help style="border-radius:14px"><b>${ACC.locHelp === 1 ? "Location is turned off for KeepWise" : "We couldn’t find your location"}</b><p class="muted small">${locHow(ACC.locHelp)}</p><div class="grid2"><button class="btn small" type="button" data-loc-help-close>Not now</button><button class="btn small primary" type="button" data-acc-loc>Try again</button></div></div>` : `<button class="btn small" type="button" data-acc-loc style="align-self:flex-start">Use my approximate location</button>`}`}
     </div>
-    <label class="check"><input type="checkbox" name="marketing" data-acc-field="marketing" ${mk ? "checked" : ""}><span>Email me offers, birthday deals and news from KeepWise. You can unsubscribe at any time.</span></label>
+    <label class="check"><input type="checkbox" name="marketing" data-acc-field="marketing" ${mk ? "checked" : ""}><span>Email me news and offers from KeepWise. You can unsubscribe at any time.</span></label>
     ${first ? `<label class="check"><input type="checkbox" name="consent" data-acc-field="consent" ${d.consent ? "checked" : ""}><span>I’m 18 or older and I agree to the ${legalLinks}.</span></label>` : ""}`;
 }
 function accFinish(){
@@ -155,7 +155,7 @@ function accProfile(){
   <section class="card"><h2>Profile</h2>
     <form data-form="acc-profile" class="acc-form" novalidate>${accFields(false)}${accErrBox()}<button class="btn primary" type="submit" ${ACC.busy ? "disabled" : ""}>Save changes</button></form></section>
   <section class="card plus-card"><div class="inline" style="justify-content:space-between"><h2>KeepWise Plus</h2><span class="pill gold">Coming soon</span></div>
-    <p class="small">Live splits with friends, your money on every device, a Business Account, a shared household and more.</p>
+    <p class="small">Live splits with friends, your money on every device, a Business Account, receipt photos and Moments.</p>
     ${plusLink("See what Plus adds and what it costs")}
     ${ACC.profile && ACC.profile.plusInterest ? `<p class="small"><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p><button class="link small" type="button" data-acc-plus-off style="align-self:flex-start">Leave the waitlist</button>`
       : `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`}
@@ -228,12 +228,15 @@ $("view").addEventListener("click", async e => {
   if (has("data-acc-photo-clear")){ ACC.draft.photo = ""; render(true); return; }
   if (has("data-acc-loc")){
     if (!navigator.geolocation){ toast("This device can’t share its location."); return; }
+    const again = !!ACC.locHelp, btn = e.target.closest("[data-acc-loc]");
+    if (btn){ btn.disabled = true; btn.textContent = "Checking…"; }
     navigator.geolocation.getCurrentPosition(pos => {
       const r = x => Math.round(x * 100) / 100; // about 1 km: enough for nearby deals, not an exact address
       ACC.draft.location = {lat: r(pos.coords.latitude), lng: r(pos.coords.longitude)};
       ACC.locHelp = 0;
       render(true); toast("Approximate location added. Tap Save to keep it.");
-    }, err => { ACC.locHelp = err && err.code === 1 ? 1 : 2; render(true); }, {enableHighAccuracy: false, timeout: 15000, maximumAge: 600000});
+    }, err => { ACC.locHelp = err && err.code === 1 ? 1 : 2; render(true);
+      if (again) toast(ACC.locHelp === 1 ? "Location is still turned off. Follow the steps, then try again." : "Still couldn’t find your location. You can type your city instead."); }, {enableHighAccuracy: false, timeout: 15000, maximumAge: 600000});
     return;
   }
   if (has("data-loc-help-close")){ ACC.locHelp = 0; render(true); return; }
