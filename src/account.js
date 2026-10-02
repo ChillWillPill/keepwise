@@ -3,7 +3,7 @@
 // Tests can override it with window.KEEPWISE_FIREBASE (null turns accounts off).
 const FB_PROJECT = {
   apiKey: "AIzaSyD8vgylgp_MxETFmZrRaw3j-T01ruaYknM",
-  authDomain: "keepwise-c28c3.firebaseapp.com",
+  authDomain: "auth.mykeepwise.com",
   projectId: "keepwise-c28c3",
   storageBucket: "keepwise-c28c3.firebasestorage.app",
   messagingSenderId: "514732112999",
