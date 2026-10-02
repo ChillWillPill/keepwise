@@ -343,6 +343,8 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .inc-avg{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;background:var(--gold-soft);border-radius:12px;padding:8px 12px}
 .up-row.in .up-date{background:var(--green-soft);color:var(--green)}
 .close-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--gold-soft) 55%,var(--card)),var(--card))}
+.pay-line>.link{white-space:nowrap;flex:none}
+.remind-card h3{font:600 1.15rem/1.25 var(--display);letter-spacing:-.01em}
 .tell-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
 .tell-card h3{font:600 1.15rem/1.25 var(--display);letter-spacing:-.01em}
 .tell-msg{background:var(--bg);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:.95rem;line-height:1.45;overflow-wrap:anywhere}
@@ -632,7 +634,7 @@ function applyTheme(){
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
 (S.settlements || (S.settlements = [])).forEach(x => { if (!x.id) x.id = uid(); });
-const save = () => { if (UI.welcome != null) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+const save = () => { if (UI.welcome != null) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} remindSync(); };
 window.addEventListener("pagehide", save);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
 
@@ -1129,7 +1131,7 @@ OUT.reviewCard = () => {
 function handleReview(kind, id){
   if (kind === "later"){ S.reviewSnooze = isoDaysAgo(0); save(); refreshOuts(); return; }
   const s = S.subs.find(x => x.id === id); if (!s) return;
-  s.reviewedAt = isoDaysAgo(0);
+  s.reviewedAt = isoDaysAgo(0); remindSeen();
   if (kind === "lot"){ s.last = isoDaysAgo(0); s.low = false; toast(`Keeping ${s.name}.`); }
   if (kind === "barely"){ s.low = true; s.keep = "auto"; toast(`${s.name} is flagged. Review it on Subs.`); }
   if (kind === "none"){ s.keep = "drop"; toast(`${s.name} marked to drop. Your month updated.`); }
@@ -1347,6 +1349,7 @@ V.subs = () => `
   <h1>Subscriptions</h1>
   <div data-out="reviewCard">${OUT.reviewCard()}</div>
   <div data-out="subsSummary">${OUT.subsSummary()}</div>
+  <div data-out="remindBox">${OUT.remindBox()}</div>
   <button class="btn" type="button" data-import-open>Find subscriptions in a bank statement</button>
   <label class="field"><span>Flag anything unused for more than</span><span class="inline"><input id="rule-days" data-bind="ruleDays" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.ruleDays}" style="width:90px" aria-label="Days"><span class="muted">days, or a duplicate of one you use</span></span></label>
   <div data-out="subsList">${OUT.subsList()}</div>
@@ -1489,7 +1492,7 @@ V.plan = () => `
     ${S.example ? `<button class="btn primary" type="button" data-w-start>Set up my month</button>` : ""}
     <div class="inline"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank">Start empty</button></div>
     <div id="reset-confirm"></div>
-    <p class="small legal-links"><a href="https://chillwillpill.github.io/keepwise/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://chillwillpill.github.io/keepwise/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`;
+    <p class="small legal-links"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`;
 OUT.envCheck = () => { const t = S.env.needs + S.env.misc + S.env.save; return t === 100 ? `<p class="muted small">Adds up to 100%.</p>` : `<p class="err">These add up to ${t}%. Make them total 100%.</p>`; };
 OUT.expTotal = () => { const C = compute(); return `<p class="small tnum">Expenditures ${fmt(C.needs)} · Misc ${fmt(C.misc)} (with subscriptions and swaps)</p>`; };
 OUT.saveSplit = () => { const C = compute(); return C.savings > 0 ? `<p class="small tnum">This month: ${fmt(C.toEF)} to emergency fund, ${fmt(C.toGoal)} to ${esc(S.goalName || "your goal")}.${C.efTarget ? ` Fund target ${fmt(C.efTarget)}.` : ""}</p>` : `<p class="err">Nothing is left to save this month.</p>`; };
@@ -2334,7 +2337,7 @@ function tellLine(x, id){  // what one split means for one person, written from 
   if (x.paidBy === id) return mine > 0 ? `you paid ${fmt(x.amount)}. My share is ${fmt(mine)}, so I owe you ${fmt(mine)}` : `you paid ${fmt(x.amount)}`;
   return `${tellName(x.paidBy)} paid ${fmt(x.amount)}. Your share is ${fmt(theirs)}, owed to ${tellName(x.paidBy)}`;
 }
-const TELL_FOOT = "\nTracked with KeepWise: https://chillwillpill.github.io/keepwise/";
+const TELL_FOOT = "\nTracked with KeepWise: https://mykeepwise.com/";
 function tellGroup(x, kind){
   if (kind === "delete") return `${x.title} was removed. It no longer counts for anyone.`;
   const sh = shares(x), who = id => id === "me" ? "Me" : tellName(id);
@@ -2384,6 +2387,78 @@ async function tellSend(text, name){
   toast("Couldn’t share or copy that. Press and hold the message to copy it."); return false;
 }
 
+/* ================= reminders before payday (scheduled on this phone; no server sends them) ================= */
+// In the Android app, KeepWise can ask "Still using Netflix?" in a notification with one-tap answers. The phone itself
+// schedules them: one a day at most, thinning out if they are ignored, and none once you answer or open Subs.
+const REMIND_AT = [18, 30], REMIND_DAYS = [0, 1, 2, 5, 8], REMIND_LEAD = 10, REMIND_IDS = Array.from({length: 12}, (_, i) => 7100 + i);
+const BELL = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.500 2-6.5z"/><path d="M10 19.500a2.200 2.200 0 0 0 4 0"/></svg>';
+function notifPlugin(){ try { const C = window.Capacitor; if (!C) return null; return (C.Plugins && C.Plugins.LocalNotifications) || (C.registerPlugin ? C.registerPlugin("LocalNotifications") : null); } catch(e){ return null; } }
+function remindCycles(){  // the next two paydays (or month starts) at least 25 days apart, each with the 10 days before it
+  const t = todayMid(), plus = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n), picks = [];
+  let cand;
+  if (payOn()) cand = paydaysBetween(t, plus(t, 80));
+  else { const a = plus(periodOf(t).end, 1); cand = [a, plus(periodOf(a).end, 1)]; }
+  cand.forEach(d => { if (!picks.length || (d - picks[picks.length - 1]) / DAY >= 25) picks.push(d); });
+  return picks.slice(0, 2).map(a => ({key: isoOf(a), anchor: a, start: plus(a, -REMIND_LEAD)}));
+}
+function remindQueue(c){  // who to ask about: soonest renewal first, then the most expensive
+  const from = isoOf(c.start), far = 9e15;
+  return S.subs.filter(s => s.keep !== "drop" && !isOurs(s) && !(s.reviewedAt && s.reviewedAt >= from))
+    .sort((a, b) => ((nextRenewal(a) || far) - (nextRenewal(b) || far)) || subMonthly(b) - subMonthly(a));
+}
+function remindPlan(){
+  const R = S.remind || {}; if (!R.on) return [];
+  const now = new Date(), out = [];
+  remindCycles().forEach(c => {
+    if (R.seen === c.key) return;
+    const q = remindQueue(c); if (!q.length) return; let n = 0;
+    REMIND_DAYS.forEach(off => { const at = new Date(c.start.getFullYear(), c.start.getMonth(), c.start.getDate() + off, REMIND_AT[0], REMIND_AT[1]);
+      if (at > now) out.push({at, sub: q[n++ % q.length], cycle: c.key}); });
+  });
+  return out.slice(0, REMIND_IDS.length).map((x, i) => ({...x, id: REMIND_IDS[i]}));
+}
+function remindText(x){ const s = x.sub, r = nextRenewal(s);
+  return {title: `Still using ${s.name}?`, body: `${fmt(s.price)} a ${s.cycle === "yr" ? "year" : "month"}${r && r >= x.at ? `, renews ${dayMonth(r)}` : ""}. Tap an answer.`}; }
+let remindT = 0, remindReady = false;
+function remindSync(){ if (!window.Capacitor || !notifPlugin()) return; clearTimeout(remindT); remindT = setTimeout(remindApply, 1200); }
+async function remindApply(){
+  const P = notifPlugin(); if (!P) return;
+  try {
+    if (!remindReady){ remindReady = true;
+      await P.registerActionTypes({types: [{id: "KW_USE", actions: [{id: "lot", title: "A lot"}, {id: "barely", title: "Barely"}, {id: "none", title: "Not at all"}]}]});
+      P.addListener("localNotificationActionPerformed", remindAnswer); }
+    await P.cancel({notifications: REMIND_IDS.map(id => ({id}))});
+    const plan = remindPlan(); if (!plan.length) return;
+    await P.schedule({notifications: plan.map(x => ({id: x.id, ...remindText(x), schedule: {at: x.at, allowWhileIdle: true}, actionTypeId: "KW_USE", extra: {subId: x.sub.id, cycle: x.cycle}}))});
+  } catch(e){}
+}
+// Answering, or opening Subs during the 10 days, ends this month's reminders.
+function remindSeen(){ const R = S.remind, c = R && R.on ? remindCycles()[0] : null; if (c && todayMid() >= c.start) R.seen = c.key; }
+function remindAnswer(e){
+  const id = e && e.notification && e.notification.extra && e.notification.extra.subId, s = S.subs.find(x => x.id === id);
+  UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; S.tab = "subs";
+  remindSeen(); render(false);
+  if (s && ["lot", "barely", "none"].includes(e.actionId)) handleReview(e.actionId, id); else save();
+  if (s){ UI.flashSub = id; clearTimeout(UI.flashT); UI.flashT = setTimeout(() => { UI.flashSub = null; }, 1500); render(true);
+    const el = document.querySelector(`[data-sub="${id}"]`); if (el) el.scrollIntoView({block: "center"}); }
+}
+OUT.remindBox = () => {
+  if (!notifPlugin()) return "";
+  const R = S.remind || {}, c = remindCycles()[0], what = payOn() ? "payday" : "a new month";
+  if (R.on) return `<div class="pay-line" data-remind><span>${BELL}<span><b>Reminders are on.</b><br><span class="muted small">${c && R.seen === c.key ? `Done for this month. They start again before the next ${payOn() ? "payday" : "month"}.` : c ? `One question a day at most, from ${dayMonth(c.start)}. They stop when you answer or open this tab.` : ""}</span></span></span><button class="link small" type="button" data-remind-off>Turn off</button></div>`;
+  if (R.hide) return `<button class="link small inc-add" type="button" data-remind-on data-remind>${BELL.replace('width="18" height="18"', 'width="16" height="16" style="vertical-align:-3px;margin-right:6px"')}Remind me before ${esc(what)}</button>`;
+  return `<section class="card remind-card" data-remind><p class="label">Before ${esc(what)}</p><h3>Want a nudge before ${esc(what)}?</h3>
+    <p class="muted">In the 10 days before ${esc(what)}, KeepWise asks about one subscription a day, with one-tap answers. It stops as soon as you answer or open this tab, and eases off if you ignore it.</p>
+    <div class="grid2"><button class="btn" type="button" data-remind-hide>Not now</button><button class="btn primary" type="button" data-remind-on>Turn on reminders</button></div>
+    <p class="muted small">Reminders are set on this phone. Nothing is sent to us.</p></section>`;
+};
+async function remindTurnOn(){
+  const P = notifPlugin(); if (!P) return;
+  let ok = false; try { const r = await P.requestPermissions(); ok = !!r && r.display === "granted"; } catch(e){}
+  if (!ok){ toast("Notifications are off for KeepWise. You can allow them in your phone’s settings."); return; }
+  S.remind = {on: true}; save(); render(true); toast("Reminders are on.");
+}
+
 /* ================= render ================= */
 function renderTabs(){
   $("tabbar").innerHTML = TABS.map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k?'aria-current="page"':""}><span class="ti">${I[k]}</span><span>${n}</span></button>`).join("");
@@ -2424,7 +2499,7 @@ const TERMS_VERSION = "2026-10-01";
 const IN_APP = !!window.Capacitor; // Google blocks its sign-in page inside app web views
 // Inside the Claude preview the page runs in a locked frame where sign-in windows cannot open.
 const PREVIEW = !!window.claude && !("KEEPWISE_FIREBASE" in window);
-const SITE_URL = "https://chillwillpill.github.io/keepwise/";
+const SITE_URL = "https://mykeepwise.com/";
 const ACC = {state: PREVIEW ? "preview" : FB_CONFIG ? "idle" : "off", user: null, profile: null, mode: "signin", err: "", email: "", draft: {}, del: false, busy: false};
 I.user = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>';
 I.google = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px;margin-right:8px" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.7 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1A11 11 0 0 0 2.1 7.1l3.6 2.8C6.6 7.3 9.1 5.4 12 5.4z"/></svg>';
@@ -2491,7 +2566,7 @@ function renderAcctBtn(){
 function accHeader(){ return `<div class="inline" style="justify-content:space-between"><h1>Account</h1><button class="btn small" type="button" data-close-account>Done</button></div>`; }
 const accErrBox = () => `<div data-out="accErr">${OUT.accErr()}</div>`;
 OUT.accErr = () => ACC.err ? `<p class="err" role="alert">${esc(ACC.err)}</p>` : "";
-const legalLinks = `<a href="https://chillwillpill.github.io/keepwise/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="https://chillwillpill.github.io/keepwise/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>`;
+const legalLinks = `<a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>`;
 V.account = () => {
   if (ACC.state === "preview") return `${accHeader()}<section class="card"><h2>Sign in on the KeepWise website</h2><p class="muted">Accounts can’t open inside this preview. Open the website to sign in with Google or email. Everything else works here as normal.</p><a class="btn primary" href="${SITE_URL}" target="_blank" rel="noopener">Open KeepWise</a></section>`;
   if (ACC.state === "off") return `${accHeader()}<section class="card"><h2>Accounts are coming soon</h2><p class="muted">KeepWise works fully without an account. Everything you enter stays on this phone.</p></section>`;
@@ -2703,7 +2778,7 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; S.tab = b.dataset.tab; save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; S.tab = b.dataset.tab; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; if (UI.inbox) markSeen(); render(false); });
 
@@ -2923,6 +2998,9 @@ view.addEventListener("click", async e => {
   if (b.dataset.space){ UI.biz = b.dataset.space === "business"; render(false); return; }
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
   if (b.hasAttribute("data-receipt-close")){ UI.receiptInfo = false; render(true); return; }
+  if (b.hasAttribute("data-remind-on")){ await remindTurnOn(); return; }
+  if (b.hasAttribute("data-remind-off")){ S.remind = {on: false, hide: true}; save(); render(true); toast("Reminders are off."); return; }
+  if (b.hasAttribute("data-remind-hide")){ S.remind = {on: false, hide: true}; save(); render(true); return; }
   if (b.hasAttribute("data-tell-close")){ UI.tell = null; render(true); return; }
   if (b.hasAttribute("data-tell-each")){ if (UI.tell) UI.tell.each = true; render(true); return; }
   if (b.hasAttribute("data-tell-all") && UI.tell){ const t = UI.tell; if (await tellSend(t.group) && UI.tell === t){ t.groupSent = true; render(true); } return; }
@@ -3086,6 +3164,7 @@ $("vcf").addEventListener("change", e => {
 // A first visit gets the short setup instead of someone else's numbers. People who already use KeepWise never see it.
 let firstRun = false; try { if (localStorage.getItem(KEY)) welcomeDone(); else firstRun = !localStorage.getItem(WELCOME_KEY) && !window.KEEPWISE_NO_SETUP; } catch(e){}  // tests can skip the setup
 if (firstRun) UI.welcome = 0;
+if (S.tab === "subs") remindSeen();  // opening straight onto Subs counts as checking them
 save();
 applyTheme();
 render(false);

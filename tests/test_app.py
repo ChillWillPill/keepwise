@@ -1,7 +1,7 @@
 """KeepWise end-to-end test suite (Playwright, Chromium).
 Run: python3 tests/test_app.py [path/to/app.html]
 Each test gets a fresh browser context (empty storage)."""
-import asyncio, sys, os, re, json, tempfile, traceback
+import asyncio, sys, os, re, json, tempfile, traceback, datetime
 from playwright.async_api import async_playwright
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -709,7 +709,7 @@ async def account_in_claude_preview_points_to_website(ctx):
     await open_account(pg)
     v = await text(pg, "#view")
     assert "Sign in on the KeepWise website" in v and "Continue with Google" not in v
-    assert await pg.get_attribute("#view a.btn.primary", "href") == "https://chillwillpill.github.io/keepwise/"
+    assert await pg.get_attribute("#view a.btn.primary", "href") == "https://mykeepwise.com/"
     assert await pg.evaluate("typeof window.firebase") == "undefined", "no sign-in code loaded in the preview"
 
 @test
@@ -1278,6 +1278,75 @@ async def no_empty_gaps_between_sections(ctx):
             worst, at, hidden = await pg.evaluate(gaps)
             assert worst <= 19, f"{name}: a {worst}px hole between {at}"
             assert hidden == 0, f"{name}: {hidden} empty sections still take a slot"
+
+NOTIF_MOCK = """window.__n = {pending: [], types: null, listener: null, perm: 'granted', asked: 0};
+window.Capacitor = {Plugins: {LocalNotifications: {
+  requestPermissions: async () => { window.__n.asked++; return {display: window.__n.perm}; },
+  registerActionTypes: async o => { window.__n.types = o.types; },
+  addListener: (name, fn) => { window.__n.listener = fn; },
+  cancel: async o => { const ids = o.notifications.map(x => x.id); window.__n.pending = window.__n.pending.filter(x => !ids.includes(x.id)); },
+  schedule: async o => { window.__n.pending.push(...o.notifications.map(x => ({...x, when: [x.schedule.at.getMonth() + 1, x.schedule.at.getDate(), x.schedule.at.getHours(), x.schedule.at.getMinutes()]}))); }
+}}};"""
+
+@test
+async def reminders_before_payday(ctx):
+    pending = "window.__n.pending.map(x => [x.when, x.title, x.extra.subId, x.actionTypeId, x.body])"
+    # the web app has no notifications, so it offers nothing
+    pg = await open_app(ctx); await tab(pg, "subs")
+    assert await pg.locator("[data-remind]").count() == 0
+    await pg.close()
+    # the Android app: paid on the 25th, today is 10 October
+    pg = await ctx.new_page(); await pg.set_viewport_size({"width": 390, "height": 844}); pg.errors = []
+    pg.on("pageerror", lambda e: pg.errors.append(str(e)))
+    await pg.clock.install(time=datetime.datetime(2026, 10, 10, 12, 0)); await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;" + NOTIF_MOCK)
+    await pg.goto(URL); await pg.wait_for_timeout(300)
+    await tab(pg, "month")
+    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
+    await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=pay]"); await f.locator("[name=day]").select_option("25"); await f.locator("[name=amount]").fill("3000")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    await tab(pg, "subs")
+    card = await text(pg, "[data-remind]")
+    assert "Want a nudge before payday?" in card and "Nothing is sent to us" in card, card
+    await pg.clock.run_for(2000)
+    assert await pg.evaluate("window.__n.pending.length") == 0 and await pg.evaluate("window.__n.asked") == 0, "nothing is scheduled, and no permission is asked, until you turn it on"
+    # permission refused: stays off, says how to fix it
+    await pg.evaluate("window.__n.perm = 'denied'"); await pg.click("[data-remind-on]"); await pg.wait_for_timeout(100)
+    assert "allow them in your phone" in await pg.inner_text("#toast") and not (await state(pg)).get("remind", {}).get("on")
+    await pg.evaluate("window.__n.perm = 'granted'"); await pg.click("[data-remind-on]"); await pg.wait_for_timeout(100)
+    assert "Reminders are on" in await text(pg, "[data-remind]") and "from Oct 15" in await text(pg, "[data-remind]")
+    await pg.clock.run_for(2000)
+    p = await pg.evaluate(pending)
+    # this payday: 15, 16, 17, then easing off to the 20th and 23rd. Next payday (25 Nov) the same from 15 Nov.
+    assert [x[0] for x in p] == [[10, 15, 18, 30], [10, 16, 18, 30], [10, 17, 18, 30], [10, 20, 18, 30], [10, 23, 18, 30], [11, 15, 18, 30], [11, 16, 18, 30], [11, 17, 18, 30], [11, 20, 18, 30], [11, 23, 18, 30]], [x[0] for x in p]
+    assert all(x[1].startswith("Still using ") and x[3] == "KW_USE" and "Tap an answer" in x[4] for x in p)
+    assert len({x[2] for x in p[:3]}) == 3, "a different subscription each day"
+    st = await state(pg); live = {x["id"] for x in st["subs"] if x.get("keep") != "drop"}
+    assert all(x[2] in live for x in p), "never asks about something already dropped"
+    assert [a["title"] for a in (await pg.evaluate("window.__n.types"))[0]["actions"]] == ["A lot", "Barely", "Not at all"]
+    # opening Subs before the 10 days start does not count as the check
+    await tab(pg, "month"); await tab(pg, "subs"); await pg.clock.run_for(2000)
+    assert len(await pg.evaluate(pending)) == 10
+    # 16 October, the first one was ignored: only what is still ahead remains
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 16, 9, 0)); await tab(pg, "month"); await pg.clock.run_for(2000)
+    p = await pg.evaluate(pending)
+    assert [x[0][:2] for x in p[:4]] == [[10, 16], [10, 17], [10, 20], [10, 23]], p
+    # answering "Not at all" on the notification: marked to drop, Subs opens, and this month's reminders stop
+    first = p[0][2]; name = [x["name"] for x in st["subs"] if x["id"] == first][0]
+    await pg.evaluate(f"window.__n.listener({{actionId: 'none', notification: {{extra: {{subId: '{first}'}}}}}})"); await pg.wait_for_timeout(150)
+    st = await state(pg)
+    assert [x for x in st["subs"] if x["id"] == first][0]["keep"] == "drop" and st["tab"] == "subs" and st["remind"]["seen"] == "2026-10-25"
+    assert f"How to cancel {name}" in await text(pg, f"[data-sub={first}]") or "cancel" in (await text(pg, f"[data-sub={first}]")).lower()
+    assert "Done for this month" in await text(pg, "[data-remind]")
+    await pg.clock.run_for(2000)
+    p = await pg.evaluate(pending)
+    assert [x[0][0] for x in p] == [11] * 5 and all(x[2] != first for x in p), "only next month is left, without the dropped one"
+    # turning it off clears everything, and it can be turned back on
+    await pg.click("[data-remind-off]"); await pg.clock.run_for(2000)
+    assert await pg.evaluate("window.__n.pending.length") == 0 and "Remind me before payday" in await text(pg, "[data-remind]")
+    await pg.click("[data-remind-on]"); await pg.clock.run_for(2000)
+    assert await pg.evaluate("window.__n.pending.length") > 0
+    assert not pg.errors, pg.errors
 
 @test
 async def cancel_help_links(ctx):
