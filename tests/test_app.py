@@ -523,7 +523,7 @@ async def shared_off_shows_setup(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
     await pg.click("[data-mode=shared]"); await pg.wait_for_timeout(120)
     soon = await text(pg, "[data-shared-soon]")
-    assert "Coming soon".upper() in soon.upper() and "Split with friends, live" in soon and "Tell them" in soon, soon
+    assert "COMING WITH PLUS" in soon.upper() and "Split with friends, live" in soon and "Tell them" in soon, soon
     for name in ("month", "subs", "cheaper", "codes", "plan", "split"):   # the public app never names the tool it was built with
         await tab(pg, name); assert "Claude" not in await pg.inner_text("#app"), name
     await pg.click("[data-shared-soon] [data-mode=local]"); await pg.wait_for_timeout(120)
@@ -613,7 +613,8 @@ async def import_csv_statement_and_apply(ctx):
     nf = [s for s in st["subs"] if s["name"] == "Netflix"][0]
     assert nf["charges"] == 6 and nf["since"] == "2026-04-05" and nf["last"] is None
     leg = await text(pg, ".legend"); needs, misc, sav = [money(x) for x in re.findall(r"\$[\d,.]+", leg)]
-    assert abs(4200 - needs - misc - sav) < 0.05, leg
+    extra = sum(e["amount"] for e in st.get("extras", []))   # regular transfers received are ticked as other income
+    assert abs(4200 + extra - needs - misc - sav) < 0.05, (leg, st.get("extras"))
     await tab(pg, "subs"); sl = await text(pg, "[data-out=subsList]")
     assert "Usage not checked yet" in sl and "Paying since" in sl
     assert "Unused for" not in sl, "unknown usage must not be flagged as unused"
@@ -1599,6 +1600,104 @@ async def shared_links_show_a_preview_card(ctx):
     img = os.path.join(os.path.dirname(APP), "icons", "og.png")
     assert os.path.exists(img) and 20_000 < os.path.getsize(img) < 300_000, "the card image is present and small enough to load fast"
     data = open(img, "rb").read(); assert int.from_bytes(data[16:20], "big") == 1200 and int.from_bytes(data[20:24], "big") == 630
+
+@test
+async def plus_screen_gives_reasons_and_prices(ctx):
+    pg = await open_app(ctx); await tab(pg, "plan")
+    await pg.locator("[data-plus-open]").first.scroll_into_view_if_needed(); await pg.locator("[data-plus-open]").first.click(); await pg.wait_for_timeout(200)
+    v = await text(pg, "#view")
+    for reason in ("Split with friends, live", "Your month on every device", "A Business space", "Receipt photos", "Moments"):
+        assert reason in v, reason
+    assert "straight from your contacts" in v
+    # prices exactly as set: 12 from 15 for the first six months, 140 from 180 a year
+    m = await text(pg, ".plus-price:not(.best)"); y = await text(pg, ".plus-price.best")
+    assert "$15" in m and "$12" in m and "a month" in m and "first 6 months, then $15 a month" in m, m
+    assert "$180" in y and "$140" in y and "a year" in y and "You save $40" in y and "About $11.67 a month" in y, y
+    assert await pg.locator(".plus-price s").count() == 2 and m.upper().count("EARLY USER PRICE") == 1
+    assert "not on sale yet" in v and "Free, and staying free" in v and "Claude" not in v
+    assert await pg.locator("[data-open-account]").count() >= 1, "signed out: the button leads to sign-in"
+    w = await pg.evaluate("Math.max(...[...document.querySelectorAll('#view *')].map(e => e.getBoundingClientRect().right))"); assert w <= 390.5, f"nothing runs off the screen: {w}"
+    await pg.click("[data-plus-close]"); await pg.wait_for_timeout(150)
+    assert await pg.locator(".plus-prices").count() == 0 and await pg.locator("[data-out=backupBox]").count() == 1, "Done returns to where you were"
+    # reachable from the coming-soon card on Split, and a tab tap leaves it
+    await tab(pg, "split"); await pg.click("[data-mode=shared]"); await pg.wait_for_timeout(120)
+    assert "COMING WITH PLUS" in (await text(pg, "[data-shared-soon]")).upper()
+    await pg.click("[data-shared-soon] [data-plus-open]"); await pg.wait_for_timeout(150); assert await pg.locator(".plus-prices").count() == 1
+    await tab(pg, "subs"); assert await pg.locator(".plus-prices").count() == 0
+    assert not pg.errors, pg.errors
+
+@test
+async def statement_separates_transfers_from_spending(ctx):
+    # Transfers are not spending by default: own-account moves and back-and-forth are left out, sent and received are
+    # shown apart, remittances are income, and only ticked lines reach the plan.
+    pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
+    rows = ["Account Title: ALI RAZA KHAN", "Account No: 0000-0000", "Date,Description,Debit,Credit"]
+    for m in ("07", "08", "09"):
+        rows += [f"01/{m}/2026,SALARY ACME PVT LTD,,200000", f"02/{m}/2026,IBFT TO ALI RAZA KHAN MEEZAN BANK,500000,", f"03/{m}/2026,IBFT FROM ALI RAZA KHAN UBL,,300000",
+                 f"05/{m}/2026,RAAST P2P TO AHMED NAWAZ,50000,", f"09/{m}/2026,ATM CASH WITHDRAWAL 1LINK,30000,", f"14/{m}/2026,NETFLIX.COM,1100,", f"18/{m}/2026,POS IMTIAZ SUPER MARKET,24000,"]
+    rows += ["20/07/2026,FT TO BILAL TRADERS,20000,", "21/07/2026,IBFT FROM SARA NOOR,,10000", "25/08/2026,RAAST TO SARA NOOR,5000,",
+             "22/08/2026,INWARD REMITTANCE WESTERN UNION JOHN SMITH,,150000", "22/09/2026,INWARD REMITTANCE WESTERN UNION JOHN SMITH,,150000"]
+    csv = os.path.join(TMP, "pk.csv"); open(csv, "w").write("\n".join(rows) + "\n")
+    await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(600)
+    async def tx(pg, sel): return (await text(pg, sel)).replace("\u00a0", " ")
+    v = await tx(pg, "#view")
+    assert "Transfers and cash" not in v, "transfers are no longer lumped into everyday spending"
+    spend = await tx(pg, "section.card:has(> h2:text-is('Everyday spending'))"); assert "Groceries" in spend and "500,000" not in spend and "Ahmed" not in spend, spend
+    out = await tx(pg, "[data-moves=out]"); inn = await tx(pg, "[data-moves=in]"); own = await tx(pg, "[data-moves=own]")
+    assert "Ahmed Nawaz" in out and "PKR 50,000/mo" in out and "every month" in out and "Bilal Traders" in out and "Cash withdrawals" in out and "PKR 30,000/mo" in out, out
+    assert "John Smith" in inn and "From abroad" in inn and "PKR 100,000/mo" in inn, inn
+    assert "Ali Raza Khan" in own and "Sent PKR 500,000/mo" in own and "received PKR 300,000/mo" in own and "Sara Noor" in own and "back and forth" in own.lower(), own
+    assert "Ali Raza" not in out and "Ali Raza" not in inn and "Sara" not in out and "Sara" not in inn, "left-out names appear in one place only"
+    ticks = await pg.evaluate("Object.fromEntries([...document.querySelectorAll('[data-move-pick]')].map(c => [c.closest('label').innerText.split('\\n')[0], c.checked]))")
+    assert ticks == {"Ahmed Nawaz": True, "Bilal Traders": False, "Cash withdrawals": True, "John Smith": True}, ticks
+    # typical month: 200,000 salary + 100,000 remittance in; 1,100 + 24,000 + 50,000 + 30,000 out
+    hero = await tx(pg, ".import-body .hero"); assert "PKR 300,000 comes in" in hero and "PKR 105,100 goes out" in hero and "PKR 194,900" in hero, hero
+    # unticking cash changes the number at once
+    await pg.locator("[data-move-pick='cash:0']").uncheck(); await pg.wait_for_timeout(150)
+    assert "PKR 75,100 goes out" in await tx(pg, ".import-body .hero")
+    await pg.locator("[data-move-pick='cash:0']").check(); await pg.locator("[data-move-pick='sent:1']").check(); await pg.wait_for_timeout(150)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(300)
+    st = await state(pg); names = {e["name"]: e["amount"] for e in st["expenses"]}
+    assert names.get("Sent to Ahmed Nawaz") == 50000 and names.get("Cash withdrawals") == 30000 and abs(names.get("Sent to Bilal Traders") - 6666.67) < 0.01, names
+    assert not any("Ali Raza" in n or "Sara" in n or "Transfers" in n for n in names), names
+    ex = {e["name"]: e["amount"] for e in st["extras"]}; assert ex == {"From abroad: John Smith": 100000}, ex
+    assert st["income"] == 200000 and [s["name"] for s in st["subs"]] == ["Netflix"]
+    assert not pg.errors, pg.errors
+
+@test
+async def loans_section_counts_and_finishes(ctx):
+    pg = await open_at(ctx, (2026, 10, 5, 10, 0)); await tab(pg, "plan")
+    need0 = money((await text(pg, "[data-out=expTotal]")).split("·")[0])
+    box = await text(pg, "[data-out=loans]"); assert "Loans and debt" in box and "Add a loan or debt" in box
+    await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
+    assert [o.strip() for o in await f.locator("[name=kind] option").all_inner_texts()] == ["Bank loan", "Personal loan", "Student debt", "Credit card", "Car loan", "Mortgage", "Other debt"]
+    assert [o.strip() for o in await f.locator("[name=every] option").all_inner_texts()] == ["Every month", "Every week", "Every 2 weeks", "Every year"]
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(100); assert "Enter the payment amount" in await pg.inner_text("#toast")
+    # a student debt paid weekly, with an amount left and no end date: the finish is estimated and says interest is not included
+    await f.locator("[name=kind]").select_option("student"); await f.locator("[name=pay]").fill("60"); await f.locator("[name=every]").select_option("wk"); await f.locator("[name=total]").fill("5200")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    box = await text(pg, "[data-out=loans]")
+    assert "Student debt" in box and "$60 a week" in box and "$260/mo" in box and "$5,200 left" in box and "About 20 months to go" in box and "Jun 2028" in box and "Interest is not included" in box, box
+    assert abs(money((await text(pg, "[data-out=expTotal]")).split("·")[0]) - need0 - 260) < 0.01, "the payment counts toward Expenditures"
+    # a bank loan with an end date
+    await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
+    await f.locator("[name=name]").fill("Car"); await f.locator("[name=kind]").select_option("car"); await f.locator("[name=pay]").fill("300"); await f.locator("[name=end]").fill("2027-04-05")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    box = await text(pg, "[data-out=loans]"); assert "Ends Apr 2027, 6 months from now" in box and "$560/mo" in box, box
+    assert len((await state(pg))["loans"]) == 2
+    # it shows in the Expenditures details on Month
+    await tab(pg, "month"); await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(150)
+    d = await text(pg, "[data-out=envelopes]"); assert "Student debt" in d and "Car" in d and "$300" in d
+    # once the end date has passed it stops counting
+    await pg.clock.set_fixed_time(__import__("datetime").datetime(2027, 4, 20, 10, 0)); await tab(pg, "plan"); await pg.wait_for_timeout(150)
+    box = await text(pg, "[data-out=loans]"); assert "Paid off" in box and "no longer counts" in box and "$260/mo" in box, box
+    assert abs(money((await text(pg, "[data-out=expTotal]")).split("·")[0]) - need0 - 260) < 0.01
+    # edit and remove, with undo
+    await pg.locator("[data-loan]").first.locator("[data-loan-edit]").click(); await pg.wait_for_timeout(120)
+    await pg.locator("form[data-form=loan] [data-loan-del]").click(); await pg.wait_for_timeout(150)
+    assert len((await state(pg))["loans"]) == 1
+    await pg.click(".toast-undo"); await pg.wait_for_timeout(150); assert len((await state(pg))["loans"]) == 2
+    assert not pg.errors, pg.errors
 
 @test
 async def cancel_help_links(ctx):

@@ -15,8 +15,28 @@ const CAT_RULES = [
   ["Transport",/UBER|LYFT|CAREEM|SHELL|EXXON|CHEVRON|\bBP\b|PSO|METRO|TRANSIT|PARKING|TFL|TRAINLINE|FUEL|PETROL/],
   ["Health",/CVS|WALGREENS|PHARMACY|BOOTS|CLINIC|DENTAL|HOSPITAL/],
   ["Shopping",/AMAZON|TARGET|BEST BUY|ETSY|EBAY|ARGOS|DARAZ|IKEA|ZARA|H&M|NIKE|APPLE STORE/],
-  ["Transfers",/TRANSFER|ZELLE|VENMO|CASH APP|WISE|ATM|WITHDRAWAL|EASYPAISA|JAZZCASH|RAAST/]
+  ["Transfers",/TRANSFER|\bTRF\b|\bTFR\b|\bIBFT\b|RAAST|1 ?LINK|\bFT\b|\bP2P\b|ZELLE|VENMO|CASH APP|\bWISE\b|REMIT|WESTERN UNION|MONEYGRAM|XOOM|PAYONEER|\bSWIFT\b|INWARD|OUTWARD|ATM|WITHDRAWAL|\bCASH\b|\bCWD\b|EASYPAISA|JAZZCASH|SADAPAY|NAYAPAY|\bUPI\b|\bIMPS\b|\bNEFT\b|\bRTGS\b|FASTER PAYMENT|SEND MONEY|MONEY SENT|MONEY RECEIVED/]
 ];
+// ---- money that moves between people and accounts (not shopping, not bills) ----
+// A transfer is not automatically spending: it may be rent, money to family, or your own savings account.
+// So transfers are pulled out, grouped by the other person's name, and shown apart for you to decide.
+const CASH_RE = /\bATM\b|CASH WITHDRAWAL|CASH WDL|\bCWD\b|WITHDRAWAL|CASH DEPOSIT|\bCDM\b/;
+const REMIT_RE = /REMIT|WESTERN UNION|MONEYGRAM|XOOM|\bRIA\b|\bWISE\b|PAYONEER|\bSWIFT\b|INWARD|FOREIGN|\bPRI\b|WORLDREMIT|\bTT\b/;
+const MOVE_STOP = new Set("TRANSFER TRANSFERS TRF TFR IBFT RAAST LINK FUNDS FUND FT P2P TO FROM FR VIA MB IB INTERNET MOBILE BANKING BANK ACCOUNT AC ACC ACCT NO REF TXN TRANSACTION PAYMENT SENT RECEIVED RECEIVE INWARD OUTWARD IN OUT ZELLE VENMO CASH APP WISE EASYPAISA JAZZCASH SADAPAY NAYAPAY UPI IMPS NEFT RTGS ID CR DR ONLINE INSTANT OF THE MR MRS MS MONEY SEND FASTER REMITTANCE REMIT HOME FOREIGN WESTERN UNION MONEYGRAM ATM WITHDRAWAL DEPOSIT HBL UBL MCB MEEZAN ALFALAH ALLIED ASKARI FAYSAL HABIB STANDARD CHARTERED NBP JS SONERI LIMITED LTD PVT".split(" "));
+const upperWords = d => String(d).toUpperCase().replace(/[^A-Z ]/g, " ").split(/\s+/).filter(w => w.length > 1);
+function partyKey(desc){ const w = upperWords(desc).filter(x => !MOVE_STOP.has(x)); return w.slice(0, 3).join(" "); }
+function moveKind(desc, amt){
+  const u = " " + String(desc).toUpperCase().replace(/[^A-Z0-9 ]/g, " ") + " ";
+  if (CASH_RE.test(u)) return "cash";
+  if (amt > 0 && REMIT_RE.test(u)) return "remit";
+  return "transfer";
+}
+// The name the account is in, read from the top of the statement, so transfers to yourself can be recognised.
+function holderName(text){
+  const m = String(text).slice(0, 6000).match(/(?:account\s*(?:title|name|holder)|title\s*of\s*account|customer\s*name|account\s*owner)\s*[:\-]?\s*([A-Za-z][A-Za-z .']{3,40})/i);
+  return m ? upperWords(m[1]).filter(w => !MOVE_STOP.has(w)).slice(0, 4) : [];
+}
+const sameName = (key, holder) => { if (!key || holder.length < 2) return false; const k = key.split(" "); return k.filter(w => holder.includes(w)).length >= Math.min(2, k.length) && k.length >= 2; };
 const catOfDesc = d => { const u = " " + d.toUpperCase().replace(/[^A-Z0-9& ]/g, " ") + " "; for (const [c, re] of CAT_RULES) if (re.test(u)) return c; return "Other"; };
 const NEEDS_CATS = new Set(["Housing","Utilities","Insurance","Loans","Groceries","Transport","Health","Tax"]);
 const BILL_CAT = new Set(["Housing","Utilities","Insurance","Loans"]);
@@ -149,7 +169,8 @@ function txFromLines(lines){
 }
 
 // ---- analysis ----
-function analyzeStatement(tx, fileName){
+function analyzeStatement(tx, fileName, holder){
+  holder = holder || [];
   tx.sort((a, b) => a.date - b.date);
   const first = tx[0].date, last = tx[tx.length - 1].date;
   const months = Math.max(1, Math.round((last - first) / (30.44 * DAY) + 0.5));
@@ -166,6 +187,26 @@ function analyzeStatement(tx, fileName){
     return null;
   };
   const perMonth = (amt, cad) => cad === "weekly" ? amt * 52 / 12 : cad === "biweekly" ? amt * 26 / 12 : cad === "yearly" ? amt / 12 : amt;
+  // transfers, remittances and cash are set aside first
+  const isMove = t => catOfDesc(t.desc) === "Transfers";
+  const moveTx = tx.filter(isMove); tx = tx.filter(t => !isMove(t));
+  const mv = {sent: {}, recv: {}, remit: {}, cashOut: 0, cashIn: 0};
+  moveTx.forEach(t => { const kind = moveKind(t.desc, t.amt), a = Math.abs(t.amt);
+    if (kind === "cash"){ if (t.amt < 0) mv.cashOut += a; else mv.cashIn += a; return; }
+    const key = partyKey(t.desc) || "UNNAMED", bucket = kind === "remit" ? mv.remit : t.amt < 0 ? mv.sent : mv.recv;
+    (bucket[key] = bucket[key] || []).push(t); });
+  const sumOf = list => list.reduce((a, t) => a + Math.abs(t.amt), 0), mo = v => r2(v / months);
+  const own = [], both = [];
+  [...new Set([...Object.keys(mv.sent), ...Object.keys(mv.recv)])].forEach(k => {
+    const o = mv.sent[k], i = mv.recv[k];
+    if (sameName(k, holder)){ own.push({name: titleCase(k), outMonthly: mo(o ? sumOf(o) : 0), inMonthly: mo(i ? sumOf(i) : 0)}); delete mv.sent[k]; delete mv.recv[k]; }
+    else if (o && i && k !== "UNNAMED"){ both.push({name: titleCase(k), outMonthly: mo(sumOf(o)), inMonthly: mo(sumOf(i))}); delete mv.sent[k]; delete mv.recv[k]; }
+  });
+  const people = (g, pre) => Object.entries(g).map(([k, list]) => { const regular = !!cadenceOf(list) || new Set(list.map(t => `${t.date.getFullYear()}-${t.date.getMonth()}`)).size >= Math.max(2, months);
+      return {name: k === "UNNAMED" ? "No name shown" : titleCase(k), monthly: mo(sumOf(list)), count: list.length, regular, on: pre === "remit" ? true : regular}; })
+    .filter(x => x.monthly >= 1).sort((a, b) => b.monthly - a.monthly);
+  const moves = {holder: holder.map(w => w[0] + w.slice(1).toLowerCase()).join(" "), own, both, sent: people(mv.sent, "sent"), received: people(mv.recv, "recv"), remit: people(mv.remit, "remit"),
+    cashOut: mo(mv.cashOut), cashIn: mo(mv.cashIn), cashOn: mv.cashOut > 0};
   // money in
   const credits = tx.filter(t => t.amt > 0), cg = group(credits), income = [];
   let otherIn = 0;
@@ -181,7 +222,7 @@ function analyzeStatement(tx, fileName){
   income.sort((a, b) => b.monthly - a.monthly);
   const monthlyIncome = r2(income.reduce((a, s) => a + s.monthly, 0));
   // money out
-  const debits = tx.filter(t => t.amt < 0), dg = group(debits), subs = [], bills = [], taxes = [], spend = {};
+  const debits = tx.filter(t => t.amt < 0), dg = group(debits), subs = [], bills = [], taxes = [], spend = {}, spendTop = {};
   for (const [k, list] of Object.entries(dg)){
     const cat = catOfDesc(list[0].desc), cad = cadenceOf(list), amts = list.map(t => -t.amt), total = amts.reduce((a, b) => a + b, 0);
     const lastAmt = amts[amts.length - 1];
@@ -193,13 +234,13 @@ function analyzeStatement(tx, fileName){
         continue;
       }
     }
-    spend[cat] = (spend[cat] || 0) + total;
+    spend[cat] = (spend[cat] || 0) + total; (spendTop[cat] = spendTop[cat] || []).push([titleCase(k), total]);
   }
   subs.sort((a, b) => b.monthly - a.monthly); bills.sort((a, b) => b.monthly - a.monthly);
-  const spending = Object.entries(spend).map(([cat, total]) => ({cat, name: CAT_LABEL[cat] || cat, monthly: r2(total / months), env: NEEDS_CATS.has(cat) ? "needs" : "misc"})).filter(x => x.monthly >= 1).sort((a, b) => b.monthly - a.monthly);
+  const spending = Object.entries(spend).map(([cat, total]) => ({cat, name: CAT_LABEL[cat] || cat, monthly: r2(total / months), env: NEEDS_CATS.has(cat) ? "needs" : "misc", top: (spendTop[cat] || []).sort((a, b) => b[1] - a[1]).slice(0, 4).map(x => x[0])})).filter(x => x.monthly >= 1).sort((a, b) => b.monthly - a.monthly);
   const taxMonthly = r2(taxes.reduce((a, t) => a + t.monthly, 0));
   const out = r2(bills.reduce((a, b) => a + b.monthly, 0) + subs.reduce((a, s) => a + s.monthly, 0) + spending.reduce((a, s) => a + s.monthly, 0) + taxMonthly);
-  return {fileName, count: tx.length, first: isoOf(first), last: isoOf(last), months, income, monthlyIncome, otherIn: r2(otherIn / months), subs, bills, taxes, taxMonthly, spending, monthlyOut: out};
+  return {fileName, count: tx.length + moveTx.length, moves, first: isoOf(first), last: isoOf(last), months, income, monthlyIncome, otherIn: r2(otherIn / months), subs, bills, taxes, taxMonthly, spending, monthlyOut: out};
 }
 
 // ---- apply to the plan ----
@@ -207,8 +248,13 @@ function applyStatement(R, mode){
   const expenses = [
     ...R.bills.map(b => ({id: uid(), name: b.name, amount: b.monthly, env: "needs", source: "statement"})),
     ...(R.taxMonthly ? [{id: uid(), name: "Tax payments", amount: R.taxMonthly, env: "needs", source: "statement"}] : []),
-    ...R.spending.filter(s => s.cat !== "Transfers").map(s => ({id: uid(), name: s.name, amount: s.monthly, env: s.env, source: "statement"}))
+    ...R.spending.filter(s => s.cat !== "Transfers").map(s => ({id: uid(), name: s.name, amount: s.monthly, env: s.env, source: "statement"})),
+    ...(R.moves ? R.moves.sent.filter(x => x.on).map(x => ({id: uid(), name: `Sent to ${x.name}`, amount: x.monthly, env: "misc", source: "statement"})) : []),
+    ...(R.moves && R.moves.cashOn && R.moves.cashOut > 0 ? [{id: uid(), name: "Cash withdrawals", amount: R.moves.cashOut, env: "misc", source: "statement"}] : [])
   ];
+  const incoming = R.moves ? [...R.moves.remit.filter(x => x.on).map(x => ({name: `From abroad: ${x.name}`, amount: x.monthly})), ...R.moves.received.filter(x => x.on).map(x => ({name: `From ${x.name}`, amount: x.monthly}))] : [];
+  incoming.forEach(x => { const old = extras().find(e => e.name.toLowerCase() === x.name.toLowerCase());
+    if (old) old.amount = x.amount; else extras().push({id: uid(), name: x.name, kind: "other", when: "any", amount: x.amount, got: [], source: "statement"}); });
   const subs = R.subs.map(s => ({id: uid(), name: s.name, price: s.price, cycle: s.cycle, last: null, group: "", env: "misc", keep: "auto", since: s.since, charges: s.charges, paid: s.paid, lastCharge: s.lastCharge, source: "statement"}));
   subs.forEach(s => setRenewalFrom(s, s.lastCharge));
   if (mode === "replace"){
@@ -233,9 +279,9 @@ async function readStatementFile(file){
   const name = file.name || "statement";
   if (/\.pdf$/i.test(name) || file.type === "application/pdf"){
     const buf = await file.arrayBuffer();
-    const lines = await pdfLines(buf), R = analyzeStatement(txFromLines(lines), name); R.cur = detectCurrency(lines.join(" ")); return R;
+    const lines = await pdfLines(buf), R = analyzeStatement(txFromLines(lines), name, holderName(lines.join("\n"))); R.cur = detectCurrency(lines.join(" ")); return R;
   }
-  const text = await file.text(), R = analyzeStatement(txFromCSV(text), name); R.cur = detectCurrency(text); return R;
+  const text = await file.text(), R = analyzeStatement(txFromCSV(text), name, holderName(text)); R.cur = detectCurrency(text); return R;
 }
 // ---- statements in another currency ----
 // Guess the statement's currency from symbols and codes in the file. Dollars and rupees are shared by several
@@ -257,7 +303,9 @@ function fxScaled(R){  // the statement's numbers in the plan's currency
   const m = v => r2((+v || 0) * k);
   return {...R, monthlyIncome: m(R.monthlyIncome), otherIn: m(R.otherIn), taxMonthly: m(R.taxMonthly), monthlyOut: m(R.monthlyOut),
     income: R.income.map(x => ({...x, monthly: m(x.monthly)})), subs: R.subs.map(x => ({...x, price: m(x.price), monthly: m(x.monthly), paid: m(x.paid)})),
-    bills: R.bills.map(x => ({...x, monthly: m(x.monthly)})), taxes: R.taxes.map(x => ({...x, total: m(x.total), monthly: m(x.monthly)})), spending: R.spending.map(x => ({...x, monthly: m(x.monthly)}))};
+    bills: R.bills.map(x => ({...x, monthly: m(x.monthly)})), taxes: R.taxes.map(x => ({...x, total: m(x.total), monthly: m(x.monthly)})), spending: R.spending.map(x => ({...x, monthly: m(x.monthly)})),
+    moves: R.moves && {...R.moves, cashOut: m(R.moves.cashOut), cashIn: m(R.moves.cashIn), sent: R.moves.sent.map(x => ({...x, monthly: m(x.monthly)})), received: R.moves.received.map(x => ({...x, monthly: m(x.monthly)})), remit: R.moves.remit.map(x => ({...x, monthly: m(x.monthly)})),
+      own: R.moves.own.map(x => ({...x, inMonthly: m(x.inMonthly), outMonthly: m(x.outMonthly)})), both: R.moves.both.map(x => ({...x, inMonthly: m(x.inMonthly), outMonthly: m(x.outMonthly)}))}};
 }
 const fxReady = () => { const fx = STMT.fx; return !fx || fx.mode !== "convert" || numv(fx.rate) > 0; };
 function fxCard(){
@@ -284,13 +332,39 @@ V.importReview = () => {
   <div data-out="importBody" class="import-body">${OUT.importBody()}</div>`;
 };
 OUT.fxCard = fxCard;
+// Transfers are shown apart from spending, split by direction, and nothing here is counted until it is ticked.
+function movesCards(M){
+  if (!M) return "";
+  const pick = (kind, i, x, sub) => `<label class="move-row"><input type="checkbox" data-move-pick="${kind}:${i}" ${x.on ? "checked" : ""}><span class="move-txt"><span>${esc(x.name)}</span><small class="muted">${sub}</small></span><span class="tnum">${fmt(x.monthly)}/mo</span></label>`;
+  const times = x => `${x.count} time${x.count === 1 ? "" : "s"}${x.regular ? " · every month" : ""}`;
+  const fixed = x => `<div class="line"><div><div>${esc(x.name)}</div><div class="muted small">Sent ${fmt(x.outMonthly)}/mo · received ${fmt(x.inMonthly)}/mo</div></div></div>`;
+  const cards = [];
+  if (M.sent.length || M.cashOut > 0) cards.push(`<section class="card" data-moves="out"><h2 class="h-info">Money you sent${infoBtn("movesOut", "About money you sent")}</h2>
+    ${infoTip("movesOut", "Transfers to other people, and cash you took out. Tick the ones that are real spending, such as rent or money for family. Leave savings and one-off transfers unticked.")}
+    ${M.sent.map((x, i) => pick("sent", i, x, times(x))).join("")}
+    ${M.cashOut > 0 ? `<label class="move-row"><input type="checkbox" data-move-pick="cash:0" ${M.cashOn ? "checked" : ""}><span class="move-txt"><span>Cash withdrawals</span><small class="muted">From cash machines and counters</small></span><span class="tnum">${fmt(M.cashOut)}/mo</span></label>` : ""}
+    <p class="muted small">Ticked lines count as spending in your plan.</p></section>`);
+  if (M.received.length || M.remit.length || M.cashIn > 0) cards.push(`<section class="card" data-moves="in"><h2 class="h-info">Money you received${infoBtn("movesIn", "About money you received")}</h2>
+    ${infoTip("movesIn", "Transfers from other people and from abroad. Tick the ones you can count on, and they are added as other income. Leave refunds, gifts and one-off payments unticked.")}
+    ${M.remit.map((x, i) => pick("remit", i, x, `From abroad · ${times(x)}`)).join("")}
+    ${M.received.map((x, i) => pick("received", i, x, times(x))).join("")}
+    ${M.cashIn > 0 ? `<div class="line"><div><div>Cash deposits</div><div class="muted small">Not counted</div></div><span class="tnum">${fmt(M.cashIn)}/mo</span></div>` : ""}
+    <p class="muted small">Ticked lines are added to Other income.</p></section>`);
+  if (M.own.length || M.both.length) cards.push(`<section class="card" data-moves="own"><h2 class="h-info">Left out of your plan${infoBtn("movesOwn", "About what is left out")}</h2>
+    ${infoTip("movesOwn", "Money moved between your own accounts, or back and forth with the same person, is neither income nor spending, so it is not counted.")}
+    ${M.own.length ? `<p class="label">Your own accounts${M.holder ? ` · ${esc(M.holder)}` : ""}</p>${M.own.map(fixed).join("")}` : ""}
+    ${M.both.length ? `<p class="label">Back and forth with the same name</p>${M.both.map(fixed).join("")}` : ""}</section>`);
+  return cards.join("");
+}
 OUT.importBody = () => {
   const R = fxScaled(STMT.result), fx = STMT.fx; FMT_CUR = fx && fx.mode === "switch" ? fx.from : null;
   const row = (a, b, c) => `<div class="line"><div><div>${esc(a)}</div>${c ? `<div class="muted small">${esc(c)}</div>` : ""}</div><span class="tnum">${b}</span></div>`;
-  const left = R.monthlyIncome - R.monthlyOut;
+  const M = R.moves, sum = l => l.filter(x => x.on).reduce((a, x) => a + x.monthly, 0);
+  const moveIn = M ? r2(sum(M.remit) + sum(M.received)) : 0, moveOut = M ? r2(sum(M.sent) + (M.cashOn ? M.cashOut : 0)) : 0;
+  const inAll = r2(R.monthlyIncome + moveIn), outAll = r2(R.monthlyOut + moveOut), left = r2(inAll - outAll);
   const html = `  <section class="hero"><p class="label">A typical month</p>
     <div class="big tnum" style="${fitSize(fmt(left), 3, 88)}${left < 0 ? ";color:var(--rust)" : ""}">${fmt(left)}</div>
-    <p class="muted">${fmt(R.monthlyIncome)} comes in, ${fmt(R.monthlyOut)} goes out${R.taxMonthly ? `, including ${fmt(R.taxMonthly)} of tax payments` : ""}.</p></section>
+    <p class="muted">${fmt(inAll)} comes in, ${fmt(outAll)} goes out${R.taxMonthly ? `, including ${fmt(R.taxMonthly)} of tax payments` : ""}.${M && (M.sent.length || M.received.length || M.remit.length || M.own.length || M.both.length) ? " Transfers are listed below for you to check." : ""}</p></section>
   <section class="card"><h2>Money coming in</h2>
     ${R.income.length ? R.income.map(s => row(s.name, fmt(s.monthly) + "/mo", s.count === 1 ? `One deposit${s.payday ? `, on the ${ordinal(s.payday)}` : ""}` : `${s.cadence === "irregular" ? "Irregular" : s.cadence[0].toUpperCase() + s.cadence.slice(1)}${s.payday ? ` · usually on the ${ordinal(s.payday)}` : ""} · ${s.count} deposits`)).join("") : `<p class="muted">No regular salary found. You can type your income on the Month tab.</p>`}
     ${R.otherIn ? `<p class="muted small">Plus about ${fmt(R.otherIn)}/mo of transfers and refunds, left out of the plan.</p>` : ""}</section>
@@ -299,7 +373,8 @@ OUT.importBody = () => {
     ${R.subs.length ? `<p class="small"><b>${fmt(R.subs.reduce((a, s) => a + s.monthly, 0))}</b> a month, <b>${fmt(R.subs.reduce((a, s) => a + s.paid, 0))}</b> paid in this statement.</p>` : ""}</section>
   <section class="card"><h2>Bills</h2>${R.bills.length ? R.bills.map(b => row(b.name, fmt(b.monthly) + "/mo", b.cat)).join("") : `<p class="muted">No regular bills found.</p>`}
     ${R.taxes.length ? R.taxes.map(t => row(t.name, fmt(t.monthly) + "/mo", `Tax · ${fmt(t.total)} in this statement`)).join("") : ""}</section>
-  <section class="card"><h2>Everyday spending</h2>${R.spending.length ? R.spending.map(s => row(s.name, fmt(s.monthly) + "/mo", s.env === "needs" ? "Expenditures" : "Miscellaneous")).join("") : `<p class="muted">Nothing else found.</p>`}</section>
+  <section class="card"><h2>Everyday spending</h2>${R.spending.length ? R.spending.map(s => row(s.name, fmt(s.monthly) + "/mo", `${s.env === "needs" ? "Expenditures" : "Miscellaneous"}${s.cat === "Other" && s.top && s.top.length ? ` · mostly ${s.top.join(", ")}` : ""}`)).join("") : `<p class="muted">Nothing else found.</p>`}</section>
+  ${movesCards(R.moves)}
   ${fxReady() ? "" : `<p class="err" style="text-align:center">Type the exchange rate above, or pick another option, before adding this to your plan.</p>`}
   <div class="grid2"><button class="btn" type="button" data-import-apply="merge" ${fxReady() ? "" : "disabled"}>Add to my plan</button><button class="btn primary" type="button" data-import-apply="replace" style="padding:10px" ${fxReady() ? "" : "disabled"}>Use this as my plan</button></div>
   <p class="muted small" style="text-align:center">“Use this as my plan” replaces your income, lines and subscriptions. Splits, codes and savings stay.</p>`;
