@@ -339,6 +339,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .a2hs-steps svg{width:16px;height:16px;vertical-align:-3px;margin:0 3px}
 .move-box{display:flex;flex-direction:column;gap:8px}
 .move-box textarea{width:100%;font:16px/1.4 var(--body);border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);color:var(--ink);resize:none}
+.idea{gap:10px}
 .remind-card h3{font:600 1.15rem/1.25 var(--display);letter-spacing:-.01em}
 .tell-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
 .tell-card h3{font:600 1.15rem/1.25 var(--display);letter-spacing:-.01em}
@@ -1030,7 +1031,9 @@ function applyStatement(R, mode){
   if (mode === "replace"){
     if (R.monthlyIncome) S.income = R.monthlyIncome;
     S.expenses = expenses; S.subs = subs;
-    S.swaps = S.swaps.filter(w => linkedItem(w)); S.example = false;
+    S.swaps = S.swaps.filter(w => linkedItem(w));
+    if (S.example) S.codes = S.codes.filter(c => c.mine);  // the sample promo codes leave with the example month
+    S.example = false;
   } else {
     if (R.monthlyIncome && !S.income) S.income = R.monthlyIncome;
     const has = (list, n) => list.some(x => x.name.toLowerCase() === n.toLowerCase());
@@ -1410,6 +1413,7 @@ V.cheaper = () => `
   <h1 class="h-info">Cheaper${infoBtn("cheaper", "About Cheaper")}</h1>
   ${infoTip("cheaper", "Lower-cost alternatives to what you already pay for. Turn one on and your month updates. Prices are estimates, so check before you switch.")}
   <div data-out="cheapSummary">${OUT.cheapSummary()}</div>
+  <div data-out="cheapIdeas">${OUT.cheapIdeas()}</div>
   <div data-out="cheapList">${OUT.cheapList()}</div>
   <details class="card"><summary>Add your own comparison</summary>
     ${!S.expenses.length && !S.subs.some(s => s.keep !== "drop") ? `<p class="muted" style="margin-top:12px">First add something you pay for: a bill on the Plan tab or a subscription on Subs. Then compare it with a cheaper option here.</p>` : `<form data-form="addSwap" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
@@ -1418,6 +1422,44 @@ V.cheaper = () => `
       <label class="field"><span>It costs per month</span><input name="altCost" required inputmode="decimal" placeholder="0"></label>
       <button class="btn primary" type="submit">Add comparison</button>
     </form>`}</details>`;
+// ---- ideas: common ways to pay less for the same thing ----
+// These are rules of thumb matched to names on the person's own list. The number is a rough share of today's price,
+// never a real quote, and every idea says so. Nothing is looked up online.
+const SWAP_IDEAS = [
+  {re: /netflix|hulu|disney|hbo|\bmax\b|peacock|paramount|prime video|apple tv|discovery|crunchyroll|youtube (premium|tv)/i, ideas: [["ads", "Plan with ads", "The same shows with adverts usually cost much less.", 0.55], ["rotate", "Keep it half the year", "Subscribe for the months you watch and pause the rest.", 0.5]]},
+  {re: /spotify|apple music|youtube music|tidal|deezer|amazon music|pandora/i, ideas: [["share", "Share a Duo or Family plan", "Split a shared plan with the people you live with.", 0.6]]},
+  {re: /icloud|google one|dropbox|onedrive|google storage/i, ideas: [["tier", "Smaller storage plan", "Clear old photos and files, then drop one tier.", 0.4]]},
+  {re: /adobe/i, ideas: [["single", "Single app plan", "Pay only for the apps you open.", 0.45]]},
+  {re: /audible|kindle unlimited|scribd|everand/i, ideas: [["library", "Your library’s app", "Many public libraries lend audiobooks and e-books free.", 0]]},
+  {re: /gym|fitness|equinox|peloton|classpass|crunch/i, ideas: [["basic", "Basic membership", "Drop the extras you do not use.", 0.5]]},
+  {re: /hellofresh|blue apron|home chef|meal kit|factor/i, ideas: [["cook", "Cook the same meals yourself", "Buy the ingredients on your grocery run.", 0.4]]},
+  {re: /dashpass|uber one|instacart|grubhub|deliveroo/i, ideas: [["pause", "Pause it and pay per order", "It pays off only if you order most weeks.", 0]]},
+  {re: /times|journal|\bpost\b|economist|guardian|athletic/i, ideas: [["promo", "Ask for the offer rate", "Publishers often give a lower rate if you ask.", 0.5]]},
+  {bill: true, re: /phone|mobile|verizon|at&t|t-mobile|vodafone/i, ideas: [["prepaid", "Prepaid or SIM-only plan", "Often the same network for less.", 0.6]]},
+  {bill: true, re: /internet|wi-?fi|broadband|comcast|xfinity|spectrum|fib(er|re)/i, ideas: [["ask", "Ask for a better rate", "Call and ask what they can offer to keep you.", 0.8]]},
+  {bill: true, re: /insurance/i, ideas: [["quotes", "Get two more quotes", "Prices vary widely for the same cover.", 0.85]]},
+];
+const YEARLY_IDEA = ["yearly", "Pay yearly instead of monthly", "A yearly plan is often cheaper than twelve monthly payments.", 0.85];
+function swapIdeas(){
+  const skip = S.swapSkip || {}, taken = new Set(S.swaps.map(w => w.link)), out = [];
+  const add = (link, name, cost, list) => list.forEach(([k, alt, why, f]) => { const key = `${link}:${k}`, altCost = r2(cost * f);
+    if (!skip[key] && !taken.has(link) && cost - altCost >= 2) out.push({key, link, name, alt, why, altCost, save: r2(cost - altCost)}); });
+  S.subs.filter(x => x.keep !== "drop" && !isOurs(x)).forEach(x => { const rule = SWAP_IDEAS.find(r => !r.bill && r.re.test(x.name)), cost = subMonthly(x);
+    add(`sub:${x.id}`, x.name, cost, rule ? rule.ideas : x.cycle === "mo" && cost >= 5 ? [YEARLY_IDEA] : []); });
+  S.expenses.forEach(x => { const rule = SWAP_IDEAS.find(r => r.bill && r.re.test(x.name)); if (rule) add(`expense:${x.id}`, x.name, +x.amount || 0, rule.ideas); });
+  const seen = new Set();  // one idea per thing you pay for, the biggest first
+  return out.sort((a, b) => b.save - a.save).filter(i => !seen.has(i.link) && seen.add(i.link));
+}
+OUT.cheapIdeas = () => {
+  const all = swapIdeas(); if (!all.length) return "";
+  const list = UI.ideasAll ? all : all.slice(0, 3);
+  return `<section class="card ideas"><h2 class="h-info">Ideas for you${infoBtn("ideas", "About these ideas")}</h2>
+    ${infoTip("ideas", "Common ways to pay less for things on your list. The amounts are rough estimates, not real prices. Check the actual price, then edit the new cost.")}
+    <div class="rows">${list.map(i => `<div class="row idea" data-idea="${esc(i.key)}"><div><div class="name">${esc(i.name)} → ${esc(i.alt)}</div><div class="muted small">${esc(i.why)}</div>
+      <div class="good small tnum">Could keep about ${fmt(i.save)} a month</div></div>
+      <div class="inline" style="justify-content:space-between"><button class="btn small primary" type="button" data-idea-add style="width:auto;padding:8px 18px">Add</button><button class="link plain small" type="button" data-idea-skip>Not for me</button></div></div>`).join("")}</div>
+    ${all.length > 3 ? `<button class="link small" type="button" data-ideas-more style="align-self:center">${UI.ideasAll ? "Show fewer" : `Show ${all.length - 3} more`}</button>` : ""}</section>`;
+};
 OUT.cheapSummary = () => {
   const on = S.swaps.filter(w => w.on), sOn = on.reduce((a,w) => a + swapSaving(w), 0), sAll = S.swaps.reduce((a,w) => a + swapSaving(w), 0);
   return `<div class="card"><div class="summary3" style="grid-template-columns:repeat(2,minmax(0,1fr))">
@@ -1426,7 +1468,7 @@ OUT.cheapSummary = () => {
 };
 OUT.cheapList = () => {
   const items = S.swaps.map(w => ({w, it: linkedItem(w), save: swapSaving(w)})).filter(x => x.it).sort((a,b) => b.save - a.save);
-  if (!items.length) return `<p class="empty">No comparisons yet.</p>`;
+  if (!items.length) return swapIdeas().length ? "" : `<p class="empty">${S.expenses.length || S.subs.some(x => x.keep !== "drop") ? "No comparisons yet. Add your own below." : "Nothing to compare yet. Add a bill on Plan or a subscription on Subs, and ideas to pay less will appear here."}</p>`;
   return `<div class="rows">${items.map(({w, it, save}) => `<div class="row swap${w.on ? " on" : ""}" data-swap="${w.id}">
     <div><div class="name">${esc(w.title || it.name)} → ${esc(w.alt)}</div>${w.note ? `<div class="muted small">${esc(w.note)}</div>` : ""}</div>
     <div class="swap-cmp"><div class="swap-box"><span class="label">Now</span><b class="tnum">${fmt(it.cost)}<small>/mo</small></b></div>
@@ -1441,7 +1483,7 @@ let codeQ = "";
 V.codes = () => `
   <h1 class="h-info">Codes${infoBtn("codes", "About Codes")}</h1>
   ${infoTip("codes", "Tap a code to copy it. “Likely” means it worked for someone in the past week. Afterwards, mark whether it worked for you.")}
-  <div class="note small">Example codes are placeholders until KeepWise connects to affiliate feeds. Codes you add are real and stay on this device.</div>
+  ${S.codes.some(c => !c.mine) ? `<div class="note small">These are example codes, shown so you can see how this tab works. Codes you add are real and stay on this device.</div>` : ""}
   <input id="code-q" type="search" enterkeyhint="search" placeholder="Search a store" aria-label="Search codes" value="${esc(codeQ)}">
   <div data-out="codeList">${OUT.codeList()}</div>
   <details class="card"><summary>Add a code you found</summary>
@@ -1460,7 +1502,7 @@ OUT.codeList = () => {
   const q = codeQ.trim().toLowerCase();
   const list = S.codes.filter(c => !q || c.store.toLowerCase().includes(q) || (c.offer||"").toLowerCase().includes(q))
     .sort((a,b) => { const r = x => ({Likely:0,"Check first":1,"Probably dead":2})[codeStatus(x)[0]]; return r(a) - r(b) || daysSince(a.last) - daysSince(b.last); });
-  if (!list.length) return `<p class="empty">${codeQ.trim() ? `No codes for “${esc(codeQ.trim())}” yet.` : "No codes yet."} Add one you found below.</p>`;
+  if (!list.length) return `<p class="empty">${codeQ.trim() ? `No codes for “${esc(codeQ.trim())}” yet.` : "No codes yet. When you find a promo code, save it here so it is ready at checkout."}${codeQ.trim() ? " Add one you found below." : ""}</p>`;
   return `<div class="rows">${list.map(c => { const [st, cls] = codeStatus(c), d = daysSince(c.last);
     return `<div class="row" data-code="${c.id}"><div class="row-top"><div><div class="name">${esc(c.store)}</div><div class="muted small">${esc(c.offer || "")}</div></div><div><span class="pill ${cls}">${st}</span></div></div>
     <div class="inline" style="justify-content:space-between"><button class="code" type="button" data-copy="${esc(c.code)}" aria-label="Copy code ${esc(c.code)}">${esc(c.code)}</button>
@@ -3011,6 +3053,12 @@ view.addEventListener("click", async e => {
     if (b.hasAttribute("data-renew-cancel")){ UI.renewEdit = null; render(true); return; }
     if (b.hasAttribute("data-del-sub")){ const u = undoable(); S.subs = S.subs.filter(x => x !== s); S.swaps = S.swaps.filter(w => w.link !== `sub:${s.id}`); save(); render(true); toast(`Removed ${s.name}.`, u); return; }
   }
+  const idea = b.closest("[data-idea]");
+  if (idea && (b.hasAttribute("data-idea-add") || b.hasAttribute("data-idea-skip"))){ const i = swapIdeas().find(x => x.key === idea.dataset.idea); if (!i) return;
+    if (b.hasAttribute("data-idea-skip")){ (S.swapSkip = S.swapSkip || {})[i.key] = 1; save(); render(true); return; }
+    S.swaps.push({id: uid(), link: i.link, title: i.name, alt: i.alt, altCost: i.altCost, note: `${i.why} Estimate: check the real price.`, on: false, idea: i.key});
+    save(); render(true); toast("Added. Check the real price, then turn it on."); return; }
+  if (b.hasAttribute("data-ideas-more")){ UI.ideasAll = !UI.ideasAll; render(true); return; }
   const sw = b.closest("[data-swap]");
   if (sw){ const w = S.swaps.find(x => x.id === sw.dataset.swap); if (!w) return;
     if (b.hasAttribute("data-swap-on")){ w.on = !w.on; save(); render(true); toast(w.on ? `Using ${w.alt}. Your month updated.` : "Swap turned off."); return; }

@@ -1545,6 +1545,47 @@ async def explanations_sit_behind_info_buttons_everywhere(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def cheaper_suggests_ideas_from_your_own_list(ctx):
+    pg = await open_app(ctx)
+    csv = os.path.join(TMP, "ideas.csv")
+    rows = ["Date,Description,Amount"]
+    for m in ("07", "08", "09"):
+        rows += [f"2026-{m}-01,PAYROLL ACME,3000", f"2026-{m}-04,NETFLIX.COM,-17.99", f"2026-{m}-06,SPOTIFY USA,-11.99", f"2026-{m}-09,AUDIBLE,-14.95", f"2026-{m}-12,NOTION LABS,-20.00", f"2026-{m}-15,ICLOUD STORAGE,-2.99"]
+    open(csv, "w").write("\n".join(rows) + "\n")
+    await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(500)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(300)
+    await tab(pg, "cheaper")
+    box = await text(pg, "[data-out=cheapIdeas]")
+    assert "Ideas for you" in box and await pg.locator("[data-idea]").count() == 3, "three ideas at most, until you ask for more"
+    first = await pg.locator("[data-idea]").first.inner_text()
+    assert "Audible" in first and "library" in first.lower() and "Could keep about $14.95 a month" in first, f"the biggest saving comes first: {first}"
+    assert "No comparisons yet" not in await text(pg, "#view"), "no dead-end message while there are ideas"
+    await pg.click("[data-ideas-more]"); await pg.wait_for_timeout(100)
+    all_ideas = await text(pg, "[data-out=cheapIdeas]")
+    assert "Netflix" in all_ideas and "Keep it half the year" in all_ideas and "Spotify" in all_ideas and "Pay yearly instead of monthly" in all_ideas, all_ideas
+    assert "Icloud" not in all_ideas and "iCloud" not in all_ideas, "a saving this small is not worth a card"
+    assert await pg.locator("[data-idea]").count() == len(set(await pg.evaluate("[...document.querySelectorAll('[data-idea]')].map(e => e.dataset.idea.split(':').slice(0, 2).join(':'))"))), "one idea per thing you pay for"
+    # the info button says plainly that these are estimates
+    await pg.click("[data-info=ideas]"); await pg.wait_for_timeout(100)
+    assert "rough estimates, not real prices" in await pg.inner_text("[data-info-tip=ideas]")
+    # Add turns an idea into a comparison you can edit; it is off until you choose it
+    before = money(await text(pg, "[data-out=cheapSummary] .summary3 > div:last-child b"))
+    await pg.locator("[data-idea]").first.locator("[data-idea-add]").click(); await pg.wait_for_timeout(150)
+    st = await state(pg); w = st["swaps"][-1]
+    assert w["alt"] == "Your library’s app" and w["altCost"] == 0 and w["on"] is False and "check the real price" in w["note"]
+    assert "Audible" not in await text(pg, "[data-out=cheapIdeas]") and "Audible" in await text(pg, "[data-out=cheapList]")
+    assert abs(money(await text(pg, "[data-out=cheapSummary] .summary3 > div:last-child b")) - before - 14.95) < 0.01
+    # Not for me removes it for good
+    gone = await pg.locator("[data-idea]").first.get_attribute("data-idea")
+    await pg.locator("[data-idea]").first.locator("[data-idea-skip]").click(); await pg.wait_for_timeout(150)
+    await pg.reload(); await pg.wait_for_timeout(300); await tab(pg, "cheaper")
+    assert await pg.locator(f"[data-idea='{gone}']").count() == 0 and (await state(pg))["swapSkip"][gone] == 1
+    # Codes: no talk of example codes when there are none, and a useful empty line
+    await tab(pg, "codes")
+    v = await text(pg, "#view"); assert "example codes" not in v.lower() and "affiliate" not in v and "ready at checkout" in v, v
+    assert not pg.errors, pg.errors
+
+@test
 async def cancel_help_links(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
     await pg.click("[data-sub=s1] [data-keep=drop]"); await pg.click("[data-sub=s6] [data-keep=drop]"); await pg.wait_for_timeout(120)

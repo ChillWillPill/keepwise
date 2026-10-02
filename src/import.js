@@ -214,7 +214,9 @@ function applyStatement(R, mode){
   if (mode === "replace"){
     if (R.monthlyIncome) S.income = R.monthlyIncome;
     S.expenses = expenses; S.subs = subs;
-    S.swaps = S.swaps.filter(w => linkedItem(w)); S.example = false;
+    S.swaps = S.swaps.filter(w => linkedItem(w));
+    if (S.example) S.codes = S.codes.filter(c => c.mine);  // the sample promo codes leave with the example month
+    S.example = false;
   } else {
     if (R.monthlyIncome && !S.income) S.income = R.monthlyIncome;
     const has = (list, n) => list.some(x => x.name.toLowerCase() === n.toLowerCase());
