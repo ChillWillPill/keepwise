@@ -1917,7 +1917,10 @@ async def chosen_currency_shows_everywhere(ctx):
     pg = await open_app(ctx)
     await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(200)
     async def clean(where):
-        v = await pg.inner_text("#view"); assert "$" not in v, f"{where}: " + v[max(0, v.index("$") - 40): v.index("$") + 20].replace("\n", " ")
+        v = await pg.inner_text("#view")
+        kw = pg.locator("[data-kw-codes]")   # KeepWise Plus is priced in US dollars for everyone, and says so on the Plus screen
+        if await kw.count(): v = v.replace(await kw.inner_text(), "")
+        assert "$" not in v, f"{where}: " + v[max(0, v.index("$") - 40): v.index("$") + 20].replace("\n", " ")
     await clean("month"); await pg.click("[data-plain]"); await pg.locator("[data-ask]").nth(2).click(); await clean("ask")
     await pg.click("[data-inc-add]"); await clean("income form"); await pg.click("[data-inc-cancel]")
     await pg.click("[data-space=business]"); await clean("business"); await pg.click("[data-space=personal]")
