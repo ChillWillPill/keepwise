@@ -3044,7 +3044,11 @@ view.addEventListener("submit", async e => {
     if (old) Object.assign(old, rec); else S.splits.push(made);
     tellAbout(old ? "edit" : "add", made, before);
     splitDraft = null; splitErr = ""; save(); render(!!old); if (old) showSplitCard(old.id);
-    const tc = document.querySelector("[data-tell]"); if (tc) tc.scrollIntoView({block: "nearest"});
+    const tc = document.querySelector("[data-tell]"), sc = $("main");
+    if (tc && !old) tc.scrollIntoView({block: "nearest"});
+    else if (tc && sc){  // show as much of the prompt as fits without pushing the edited split off the top
+      const card = document.querySelector(`[data-split="${old.id}"]`), m = sc.getBoundingClientRect(), over = tc.getBoundingClientRect().bottom - m.bottom;
+      if (card && over > 0) sc.scrollTop += Math.max(0, Math.min(over, card.getBoundingClientRect().top - m.top - 8)); }
     toast(old ? "Split updated." : "Split saved."); return;
   }
 });
