@@ -1400,6 +1400,53 @@ async def opening_details_does_not_jump(ctx):
     assert "Hide details" in await text(pg, f"[data-env-open='{keys[2]}']") or await pg.locator("[data-out=envelopes] input").count() > 0
 
 @test
+async def contacts_button_in_split_form_shows_what_to_do(ctx):
+    # iPhone and computers cannot hand a website the address book, so tapping "Search your phone contacts"
+    # must explain the file route right there, not somewhere further down the page.
+    pg = await open_app(ctx); await tab(pg, "split")
+    await pg.evaluate("(() => { try { delete Navigator.prototype.contacts; } catch(e){} })()")
+    await pg.click("[data-new-split]"); await pg.fill("[data-part-search]", "Hass"); await pg.wait_for_timeout(150)
+    await pg.click("form[data-form=split] [data-contacts-sync]"); await pg.wait_for_timeout(200)
+    h = pg.locator("form[data-form=split] [data-contacts-help]")
+    assert await h.count() == 1 and await h.is_visible(), "help appears inside the form"
+    box, m = await h.bounding_box(), await pg.locator("#main").bounding_box()
+    assert box["y"] >= m["y"] and box["y"] + box["height"] <= m["y"] + m["height"] + 1, "and it is on screen"
+    assert "Add your contacts from a file" in await h.inner_text() and await pg.input_value("[data-part-search]") == "Hass", "what was typed is kept"
+    vcf = os.path.join(TMP, "one.vcf"); open(vcf, "w").write("BEGIN:VCARD\nVERSION:3.0\nFN:Hassan Ali\nTEL:+1 555 010 9911\nEND:VCARD\n")
+    async with pg.expect_file_chooser() as fc: await pg.click("[data-contacts-file]")
+    await (await fc.value).set_files(vcf); await pg.wait_for_timeout(300)
+    assert await pg.locator("[data-contacts-help]").count() == 0
+    await pg.fill("[data-part-search]", "Hass"); await pg.wait_for_timeout(150)
+    assert "Hassan Ali" in await text(pg, "form[data-form=split]"), "the contact can now be found"
+    # Not now puts the button back
+    await pg.evaluate("localStorage.clear()"); pg2 = await open_app(ctx); await tab(pg2, "split")
+    await pg2.evaluate("(() => { try { delete Navigator.prototype.contacts; } catch(e){} })()")
+    await pg2.click("[data-new-split]"); await pg2.fill("[data-part-search]", "Z"); await pg2.wait_for_timeout(150)
+    await pg2.click("form[data-form=split] [data-contacts-sync]"); await pg2.wait_for_timeout(150)
+    await pg2.click("form[data-form=split] [data-contacts-help-close]"); await pg2.wait_for_timeout(150)
+    assert await pg2.locator("form[data-form=split]").count() == 1 and await pg2.locator("[data-contacts-help]").count() == 0
+
+@test
+async def history_help_sits_behind_an_info_button(ctx):
+    pg = await open_app(ctx); await tab(pg, "split")
+    assert await pg.locator("[data-info-tip]").count() == 0, "no paragraph of instructions on the screen by default"
+    b = pg.locator("#history [data-info=history]"); assert await b.get_attribute("aria-expanded") == "false"
+    box = await b.bounding_box(); assert box["width"] >= 36 and box["height"] >= 36, "big enough to tap"
+    await b.click(); await pg.wait_for_timeout(120)
+    tip = await pg.inner_text("[data-info-tip=history]")
+    assert "Put back in the list" in tip and len(tip) < 170, tip
+    assert await pg.locator("#history [data-info=history]").get_attribute("aria-expanded") == "true"
+    await pg.click("#history [data-info=history]"); await pg.wait_for_timeout(120)
+    assert await pg.locator("[data-info-tip]").count() == 0
+    # one other person in a split: the prompt names them, not "everyone"
+    await pg.click("[data-new-split]"); f = pg.locator("form[data-form=split]")
+    await f.locator("[data-d=title]").fill("Tax filing"); await f.locator("[data-d=amount]").fill("255")
+    await pg.click("[data-part-search]"); await pg.wait_for_timeout(60); await pg.click("[data-part-add=p1]"); await pg.wait_for_timeout(60)
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    card = await text(pg, "[data-tell]")
+    assert "Let Alex know about Tax filing" in card and "everyone" not in card and "Send to Alex" in card, card
+
+@test
 async def cancel_help_links(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
     await pg.click("[data-sub=s1] [data-keep=drop]"); await pg.click("[data-sub=s6] [data-keep=drop]"); await pg.wait_for_timeout(120)

@@ -330,6 +330,11 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .up-row.in .up-date{background:var(--green-soft);color:var(--green)}
 .close-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--gold-soft) 55%,var(--card)),var(--card))}
 .pay-line>.link{white-space:nowrap;flex:none}
+.part-help{padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--chip)}
+.h-info{display:flex;align-items:center;gap:6px}
+.info-btn{appearance:none;border:0;background:none;color:var(--muted);padding:8px;margin:-8px 0;min-width:36px;min-height:36px;display:inline-grid;place-items:center;border-radius:50%;cursor:pointer}
+.info-btn[aria-expanded=true]{color:var(--green)}
+.info-tip{background:var(--chip);border-radius:14px;padding:10px 14px;font-size:.92rem;line-height:1.45}
 .remind-card h3{font:600 1.15rem/1.25 var(--display);letter-spacing:-.01em}
 .tell-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
 .tell-card h3{font:600 1.15rem/1.25 var(--display);letter-spacing:-.01em}
@@ -1586,6 +1591,10 @@ OUT.splitSum = () => {
     <div><span class="muted small">${net >= 0 ? "Net you're owed" : "Net you owe"}</span><b class="${net >= 0 ? "good" : "bad"}">${fmt(Math.abs(net))}</b></div></div></div>
     ${b.length ? `<div class="balances">${b.map(x => `<div data-settle="${esc(x.p.id)}" data-amt="${Math.abs(x.net)}"><span class="${x.net > 0 ? "good" : "bad"}">${x.net > 0 ? `${esc(x.p.name)} owes you ${fmt(x.net)}` : `You owe ${esc(x.p.name)} ${fmt(-x.net)}`}</span><button class="btn small" type="button" data-settle-btn>${x.net > 0 ? "Got paid" : "Paid"}</button></div>`).join("")}</div>` : `<p class="muted">Everyone is square.</p>`}`;
 };
+// A small "i" next to a heading opens a short explanation, so screens stay clean and help is one tap away.
+const INFO_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg>';
+const infoBtn = (key, label) => `<button class="info-btn" type="button" data-info="${key}" aria-label="${esc(label)}" aria-expanded="${UI.info === key}">${INFO_ICON}</button>`;
+const infoTip = (key, text) => UI.info === key ? `<p class="info-tip" role="note" data-info-tip="${key}">${esc(text)}</p>` : "";
 function backInList(x){
   const c = CTX(), other = x.from === c.me ? x.to : x.from, bal = myBalances(c).find(b => b.p.id === other);
   if (!bal) return `Put back. You and ${person(other, c).name} are square.`;
@@ -1609,8 +1618,8 @@ function historySection(c){
       ${mine ? `<div class="inline" style="justify-content:flex-end"><button class="btn small" type="button" data-pay-edit>Edit</button><button class="btn small danger" type="button" data-pay-del>Put back in the list</button></div>` : ""}</div></div>`;
   };
   return `<section style="display:flex;flex-direction:column;gap:12px" id="history">
-    <h2>History</h2>
-    <p class="muted">Every Paid and Got paid${c.kind === "shared" ? " in your circle" : " you tapped"}. If one didn’t really happen, put it back in the list and its Paid or Got paid button returns. To change what someone owes, tap Edit on the split above.</p>
+    <h2 class="h-info">History${infoBtn("history", "About History")}</h2>
+    ${infoTip("history", `Payments ${c.kind === "shared" ? "your circle" : "you"} marked as Paid or Got paid. To undo one, choose “Put back in the list”. To change an amount owed, edit the split.`)}
     ${pays.length ? `<div class="rows">${pays.map(row).join("")}</div>` : `<p class="empty">No payments recorded yet.</p>`}
   </section>`;
 }
@@ -1635,7 +1644,7 @@ OUT.partResults = () => {
   const exact = q && c.people.some(p => String(p.name || "").toLowerCase() === q.toLowerCase());
   const rows = list.slice(0, 30).map(p => `<button type="button" class="part-opt" data-part-add="${esc(p.id)}"><span class="avatar part-av" style="--h:${avatarHue(p.name)}" aria-hidden="true">${esc(initials(p.name))}</span><span class="part-txt"><span>${esc(p.name)}</span>${p.phone ? `<small class="muted">${esc(showPhone(p.phone))}</small>` : ""}</span></button>`).join("")
     + (c.kind !== "shared" ? (() => { const cm = contactMatches(q); return cm.length ? `<p class="part-sub">From your contacts</p>` + cm.map(x => `<button type="button" class="part-opt" data-part-contact="${esc(x.id)}"><span class="avatar part-av" style="--h:${avatarHue(x.n)}" aria-hidden="true">${esc(initials(x.n))}</span><span class="part-txt"><span>${esc(x.n)}</span>${x.p[0] || x.e[0] ? `<small class="muted">${esc(x.p[0] ? showPhone(x.p[0]) : x.e[0])}</small>` : ""}</span></button>`).join("") : ""; })() : "");
-  const findContacts = c.kind !== "shared" && !(S.contacts || []).length ? `<button type="button" class="part-opt part-find" data-contacts-sync>${I.users}<span class="part-txt"><span>Search your phone contacts</span><small class="muted">Find friends faster. Contacts stay on this phone.</small></span></button>` : "";
+  const findContacts = c.kind !== "shared" && !(S.contacts || []).length ? UI.contactsHelp ? `<div class="part-help" data-contacts-help><b>Add your contacts from a file</b><p class="muted small">${contactsHow()}</p><div class="grid2"><button class="btn small" type="button" data-contacts-help-close>Not now</button><button class="btn small primary" type="button" data-contacts-file>Choose the file</button></div></div>` : `<button type="button" class="part-opt part-find" data-contacts-sync>${I.users}<span class="part-txt"><span>Search your phone contacts</span><small class="muted">Find friends faster. Contacts stay on this phone.</small></span></button>` : "";
   const addNew = q && !exact && c.kind !== "shared" ? `<button type="button" class="part-opt part-new" data-part-new>${I.plus}Add “${esc(q)}” as a new person</button>` : "";
   const empty = !rows && !addNew && !(c.kind !== "shared" && !(S.contacts || []).length) ? `<p class="muted small" style="padding:10px 12px">${q ? "No one matches that." : "Everyone is already in this split."}</p>` : "";
   return `<div class="part-results" role="listbox" aria-label="People">${rows}${addNew}${q || !rows ? findContacts : ""}${empty}</div>`;
@@ -2153,10 +2162,13 @@ function saveGroupRow(){
   if (UI.groupName !== undefined) return `<div class="group-save"><input data-group-name placeholder="Group name, e.g. Movie crew" value="${esc(UI.groupName)}" enterkeyhint="done" aria-label="Group name"><button class="btn small" type="button" data-group-save>Save</button><button class="link plain small" type="button" data-group-cancel>Cancel</button></div>`;
   return `<button class="link plain small group-save-link" type="button" data-group-new>${I.users}Save these ${ids.length + 1} as a group</button>`;
 }
+// A website cannot read the iPhone address book directly, so it comes in as a contacts file the phone makes itself.
+const contactsHow = () => (IS_IOS ? "A website cannot open your iPhone contacts directly. In the Contacts app, tap Lists, press and hold All Contacts, choose Export and save the file. Then pick that file here."
+  : "Export your contacts as a vCard (.vcf) file from your phone or email app, then pick it here.") + " KeepWise reads the file on this device and keeps names, phone numbers and emails only for searching.";
 function contactsCard(){
   const n = (S.contacts || []).length;
   if (UI.contactsHelp) return `<div class="card contacts-card"><b>Add your contacts from a file</b>
-    <p class="muted small">${IS_IOS ? "On iPhone, open iCloud.com on a computer, go to Contacts, select all, then choose Export vCard. Send the file to this phone and pick it here." : "Export your contacts as a vCard (.vcf) file from your phone or email app, then pick it here."} KeepWise reads the file on this device and keeps names, phone numbers and emails only for searching.</p>
+    <p class="muted small">${contactsHow()}</p>
     <div class="grid2"><button class="btn" type="button" data-contacts-help-close>Not now</button><button class="btn primary" type="button" data-contacts-file>Choose a contacts file</button></div></div>`;
   if (!n) return `<button class="w-choice contacts-cta" type="button" data-contacts-sync><span class="w-ic">${I.users}</span><span><b>Find friends from your contacts</b><span class="muted small">Search your phone contacts when you add people to a split. They stay on this phone.</span></span>${I.chev}</button>`;
   return `<div class="contacts-on"><span class="w-ic">${I.users}</span><div class="co-txt"><b>${n} contact${n === 1 ? "" : "s"} ready to search</b><span class="muted small">They stay on this phone.</span></div><div class="co-act"><button class="link small" type="button" data-contacts-sync>Refresh</button><button class="link plain small" type="button" data-contacts-forget>Remove</button></div></div>`;
@@ -2359,12 +2371,12 @@ function tellSettled(pid, amount, gotPaid){
   UI.tell = {kind: "settle", title: name, at: null, group: null, each: false,
     rows: [{id: pid, name, text: gotPaid ? `Got your ${fmt(amount)}, thank you. We are all square.` : `I paid you ${fmt(amount)}. We are all square.`}]};
 }
-const TELL_HEAD = {add: t => `Let everyone in ${t} know`, edit: t => `${t} changed. Let them know`, delete: t => `${t} was deleted. Let them know`, settle: t => `Let ${t} know`};
+const TELL_HEAD = {add: (t, who) => who ? `Let ${who} know about ${t}` : `Let everyone in ${t} know`, edit: (t, who) => `${t} changed. Let ${who || "them"} know`, delete: (t, who) => `${t} was deleted. Let ${who || "them"} know`, settle: t => `Let ${t} know`};
 function tellCard(){
   const t = UI.tell; if (!t || splitDraft) return "";
   const one = t.rows.length === 1, row = r => `<div class="tell-row" data-tell-id="${esc(r.id)}"><div class="tell-txt"><b>${esc(r.name)}</b><span class="muted small">${esc(r.text.replace(TELL_FOOT, ""))}</span></div><button class="btn small${r.sent ? " done" : ""}" type="button" data-tell-send aria-label="Send to ${esc(r.name)}">${r.sent ? "✓ Sent" : "Send"}</button></div>`;
   return `<section class="card tell-card" data-tell><div class="inline" style="justify-content:space-between"><p class="label">Tell them</p><button class="link plain small" type="button" data-tell-close>${t.rows.every(r => r.sent) || t.groupSent ? "Done" : "Not now"}</button></div>
-    <h3>${esc(TELL_HEAD[t.kind](t.title))}</h3>
+    <h3>${esc(TELL_HEAD[t.kind](t.title, one ? firstWord(t.rows[0].name) : ""))}</h3>
     ${t.group ? `<div class="tell-msg">${esc(t.group.replace(TELL_FOOT, "")).replace(/\n/g, "<br>")}</div>
       <button class="btn primary" type="button" data-tell-all>${I.share}${t.groupSent ? "Sent. Send again" : "Send to everyone"}</button>
       ${t.each ? `<div class="tell-rows">${t.rows.map(row).join("")}</div>` : `<button class="link small" type="button" data-tell-each style="align-self:center">Or tell each person separately</button>`}`
@@ -2997,6 +3009,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.space){ UI.biz = b.dataset.space === "business"; render(false); return; }
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
   if (b.hasAttribute("data-receipt-close")){ UI.receiptInfo = false; render(true); return; }
+  if (b.dataset.info){ UI.info = UI.info === b.dataset.info ? null : b.dataset.info; render(true); return; }
   if (b.hasAttribute("data-remind-on")){ await remindTurnOn(); return; }
   if (b.hasAttribute("data-remind-off")){ S.remind = {on: false, hide: true}; save(); render(true); toast("Reminders are off."); return; }
   if (b.hasAttribute("data-remind-hide")){ S.remind = {on: false, hide: true}; save(); render(true); return; }

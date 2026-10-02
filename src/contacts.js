@@ -97,10 +97,13 @@ function saveGroupRow(){
   if (UI.groupName !== undefined) return `<div class="group-save"><input data-group-name placeholder="Group name, e.g. Movie crew" value="${esc(UI.groupName)}" enterkeyhint="done" aria-label="Group name"><button class="btn small" type="button" data-group-save>Save</button><button class="link plain small" type="button" data-group-cancel>Cancel</button></div>`;
   return `<button class="link plain small group-save-link" type="button" data-group-new>${I.users}Save these ${ids.length + 1} as a group</button>`;
 }
+// A website cannot read the iPhone address book directly, so it comes in as a contacts file the phone makes itself.
+const contactsHow = () => (IS_IOS ? "A website cannot open your iPhone contacts directly. In the Contacts app, tap Lists, press and hold All Contacts, choose Export and save the file. Then pick that file here."
+  : "Export your contacts as a vCard (.vcf) file from your phone or email app, then pick it here.") + " KeepWise reads the file on this device and keeps names, phone numbers and emails only for searching.";
 function contactsCard(){
   const n = (S.contacts || []).length;
   if (UI.contactsHelp) return `<div class="card contacts-card"><b>Add your contacts from a file</b>
-    <p class="muted small">${IS_IOS ? "On iPhone, open iCloud.com on a computer, go to Contacts, select all, then choose Export vCard. Send the file to this phone and pick it here." : "Export your contacts as a vCard (.vcf) file from your phone or email app, then pick it here."} KeepWise reads the file on this device and keeps names, phone numbers and emails only for searching.</p>
+    <p class="muted small">${contactsHow()}</p>
     <div class="grid2"><button class="btn" type="button" data-contacts-help-close>Not now</button><button class="btn primary" type="button" data-contacts-file>Choose a contacts file</button></div></div>`;
   if (!n) return `<button class="w-choice contacts-cta" type="button" data-contacts-sync><span class="w-ic">${I.users}</span><span><b>Find friends from your contacts</b><span class="muted small">Search your phone contacts when you add people to a split. They stay on this phone.</span></span>${I.chev}</button>`;
   return `<div class="contacts-on"><span class="w-ic">${I.users}</span><div class="co-txt"><b>${n} contact${n === 1 ? "" : "s"} ready to search</b><span class="muted small">They stay on this phone.</span></div><div class="co-act"><button class="link small" type="button" data-contacts-sync>Refresh</button><button class="link plain small" type="button" data-contacts-forget>Remove</button></div></div>`;

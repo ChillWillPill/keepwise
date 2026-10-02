@@ -39,12 +39,12 @@ function tellSettled(pid, amount, gotPaid){
   UI.tell = {kind: "settle", title: name, at: null, group: null, each: false,
     rows: [{id: pid, name, text: gotPaid ? `Got your ${fmt(amount)}, thank you. We are all square.` : `I paid you ${fmt(amount)}. We are all square.`}]};
 }
-const TELL_HEAD = {add: t => `Let everyone in ${t} know`, edit: t => `${t} changed. Let them know`, delete: t => `${t} was deleted. Let them know`, settle: t => `Let ${t} know`};
+const TELL_HEAD = {add: (t, who) => who ? `Let ${who} know about ${t}` : `Let everyone in ${t} know`, edit: (t, who) => `${t} changed. Let ${who || "them"} know`, delete: (t, who) => `${t} was deleted. Let ${who || "them"} know`, settle: t => `Let ${t} know`};
 function tellCard(){
   const t = UI.tell; if (!t || splitDraft) return "";
   const one = t.rows.length === 1, row = r => `<div class="tell-row" data-tell-id="${esc(r.id)}"><div class="tell-txt"><b>${esc(r.name)}</b><span class="muted small">${esc(r.text.replace(TELL_FOOT, ""))}</span></div><button class="btn small${r.sent ? " done" : ""}" type="button" data-tell-send aria-label="Send to ${esc(r.name)}">${r.sent ? "✓ Sent" : "Send"}</button></div>`;
   return `<section class="card tell-card" data-tell><div class="inline" style="justify-content:space-between"><p class="label">Tell them</p><button class="link plain small" type="button" data-tell-close>${t.rows.every(r => r.sent) || t.groupSent ? "Done" : "Not now"}</button></div>
-    <h3>${esc(TELL_HEAD[t.kind](t.title))}</h3>
+    <h3>${esc(TELL_HEAD[t.kind](t.title, one ? firstWord(t.rows[0].name) : ""))}</h3>
     ${t.group ? `<div class="tell-msg">${esc(t.group.replace(TELL_FOOT, "")).replace(/\n/g, "<br>")}</div>
       <button class="btn primary" type="button" data-tell-all>${I.share}${t.groupSent ? "Sent. Send again" : "Send to everyone"}</button>
       ${t.each ? `<div class="tell-rows">${t.rows.map(row).join("")}</div>` : `<button class="link small" type="button" data-tell-each style="align-self:center">Or tell each person separately</button>`}`
