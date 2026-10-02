@@ -1203,6 +1203,65 @@ async def coming_up_renewals(ctx):
     c = await text(pg, "[data-out=comingUp]"); assert "You chose to drop it" in c and "$29.98 will be charged" in c
 
 @test
+async def tell_them_after_split_changes(ctx):
+    pg = await open_app(ctx)
+    await pg.evaluate("(() => { window.__sent = []; navigator.share = async d => { window.__sent.push(d.text); }; })()")
+    await tab(pg, "split")
+    assert await pg.locator("[data-tell]").count() == 0, "nothing to tell before anything changes"
+    names = await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1')).people.filter(p => p.id !== 'me' && !p.archived).map(p => [p.id, p.name])")
+    assert len(names) >= 2, names
+    (a, an), (b, bn) = names[0], names[1]
+    # added: one message for the group, or one each
+    await pg.click("[data-new-split]"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=split]")
+    await f.locator("[data-d=title]").fill("Movie night"); await f.locator("[data-d=amount]").fill("90")
+    for pid in (a, b):
+        await pg.click("[data-part-search]"); await pg.wait_for_timeout(60)
+        await pg.click(f"[data-part-add='{pid}']"); await pg.wait_for_timeout(60)
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    st = await state(pg); sp = [x for x in st["splits"] if x["title"] == "Movie night"][0]
+    n = len(sp["parts"]); m = lambda v: f"${v:.2f}".replace(".00", ""); share = m(90 / n)
+    card = await text(pg, "[data-tell]")
+    assert "Let everyone in Movie night know" in card and "$90, paid by me" in card and f"{an}: {share}" in card, card
+    assert "does not message anyone" in card
+    await pg.click("[data-tell-all]"); await pg.wait_for_timeout(150)
+    sent = await pg.evaluate("window.__sent")
+    assert len(sent) == 1 and sent[0].startswith("Movie night: $90, paid by me.") and f"Me: {share}" in sent[0] and "Tracked with KeepWise" in sent[0], sent
+    assert "Sent. Send again" in await text(pg, "[data-tell]")
+    await pg.click("[data-tell-each]"); await pg.wait_for_timeout(100)
+    await pg.click(f"[data-tell-id='{a}'] [data-tell-send]"); await pg.wait_for_timeout(150)
+    sent = await pg.evaluate("window.__sent")
+    assert sent[1].startswith(f"Movie night: I paid $90. Your share is {share}."), sent[1]
+    assert "Sent" in await text(pg, f"[data-tell-id='{a}']")
+    await pg.click("[data-tell-close]"); await pg.wait_for_timeout(100)
+    assert await pg.locator("[data-tell]").count() == 0
+    # updated: says what the share was before, right under the card that changed
+    await pg.click(f"[data-split='{sp['id']}'] [data-edit-split]"); await pg.wait_for_timeout(120)
+    f = pg.locator("form[data-form=split]"); await f.locator("[data-d=amount]").fill("120"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    await pg.click("[data-tell-each]"); await pg.wait_for_timeout(100)
+    row = await text(pg, f"[data-tell-id='{a}']")
+    assert f"Movie night was updated: I paid $120. Your share is {m(120 / n)}. Before, your share was {share}." in row, row
+    assert await pg.evaluate(f"document.querySelector(\"[data-split='{sp['id']}']\").nextElementSibling.hasAttribute('data-tell')"), "shown under the edited split"
+    box = await pg.locator("[data-tell]").bounding_box(); assert box["width"] <= 390 and box["x"] >= 0
+    # deleted, and Undo takes the prompt away again
+    await pg.click(f"[data-split='{sp['id']}'] [data-del-split]"); await pg.wait_for_timeout(150)
+    card = await text(pg, "[data-tell]"); assert "Movie night was deleted" in card and "It no longer counts for anyone" in card, card
+    await pg.click(".toast-undo"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-tell]").count() == 0 and any(x["title"] == "Movie night" for x in (await state(pg))["splits"])
+    # settled: one person, one message
+    row = pg.locator("[data-settle]").first; who = await row.get_attribute("data-settle"); got = "owes you" in await row.inner_text()
+    await row.locator("[data-settle-btn]").click(); await pg.wait_for_timeout(150)
+    card = await text(pg, "[data-tell]")
+    assert ("Got your" in card if got else "I paid you" in card) and "We are all square" in card, card
+    await pg.click("[data-tell] [data-tell-send]"); await pg.wait_for_timeout(120)
+    assert "all square" in (await pg.evaluate("window.__sent"))[-1] and "Tracked with" not in (await pg.evaluate("window.__sent"))[-1]
+    # no share sheet (a computer): the message is copied instead
+    await pg.evaluate("(() => { navigator.share = undefined; Object.defineProperty(navigator, 'clipboard', {value: {writeText: async t => { window.__copied = t; }}, configurable: true}); })()")
+    await pg.click("[data-tell] [data-tell-send]"); await pg.wait_for_timeout(120)
+    assert "Copied. Paste it into a message" in await pg.inner_text("#toast") and "all square" in await pg.evaluate("window.__copied")
+    assert not pg.errors, pg.errors
+
+@test
 async def cancel_help_links(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
     await pg.click("[data-sub=s1] [data-keep=drop]"); await pg.click("[data-sub=s6] [data-keep=drop]"); await pg.wait_for_timeout(120)

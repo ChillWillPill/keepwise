@@ -326,6 +326,13 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .inc-avg{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;background:var(--gold-soft);border-radius:12px;padding:8px 12px}
 .up-row.in .up-date{background:var(--green-soft);color:var(--green)}
 .close-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--gold-soft) 55%,var(--card)),var(--card))}
+.tell-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
+.tell-card h3{font:600 1.15rem/1.25 var(--display);letter-spacing:-.01em}
+.tell-msg{background:var(--bg);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:.95rem;line-height:1.45;overflow-wrap:anywhere}
+.tell-rows{display:flex;flex-direction:column;gap:10px}
+.tell-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tell-txt{display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere}
+.tell-row .btn.done{color:var(--green)}
 .close-card h3{font:600 1.2rem/1.25 var(--display);letter-spacing:-.01em}
 /* ---- contacts and groups ---- */
 .part-txt{display:flex;flex-direction:column;min-width:0;text-align:left}
@@ -1533,6 +1540,7 @@ V.split = () => {
   ${modeSwitch()}
   <div data-out="splitSum">${OUT.splitSum()}</div>
   <div class="chips" role="group" aria-label="Filter">${tags.map(t => `<button class="chip" type="button" data-filter="${esc(t)}" aria-pressed="${S.filter === t}">${esc(t)}</button>`).join("")}</div>
+  ${c.kind === "local" && UI.tell && !(UI.tell.at && list.some(x => x.id === UI.tell.at)) ? tellCard() : ""}
   ${splitDraft && !splitDraft.editId ? splitForm() : `<button class="btn primary" type="button" data-new-split>New split</button>${momentsTeaser()}`}
   ${list.length ? list.map(x => { if (splitDraft && splitDraft.editId === x.id) return splitForm(); const lines = splitLine(x, c);
     const by = c.kind === "shared" && x.createdBy && x.createdBy !== c.me ? ` · added by ${esc(person(x.createdBy, c).name)}` : "";
@@ -1540,7 +1548,7 @@ V.split = () => {
       <div style="min-width:0"><div class="name" style="font-size:1.1rem">${esc(x.title)}</div><div class="muted small">${esc(x.tag)} · ${METHOD_LABEL[x.method] || ""}${x.paidBy !== c.me ? ` · ${esc(person(x.paidBy, c).name)} paid` : ""}${by}</div>
       <p class="small" style="margin-top:4px">${lines.length ? lines.map(l => `<span class="${l.good ? "good" : "bad"}">${esc(l.t)}</span>`).join(" · ") : `<span class="muted">Doesn’t involve you</span>`}</p></div>
       <div class="name tnum" style="font-size:1.1rem">${fmt(x.amount)}</div></div>
-      <div class="inline" style="justify-content:flex-end"><button class="btn small" type="button" data-edit-split aria-label="Edit ${esc(x.title)}">Edit</button><button class="btn small danger" type="button" data-del-split aria-label="Delete ${esc(x.title)}">Delete</button></div></div>`; }).join("") : `<p class="empty">No splits${S.filter !== "All" ? ` tagged ${esc(S.filter)}` : ""} yet.</p>`}
+      <div class="inline" style="justify-content:flex-end"><button class="btn small" type="button" data-edit-split aria-label="Edit ${esc(x.title)}">Edit</button><button class="btn small danger" type="button" data-del-split aria-label="Delete ${esc(x.title)}">Delete</button></div></div>${c.kind === "local" && UI.tell && UI.tell.at === x.id ? tellCard() : ""}`; }).join("") : `<p class="empty">No splits${S.filter !== "All" ? ` tagged ${esc(S.filter)}` : ""} yet.</p>`}
   ${historySection(c)}
   ${c.kind === "shared" ? `<section style="display:flex;flex-direction:column;gap:12px"><h2>Your circle</h2>
     <p class="muted">Everyone who opened this page and joined. Invite more people from the Share menu.</p>
@@ -2295,6 +2303,70 @@ OUT.payBox = () => {
   return `<div class="pay-line"><span>${I.month.replace("<svg ", '<svg width="18" height="18" ')}<span><b>${fmt(+S.pay.amount || 0)}</b> ${esc(payWhenText())}${n ? ` · next payday <b>${daysUntil(n) === 0 ? "today" : daysUntil(n) === 1 ? "tomorrow" : n.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})}</b>` : S.pay.when === "biweekly" ? " · add your next payday" : ""}${ms !== 1 ? `<br><span class="muted small">Your ${esc(P.name)} runs ${rangeText(P)}.</span>` : ""}</span></span><button class="link small" type="button" data-payday-edit>Change</button></div>`;
 };
 
+/* ================= tell them (messages you send yourself; KeepWise sends nothing) ================= */
+// After a split on this phone is added, changed, deleted or settled, KeepWise writes a short message for each person in it.
+// You send it from your own apps (the phone's share sheet), or copy it. Nothing leaves the phone unless you send it.
+const tellOthers = x => x ? [...new Set([x.paidBy, ...Object.keys(x.parts || {})])].filter(id => id !== "me") : [];
+const tellName = id => (S.people.find(p => p.id === id) || {}).name || "Someone";
+function tellLine(x, id){  // what one split means for one person, written from you to them
+  const sh = shares(x), mine = sh.me || 0, theirs = sh[id] || 0;
+  if (x.method === "borrow"){ const who = Object.keys(x.parts)[0];
+    return x.paidBy === "me" ? (who === id ? `I lent you ${fmt(x.amount)}` : `I lent ${tellName(who)} ${fmt(x.amount)}`)
+      : x.paidBy === id ? `you lent ${who === "me" ? "me" : tellName(who)} ${fmt(x.amount)}` : `${tellName(x.paidBy)} lent you ${fmt(x.amount)}`; }
+  if (x.paidBy === "me") return `I paid ${fmt(x.amount)}. Your share is ${fmt(theirs)}`;
+  if (x.paidBy === id) return mine > 0 ? `you paid ${fmt(x.amount)}. My share is ${fmt(mine)}, so I owe you ${fmt(mine)}` : `you paid ${fmt(x.amount)}`;
+  return `${tellName(x.paidBy)} paid ${fmt(x.amount)}. Your share is ${fmt(theirs)}, owed to ${tellName(x.paidBy)}`;
+}
+const TELL_FOOT = "\nTracked with KeepWise: https://chillwillpill.github.io/keepwise/";
+function tellGroup(x, kind){
+  if (kind === "delete") return `${x.title} was removed. It no longer counts for anyone.`;
+  const sh = shares(x), who = id => id === "me" ? "Me" : tellName(id);
+  return `${x.title}${kind === "edit" ? " (updated)" : ""}: ${fmt(x.amount)}, paid by ${x.paidBy === "me" ? "me" : tellName(x.paidBy)}.\n${Object.keys(sh).map(id => `${who(id)}: ${fmt(sh[id])}`).join("\n")}${TELL_FOOT}`;
+}
+function tellAbout(kind, x, old){  // kind: add, edit, delete
+  if (S.splitMode === "shared" || !x) { UI.tell = null; return; }
+  const now = tellOthers(x), before = old ? tellOthers(old) : [], rows = [];
+  now.forEach(id => {
+    let text;
+    if (kind === "delete") text = `${x.title} was removed. It no longer counts between us.`;
+    else if (kind === "edit"){ const was = before.includes(id) ? (shares(old)[id] || 0) : null, is = shares(x)[id] || 0;
+      text = `${x.title} was updated: ${tellLine(x, id)}.${was != null && Math.abs(was - is) > 0.005 && x.method !== "borrow" ? ` Before, your share was ${fmt(was)}.` : ""}`; }
+    else text = `${x.title}: ${tellLine(x, id)}.${TELL_FOOT}`;
+    rows.push({id, name: tellName(id), text});
+  });
+  before.filter(id => !now.includes(id)).forEach(id => rows.push({id, name: tellName(id), text: `You are no longer part of ${old.title}. It no longer counts between us.`}));
+  if (!rows.length){ UI.tell = null; return; }
+  UI.tell = {kind, title: x.title, at: kind === "edit" ? x.id : null, rows, group: now.length >= 2 && x.method !== "borrow" ? tellGroup(x, kind) : null, each: false};
+}
+function tellSettled(pid, amount, gotPaid){
+  if (S.splitMode === "shared"){ UI.tell = null; return; }
+  const name = tellName(pid);
+  UI.tell = {kind: "settle", title: name, at: null, group: null, each: false,
+    rows: [{id: pid, name, text: gotPaid ? `Got your ${fmt(amount)}, thank you. We are all square.` : `I paid you ${fmt(amount)}. We are all square.`}]};
+}
+const TELL_HEAD = {add: t => `Let everyone in ${t} know`, edit: t => `${t} changed. Let them know`, delete: t => `${t} was deleted. Let them know`, settle: t => `Let ${t} know`};
+function tellCard(){
+  const t = UI.tell; if (!t || splitDraft) return "";
+  const one = t.rows.length === 1, row = r => `<div class="tell-row" data-tell-id="${esc(r.id)}"><div class="tell-txt"><b>${esc(r.name)}</b><span class="muted small">${esc(r.text.replace(TELL_FOOT, ""))}</span></div><button class="btn small${r.sent ? " done" : ""}" type="button" data-tell-send aria-label="Send to ${esc(r.name)}">${r.sent ? "✓ Sent" : "Send"}</button></div>`;
+  return `<section class="card tell-card" data-tell><div class="inline" style="justify-content:space-between"><p class="label">Tell them</p><button class="link plain small" type="button" data-tell-close>${t.rows.every(r => r.sent) || t.groupSent ? "Done" : "Not now"}</button></div>
+    <h3>${esc(TELL_HEAD[t.kind](t.title))}</h3>
+    ${t.group ? `<div class="tell-msg">${esc(t.group.replace(TELL_FOOT, "")).replace(/\n/g, "<br>")}</div>
+      <button class="btn primary" type="button" data-tell-all>${I.share}${t.groupSent ? "Sent. Send again" : "Send to everyone"}</button>
+      ${t.each ? `<div class="tell-rows">${t.rows.map(row).join("")}</div>` : `<button class="link small" type="button" data-tell-each style="align-self:center">Or tell each person separately</button>`}`
+    : one ? `<div class="tell-msg">${esc(t.rows[0].text.replace(TELL_FOOT, ""))}</div><div data-tell-id="${esc(t.rows[0].id)}"><button class="btn primary" type="button" data-tell-send>${I.share}${t.rows[0].sent ? "Sent. Send again" : `Send to ${esc(firstWord(t.rows[0].name))}`}</button></div>`
+    : `<div class="tell-rows">${t.rows.map(row).join("")}</div>`}
+    <p class="muted small">KeepWise does not message anyone. You send this yourself, from your own apps.</p></section>`;
+}
+const firstWord = n => String(n || "").trim().split(/\s+/)[0] || "them";
+async function tellSend(text, name){
+  try { if (navigator.share){ await navigator.share({text}); return true; } }
+  catch(e){ if (e && e.name === "AbortError") return false; }
+  const said = () => toast(`Copied. Paste it into a message${name ? " to " + name : ""}.`);
+  try { await navigator.clipboard.writeText(text); said(); return true; } catch(e){}
+  try { const ta = document.createElement("textarea"); ta.value = text; ta.style.cssText = "position:fixed;opacity:0"; document.body.append(ta); ta.select(); const ok = document.execCommand("copy"); ta.remove(); if (ok){ said(); return true; } } catch(e){}
+  toast("Couldn’t share or copy that. Press and hold the message to copy it."); return false;
+}
+
 /* ================= render ================= */
 function renderTabs(){
   $("tabbar").innerHTML = TABS.map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k?'aria-current="page"':""}><span class="ti">${I[k]}</span><span>${n}</span></button>`).join("");
@@ -2834,13 +2906,18 @@ view.addEventListener("click", async e => {
   if (b.dataset.space){ UI.biz = b.dataset.space === "business"; render(false); return; }
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
   if (b.hasAttribute("data-receipt-close")){ UI.receiptInfo = false; render(true); return; }
+  if (b.hasAttribute("data-tell-close")){ UI.tell = null; render(true); return; }
+  if (b.hasAttribute("data-tell-each")){ if (UI.tell) UI.tell.each = true; render(true); return; }
+  if (b.hasAttribute("data-tell-all") && UI.tell){ const t = UI.tell; if (await tellSend(t.group) && UI.tell === t){ t.groupSent = true; render(true); } return; }
+  if (b.hasAttribute("data-tell-send") && UI.tell){ const t = UI.tell, r = t.rows.find(y => y.id === b.closest("[data-tell-id]").dataset.tellId); if (!r) return;
+    if (await tellSend(r.text, firstWord(r.name)) && UI.tell === t){ r.sent = true; render(true); } return; }
   if (b.hasAttribute("data-open-account")){ UI.account = true; UI.inbox = false; if (typeof accInit === "function") accInit(); render(false); return; }
   const sp = b.closest("[data-split]");
   if (sp && b.hasAttribute("data-del-split")){
     if (shared()){ const x = SH.splits.find(y => y.id === sp.dataset.split); if (!x) return;
       await shWrite(() => SH.db.doc("splits/" + x.id).update({deleted:true, updatedBy:SH.me, updatedAt:Date.now()}), `Deleted ${x.title}. Your circle was notified.`); return; }
     const x = S.splits.find(y => y.id === sp.dataset.split), u = undoable();
-    S.splits = S.splits.filter(y => y !== x); save(); render(true); toast(`Deleted ${x ? x.title : "split"}.`, u); return; }
+    S.splits = S.splits.filter(y => y !== x); tellAbout("delete", x); save(); render(true); toast(`Deleted ${x ? x.title : "split"}.`, () => { UI.tell = null; u(); }); return; }
   const st = b.closest("[data-settle]");
   if (st && b.hasAttribute("data-settle-btn")){ const pid = st.dataset.settle, amt = +st.dataset.amt, bal = myBalances().find(x => x.p.id === pid);
     if (!bal) return;
@@ -2848,7 +2925,7 @@ view.addEventListener("click", async e => {
       await shWrite(() => SH.db.collection("payments").doc(uid() + uid()).set({...rec, amount:amt, date:isoDaysAgo(0), createdBy:me, createdAt:Date.now()}), bal.net > 0 ? `Recorded ${fmt(amt)} from ${bal.p.name}. Undo it in History.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}. ${bal.p.name} was notified.`); return; }
     if (bal.net > 0) S.settlements.push({id:uid(), from:pid, to:"me", amount:amt, date:isoDaysAgo(0)});
     else S.settlements.push({id:uid(), from:"me", to:pid, amount:amt, date:isoDaysAgo(0)});
-    save(); render(true); toast(bal.net > 0 ? `Recorded ${fmt(amt)} from ${bal.p.name}. Undo it in History.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}. Undo it in History.`); return; }
+    tellSettled(pid, amt, bal.net > 0); save(); render(true); toast(bal.net > 0 ? `Recorded ${fmt(amt)} from ${bal.p.name}. Undo it in History.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}. Undo it in History.`); return; }
   const pay = b.closest("[data-pay]");
   if (pay && shared()){ const x = SH.pays.find(y => y.id === pay.dataset.pay); if (!x) return;
     if (b.hasAttribute("data-pay-edit")){ UI.editPay = x.id; render(true); return; }
@@ -2947,8 +3024,12 @@ view.addEventListener("submit", async e => {
       return;
     }
     const old = d.editId && S.splits.find(y => y.id === d.editId);
-    if (old) Object.assign(old, rec); else S.splits.push({id:uid(), ...rec, date:isoDaysAgo(0)});
-    splitDraft = null; splitErr = ""; save(); render(!!old); if (old) showSplitCard(old.id); toast(old ? "Split updated." : "Split saved."); return;
+    const before = old ? JSON.parse(JSON.stringify(old)) : null, made = old || {id:uid(), ...rec, date:isoDaysAgo(0)};
+    if (old) Object.assign(old, rec); else S.splits.push(made);
+    tellAbout(old ? "edit" : "add", made, before);
+    splitDraft = null; splitErr = ""; save(); render(!!old); if (old) showSplitCard(old.id);
+    const tc = document.querySelector("[data-tell]"); if (tc) tc.scrollIntoView({block: "nearest"});
+    toast(old ? "Split updated." : "Split saved."); return;
   }
 });
 
