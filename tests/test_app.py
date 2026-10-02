@@ -192,7 +192,7 @@ async def currency_label_never_overlaps_amount_anywhere(ctx):
     for cur in ["USD", "GBP", "PKR", "AED", "INR"]:
         await tab(pg, "month"); await pg.select_option("#m-cur", cur); await pg.wait_for_timeout(120)
         r = await pg.evaluate(CHECK_MONEY); assert r["n"] >= 1 and not r["bad"], f"{cur} month: {r}"
-        await tab(pg, "plan"); r = await pg.evaluate(CHECK_MONEY); assert r["n"] >= 10 and not r["bad"], f"{cur} plan: {r}"
+        await tab(pg, "plan"); r = await pg.evaluate(CHECK_MONEY); assert r["n"] >= 5 and not r["bad"], f"{cur} plan: {r}"
         await tab(pg, "split"); await pg.click("[data-new-split]"); await pg.wait_for_timeout(80)
         r = await pg.evaluate(CHECK_MONEY); assert r["n"] >= 1 and not r["bad"], f"{cur} split form: {r}"
         await pg.click("[data-cancel-split]")
@@ -326,7 +326,8 @@ async def subs_rule_days_add_remove(ctx):
     await f.locator("[name=name]").fill("YouTube Premium"); await f.locator("[name=price]").fill("13.99")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(120)
     assert "YouTube Premium" in await text(pg, "[data-out=subsList]")
-    await pg.locator("[data-sub]", has_text="YouTube Premium").locator("[data-del-sub]").click(); await pg.wait_for_timeout(100)
+    await pg.locator("[data-sub]", has_text="YouTube Premium").locator("[data-sub-edit]").click(); await pg.wait_for_timeout(100)
+    await pg.locator("form[data-form=subEdit] [data-del-sub]").click(); await pg.wait_for_timeout(100)
     assert "YouTube Premium" not in await text(pg, "[data-out=subsList]")
 
 # ---------------- cheaper ----------------
@@ -376,7 +377,8 @@ async def codes_search_vote_add(ctx):
     await f.locator("[name=store]").fill("Zara"); await f.locator("[name=code]").fill("ZARA15")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(100)
     row = pg.locator("[data-code]", has_text="Zara"); assert "Added by you" in await row.inner_text()
-    await row.locator("[data-del-code]").click(); await pg.wait_for_timeout(80)
+    await row.locator("[data-code-edit]").click(); await pg.wait_for_timeout(80)
+    await pg.locator("form[data-form=codeEdit] [data-del-code]").click(); await pg.wait_for_timeout(80)
     assert await pg.locator("[data-code]", has_text="Zara").count() == 0
 
 # ---------------- plan ----------------
@@ -389,7 +391,20 @@ async def plan_envelopes_lines_priority(ctx):
     assert "Adds up to 100%" in await text(pg, "[data-out=envCheck]")
     n0 = await pg.locator("[data-exp]").count()
     await pg.click("[data-add-exp]"); await pg.wait_for_timeout(100)
-    assert await pg.locator("[data-exp]").count() == n0 + 1
+    await pg.click("form[data-form=exp] [type=submit]"); await pg.wait_for_timeout(100); assert "Give the line a name" in await pg.inner_text("#toast")
+    await pg.fill("form[data-form=exp] [name=name]", "Parking"); await pg.fill("form[data-form=exp] [name=amount]", "45")
+    await pg.evaluate("document.activeElement.blur()"); await pg.wait_for_timeout(250)
+    assert await pg.input_value("form[data-form=exp] [name=name]") == "Parking", "leaving a field never empties the card"
+    await pg.click("form[data-form=exp] [type=submit]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-exp]").count() == n0 + 1 and "Parking" in await text(pg, "[data-out=expList]")
+    # every line edits as a card: Edit, then Save, Remove or Cancel
+    await pg.locator("[data-exp]").last.locator("[data-exp-edit]").click(); await pg.wait_for_timeout(100)
+    await pg.fill("form[data-form=exp] [name=amount]", "60"); await pg.select_option("form[data-form=exp] [name=env]", "misc"); await pg.click("form[data-form=exp] [type=submit]"); await pg.wait_for_timeout(150)
+    last = (await state(pg))["expenses"][-1]; assert last["name"] == "Parking" and last["amount"] == 60 and last["env"] == "misc"
+    await pg.locator("[data-exp]").last.locator("[data-exp-edit]").click(); await pg.wait_for_timeout(100)
+    await pg.fill("form[data-form=exp] [name=amount]", "999"); await pg.click("[data-exp-cancel]"); await pg.wait_for_timeout(100)
+    assert (await state(pg))["expenses"][-1]["amount"] == 60, "Cancel changes nothing"
+    await pg.locator("[data-exp]").last.locator("[data-exp-edit]").click(); await pg.wait_for_timeout(100)
     await pg.locator("[data-exp]").last.locator("[data-del-exp]").click(); await pg.wait_for_timeout(100)
     assert await pg.locator("[data-exp]").count() == n0
     await pg.select_option("select[data-bind=priority]", "goal"); await pg.wait_for_timeout(80)
@@ -951,7 +966,7 @@ async def removals_can_be_undone(ctx):
     pg = await open_app(ctx)
     # subscription
     await tab(pg, "subs"); n = len((await state(pg))["subs"])
-    await pg.click("[data-sub=s1] [data-del-sub]"); await pg.wait_for_timeout(120)
+    await pg.click("[data-sub=s1] [data-sub-edit]"); await pg.wait_for_timeout(100); await pg.click("[data-sub=s1] [data-del-sub]"); await pg.wait_for_timeout(120)
     assert len((await state(pg))["subs"]) == n - 1 and "Removed Netflix." in await pg.inner_text("#toast")
     await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(150)
     st = await state(pg); assert len(st["subs"]) == n and any(w["link"] == "sub:s1" for w in st["swaps"]), "sub and its swap come back"
@@ -964,6 +979,7 @@ async def removals_can_be_undone(ctx):
     assert len((await state(pg))["splits"]) == m
     # plan line, code, swap
     await tab(pg, "plan"); k = len((await state(pg))["expenses"])
+    await pg.locator("[data-exp]").first.locator("[data-exp-edit]").click(); await pg.wait_for_timeout(100)
     await pg.locator("[data-exp]").first.locator("[data-del-exp]").click(); await pg.wait_for_timeout(120)
     await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(150)
     assert len((await state(pg))["expenses"]) == k
@@ -971,7 +987,7 @@ async def removals_can_be_undone(ctx):
     f = pg.locator("form[data-form=addCode]"); await f.locator("[name=store]").fill("Zara"); await f.locator("[name=code]").fill("ZARA15")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(120)
     c = len((await state(pg))["codes"])
-    await pg.locator("[data-del-code]").first.click(); await pg.wait_for_timeout(120)
+    await pg.locator("[data-code-edit]").first.click(); await pg.wait_for_timeout(100); await pg.locator("[data-del-code]").first.click(); await pg.wait_for_timeout(120)
     assert len((await state(pg))["codes"]) == c - 1
     await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(150)
     assert len((await state(pg))["codes"]) == c
@@ -986,7 +1002,8 @@ async def amounts_are_never_negative(ctx):
     await pg.fill("#m-income", "-4000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(200)
     assert (await state(pg))["income"] == 4000
     await tab(pg, "plan")
-    amt = pg.locator("[data-exp-amt]").first; await amt.fill("-50"); await amt.blur(); await pg.wait_for_timeout(200)
+    await pg.locator("[data-exp-edit]").first.click(); await pg.wait_for_timeout(100)
+    await pg.fill("form[data-form=exp] [name=amount]", "-50"); await pg.click("form[data-form=exp] [type=submit]"); await pg.wait_for_timeout(200)
     assert (await state(pg))["expenses"][0]["amount"] == 50
     await tab(pg, "split"); await pg.click("[data-new-split]")
     await pg.fill("[data-d=title]", "Refund trick"); await pg.fill("[data-d=amount]", "100")
@@ -1199,7 +1216,7 @@ async def keep_data_safe_reminders(ctx):
     # a real plan, a few days in, with no backup: a gentle reminder that can wait
     pg2 = await open_app(ctx); await tab(pg2, "plan")
     await pg2.click("[data-reset=blank]"); await pg2.click("[data-reset-yes]"); await pg2.wait_for_timeout(150)
-    await pg2.click("[data-add-exp]"); await pg2.wait_for_timeout(100); await tab(pg2, "month")
+    await pg2.click("[data-add-exp]"); await pg2.wait_for_timeout(100); await pg2.fill("form[data-form=exp] [name=name]", "Rent"); await pg2.click("form[data-form=exp] [type=submit]"); await pg2.wait_for_timeout(100); await tab(pg2, "month")
     assert await text(pg2, "[data-out=keepSafe]") == "", "not on day one"
     await pg2.close()
     import datetime
@@ -1687,6 +1704,51 @@ async def statement_separates_transfers_from_spending(ctx):
     assert st["income"] == 200000 and [s["name"] for s in st["subs"]] == ["Netflix"]
     assert not pg.errors, pg.errors
 
+FILL_FORMS = """() => { const out = {};
+  document.querySelectorAll('#view form, #view [data-pay] , #view details[open]').forEach((f, fi) => {
+    f.querySelectorAll('input').forEach((el, i) => {
+      if (el.readOnly || el.disabled || ['checkbox','radio','file','hidden','search'].includes(el.type) || el.offsetParent === null) return;
+      const v = el.type === 'date' ? '2028-04-20' : el.type === 'email' ? 'zed@example.com' : (el.inputMode === 'decimal' || el.inputMode === 'numeric') ? '37' : el.type === 'tel' ? '+1 555 010 0199' : 'Zed';
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, v);
+      el.dispatchEvent(new Event('input', {bubbles: true})); el.dispatchEvent(new Event('change', {bubbles: true}));
+      el.setAttribute('data-sweep', fi + ':' + i); out[fi + ':' + i] = v; el.focus();
+    }); });
+  if (document.activeElement) document.activeElement.blur(); return out; }"""
+READ_FORMS = """() => { const out = {}; document.querySelectorAll('#view form, #view [data-pay] , #view details[open]').forEach((f, fi) => f.querySelectorAll('input').forEach((el, i) => out[fi + ':' + i] = el.value)); return out; }"""
+
+@test
+async def no_card_loses_what_you_typed(ctx):
+    # Tapping Done on the keyboard, or opening a date picker, takes focus out of the field. Whatever was typed in any
+    # card anywhere in the app must still be there afterwards.
+    pg = await open_app(ctx, fb=True)
+    async def sweep(where, min_fields=1):
+        want = await pg.evaluate(FILL_FORMS); assert len(want) >= min_fields, f"{where}: found {len(want)} fields"
+        await pg.wait_for_timeout(350)
+        got = await pg.evaluate(READ_FORMS)
+        lost = {k: (v, got.get(k)) for k, v in want.items() if got.get(k) != v}
+        assert not lost, f"{where}: lost {lost}"
+    await pg.click("[data-inc-add]"); await pg.wait_for_timeout(100); await sweep("other income", 2); await pg.click("[data-inc-cancel]")
+    await tab(pg, "subs"); await pg.click("text=Add a subscription"); await pg.wait_for_timeout(100); await sweep("add a subscription", 3)
+    await pg.locator("[data-sub-edit]").first.click(); await pg.wait_for_timeout(100); await sweep("edit a subscription", 3); await pg.click("[data-sub-cancel]")
+    await tab(pg, "cheaper"); await pg.click("text=Add your own comparison"); await pg.wait_for_timeout(100); await sweep("add a comparison", 2)
+    await tab(pg, "codes"); await pg.click("text=Add a code you found"); await pg.wait_for_timeout(100); await sweep("add a code", 3)
+    await pg.click("form[data-form=addCode] [type=submit]"); await pg.wait_for_timeout(150)
+    await pg.locator("[data-code-edit]").first.click(); await pg.wait_for_timeout(100); await sweep("edit a code", 3); await pg.click("[data-code-cancel]")
+    await tab(pg, "plan"); await pg.click("[data-add-exp]"); await pg.wait_for_timeout(100); await sweep("add a line", 2); await pg.click("[data-exp-cancel]")
+    await pg.locator("[data-exp-edit]").first.click(); await pg.wait_for_timeout(100); await sweep("edit a line", 2); await pg.click("[data-exp-cancel]")
+    await pg.click("[data-loan-add]"); await pg.wait_for_timeout(100); await sweep("add a loan", 5)
+    for kind in ("card", "student", "home"):   # every dropdown in the loan card keeps its choice
+        await pg.select_option("form[data-form=loan] [name=kind]", kind); await pg.evaluate("document.activeElement && document.activeElement.blur()"); await pg.wait_for_timeout(300)
+        assert await pg.input_value("form[data-form=loan] [name=kind]") == kind, kind
+    for ev in ("wk", "2wk", "yr"):
+        await pg.select_option("form[data-form=loan] [name=every]", ev); await pg.evaluate("document.activeElement && document.activeElement.blur()"); await pg.wait_for_timeout(300)
+        assert await pg.input_value("form[data-form=loan] [name=every]") == ev, ev
+    assert await pg.input_value("form[data-form=loan] [name=name]") == "Zed"
+    await pg.click("[data-loan-cancel]")
+    await tab(pg, "split"); await pg.click("[data-new-split]"); await pg.wait_for_timeout(100); await sweep("new split", 2); await pg.click("[data-cancel-split]")
+    await open_account(pg); await pg.click("[data-acc-mode=create]"); await pg.wait_for_timeout(120); await sweep("sign up", 2)
+    assert not pg.errors, pg.errors
+
 @test
 async def keepwise_plus_codes_show_as_eligible(ctx):
     pg = await open_app(ctx); await tab(pg, "codes")
@@ -1724,11 +1786,37 @@ async def loans_section_counts_and_finishes(ctx):
     d = await text(pg, "[data-out=envelopes]"); assert "Student debt" in d and "Car" in d and "$300" in d
     # once the end date has passed it stops counting
     await pg.clock.set_fixed_time(__import__("datetime").datetime(2027, 4, 20, 10, 0)); await tab(pg, "plan"); await pg.wait_for_timeout(150)
+    # picking an end date, or tapping Done on the keyboard, never empties the card (the iPhone date picker takes focus away)
+    await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
+    await f.locator("[name=name]").fill("Bank of America"); await f.locator("[name=total]").fill("700"); await f.locator("[name=end]").fill("2028-04-20")
+    await pg.evaluate("document.activeElement.blur()"); await pg.wait_for_timeout(250)
+    assert await f.locator("[name=name]").input_value() == "Bank of America" and await f.locator("[name=total]").input_value() == "700" and await f.locator("[name=end]").input_value() == "2028-04-20"
+    await pg.click("[data-loan-cancel]"); await pg.wait_for_timeout(100)
+    # interest appears only when payment, amount left, installments and end date are all there, and the maths is exact
+    await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
+    assert await f.locator("[name=rate]").get_attribute("readonly") is not None and await f.locator("[name=rate]").input_value() == ""
+    await f.locator("[name=pay]").fill("100"); await f.locator("[name=total]").fill("1100"); await f.locator("[name=left]").fill("12"); await pg.wait_for_timeout(80)
+    assert await f.locator("[name=rate]").input_value() == "", "no end date yet, so no interest shown"
+    await f.locator("[name=end]").fill("2028-04-20"); await pg.wait_for_timeout(80)
+    assert await f.locator("[name=rate]").input_value() == "16.4% a year", await f.locator("[name=rate]").input_value()
+    assert "$1,200 in all, which is $100 in interest" in await f.locator("[data-loan-ratenote]").inner_text()
+    await f.locator("[name=total]").fill("1200"); await pg.wait_for_timeout(80); assert await f.locator("[name=rate]").input_value() == "0% a year"
+    await f.locator("[name=total]").fill("5000"); await pg.wait_for_timeout(80)
+    assert await f.locator("[name=rate]").input_value() == "Check the numbers" and "less than the amount left" in await f.locator("[data-loan-ratenote]").inner_text()
+    await f.locator("[name=left]").fill("a few"); await pg.wait_for_timeout(80); assert await f.locator("[name=rate]").input_value() == ""
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(120); assert "whole number" in await pg.inner_text("#toast")
+    await f.locator("[name=left]").fill("12"); await f.locator("[name=total]").fill("1100"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    box = await text(pg, "[data-out=loans]"); assert "12 installments left · interest about 16.4% a year" in box, box
+    await pg.locator("[data-loan]").last.locator("[data-loan-edit]").click(); await pg.wait_for_timeout(120)
+    assert await pg.input_value("form[data-form=loan] [name=left]") == "12" and await pg.input_value("form[data-form=loan] [name=rate]") == "16.4% a year"
+    await pg.locator("form[data-form=loan] [data-loan-del]").click(); await pg.wait_for_timeout(150)
     # a credit card: its type shows, and the yearly fee is spread across the year
     await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
     assert not await f.locator("[data-loan-cardrow]").is_visible(), "card fields stay hidden for other debts"
     await f.locator("[name=kind]").select_option("card"); await pg.wait_for_timeout(80)
     assert [o.strip() for o in await f.locator("[name=card] option").all_inner_texts()] == ["Visa", "Mastercard", "American Express", "Discover", "UnionPay", "Other"]
+    await pg.evaluate("document.activeElement.blur()"); await pg.wait_for_timeout(250)
+    assert await f.locator("[name=kind]").input_value() == "card" and await f.locator("[data-loan-cardrow]").is_visible(), "the chosen type stays chosen"
     await f.locator("[name=card]").select_option("Mastercard"); await f.locator("[name=pay]").fill("100"); await f.locator("[name=fee]").fill("120")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
     box = await text(pg, "[data-out=loans]"); assert "Credit card · Mastercard · $100 a month · $120 yearly fee" in box and "$110/mo" in box, box

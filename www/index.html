@@ -203,6 +203,7 @@ details summary::-webkit-details-marker{display:none}
 @media (prefers-reduced-motion:no-preference){.cmp-bar{animation:grow .4s ease-out both;transform-origin:bottom}@keyframes grow{from{transform:scaleY(.2)}to{transform:scaleY(1)}}}
 .env-row{padding:0}
 .env-head{appearance:none;border:0;background:none;width:100%;text-align:left;font:inherit;color:inherit;padding:14px 18px;display:flex;flex-direction:column;gap:8px;cursor:pointer}
+.env-head>.row-top,.env-head>.meter{width:100%;box-sizing:border-box;flex:none}  /* Safari does not stretch the children of a button, so the bar had no width */
 .env-head:focus-visible{outline:2px solid var(--green);outline-offset:-3px;border-radius:14px}
 .env-hint{display:inline-flex;align-items:center;gap:4px;align-self:flex-end}
 .env-row.open .env-hint svg{transform:rotate(180deg)}
@@ -353,6 +354,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .inc-row{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--bg)}
 .inc-row.editing{background:var(--card)}
 .inc-form{display:flex;flex-direction:column;gap:12px}
+input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weight:600}
 .inc-log{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .inc-log input[type=date]{min-height:48px}
 .inc-pays .line{padding:8px 0}
@@ -1531,6 +1533,13 @@ OUT.subsList = () => {
     const renewEditor = !editing ? "" : `<div class="renew-set"><span class="small muted">Renews on</span>${s.cycle === "yr" ? `<input type="date" data-renew-date value="${esc(s.renewDate || "")}" aria-label="Next renewal date for ${esc(s.name)}">` : `<select data-renew-day aria-label="Renewal day for ${esc(s.name)}"><option value="">Pick a day</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${s.renewDay === i + 1 ? "selected" : ""}>${ordinal(i + 1)} of each month</option>`).join("")}</select>`}<button class="link plain small" type="button" data-renew-cancel>Done</button></div>`;
     const renew = editing ? "" : nr ? `<button class="link plain small renew-btn" type="button" data-renew-open aria-label="Change renewal date for ${esc(s.name)}">Renews ${nd === 0 ? "today" : nd === 1 ? "tomorrow" : nr.toLocaleDateString("en-US", {month: "short", day: "numeric"})}</button>`
       : `<button class="link plain small renew-btn add" type="button" data-renew-open aria-label="Add renewal date for ${esc(s.name)}">+ Renewal date</button>`;
+    if (UI.subEdit === s.id) return `<div class="row" data-sub="${s.id}"><form class="inc-form" data-form="subEdit">
+      <label class="field"><span>Name</span><input name="name" value="${esc(s.name)}" enterkeyhint="next" autocomplete="off"></label>
+      <div class="grid2"><label class="field"><span>Price</span><span class="money-in"><em>${esc(sym())}</em><input name="price" inputmode="decimal" enterkeyhint="next" value="${s.price}"></span></label>
+        <label class="field"><span>Billed</span><select name="cycle"><option value="mo" ${s.cycle !== "yr" ? "selected" : ""}>Monthly</option><option value="yr" ${s.cycle === "yr" ? "selected" : ""}>Yearly</option></select></label></div>
+      <div class="grid2"><label class="field"><span>Last used</span><input name="last" type="date" max="${isoDaysAgo(0)}" value="${esc(s.last || "")}"></label>
+        <label class="field"><span>Kind</span><input name="group" value="${esc(s.group || "")}" placeholder="Video, Music…" enterkeyhint="done"></label></div>
+      ${editBtns(false, "data-del-sub", "", "data-sub-cancel")}</form></div>`;
     return `<div class="row${UI.flashSub === s.id ? " flash" : ""}" data-sub="${s.id}"><div class="row-top"><div><div class="name">${esc(s.name)}</div>
       <div class="muted small">${!s.last ? "Usage not checked yet" : d === 0 ? "Last used today" : d === 1 ? "Last used yesterday" : `Last used ${d} days ago`}${s.group ? ` · ${esc(s.group)}` : ""}</div>${s.since ? `<div class="muted small">${esc(paidFor(s))}</div>` : ""}<div>${renew}</div></div>
       <div><div class="name tnum">${fmt(s.price)}<span class="muted small">/${s.cycle === "yr" ? "yr" : "mo"}</span></div>${s.cycle === "yr" ? `<div class="muted small tnum">${fmt(subMonthly(s))}/mo</div>` : ""}</div></div>
@@ -1538,7 +1547,7 @@ OUT.subsList = () => {
       ${f.length ? `<div class="inline">${f.map(r => `<span class="pill ${k === "keep" ? "grey" : "flag"}">${esc(r)}</span>`).join("")}</div>` : ""}
       <div class="inline" style="justify-content:space-between">
         <div class="seg" role="group" aria-label="${esc(s.name)}"><button type="button" data-keep="keep" aria-pressed="${k === "keep"}">Keep</button><button type="button" data-keep="auto" aria-pressed="${k === "auto"}" title="Let your rules decide">Auto</button><button type="button" class="drop" data-keep="drop" aria-pressed="${k === "drop"}">Drop</button></div>
-        <span class="inline">${d === 0 ? `<button class="btn small done" type="button" data-used disabled aria-label="${esc(s.name)} is marked as used today">${I.check}Used today</button>` : `<button class="btn small" type="button" data-used aria-label="Mark ${esc(s.name)} as used today">I used it today</button>`}<button class="btn small danger" type="button" data-del-sub aria-label="Remove ${esc(s.name)}">Remove</button></span></div>
+        <span class="inline">${d === 0 ? `<button class="btn small done" type="button" data-used disabled aria-label="${esc(s.name)} is marked as used today">${I.check}Used today</button>` : `<button class="btn small" type="button" data-used aria-label="Mark ${esc(s.name)} as used today">I used it today</button>`}<button class="btn small" type="button" data-sub-edit aria-label="Edit ${esc(s.name)}">Edit</button></span></div>
       ${k === "drop" ? `<div class="drop-help"><p class="small">Cancel ${nr ? `before ${nd === 0 ? "today ends" : nr.toLocaleDateString("en-US", {month: "short", day: "numeric"})}` : "before it renews"}, in the app or site where you signed up.</p>${cancelLink(s)}</div>` : ""}</div>`;}).join("")}</div>`;
 };
 
@@ -1639,13 +1648,30 @@ OUT.codeList = () => {
     .sort((a,b) => { const r = x => ({Likely:0,"Check first":1,"Probably dead":2})[codeStatus(x)[0]]; return r(a) - r(b) || daysSince(a.last) - daysSince(b.last); });
   if (!list.length) return `<p class="empty">${codeQ.trim() ? `No codes for “${esc(codeQ.trim())}” yet.` : "No codes of your own yet. When you find a promo code, save it here so it is ready at checkout."}${codeQ.trim() ? " Add one you found below." : ""}</p>`;
   return `<div class="rows">${list.map(c => { const [st, cls] = codeStatus(c), d = daysSince(c.last);
+    if (UI.codeEdit === c.id) return `<div class="row" data-code="${c.id}"><form class="inc-form" data-form="codeEdit">
+      <div class="grid2"><label class="field"><span>Store</span><input name="store" value="${esc(c.store)}" enterkeyhint="next" autocomplete="off"></label><label class="field"><span>Code</span><input name="code" value="${esc(c.code)}" autocapitalize="characters" enterkeyhint="next" autocomplete="off"></label></div>
+      <label class="field"><span>What it gives</span><input name="offer" value="${esc(c.offer || "")}" enterkeyhint="done"></label>
+      ${editBtns(false, "data-del-code", "", "data-code-cancel")}</form></div>`;
     return `<div class="row" data-code="${c.id}"><div class="row-top"><div><div class="name">${esc(c.store)}</div><div class="muted small">${esc(c.offer || "")}</div></div><div><span class="pill ${cls}">${st}</span></div></div>
     <div class="inline" style="justify-content:space-between"><button class="code" type="button" data-copy="${esc(c.code)}" aria-label="Copy code ${esc(c.code)}">${esc(c.code)}</button>
     <span class="muted small">${c.mine ? "Added by you · " : ""}worked ${c.worked}×, failed ${c.failed}× · last ${d === 0 ? "today" : d === 1 ? "yesterday" : d + " days ago"}</span></div>
-    <div class="inline"><button class="btn small" type="button" data-vote="worked">It worked</button><button class="btn small" type="button" data-vote="failed">Didn’t work</button>${c.mine ? `<button class="btn small danger" type="button" data-del-code>Remove</button>` : ""}</div></div>`;}).join("")}</div>`;
+    <div class="inline"><button class="btn small" type="button" data-vote="worked">It worked</button><button class="btn small" type="button" data-vote="failed">Didn’t work</button>${c.mine ? `<button class="btn small" type="button" data-code-edit aria-label="Edit the ${esc(c.store)} code">Edit</button>` : ""}</div></div>`;}).join("")}</div>`;
 };
 
 // ---- Plan ----
+// Lines, subscriptions and codes all edit the same way: tap Edit, change it in a card, then Save, Remove or Cancel.
+const editBtns = (isNew, del, addLabel, cancel) => `<div class="grid2">${isNew ? `<button class="btn" type="button" ${cancel}>Cancel</button>` : `<button class="btn danger" type="button" ${del}>Remove</button>`}<button class="btn primary" type="submit" style="padding:10px">${isNew ? addLabel : "Save"}</button></div>
+    ${isNew ? "" : `<button class="link plain small" type="button" ${cancel} style="align-self:center">Cancel</button>`}`;
+function expForm(e){
+  return `<form class="inc-form" data-form="exp"><label class="field"><span>Name</span><input name="name" value="${esc(e ? e.name : "")}" placeholder="e.g. Rent" enterkeyhint="next" autocomplete="off"></label>
+    <div class="grid2"><label class="field"><span>Amount a month</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${e ? e.amount : ""}"></span></label>
+      <label class="field"><span>Envelope</span><select name="env"><option value="needs" ${!e || e.env === "needs" ? "selected" : ""}>Expenditures</option><option value="misc" ${e && e.env === "misc" ? "selected" : ""}>Misc</option></select></label></div>
+    ${editBtns(!e, "data-del-exp", "Add line", "data-exp-cancel")}</form>`;
+}
+OUT.expList = () => S.expenses.map(e => UI.expEdit === e.id ? `<div class="inc-row editing" data-exp="${e.id}">${expForm(e)}</div>`
+    : `<div class="inc-row" data-exp="${e.id}"><div class="row-top"><div><div class="name">${esc(e.name)}</div><div class="muted small">${e.env === "misc" ? "Misc" : "Expenditures"}</div></div><div class="name tnum">${fmt(e.amount)}<span class="muted small">/mo</span></div></div>
+      <button class="link plain small" type="button" data-exp-edit aria-label="Edit ${esc(e.name)}" style="align-self:flex-end">Edit</button></div>`).join("")
+  + (UI.expAdd ? `<div class="inc-row editing">${expForm(null)}</div>` : `<button class="btn" type="button" data-add-exp>${I.plus}Add a line</button>`);
 V.plan = () => `
   <h1>Plan</h1>
   <div class="grid2">
@@ -1658,12 +1684,7 @@ V.plan = () => `
     </div><div data-out="envCheck">${OUT.envCheck()}</div></section>
   <section class="card"><h2>What goes out each month</h2>
     <div data-out="expTotal">${OUT.expTotal()}</div>
-    <div class="rows" style="border-radius:14px">${S.expenses.map(e => `<div class="row" data-exp="${e.id}" style="padding:10px 12px">
-      <input data-exp-name value="${esc(e.name)}" aria-label="Name" enterkeyhint="done">
-      <div class="inline"><span class="money-in" style="flex:1 1 100px"><em>${esc(sym())}</em><input data-exp-amt type="text" inputmode="decimal" enterkeyhint="done" value="${e.amount}" aria-label="Amount for ${esc(e.name)}"></span>
-      <select data-exp-env style="flex:1 1 150px" aria-label="Envelope"><option value="needs" ${e.env==="needs"?"selected":""}>Expenditures</option><option value="misc" ${e.env==="misc"?"selected":""}>Misc</option></select>
-      <button class="btn small danger" type="button" data-del-exp aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>
-    <button class="btn" type="button" data-add-exp>Add a line</button></section>
+    <div data-out="expList" style="display:flex;flex-direction:column;gap:10px">${OUT.expList()}</div></section>
   <div data-out="loans">${OUT.loans()}</div>
   <section class="card"><h2>Savings</h2>
     <div class="grid2"><label class="field"><span>Emergency fund so far</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="efSaved" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.efSaved}"></span></label>
@@ -2649,6 +2670,28 @@ function loanFinish(l){
   const mth = loanMonthly(l); if (+l.total > 0 && mth > 0){ const n = Math.ceil(l.total / mth); return {date: new Date(t.getFullYear(), t.getMonth() + n, 1), months: n, est: true}; }
   return null;
 }
+// Interest is worked out only when every number is there and makes sense: a payment, the amount left, whole installments
+// left and a real end date still ahead. It is the yearly rate at which those payments exactly clear the amount left.
+const LOAN_PPY = {mo: 12, wk: 52, "2wk": 26, yr: 1};
+function loanRate(l){
+  const A = +l.pay, P = +l.total, n = +l.left, end = String(l.end || "");
+  if (!(A > 0) || !(P > 0) || !(n >= 1) || !Number.isInteger(n) || n > 1200) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(end) || isNaN(new Date(end + "T00:00:00").getTime()) || end < isoDaysAgo(0)) return null;
+  const paid = A * n; if (paid < P - 0.005) return {short: true};
+  if (paid - P < 0.005) return {apr: 0, paid, cost: 0};
+  let lo = 0, hi = 1; const pv = r => A * (1 - Math.pow(1 + r, -n)) / r;
+  while (pv(hi) > P && hi < 64) hi *= 2;
+  for (let i = 0; i < 80; i++){ const mid = (lo + hi) / 2; if (pv(mid) > P) lo = mid; else hi = mid; }
+  const apr = (lo + hi) / 2 * (LOAN_PPY[l.every] || 12) * 100;
+  return isFinite(apr) && apr < 1000 ? {apr: Math.round(apr * 10) / 10, paid, cost: r2(paid - P)} : null;
+}
+function loanCalc(f){ const v = n => String(f.elements[n] ? f.elements[n].value : "").trim(), leftRaw = v("left");
+  const d = {pay: numv(v("pay")), total: numv(v("total")), left: /^\d{1,4}$/.test(leftRaw) ? +leftRaw : 0, end: v("end"), every: v("every")};
+  f.elements.rate.value = loanRateText(d); const n = f.querySelector("[data-loan-ratenote]"); if (n) n.textContent = loanRateNote(d); }
+const loanRateNote = l => { const r = loanRate(l); return !r ? "Fill in the payment, amount left, installments left and end date, and the interest is worked out for you."
+  : r.short ? "These payments add up to less than the amount left. Check the payment, the amount left or the installments."
+  : r.apr === 0 ? "Your payments add up to exactly the amount left, so there is no interest." : `You will pay ${fmt(r.paid)} in all, which is ${fmt(r.cost)} in interest.`; };
+const loanRateText = l => { const r = loanRate(l); return !r ? "" : r.short ? "Check the numbers" : `${r.apr}% a year`; };
 const monthYear = d => d.toLocaleDateString("en-US", {month: "short", year: "numeric"});
 function loanForm(l){
   const d = UI.loanDraft, cardSel = !d.card ? "Visa" : CARD_TYPES.includes(d.card) ? d.card : "Other", sel = (name, list, v) => `<select name="${name}">${list.map(([k, n]) => `<option value="${k}" ${v === k ? "selected" : ""}>${n}</option>`).join("")}</select>`;
@@ -2660,7 +2703,10 @@ function loanForm(l){
     <div class="grid2"><label class="field"><span>Payment</span><span class="money-in"><em>${esc(sym())}</em><input name="pay" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.pay)}"></span></label>
       <label class="field"><span>How often</span>${sel("every", LOAN_EVERY, d.every)}</label></div>
     <div class="grid2"><label class="field"><span>Left to pay <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="total" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.total)}"></span></label>
-      <label class="field"><span>End date <small class="muted">optional</small></span><input name="end" type="date" value="${esc(d.end || "")}"></label></div>
+      <label class="field"><span>Installments left <small class="muted">optional</small></span><input name="left" inputmode="numeric" enterkeyhint="next" placeholder="e.g. 24" value="${esc(d.left || "")}"></label></div>
+    <div class="grid2"><label class="field"><span>End date <small class="muted">optional</small></span><input name="end" type="date" value="${esc(d.end || "")}"></label>
+      <label class="field"><span>Interest</span><input name="rate" readonly tabindex="-1" class="calc" placeholder="Worked out for you" value="${esc(loanRateText(d))}" aria-label="Interest, worked out from your numbers"></label></div>
+    <p class="muted small" data-loan-ratenote>${loanRateNote(d)}</p>
     <div class="grid2">${l ? `<button class="btn danger" type="button" data-loan-del>Remove</button>` : `<button class="btn" type="button" data-loan-cancel>Cancel</button>`}<button class="btn primary" type="submit" style="padding:10px">${l ? "Save" : "Add loan"}</button></div>
     ${l ? `<button class="link plain small" type="button" data-loan-cancel style="align-self:center">Cancel</button>` : ""}</form>`;
 }
@@ -2668,13 +2714,14 @@ OUT.loans = () => {
   const list = S.loans || [], live = list.filter(l => !loanDone(l)), owed = r2(live.reduce((a, l) => a + (+l.total || 0), 0));
   const rows = list.map(l => {
     if (UI.loanEdit === l.id) return `<div class="inc-row editing" data-loan="${l.id}">${loanForm(l)}</div>`;
-    const f = loanFinish(l), done = loanDone(l), ev = (LOAN_EVERY.find(x => x[0] === l.every) || LOAN_EVERY[0])[2];
+    const f = loanFinish(l), done = loanDone(l), rate = loanRate(l), ev = (LOAN_EVERY.find(x => x[0] === l.every) || LOAN_EVERY[0])[2];
     return `<div class="inc-row" data-loan="${l.id}"><div class="row-top"><div><div class="name">${esc(l.name || loanKind(l.kind))}</div><div class="muted small">${esc(loanKind(l.kind))}${l.kind === "card" && l.card ? " · " + esc(l.card) : ""} · ${fmt(l.pay)} ${ev}${l.kind === "card" && +l.fee > 0 ? ` · ${fmt(l.fee)} yearly fee` : ""}</div></div>
         <div style="text-align:right">${done ? `<span class="pill ok">Paid off</span>` : `<div class="name tnum">${fmt(loanMonthly(l))}<span class="muted small">/mo</span></div>`}${+l.total > 0 && !done ? `<div class="muted small tnum">${fmt(l.total)} left</div>` : ""}</div></div>
+      ${!done && (+l.left > 0 || (rate && !rate.short)) ? `<p class="small">${[+l.left > 0 ? `${l.left} installment${+l.left === 1 ? "" : "s"} left` : "", rate && !rate.short ? `interest about ${rate.apr}% a year` : ""].filter(Boolean).join(" · ").replace(/^./, c => c.toUpperCase())}</p>` : ""}
       ${done ? `<p class="muted small">Ended ${shortDate(l.end)}. It no longer counts in your plan.</p>` : f ? `<p class="small ${f.est ? "muted" : ""}">${f.est ? `About ${f.months} month${f.months === 1 ? "" : "s"} to go at this pace, around ${monthYear(f.date)}. Interest is not included.` : f.months === 0 ? `Ends ${shortDate(l.end)}.` : `Ends ${monthYear(f.date)}, ${f.months} month${f.months === 1 ? "" : "s"} from now.`}</p>` : ""}
       <button class="link plain small" type="button" data-loan-edit aria-label="Edit ${esc(l.name || loanKind(l.kind))}" style="align-self:flex-end">Edit</button></div>`; }).join("");
   return `<section class="card inc-card loan-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Loans and debt${infoBtn("loans", "About loans and debt")}</h2>${live.length ? `<span class="muted small tnum">${fmt(loansMonthly())}/mo</span>` : ""}</div>
-    ${infoTip("loans", "Loan and credit card payments count toward Expenditures until the end date passes. A card’s yearly fee is spread across the year. With an amount left and no end date, the finish is estimated from your payments and does not include interest.")}
+    ${infoTip("loans", "Loan and credit card payments count toward Expenditures until the end date passes. A card’s yearly fee is spread across the year. Interest is worked out only when the payment, amount left, installments left and end date are all filled in. With an amount left and no end date, the finish is estimated from your payments and does not include interest.")}
     ${rows}${UI.loanAdd ? `<div class="inc-row editing">${loanForm(null)}</div>` : `<button class="btn" type="button" data-loan-add>${I.plus}Add a loan or credit card</button>`}
     ${live.length && owed > 0 ? `<p class="muted small">You owe ${fmt(owed)} in total across ${live.filter(l => +l.total > 0).length} of these.</p>` : !list.length && !UI.loanAdd ? `<p class="muted small">Bank loans, student debt, credit cards and anything else you are paying back.</p>` : ""}</section>`;
 };
@@ -2813,10 +2860,12 @@ function render(keepScroll){
   main.scrollTop = keepScroll ? top : 0;
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
 }
+const OPEN_FORMS = 'form[data-form="loan"],form[data-form="exp"],form[data-form="subEdit"],form[data-form="codeEdit"]';
 function refreshOuts(){
   const active = document.activeElement;
   document.querySelectorAll("#view [data-out]").forEach(el => {
     if (isField(active) && el.contains(active)) return; // never rebuild the box someone is typing in
+    if (el.querySelector(OPEN_FORMS)) return;            // nor one with a half-filled card: a date picker or the Done key takes focus away
     const f = OUT[el.dataset.out]; if (f) el.innerHTML = f();
   });
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
@@ -3127,7 +3176,7 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; if (UI.inbox) markSeen(); render(false); });
 
@@ -3142,6 +3191,8 @@ view.addEventListener("input", e => {
     refreshOuts(); return; }
   const payForm = t.closest && t.closest('form[data-form="pay"]');
   if (payForm && t.name && UI.payDraft){ UI.payDraft[t.name] = t.value; if (t.name === "when"){ const box = view.querySelector('[data-out="payBox"]'); if (box) box.innerHTML = OUT.payBox(); } return; }
+  const loanF = t.closest && t.closest('form[data-form="loan"]');
+  if (loanF){ if (t.name && UI.loanDraft && t.name !== "rate") UI.loanDraft[t.name] = t.value; loanCalc(loanF); return; }
   const incForm = t.closest && t.closest('form[data-form="income"]');
   if (incForm && t.name && UI.incDraft){ UI.incDraft[t.name] = t.value;
     if (t.name === "when" || t.name === "kind"){ const box = view.querySelector('[data-out="extraIncome"]'); if (box) box.innerHTML = OUT.extraIncome(); }
@@ -3162,10 +3213,7 @@ view.addEventListener("input", e => {
   if (t.dataset.env){ S.env[t.dataset.env] = Math.max(0, Math.round(numv(t.value))); save(); refreshOuts(); return; }
   const exp = t.closest("[data-exp]");
   if (exp){ const it = S.expenses.find(x => x.id === exp.dataset.exp); if (!it) return;
-    if (t.hasAttribute("data-exp-name")) it.name = t.value;
-    if (t.hasAttribute("data-exp-amt")) it.amount = numv(t.value);
-    if (t.hasAttribute("data-exp-env")) it.env = t.value;
-    save(); refreshOuts(); return; }
+    return; }
   if (t.dataset.alt){ const w = S.swaps.find(x => x.id === t.dataset.alt); if (w){ w.altCost = numv(t.value); save(); refreshOuts(); } return; }
   if (t.id === "code-q"){ codeQ = t.value; refreshOuts(); return; }
   const pn = t.closest("[data-person]");
@@ -3180,6 +3228,7 @@ view.addEventListener("input", e => {
 });
 view.addEventListener("change", e => {
   const t = e.target;
+  if (t.form && t.form.dataset.form === "loan"){ if (t.name && UI.loanDraft && t.name !== "rate") UI.loanDraft[t.name] = t.value; loanCalc(t.form); }
   if (t.name === "kind" && t.form && t.form.dataset.form === "loan"){ const r = t.form.querySelector("[data-loan-cardrow]"), o = t.form.querySelector("[data-loan-cardother]"); if (r) r.hidden = t.value !== "card"; if (o) o.hidden = t.value !== "card" || t.form.elements.card.value !== "Other"; return; }
   if (t.name === "card" && t.form && t.form.dataset.form === "loan"){ const o = t.form.querySelector("[data-loan-cardother]"); if (o){ o.hidden = t.value !== "Other"; if (!o.hidden) o.querySelector("input").focus(); } return; }
   if (t.hasAttribute && (t.hasAttribute("data-renew-day") || t.hasAttribute("data-renew-date"))){
@@ -3307,7 +3356,9 @@ view.addEventListener("click", async e => {
       toast(wasFlagged ? `${s.name} marked as used today. It is no longer flagged.` : `${s.name} marked as used today.`); return; }
     if (b.hasAttribute("data-renew-open")){ UI.renewEdit = s.id; render(true); const el = view.querySelector(`[data-sub="${s.id}"] [data-renew-day],[data-sub="${s.id}"] [data-renew-date]`); if (el) el.focus(); return; }
     if (b.hasAttribute("data-renew-cancel")){ UI.renewEdit = null; render(true); return; }
-    if (b.hasAttribute("data-del-sub")){ const u = undoable(); S.subs = S.subs.filter(x => x !== s); S.swaps = S.swaps.filter(w => w.link !== `sub:${s.id}`); save(); render(true); toast(`Removed ${s.name}.`, u); return; }
+    if (b.hasAttribute("data-sub-edit")){ UI.subEdit = s.id; UI.renewEdit = null; render(true); return; }
+    if (b.hasAttribute("data-sub-cancel")){ UI.subEdit = null; render(true); return; }
+    if (b.hasAttribute("data-del-sub")){ UI.subEdit = null; const u = undoable(); S.subs = S.subs.filter(x => x !== s); S.swaps = S.swaps.filter(w => w.link !== `sub:${s.id}`); save(); render(true); toast(`Removed ${s.name}.`, u); return; }
   }
   const idea = b.closest("[data-idea]");
   if (idea && (b.hasAttribute("data-idea-add") || b.hasAttribute("data-idea-skip"))){ const i = swapIdeas().find(x => x.key === idea.dataset.idea); if (!i) return;
@@ -3326,12 +3377,15 @@ view.addEventListener("click", async e => {
   const cr = b.closest("[data-code]");
   if (cr){ const c = S.codes.find(x => x.id === cr.dataset.code); if (!c) return;
     if (b.dataset.vote){ c[b.dataset.vote]++; if (b.dataset.vote === "worked") c.last = isoDaysAgo(0); save(); refreshOuts(); toast("Thanks. That helps rank this code."); return; }
-    if (b.hasAttribute("data-del-code")){ const u = undoable(); S.codes = S.codes.filter(x => x !== c); save(); refreshOuts(); toast(`Removed the ${c.store} code.`, u); return; }
+    if (b.hasAttribute("data-code-edit")){ UI.codeEdit = c.id; refreshOuts(); return; }
+    if (b.hasAttribute("data-code-cancel")){ UI.codeEdit = null; refreshOuts(); return; }
+    if (b.hasAttribute("data-del-code")){ UI.codeEdit = null; const u = undoable(); S.codes = S.codes.filter(x => x !== c); save(); refreshOuts(); toast(`Removed the ${c.store} code.`, u); return; }
   }
   const er = b.closest("[data-exp]");
-  if (er && b.hasAttribute("data-del-exp")){ const u = undoable(), gone = S.expenses.find(x => x.id === er.dataset.exp); S.expenses = S.expenses.filter(x => x.id !== er.dataset.exp); S.swaps = S.swaps.filter(w => w.link !== `expense:${er.dataset.exp}`); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; }
-  if (b.hasAttribute("data-add-exp")){ S.expenses.push({id:uid(), name:"New line", amount:0, env:"needs"}); save(); render(true);
-    const rows = view.querySelectorAll("[data-exp-name]"); const last = rows[rows.length-1]; if (last){ last.focus(); last.select(); } return; }
+  if (er && b.hasAttribute("data-del-exp")){ UI.expEdit = null; const u = undoable(), gone = S.expenses.find(x => x.id === er.dataset.exp); S.expenses = S.expenses.filter(x => x.id !== er.dataset.exp); S.swaps = S.swaps.filter(w => w.link !== `expense:${er.dataset.exp}`); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; }
+  if (b.hasAttribute("data-add-exp")){ UI.expAdd = true; UI.expEdit = null; render(true); const i = view.querySelector('form[data-form="exp"] [name=name]'); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-exp-cancel")){ UI.expAdd = false; UI.expEdit = null; render(true); return; }
+  if (er && b.hasAttribute("data-exp-edit")){ UI.expEdit = er.dataset.exp; UI.expAdd = false; render(true); return; }
   if (b.dataset.reset){ const kind = b.dataset.reset;
     $("reset-confirm").innerHTML = `<div class="note" style="margin-top:10px"><p>${kind === "blank" ? "Clear everything and start empty?" : "Replace your numbers with the example?"} This can’t be undone.</p><div class="inline" style="margin-top:10px"><button class="btn" type="button" data-reset-no>Keep my data</button><button class="btn danger" type="button" data-reset-yes="${kind}">${kind === "blank" ? "Clear it" : "Load example"}</button></div></div>`; return; }
   if (b.hasAttribute("data-reset-no")){ $("reset-confirm").innerHTML = ""; return; }
@@ -3368,8 +3422,8 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
   if (b.hasAttribute("data-receipt-close")){ UI.receiptInfo = false; render(true); return; }
   const loanRow = b.closest("[data-loan]"), loanX = loanRow && loanList().find(x => x.id === loanRow.dataset.loan);
-  if (b.hasAttribute("data-loan-add")){ UI.loanAdd = true; UI.loanEdit = null; UI.loanDraft = {kind: "bank", name: "", pay: "", every: "mo", total: "", end: ""}; render(true); const f = view.querySelector('form[data-form="loan"] [name=pay]'); if (f) f.focus(); return; }
-  if (b.hasAttribute("data-loan-edit") && loanX){ UI.loanEdit = loanX.id; UI.loanAdd = false; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", card: loanX.card || "", fee: loanX.fee || ""}; render(true); return; }
+  if (b.hasAttribute("data-loan-add")){ UI.loanAdd = true; UI.loanEdit = null; UI.loanDraft = {kind: "bank", name: "", pay: "", every: "mo", total: "", end: "", left: ""}; render(true); const f = view.querySelector('form[data-form="loan"] [name=pay]'); if (f) f.focus(); return; }
+  if (b.hasAttribute("data-loan-edit") && loanX){ UI.loanEdit = loanX.id; UI.loanAdd = false; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || ""}; render(true); return; }
   if (b.hasAttribute("data-loan-cancel")){ UI.loanAdd = false; UI.loanEdit = null; render(true); return; }
   if (b.hasAttribute("data-loan-del") && loanX){ const u = undoable(); S.loans = loanList().filter(x => x !== loanX); UI.loanEdit = null; save(); render(true); toast(`Removed ${loanX.name || loanKind(loanX.kind)}.`, u); return; }
   if (b.dataset.info){ UI.info = UI.info === b.dataset.info ? null : b.dataset.info; render(true); return; }
@@ -3451,10 +3505,11 @@ view.addEventListener("submit", async e => {
     S.income = r2(amount * PAY_BASE[when]); S.monthStart = Math.min(28, Math.max(1, +fd.get("monthStart") || 1));
     UI.payEdit = false; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Saved. Your plan counts ${fmt(S.income)} a month from pay.`); return; }
   if (kind === "loan"){
-    const pay = numv(fd.get("pay")), total = numv(fd.get("total")), end = String(fd.get("end") || "");
+    const pay = numv(fd.get("pay")), total = numv(fd.get("total")), end = String(fd.get("end") || ""), leftRaw = String(fd.get("left") || "").trim(), left = /^\d{1,4}$/.test(leftRaw) ? +leftRaw : 0;
     if (!pay){ toast("Enter the payment amount."); f.querySelector("[name=pay]").focus(); return; }
+    if (leftRaw && !left){ toast("Installments left should be a whole number."); f.querySelector("[name=left]").focus(); return; }
     const old = UI.loanEdit && loanList().find(x => x.id === UI.loanEdit), old0 = old;
-    const rec = {kind: fd.get("kind") || "other", name: String(fd.get("name") || "").trim(), pay, every: fd.get("every") || "mo", total: total || 0, end: end || ""};
+    const rec = {kind: fd.get("kind") || "other", name: String(fd.get("name") || "").trim(), pay, every: fd.get("every") || "mo", total: total || 0, end: end || "", left};
     if (rec.kind === "card"){ rec.card = String(fd.get("card") || "Visa"); if (rec.card === "Other") rec.card = String(fd.get("cardOther") || "").trim().slice(0, 30) || "Other"; rec.fee = numv(fd.get("fee")) || 0; } else if (old0) { delete old0.card; delete old0.fee; }
     if (old) Object.assign(old, rec); else loanList().push({id: uid(), ...rec});
     UI.loanAdd = false; UI.loanEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
@@ -3472,6 +3527,19 @@ view.addEventListener("submit", async e => {
     (x.got = x.got || []).push({id: uid(), date: String(fd.get("date") || isoDaysAgo(0)), amount: a}); UI.incLog = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Logged ${fmt(a)} from ${x.name}.`); return; }
   if (kind === "closeMonth"){ const key = f.closest("[data-close]").dataset.close; closeMonth(key, numv(fd.get("amount"))); return; }
   if (kind === "ask"){ const q = $("ask-in").value.trim(); if (!q) return; ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
+  if (kind === "exp"){ const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), env = fd.get("env") === "misc" ? "misc" : "needs";
+    if (!name){ toast("Give the line a name."); f.querySelector("[name=name]").focus(); return; }
+    const old = UI.expEdit && S.expenses.find(x => x.id === UI.expEdit);
+    if (old) Object.assign(old, {name, amount, env}); else S.expenses.push({id: uid(), name, amount, env});
+    UI.expAdd = false; UI.expEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `Added ${name}.`); return; }
+  if (kind === "subEdit"){ const x = S.subs.find(v => v.id === UI.subEdit), name = String(fd.get("name") || "").trim(), price = numv(fd.get("price")); if (!x) return;
+    if (!name || !price){ toast("Add a name and a price."); return; }
+    const cycle = fd.get("cycle") === "yr" ? "yr" : "mo"; if (cycle !== x.cycle){ delete x.renewDay; delete x.renewDate; }
+    Object.assign(x, {name, price, cycle, last: String(fd.get("last") || "") || x.last, group: String(fd.get("group") || "").trim()});
+    UI.subEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Updated ${name}.`); return; }
+  if (kind === "codeEdit"){ const x = S.codes.find(v => v.id === UI.codeEdit), store = String(fd.get("store") || "").trim(), code = String(fd.get("code") || "").trim(); if (!x) return;
+    if (!store || !code){ toast("Add the store and the code."); return; }
+    Object.assign(x, {store, code, offer: String(fd.get("offer") || "").trim()}); UI.codeEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Updated the ${store} code.`); return; }
   if (kind === "addSub"){ const name = String(fd.get("name")).trim(), price = numv(fd.get("price")); if (!name || !price){ toast("Add a name and a price."); return; }
     const ns = {id:uid(), name, price, cycle:fd.get("cycle"), last:fd.get("last") || isoDaysAgo(0), group:String(fd.get("group")||"").trim(), env:"misc", keep:"auto"};
     const rn = String(fd.get("renew") || ""); if (rn){ if (ns.cycle === "yr") ns.renewDate = rn; else ns.renewDay = +rn.slice(8, 10); }
