@@ -1034,7 +1034,7 @@ async def empty_start_says_true_things(ctx):
     assert "Sample month" not in v and "Start with the money coming in" in v
     assert "Every subscription was used" not in v and "No subscriptions yet" in v
     assert "already using every swap" not in v and "shortfall" not in v
-    await tab(pg, "codes"); assert "No codes yet." in await text(pg, "[data-out=codeList]") and "“”" not in await text(pg, "#view")
+    await tab(pg, "codes"); assert "No codes of your own yet." in await text(pg, "[data-out=codeList]") and "“”" not in await text(pg, "#view")
     await tab(pg, "cheaper"); await pg.click("text=Add your own comparison")
     assert "First add something you pay for" in await text(pg, "#view") and await pg.locator("form[data-form=addSwap]").count() == 0
     await tab(pg, "split"); assert "Just you" in await text(pg, "#view")
@@ -1628,7 +1628,7 @@ async def plus_screen_gives_reasons_and_prices(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     await pg.locator("[data-plus-open]").first.scroll_into_view_if_needed(); await pg.locator("[data-plus-open]").first.click(); await pg.wait_for_timeout(200)
     v = await text(pg, "#view")
-    for reason in ("Split with friends, live", "Your month on every device", "A Business space", "Receipt photos", "Moments"):
+    for reason in ("Live splits with friends", "Your money on every device", "Business Account", "A shared household", "Reminders on every phone", "Receipt photos", "Moments"):
         assert reason in v, reason
     assert "straight from your contacts" in v
     # prices exactly as set: 12 from 15 for the first six months, 140 from 180 a year
@@ -1636,7 +1636,8 @@ async def plus_screen_gives_reasons_and_prices(ctx):
     assert "$15" in m and "$12" in m and "a month" in m and "first 6 months, then $15 a month" in m, m
     assert "$180" in y and "$140" in y and "a year" in y and "You save $40" in y and "About $11.67 a month" in y, y
     assert await pg.locator(".plus-price s").count() == 2 and m.upper().count("EARLY USER PRICE") == 1
-    assert "not on sale yet" in v and "Free, and staying free" in v and "Claude" not in v
+    assert "not on sale yet" in v and "Free, and staying free" in v and "Claude" not in v and "Business space" not in v
+    assert "EARLY140" in y and "EARLY12" in m, "each price shows its code"
     assert await pg.locator("[data-open-account]").count() >= 1, "signed out: the button leads to sign-in"
     w = await pg.evaluate("Math.max(...[...document.querySelectorAll('#view *')].map(e => e.getBoundingClientRect().right))"); assert w <= 390.5, f"nothing runs off the screen: {w}"
     await pg.click("[data-plus-close]"); await pg.wait_for_timeout(150)
@@ -1687,10 +1688,21 @@ async def statement_separates_transfers_from_spending(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def keepwise_plus_codes_show_as_eligible(ctx):
+    pg = await open_app(ctx); await tab(pg, "codes")
+    box = await text(pg, "[data-kw-codes]")
+    assert "KeepWise Plus codes" in box and "EARLY140" in box and "EARLY12" in box and box.count("Eligible") == 2, box
+    assert "$140 for your first year, instead of $180" in box and "$12 a month for your first 6 months, instead of $15" in box and "when Plus opens" in box
+    await pg.locator("[data-kw-code=EARLY140] [data-copy]").click(); await pg.wait_for_timeout(150); assert "Cop" in await pg.inner_text("#toast"), "tapping the code copies it"
+    assert not any(c["code"].startswith("EARLY") for c in (await state(pg))["codes"]), "KeepWise codes are not mixed into your own list"
+    await pg.click("[data-kw-codes] [data-plus-open]"); await pg.wait_for_timeout(150); assert await pg.locator(".plus-prices").count() == 1
+    assert not pg.errors, pg.errors
+
+@test
 async def loans_section_counts_and_finishes(ctx):
     pg = await open_at(ctx, (2026, 10, 5, 10, 0)); await tab(pg, "plan")
     need0 = money((await text(pg, "[data-out=expTotal]")).split("·")[0])
-    box = await text(pg, "[data-out=loans]"); assert "Loans and debt" in box and "Add a loan or debt" in box
+    box = await text(pg, "[data-out=loans]"); assert "Loans and debt" in box and "Add a loan or credit card" in box
     await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
     assert [o.strip() for o in await f.locator("[name=kind] option").all_inner_texts()] == ["Bank loan", "Personal loan", "Student debt", "Credit card", "Car loan", "Mortgage", "Other debt"]
     assert [o.strip() for o in await f.locator("[name=every] option").all_inner_texts()] == ["Every month", "Every week", "Every 2 weeks", "Every year"]
@@ -1712,6 +1724,24 @@ async def loans_section_counts_and_finishes(ctx):
     d = await text(pg, "[data-out=envelopes]"); assert "Student debt" in d and "Car" in d and "$300" in d
     # once the end date has passed it stops counting
     await pg.clock.set_fixed_time(__import__("datetime").datetime(2027, 4, 20, 10, 0)); await tab(pg, "plan"); await pg.wait_for_timeout(150)
+    # a credit card: its type shows, and the yearly fee is spread across the year
+    await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
+    assert not await f.locator("[data-loan-cardrow]").is_visible(), "card fields stay hidden for other debts"
+    await f.locator("[name=kind]").select_option("card"); await pg.wait_for_timeout(80)
+    assert [o.strip() for o in await f.locator("[name=card] option").all_inner_texts()] == ["Visa", "Mastercard", "American Express", "Discover", "UnionPay", "Other"]
+    await f.locator("[name=card]").select_option("Mastercard"); await f.locator("[name=pay]").fill("100"); await f.locator("[name=fee]").fill("120")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    box = await text(pg, "[data-out=loans]"); assert "Credit card · Mastercard · $100 a month · $120 yearly fee" in box and "$110/mo" in box, box
+    card = [l for l in (await state(pg))["loans"] if l["kind"] == "card"][0]; assert card["card"] == "Mastercard" and card["fee"] == 120
+    # Other lets you type the card's own name, and it comes back when you edit
+    await pg.locator("[data-loan]").last.locator("[data-loan-edit]").click(); await pg.wait_for_timeout(120); f = pg.locator("form[data-form=loan]")
+    assert not await f.locator("[data-loan-cardother]").is_visible()
+    await f.locator("[name=card]").select_option("Other"); await pg.wait_for_timeout(80); await f.locator("[name=cardOther]").fill("Target RedCard")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    assert "Credit card · Target RedCard · $100 a month" in await text(pg, "[data-out=loans]")
+    await pg.locator("[data-loan]").last.locator("[data-loan-edit]").click(); await pg.wait_for_timeout(120)
+    assert await pg.input_value("form[data-form=loan] [name=card]") == "Other" and await pg.input_value("form[data-form=loan] [name=cardOther]") == "Target RedCard"
+    await pg.locator("form[data-form=loan] [data-loan-del]").click(); await pg.wait_for_timeout(150)
     box = await text(pg, "[data-out=loans]"); assert "Paid off" in box and "no longer counts" in box and "$260/mo" in box, box
     assert abs(money((await text(pg, "[data-out=expTotal]")).split("·")[0]) - need0 - 260) < 0.01
     # edit and remove, with undo
