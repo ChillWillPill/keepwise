@@ -62,3 +62,26 @@ OUT.payBox = () => {
   const n = nextPayday(), ms = monthStartDay(), P = periodOf(new Date());
   return `<div class="pay-line"><span>${I.month.replace("<svg ", '<svg width="18" height="18" ')}<span><b>${fmt(+S.pay.amount || 0)}</b> ${esc(payWhenText())}${n ? ` · next payday <b>${daysUntil(n) === 0 ? "today" : daysUntil(n) === 1 ? "tomorrow" : n.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})}</b>` : S.pay.when === "biweekly" ? " · add your next payday" : ""}${ms !== 1 ? `<br><span class="muted small">Your ${esc(P.name)} runs ${rangeText(P)}.</span>` : ""}</span></span><button class="link small" type="button" data-payday-edit>Change</button></div>`;
 };
+
+/* ================= did it arrive? (asked from the day after money was due) ================= */
+// Payday and scheduled income are only expected until someone says they landed. From the day after the due date, and
+// for a week, Month asks once. Yes logs it (or confirms the pay), Not yet asks again tomorrow.
+const dayPlus = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+function incomeDueOn(x, d){
+  if (x.when === "monthly" && x.day) return d.getDate() === Math.min(+x.day, daysInMonth(d.getFullYear(), d.getMonth()));
+  if (x.when === "weekly" && x.wd != null) return d.getDay() === +x.wd;
+  if (x.when === "biweekly" && x.next){ const [y, m, dd] = x.next.split("-").map(Number), n = Math.round((d - new Date(y, m - 1, dd)) / DAY); return n % 14 === 0; }
+  return false;
+}
+const incomeLogged = (x, iso) => (x.got || []).some(p => (p.date || "") >= iso) || x.skip === iso;
+function arrivals(){  // what was due in the last 7 days, from yesterday back, and has no answer yet
+  const t = todayMid(), out = [];
+  if (S.arriveSnooze === isoOf(t)) return out;
+  if (payOn()){ const d = paydaysBetween(dayPlus(t, -7), dayPlus(t, -1)).pop(); if (d && !((S.payGot || "") >= isoOf(d))) out.push({key: "pay", name: "Your pay", amount: +S.pay.amount || 0, date: d}); }
+  (S.extras || []).forEach(x => { for (let i = 1; i <= 7; i++){ const d = dayPlus(t, -i); if (incomeDueOn(x, d)){ if (!incomeLogged(x, isoOf(d))) out.push({key: x.id, name: x.name, amount: +x.amount || 0, date: d, x}); break; } } });
+  return out.sort((a, b) => a.date - b.date);
+}
+OUT.arrived = () => { const list = arrivals(); if (!list.length) return "";
+  return `<section class="card" data-arrived><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 style="font-size:1.2rem">Did it arrive?</h2><button class="link plain small" type="button" data-arrive-later>Ask me tomorrow</button></div>
+    ${list.map(a => `<div class="inc-row" data-arrive="${esc(a.key)}" data-arrive-date="${isoOf(a.date)}"><div class="row-top"><div><div class="name">${esc(a.name)}</div><div class="muted small">Expected ${dayMonth(a.date)}</div></div><div class="name tnum">${fmt(a.amount)}</div></div>
+      <div class="grid2"><button class="btn small" type="button" data-arrive-no>${a.x ? "It won’t come" : "Not yet"}</button><button class="btn small primary" type="button" data-arrive-yes>${a.x ? "Yes, log it" : "Yes, it arrived"}</button></div></div>`).join("")}</section>`; };

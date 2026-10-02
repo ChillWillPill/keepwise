@@ -1339,8 +1339,82 @@ window.Capacitor = {Plugins: {LocalNotifications: {
 }}};"""
 
 @test
+async def asks_if_money_arrived_from_the_day_after(ctx):
+    # paid on the 5th; a side income of 250 lands on the 9th. Today is 5 October: nothing to ask yet.
+    pg = await open_at(ctx, (2026, 10, 5, 9, 0))
+    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
+    await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=pay]"); await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("1420")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]")
+    await f.locator("[name=name]").fill("Tutoring"); await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=income]"); await f.locator("[name=day]").select_option("9"); await f.locator("[name=amount]").fill("250")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    assert await pg.locator("[data-arrived]").count() == 0, "never on the day itself"
+    # 6 October: the day after payday it asks about the pay, and only the pay
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 6, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    card = await text(pg, "[data-arrived]"); assert "Did it arrive?" in card and "Your pay" in card and "Expected Oct 5" in card and "$1,420" in card and "Tutoring" not in card, card
+    await pg.click("[data-arrive=pay] [data-arrive-no]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-arrived]").count() == 0 and "ask again tomorrow" in await pg.inner_text("#toast")
+    # 7 October: it asks again; Yes settles it for good
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 7, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    await pg.click("[data-arrive=pay] [data-arrive-yes]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-arrived]").count() == 0 and (await state(pg))["payGot"] == "2026-10-05"
+    # 10 October: the side income was due yesterday and is not logged
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 10, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    card = await text(pg, "[data-arrived]"); assert "Tutoring" in card and "Expected Oct 9" in card and "$250" in card and "Your pay" not in card, card
+    await pg.locator("[data-arrived] [data-arrive-yes]").click(); await pg.wait_for_timeout(150)
+    x = (await state(pg))["extras"][0]; assert x["got"][-1]["date"] == "2026-10-09" and x["got"][-1]["amount"] == 250
+    assert await pg.locator("[data-arrived]").count() == 0 and "Logged $250 from Tutoring" in await pg.inner_text("#toast")
+    # logging it yourself beforehand means it never asks; and after a week it stops asking
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 11, 14, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    card = await text(pg, "[data-arrived]"); assert "Tutoring" in card and "Expected Nov 9" in card and "Your pay" not in card, "pay from the 5th is more than a week old: " + card
+    await pg.locator("[data-arrived] [data-arrive-no]").click(); await pg.wait_for_timeout(150)
+    assert (await state(pg))["extras"][0]["skip"] == "2026-11-09" and await pg.locator("[data-arrived]").count() == 0
+    assert not pg.errors, pg.errors
+
+@test
+async def android_reminders_for_income_and_each_renewal(ctx):
+    # the Android app: paid on the 25th, today is 10 October, reminders turned on
+    pg = await ctx.new_page(); await pg.set_viewport_size({"width": 390, "height": 844}); pg.errors = []
+    pg.on("pageerror", lambda e: pg.errors.append(str(e)))
+    await pg.clock.install(time=datetime.datetime(2026, 10, 10, 12, 0)); await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;" + NOTIF_MOCK)
+    await pg.goto(URL); await pg.wait_for_timeout(300)
+    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
+    await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=pay]"); await f.locator("[name=day]").select_option("25"); await f.locator("[name=amount]").fill("3000")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]")
+    await f.locator("[name=name]").fill("Tutoring"); await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=income]"); await f.locator("[name=day]").select_option("12"); await f.locator("[name=amount]").fill("250")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    await pg.clock.run_for(2000); assert await pg.evaluate("window.__n.pending.length") == 0, "nothing until reminders are on"
+    await tab(pg, "subs"); await pg.click("[data-remind-on]"); await pg.wait_for_timeout(100); await pg.clock.run_for(2000)
+    inc = await pg.evaluate("window.__n.pending.filter(x => x.id >= 7300).map(x => [x.when, x.title, x.body, x.extra.kind])")
+    # the morning after each was due: Tutoring on the 13th, pay on the 26th
+    assert [x[0] for x in inc] == [[10, 13, 10, 0], [10, 26, 10, 0]], inc
+    assert inc[0][1] == "Did Tutoring arrive?" and "$250 was expected Oct 12" in inc[0][2] and inc[1][1] == "Did your pay arrive?" and "$3,000 was expected Oct 25" in inc[1][2] and all(x[3] == "income" for x in inc)
+    # each subscription with a charge date outside the days before payday gets its own question, 7 or 5 days ahead of the charge
+    ren = await pg.evaluate("window.__n.pending.filter(x => x.id >= 7200 && x.id < 7300).map(x => [x.schedule.at.getTime(), x.title, x.extra.subId])")
+    st = await state(pg); now = await pg.evaluate("Date.now()")
+    for at, title, sid in ren:
+        assert title.startswith("Still using ") and at > now
+        day = datetime.datetime.fromtimestamp(at / 1000, datetime.timezone.utc if os.environ.get("TZ") == "UTC" else None)
+        assert not (datetime.datetime(2026, 10, 15) <= day.replace(tzinfo=None) <= datetime.datetime(2026, 10, 25, 23, 59)), "the payday questions cover those days"
+    assert len(ren) >= 1 and len({x[2] for x in ren}) == len(ren), f"one question per subscription: {ren}"
+    # logging the income on the day it lands removes its reminder
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 12, 20, 0)); await tab(pg, "month")
+    await pg.click("[data-inc-log]"); await pg.click("form[data-form=incomeLog] [type=submit]"); await pg.wait_for_timeout(150); await pg.clock.run_for(2000)
+    inc = await pg.evaluate("window.__n.pending.filter(x => x.id >= 7300).map(x => x.title)")
+    assert "Did Tutoring arrive?" not in inc and "Did your pay arrive?" in inc, inc
+    # tapping an income reminder opens Month
+    await tab(pg, "codes"); await pg.evaluate("window.__n.listener({actionId: 'tap', notification: {extra: {kind: 'income'}}})"); await pg.wait_for_timeout(150)
+    assert (await state(pg))["tab"] == "month"
+    assert not pg.errors, pg.errors
+
+@test
 async def reminders_before_payday(ctx):
-    pending = "window.__n.pending.map(x => [x.when, x.title, x.extra.subId, x.actionTypeId, x.body])"
+    pending = "window.__n.pending.filter(x => x.id < 7200).map(x => [x.when, x.title, x.extra.subId, x.actionTypeId, x.body])"
     # the web app has no notifications, so it offers nothing
     pg = await open_app(ctx); await tab(pg, "subs")
     assert await pg.locator("[data-remind]").count() == 0

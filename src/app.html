@@ -1298,6 +1298,7 @@ V.month = () => {
   <div data-out="headline">${OUT.headline()}</div></section>
   <div data-out="monthClose">${OUT.monthClose()}</div>
   <div data-out="keepSafe">${OUT.keepSafe()}</div>
+  <div data-out="arrived">${OUT.arrived()}</div>
   <div data-out="comingUp">${OUT.comingUp()}</div>
   <div data-out="reviewCard">${OUT.reviewCard()}</div>
   ${importCard()}
@@ -2571,6 +2572,29 @@ OUT.payBox = () => {
   return `<div class="pay-line"><span>${I.month.replace("<svg ", '<svg width="18" height="18" ')}<span><b>${fmt(+S.pay.amount || 0)}</b> ${esc(payWhenText())}${n ? ` · next payday <b>${daysUntil(n) === 0 ? "today" : daysUntil(n) === 1 ? "tomorrow" : n.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})}</b>` : S.pay.when === "biweekly" ? " · add your next payday" : ""}${ms !== 1 ? `<br><span class="muted small">Your ${esc(P.name)} runs ${rangeText(P)}.</span>` : ""}</span></span><button class="link small" type="button" data-payday-edit>Change</button></div>`;
 };
 
+/* ================= did it arrive? (asked from the day after money was due) ================= */
+// Payday and scheduled income are only expected until someone says they landed. From the day after the due date, and
+// for a week, Month asks once. Yes logs it (or confirms the pay), Not yet asks again tomorrow.
+const dayPlus = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+function incomeDueOn(x, d){
+  if (x.when === "monthly" && x.day) return d.getDate() === Math.min(+x.day, daysInMonth(d.getFullYear(), d.getMonth()));
+  if (x.when === "weekly" && x.wd != null) return d.getDay() === +x.wd;
+  if (x.when === "biweekly" && x.next){ const [y, m, dd] = x.next.split("-").map(Number), n = Math.round((d - new Date(y, m - 1, dd)) / DAY); return n % 14 === 0; }
+  return false;
+}
+const incomeLogged = (x, iso) => (x.got || []).some(p => (p.date || "") >= iso) || x.skip === iso;
+function arrivals(){  // what was due in the last 7 days, from yesterday back, and has no answer yet
+  const t = todayMid(), out = [];
+  if (S.arriveSnooze === isoOf(t)) return out;
+  if (payOn()){ const d = paydaysBetween(dayPlus(t, -7), dayPlus(t, -1)).pop(); if (d && !((S.payGot || "") >= isoOf(d))) out.push({key: "pay", name: "Your pay", amount: +S.pay.amount || 0, date: d}); }
+  (S.extras || []).forEach(x => { for (let i = 1; i <= 7; i++){ const d = dayPlus(t, -i); if (incomeDueOn(x, d)){ if (!incomeLogged(x, isoOf(d))) out.push({key: x.id, name: x.name, amount: +x.amount || 0, date: d, x}); break; } } });
+  return out.sort((a, b) => a.date - b.date);
+}
+OUT.arrived = () => { const list = arrivals(); if (!list.length) return "";
+  return `<section class="card" data-arrived><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 style="font-size:1.2rem">Did it arrive?</h2><button class="link plain small" type="button" data-arrive-later>Ask me tomorrow</button></div>
+    ${list.map(a => `<div class="inc-row" data-arrive="${esc(a.key)}" data-arrive-date="${isoOf(a.date)}"><div class="row-top"><div><div class="name">${esc(a.name)}</div><div class="muted small">Expected ${dayMonth(a.date)}</div></div><div class="name tnum">${fmt(a.amount)}</div></div>
+      <div class="grid2"><button class="btn small" type="button" data-arrive-no>${a.x ? "It won’t come" : "Not yet"}</button><button class="btn small primary" type="button" data-arrive-yes>${a.x ? "Yes, log it" : "Yes, it arrived"}</button></div></div>`).join("")}</section>`; };
+
 /* ================= tell them (messages you send yourself; KeepWise sends nothing) ================= */
 // After a split on this phone is added, changed, deleted or settled, KeepWise writes a short message for each person in it.
 // You send it from your own apps (the phone's share sheet), or copy it. Nothing leaves the phone unless you send it.
@@ -2789,6 +2813,29 @@ function remindPlan(){
   });
   return out.slice(0, REMIND_IDS.length).map((x, i) => ({...x, id: REMIND_IDS[i]}));
 }
+// A subscription that renews outside the days before payday gets its own question, a week before the charge
+// (or 5 days before, if a week has already passed). One answered in the last 20 days is left alone.
+const RENEW_IDS = Array.from({length: 12}, (_, i) => 7200 + i), ARRIVE_IDS = Array.from({length: 10}, (_, i) => 7300 + i);
+function renewPlan(){
+  const R = S.remind || {}; if (!R.on) return [];
+  const now = new Date(), cyc = remindCycles(), recent = isoDaysAgo(20), out = [];
+  S.subs.filter(s => s.keep !== "drop" && !isOurs(s) && !(s.reviewedAt && s.reviewedAt >= recent)).forEach(s => {
+    const r = nextRenewal(s); if (!r) return;
+    const at = [7, 5].map(n => new Date(r.getFullYear(), r.getMonth(), r.getDate() - n, REMIND_AT[0], REMIND_AT[1])).find(d => d > now); if (!at) return;
+    const day = new Date(at.getFullYear(), at.getMonth(), at.getDate());
+    if (cyc.some(c => R.seen !== c.key && day >= c.start && day <= c.anchor)) return;  // the payday questions already cover it
+    out.push({at, sub: s, cycle: "renew"}); });
+  return out.sort((a, b) => a.at - b.at).slice(0, RENEW_IDS.length).map((x, i) => ({...x, id: RENEW_IDS[i]}));
+}
+function arrivePlan(){  // the morning after money was due, if it has not been logged by then
+  const R = S.remind || {}; if (!R.on) return [];
+  const now = new Date(), t = todayMid(), out = [], at = d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10, 0);
+  const add = (name, amount, d) => { const when = at(d) > now ? at(d) : at(t); out.push({at: when, title: `Did ${name} arrive?`, body: `${fmt(amount)} was expected ${dayMonth(d)}. Open KeepWise to log it.`}); };
+  arrivals().forEach(a => add(a.key === "pay" ? "your pay" : a.name, a.amount, a.date));
+  if (payOn()){ const d = paydaysBetween(t, dayPlus(t, 40))[0]; if (d && !((S.payGot || "") >= isoOf(d))) add("your pay", +S.pay.amount || 0, d); }
+  (S.extras || []).forEach(x => { const d = nextIncome(x); if (d && !incomeLogged(x, isoOf(d))) add(x.name, +x.amount || 0, d); });
+  return out.sort((a, b) => a.at - b.at).slice(0, ARRIVE_IDS.length).map((x, i) => ({...x, id: ARRIVE_IDS[i]}));
+}
 function remindText(x){ const s = x.sub, r = nextRenewal(s);
   return {title: `Still using ${s.name}?`, body: `${fmt(s.price)} a ${s.cycle === "yr" ? "year" : "month"}${r && r >= x.at ? `, renews ${dayMonth(r)}` : ""}. Tap an answer.`}; }
 let remindT = 0, remindReady = false;
@@ -2799,14 +2846,16 @@ async function remindApply(){
     if (!remindReady){ remindReady = true;
       await P.registerActionTypes({types: [{id: "KW_USE", actions: [{id: "lot", title: "A lot"}, {id: "barely", title: "Barely"}, {id: "none", title: "Not at all"}]}]});
       P.addListener("localNotificationActionPerformed", remindAnswer); }
-    await P.cancel({notifications: REMIND_IDS.map(id => ({id}))});
-    const plan = remindPlan(); if (!plan.length) return;
-    await P.schedule({notifications: plan.map(x => ({id: x.id, ...remindText(x), schedule: {at: x.at, allowWhileIdle: true}, actionTypeId: "KW_USE", extra: {subId: x.sub.id, cycle: x.cycle}}))});
+    await P.cancel({notifications: [...REMIND_IDS, ...RENEW_IDS, ...ARRIVE_IDS].map(id => ({id}))});
+    const plan = [...remindPlan(), ...renewPlan()], inc = arrivePlan(); if (!plan.length && !inc.length) return;
+    await P.schedule({notifications: [...plan.map(x => ({id: x.id, ...remindText(x), schedule: {at: x.at, allowWhileIdle: true}, actionTypeId: "KW_USE", extra: {subId: x.sub.id, cycle: x.cycle}})),
+      ...inc.map(x => ({id: x.id, title: x.title, body: x.body, schedule: {at: x.at, allowWhileIdle: true}, extra: {kind: "income"}}))]});
   } catch(e){}
 }
 // Answering, or opening Subs during the 10 days, ends this month's reminders.
 function remindSeen(){ const R = S.remind, c = R && R.on ? remindCycles()[0] : null; if (c && todayMid() >= c.start) R.seen = c.key; }
 function remindAnswer(e){
+  if (e && e.notification && e.notification.extra && e.notification.extra.kind === "income"){ UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = "month"; render(false); save(); return; }
   const id = e && e.notification && e.notification.extra && e.notification.extra.subId, s = S.subs.find(x => x.id === id);
   UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; S.tab = "subs";
   remindSeen(); render(false);
@@ -2820,7 +2869,7 @@ OUT.remindBox = () => {
   if (R.on) return `<div class="pay-line" data-remind><span>${BELL}<span><b>Reminders are on.</b><br><span class="muted small">${c && R.seen === c.key ? `Done for this month. They start again before the next ${payOn() ? "payday" : "month"}.` : c ? `One question a day at most, from ${dayMonth(c.start)}. They stop when you answer or open this tab.` : ""}</span></span></span><button class="link small" type="button" data-remind-off>Turn off</button></div>`;
   if (R.hide) return `<button class="link small inc-add" type="button" data-remind-on data-remind>${BELL.replace('width="18" height="18"', 'width="16" height="16" style="vertical-align:-3px;margin-right:6px"')}Remind me before ${esc(what)}</button>`;
   return `<section class="card remind-card" data-remind><p class="label">Before ${esc(what)}</p><h3>Want a nudge before ${esc(what)}?</h3>
-    <p class="muted">In the 10 days before ${esc(what)}, KeepWise asks about one subscription a day, with one-tap answers. It stops as soon as you answer or open this tab, and eases off if you ignore it.</p>
+    <p class="muted">In the 10 days before ${esc(what)}, KeepWise asks about one subscription a day, with one-tap answers. It stops as soon as you answer or open this tab, and eases off if you ignore it. A subscription that renews at another time is asked about a week before its charge, and you get one reminder the morning after pay or other income was due, if it has not been logged.</p>
     <div class="grid2"><button class="btn" type="button" data-remind-hide>Not now</button><button class="btn primary" type="button" data-remind-on>Turn on reminders</button></div>
     <p class="muted small">Reminders are set on this phone. Nothing is sent to us.</p></section>`;
 };
@@ -3264,6 +3313,14 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-payday-clear")){ S.pay = null; S.monthStart = 1; UI.payEdit = false; save(); render(true); toast("Pay schedule removed. Your month runs from the 1st again."); return; }
   // ---- other income
   const blankInc = () => ({name: "", kind: "side", when: "any", day: 1, wd: 5, next: isoDaysAgo(0), amount: ""});
+  if (b.hasAttribute("data-arrive-later")){ S.arriveSnooze = isoOf(todayMid()); save(); refreshOuts(); toast("We’ll ask again tomorrow."); return; }
+  const arr = b.closest("[data-arrive]");
+  if (arr && (b.hasAttribute("data-arrive-yes") || b.hasAttribute("data-arrive-no"))){ const iso = arr.dataset.arriveDate, yes = b.hasAttribute("data-arrive-yes"), u = undoable();
+    if (arr.dataset.arrive === "pay"){ if (yes){ S.payGot = iso; save(); refreshOuts(); toast("Good. Your pay is marked as arrived.", u); } else { S.arriveSnooze = isoOf(todayMid()); save(); refreshOuts(); toast("We’ll ask again tomorrow."); } return; }
+    const x = extras().find(v => v.id === arr.dataset.arrive); if (!x) return;
+    if (yes){ (x.got = x.got || []).push({id: uid(), date: iso, amount: +x.amount || 0}); save(); refreshOuts(); toast(`Logged ${fmt(x.amount)} from ${x.name}.`, u); }
+    else { x.skip = iso; save(); refreshOuts(); toast(`Okay. ${x.name} is skipped this time.`, u); }
+    return; }
   if (b.hasAttribute("data-inc-add")){ UI.incAdd = true; UI.incEdit = null; UI.incLog = null; UI.incDraft = blankInc(); refreshOuts(); const i = view.querySelector('form[data-form="income"] [name=name]'); if (i) i.focus(); return; }
   if (b.hasAttribute("data-inc-cancel")){ UI.incAdd = false; UI.incEdit = null; refreshOuts(); return; }
   const incRow = b.closest("[data-inc]"), incX = incRow && extras().find(x => x.id === incRow.dataset.inc);
