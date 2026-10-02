@@ -10,6 +10,20 @@ head = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="See what you keep at month end: subscriptions, cheaper swaps, codes, budget and bill splitting.">
+<link rel="canonical" href="https://mykeepwise.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="KeepWise">
+<meta property="og:url" content="https://mykeepwise.com/">
+<meta property="og:title" content="KeepWise: see what you keep at month end">
+<meta property="og:description" content="Find subscriptions you forgot, split bills with friends, and keep more each month. Free, and your data stays on your phone.">
+<meta property="og:image" content="https://mykeepwise.com/icons/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="KeepWise owl logo with the words: See what you keep at month end.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="KeepWise: see what you keep at month end">
+<meta name="twitter:description" content="Find subscriptions you forgot, split bills with friends, and keep more each month. Free.">
+<meta name="twitter:image" content="https://mykeepwise.com/icons/og.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/favicon-64.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">

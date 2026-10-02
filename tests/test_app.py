@@ -1231,7 +1231,7 @@ async def tell_them_after_split_changes(ctx):
     assert "does not message anyone" in card
     await pg.click("[data-tell-all]"); await pg.wait_for_timeout(150)
     sent = await pg.evaluate("window.__sent")
-    assert len(sent) == 1 and sent[0].startswith("Movie night: $90, paid by me.") and f"Me: {share}" in sent[0] and "Tracked with KeepWise" in sent[0], sent
+    assert len(sent) == 1 and sent[0].startswith("Movie night: $90, paid by me.") and f"Me: {share}" in sent[0] and sent[0].endswith("Split bills free with KeepWise: https://mykeepwise.com"), sent
     assert "Sent. Send again" in await text(pg, "[data-tell]")
     await pg.click("[data-tell-each]"); await pg.wait_for_timeout(100)
     await pg.click(f"[data-tell-id='{a}'] [data-tell-send]"); await pg.wait_for_timeout(150)
@@ -1259,7 +1259,9 @@ async def tell_them_after_split_changes(ctx):
     card = await text(pg, "[data-tell]")
     assert ("Got your" in card if got else "I paid you" in card) and "We are all square" in card, card
     await pg.click("[data-tell] [data-tell-send]"); await pg.wait_for_timeout(120)
-    assert "all square" in (await pg.evaluate("window.__sent"))[-1] and "Tracked with" not in (await pg.evaluate("window.__sent"))[-1]
+    sent = await pg.evaluate("window.__sent")
+    assert "all square" in sent[-1] and all("https://mykeepwise.com" in m for m in sent), "every message carries the link, whatever it is about"
+    assert "mykeepwise.com" in await text(pg, "[data-tell] .tell-msg"), "and the preview shows it"
     # no share sheet (a computer): the message is copied instead
     await pg.evaluate("(() => { navigator.share = undefined; Object.defineProperty(navigator, 'clipboard', {value: {writeText: async t => { window.__copied = t; }}, configurable: true}); })()")
     await pg.click("[data-tell] [data-tell-send]"); await pg.wait_for_timeout(120)
@@ -1586,6 +1588,17 @@ async def cheaper_suggests_ideas_from_your_own_list(ctx):
     await tab(pg, "codes")
     v = await text(pg, "#view"); assert "example codes" not in v.lower() and "affiliate" not in v and "ready at checkout" in v, v
     assert not pg.errors, pg.errors
+
+@test
+async def shared_links_show_a_preview_card(ctx):
+    # WhatsApp, iMessage and others build the card from these tags; without them the link is bare text.
+    if not APP.endswith(os.path.join("www", "index.html")): return
+    html = open(APP, encoding="utf-8").read()
+    for tag in ('property="og:title"', 'property="og:description"', 'property="og:image" content="https://mykeepwise.com/icons/og.png"', 'name="twitter:card" content="summary_large_image"', 'rel="canonical" href="https://mykeepwise.com/"'):
+        assert tag in html, tag
+    img = os.path.join(os.path.dirname(APP), "icons", "og.png")
+    assert os.path.exists(img) and 20_000 < os.path.getsize(img) < 300_000, "the card image is present and small enough to load fast"
+    data = open(img, "rb").read(); assert int.from_bytes(data[16:20], "big") == 1200 and int.from_bytes(data[20:24], "big") == 630
 
 @test
 async def cancel_help_links(ctx):

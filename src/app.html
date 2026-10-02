@@ -347,6 +347,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .tell-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
 .tell-card h3{font:600 1.15rem/1.25 var(--display);letter-spacing:-.01em}
 .tell-msg{background:var(--bg);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:.95rem;line-height:1.45;overflow-wrap:anywhere}
+.tell-foot{display:block;margin-top:8px;color:var(--muted);font-size:.85rem}
 .tell-rows{display:flex;flex-direction:column;gap:10px}
 .tell-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .tell-txt{display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere}
@@ -2444,11 +2445,13 @@ function tellLine(x, id){  // what one split means for one person, written from 
   if (x.paidBy === id) return mine > 0 ? `you paid ${fmt(x.amount)}. My share is ${fmt(mine)}, so I owe you ${fmt(mine)}` : `you paid ${fmt(x.amount)}`;
   return `${tellName(x.paidBy)} paid ${fmt(x.amount)}. Your share is ${fmt(theirs)}, owed to ${tellName(x.paidBy)}`;
 }
-const TELL_FOOT = "\nTracked with KeepWise: https://mykeepwise.com/";
+// Every message carries the link: each one sent is how the next person hears about KeepWise.
+const TELL_FOOT = "\n\nSplit bills free with KeepWise: https://mykeepwise.com";
+const tellFootHtml = `<span class="tell-foot">Split bills free with KeepWise: mykeepwise.com</span>`;
 function tellGroup(x, kind){
   if (kind === "delete") return `${x.title} was removed. It no longer counts for anyone.`;
   const sh = shares(x), who = id => id === "me" ? "Me" : tellName(id);
-  return `${x.title}${kind === "edit" ? " (updated)" : ""}: ${fmt(x.amount)}, paid by ${x.paidBy === "me" ? "me" : tellName(x.paidBy)}.\n${Object.keys(sh).map(id => `${who(id)}: ${fmt(sh[id])}`).join("\n")}${TELL_FOOT}`;
+  return `${x.title}${kind === "edit" ? " (updated)" : ""}: ${fmt(x.amount)}, paid by ${x.paidBy === "me" ? "me" : tellName(x.paidBy)}.\n${Object.keys(sh).map(id => `${who(id)}: ${fmt(sh[id])}`).join("\n")}`;
 }
 function tellAbout(kind, x, old){  // kind: add, edit, delete
   if (shared() || !x) { UI.tell = null; return; }
@@ -2458,7 +2461,7 @@ function tellAbout(kind, x, old){  // kind: add, edit, delete
     if (kind === "delete") text = `${x.title} was removed. It no longer counts between us.`;
     else if (kind === "edit"){ const was = before.includes(id) ? (shares(old)[id] || 0) : null, is = shares(x)[id] || 0;
       text = `${x.title} was updated: ${tellLine(x, id)}.${was != null && Math.abs(was - is) > 0.005 && x.method !== "borrow" ? ` Before, your share was ${fmt(was)}.` : ""}`; }
-    else text = `${x.title}: ${tellLine(x, id)}.${TELL_FOOT}`;
+    else text = `${x.title}: ${tellLine(x, id)}.`;
     rows.push({id, name: tellName(id), text});
   });
   before.filter(id => !now.includes(id)).forEach(id => rows.push({id, name: tellName(id), text: `You are no longer part of ${old.title}. It no longer counts between us.`}));
@@ -2474,18 +2477,19 @@ function tellSettled(pid, amount, gotPaid){
 const TELL_HEAD = {add: (t, who) => who ? `Let ${who} know about ${t}` : `Let everyone in ${t} know`, edit: (t, who) => `${t} changed. Let ${who || "them"} know`, delete: (t, who) => `${t} was deleted. Let ${who || "them"} know`, settle: t => `Let ${t} know`};
 function tellCard(){
   const t = UI.tell; if (!t || splitDraft) return "";
-  const one = t.rows.length === 1, row = r => `<div class="tell-row" data-tell-id="${esc(r.id)}"><div class="tell-txt"><b>${esc(r.name)}</b><span class="muted small">${esc(r.text.replace(TELL_FOOT, ""))}</span></div><button class="btn small${r.sent ? " done" : ""}" type="button" data-tell-send aria-label="Send to ${esc(r.name)}">${r.sent ? "✓ Sent" : "Send"}</button></div>`;
+  const one = t.rows.length === 1, row = r => `<div class="tell-row" data-tell-id="${esc(r.id)}"><div class="tell-txt"><b>${esc(r.name)}</b><span class="muted small">${esc(r.text)}</span></div><button class="btn small${r.sent ? " done" : ""}" type="button" data-tell-send aria-label="Send to ${esc(r.name)}">${r.sent ? "✓ Sent" : "Send"}</button></div>`;
   return `<section class="card tell-card" data-tell><div class="inline" style="justify-content:space-between"><p class="label">Tell them</p><button class="link plain small" type="button" data-tell-close>${t.rows.every(r => r.sent) || t.groupSent ? "Done" : "Not now"}</button></div>
     <h3>${esc(TELL_HEAD[t.kind](t.title, one ? firstWord(t.rows[0].name) : ""))}</h3>
-    ${t.group ? `<div class="tell-msg">${esc(t.group.replace(TELL_FOOT, "")).replace(/\n/g, "<br>")}</div>
+    ${t.group ? `<div class="tell-msg">${esc(t.group).replace(/\n/g, "<br>")}${tellFootHtml}</div>
       <button class="btn primary" type="button" data-tell-all>${I.share}${t.groupSent ? "Sent. Send again" : "Send to everyone"}</button>
       ${t.each ? `<div class="tell-rows">${t.rows.map(row).join("")}</div>` : `<button class="link small" type="button" data-tell-each style="align-self:center">Or tell each person separately</button>`}`
-    : one ? `<div class="tell-msg">${esc(t.rows[0].text.replace(TELL_FOOT, ""))}</div><div data-tell-id="${esc(t.rows[0].id)}"><button class="btn primary" type="button" data-tell-send>${I.share}${t.rows[0].sent ? "Sent. Send again" : `Send to ${esc(firstWord(t.rows[0].name))}`}</button></div>`
+    : one ? `<div class="tell-msg">${esc(t.rows[0].text)}${tellFootHtml}</div><div data-tell-id="${esc(t.rows[0].id)}"><button class="btn primary" type="button" data-tell-send>${I.share}${t.rows[0].sent ? "Sent. Send again" : `Send to ${esc(firstWord(t.rows[0].name))}`}</button></div>`
     : `<div class="tell-rows">${t.rows.map(row).join("")}</div>`}
     <p class="muted small">KeepWise does not message anyone. You send this yourself, from your own apps.</p></section>`;
 }
 const firstWord = n => String(n || "").trim().split(/\s+/)[0] || "them";
 async function tellSend(text, name){
+  text += TELL_FOOT;
   try { if (navigator.share){ await navigator.share({text}); return true; } }
   catch(e){ if (e && e.name === "AbortError") return false; }
   const said = () => toast(`Copied. Paste it into a message${name ? " to " + name : ""}.`);
