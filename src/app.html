@@ -843,12 +843,19 @@ const titleCase = k => k.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase())
 
 // ---- dates and amounts ----
 const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
+// 04/05/2026 is 5 April in the US and 4 May elsewhere. The file itself usually settles it: any date with a number above 12
+// shows which position holds the day. Only when every date is ambiguous does the chosen currency decide.
+function dayFirstIn(texts){
+  let dayFirst = 0, monthFirst = 0;
+  for (const t of texts){ const m = String(t || "").trim().match(/^(\d{1,2})[-/.](\d{1,2})[-/.]\d{2,4}/); if (!m) continue; if (+m[1] > 12) dayFirst++; else if (+m[2] > 12) monthFirst++; }
+  return dayFirst || monthFirst ? dayFirst > monthFirst : ["GBP","EUR","PKR","INR","AUD","AED"].includes(S.cur);
+}
 function parseAnyDate(s, yearHint, dayFirst){
   s = String(s || "").trim(); let m;
   if ((m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/))) return new Date(+m[1], +m[2]-1, +m[3]);
   if ((m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/))){
     let a = +m[1], b = +m[2], y = +m[3]; if (y < 100) y += 2000;
-    const df = dayFirst || a > 12; return new Date(y, (df ? b : a) - 1, df ? a : b);
+    const df = b > 12 ? false : a > 12 ? true : !!dayFirst; return new Date(y, (df ? b : a) - 1, df ? a : b);  // a month is never above 12
   }
   if ((m = s.match(/^(\d{1,2})[\s-]+([A-Za-z]{3,4})[a-z]*[\s-,]*(\d{2,4})?/)) && MONTHS[m[2].toLowerCase()] !== undefined){
     let y = m[3] ? +m[3] : yearHint; if (y < 100) y += 2000; return new Date(y, MONTHS[m[2].toLowerCase()], +m[1]);
@@ -889,7 +896,7 @@ function txFromCSV(text){
   const cr = find(/credit|paid in|deposit|money in|inflow/), db = find(/debit|paid out|withdraw|money out|outflow/);
   const am = find(/^amount|amount$|value|^sum/), ty = find(/^type$|dr\/cr|cr\/dr|direction/);
   if (di < 0 || de < 0 || (am < 0 && cr < 0 && db < 0)) throw new Error("Couldn't find date, description and amount columns.");
-  const year = new Date().getFullYear(), dayFirst = ["GBP","EUR","PKR","INR","AUD","AED"].includes(S.cur);
+  const year = new Date().getFullYear(), dayFirst = dayFirstIn(rows.slice(hi + 1).map(r => r[di]));
   let tx = rows.slice(hi + 1).map(r => {
     const date = parseAnyDate(r[di], year, dayFirst), desc = (r[de] || "").trim();
     let amt;
@@ -929,7 +936,7 @@ const MONEY_RE = /\(?-?[£$€₹]?\s?(?:Rs\.?\s?)?\d{1,3}(?:,\d{3})*\.\d{2}\)?(
 const DATE_RE = /^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{1,2}[\s-][A-Za-z]{3,4}[a-z]*(?:[\s-,]+\d{2,4})?|[A-Za-z]{3,4}\.?\s\d{1,2}(?:,?\s\d{4})?)\b/;
 function txFromLines(lines){
   const joined = lines.join(" "), yearHint = +((joined.match(/\b(20\d{2})\b/) || [])[1] || new Date().getFullYear());
-  const dayFirst = ["GBP","EUR","PKR","INR","AUD","AED"].includes(S.cur);
+  const dayFirst = dayFirstIn(lines.map(l => (l.match(DATE_RE) || [])[1]));
   const out = []; let prevBal = null;
   for (const line of lines){
     const dm = line.match(DATE_RE); if (!dm) continue;

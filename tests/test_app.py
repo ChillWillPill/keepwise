@@ -1447,6 +1447,29 @@ async def history_help_sits_behind_an_info_button(ctx):
     assert "Let Alex know about Tax filing" in card and "everyone" not in card and "Send to Alex" in card, card
 
 @test
+async def statement_dates_follow_the_file_not_the_currency(ctx):
+    # A US statement (month first) imported while the currency is AED must not read 04/14 as month 14.
+    pg = await open_app(ctx)
+    await pg.select_option("#m-cur", "AED"); await pg.wait_for_timeout(150)
+    us = os.path.join(TMP, "us.csv")
+    open(us, "w").write("Date,Description,Amount\n04/01/2026,PAYROLL ACME,3000\n04/14/2026,ADOBE CREATIVE CLOUD,-59.99\n05/01/2026,PAYROLL ACME,3000\n05/14/2026,ADOBE CREATIVE CLOUD,-59.99\n06/14/2026,ADOBE CREATIVE CLOUD,-59.99\n")
+    await pg.set_input_files("#stmt", us); await pg.wait_for_timeout(500)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(250)
+    a = [x for x in (await state(pg))["subs"] if x["name"].lower().startswith("adobe")][0]
+    assert a["since"] == "2026-04-14" and a["lastCharge"] == "2026-06-14" and a["renewDay"] == 14, a
+    # a day-first file under USD: 14/04 can only be 14 April
+    await pg.select_option("#m-cur", "USD"); await pg.wait_for_timeout(150)
+    uk = os.path.join(TMP, "dayfirst.csv")
+    open(uk, "w").write("Date,Description,Amount\n01/04/2026,PAYROLL ACME,3000\n14/04/2026,HULU,-9.99\n01/05/2026,PAYROLL ACME,3000\n14/05/2026,HULU,-9.99\n14/06/2026,HULU,-9.99\n")
+    await pg.set_input_files("#stmt", uk); await pg.wait_for_timeout(500)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(250)
+    h = [x for x in (await state(pg))["subs"] if x["name"].lower().startswith("hulu")][0]
+    assert h["since"] == "2026-04-14" and h["lastCharge"] == "2026-06-14", h
+    # no date anywhere may land in a month that does not exist or in the future
+    today = await pg.evaluate("new Date().toISOString().slice(0, 10)")
+    assert all((x.get("since") or "0") <= today for x in (await state(pg))["subs"])
+
+@test
 async def cancel_help_links(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
     await pg.click("[data-sub=s1] [data-keep=drop]"); await pg.click("[data-sub=s6] [data-keep=drop]"); await pg.wait_for_timeout(120)
