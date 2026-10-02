@@ -1394,11 +1394,26 @@ async def asks_if_money_arrived_from_the_day_after(ctx):
     await pg.locator("[data-arrived] [data-arrive-yes]").click(); await pg.wait_for_timeout(150)
     x = (await state(pg))["extras"][0]; assert x["got"][-1]["date"] == "2026-10-09" and x["got"][-1]["amount"] == 250
     assert await pg.locator("[data-arrived]").count() == 0 and "Logged $250 from Tutoring" in await pg.inner_text("#toast")
+    # a once-a-month income that is logged shows a green Logged tag in place of the button; removing the payment brings the button back
+    row = pg.locator("[data-inc]", has_text="Tutoring"); assert (await row.locator("[data-inc-logged]").inner_text()).strip() == "Logged" and await row.locator("[data-inc-log]").count() == 0
+    await row.locator("[data-inc-pay-del]").click(); await pg.wait_for_timeout(150)
+    row = pg.locator("[data-inc]", has_text="Tutoring"); assert await row.locator("[data-inc-log]").count() == 1 and await row.locator("[data-inc-logged]").count() == 0
+    await pg.click("#toast .toast-undo") if await pg.locator("#toast .toast-undo").count() else await pg.locator("[data-arrived] [data-arrive-yes]").click()
+    await pg.wait_for_timeout(150)
+    # income that lands every week keeps its button and counts what has been logged
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]")
+    await f.locator("[name=name]").fill("Shifts"); await f.locator("[name=when]").select_option("weekly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=income]"); await f.locator("[name=amount]").fill("80"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    row = pg.locator("[data-inc]", has_text="Shifts"); assert await row.locator("[data-inc-logged]").count() == 0
+    for n in (1, 2):
+        await row.locator("[data-inc-log]").click(); await pg.click("form[data-form=incomeLog] [type=submit]"); await pg.wait_for_timeout(200)
+        row = pg.locator("[data-inc]", has_text="Shifts"); assert (await row.locator("[data-inc-logged]").inner_text()).strip() == f"{n} logged" and await row.locator("[data-inc-log]").count() == 1
     # logging it yourself beforehand means it never asks; and after a week it stops asking
     await pg.clock.set_fixed_time(datetime.datetime(2026, 11, 14, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
     card = await text(pg, "[data-arrived]"); assert "Tutoring" in card and "Expected Nov 9" in card and "Your pay" not in card, "pay from the 5th is more than a week old: " + card
-    await pg.locator("[data-arrived] [data-arrive-no]").click(); await pg.wait_for_timeout(150)
-    assert (await state(pg))["extras"][0]["skip"] == "2026-11-09" and await pg.locator("[data-arrived]").count() == 0
+    row = pg.locator("[data-inc]", has_text="Tutoring"); assert await row.locator("[data-inc-log]").count() == 1 and await row.locator("[data-inc-logged]").count() == 0, "a new month brings the button back"
+    await pg.locator("[data-arrive]", has_text="Tutoring").locator("[data-arrive-no]").click(); await pg.wait_for_timeout(150)
+    assert (await state(pg))["extras"][0]["skip"] == "2026-11-09" and "Tutoring" not in await text(pg, "[data-arrived]")
     assert not pg.errors, pg.errors
 
 @test

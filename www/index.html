@@ -177,6 +177,7 @@ a.btn{display:block;text-decoration:none}
 .pill{display:inline-block;font-size:.76rem;font-weight:600;border-radius:99px;padding:3px 9px;white-space:nowrap}
 .pill.flag{background:var(--rust-soft);color:var(--rust)}
 .pill.ok{background:var(--green-soft);color:var(--green)}
+.pill svg{width:12px;height:12px;vertical-align:-1px;margin-right:4px}
 .pill.gold{background:var(--gold-soft);color:var(--gold)}
 .pill.grey{background:var(--chip);color:var(--muted)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;flex:none}
@@ -2552,7 +2553,8 @@ OUT.extraIncome = () => {
         <div style="text-align:right"><div class="name tnum ${got >= exp && got > 0 ? "good" : ""}">${fmt(got)}</div><div class="muted small">received in ${mName}</div></div></div>
       <div class="meter"><i style="width:${pct}%"></i></div>
       ${UI.incLog === x.id ? `<form class="inc-log" data-form="incomeLog"><span class="money-in" style="flex:1 1 110px"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="Amount" value="${x.when && x.when !== "any" ? esc(x.amount) : ""}" aria-label="Amount received"></span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}" aria-label="Date received" style="flex:1 1 130px"><button class="btn small primary" type="submit">Save</button><button class="link plain small" type="button" data-inc-log-cancel>Cancel</button></form>`
-        : `<div class="inline" style="justify-content:space-between"><button class="btn small" type="button" data-inc-log>${I.plus}Log a payment</button><button class="link plain small" type="button" data-inc-edit aria-label="Edit ${esc(x.name)}">Edit</button></div>`}
+        : `<div class="inline" style="justify-content:space-between">${x.when === "monthly" && pays.length ? `<span class="pill ok" data-inc-logged>${I.check}Logged</span>`
+          : `<span class="inline" style="gap:8px"><button class="btn small" type="button" data-inc-log>${I.plus}Log a payment</button>${pays.length ? `<span class="pill ok" data-inc-logged>${pays.length} logged</span>` : ""}</span>`}<button class="link plain small" type="button" data-inc-edit aria-label="Edit ${esc(x.name)}">Edit</button></div>`}
       ${pays.length ? `<div class="inc-pays">${pays.map(p => `<div class="line" data-pay-in="${p.id}"><span class="muted small">${shortDate(p.date)}</span><span class="inline"><span class="tnum good">+${fmt(p.amount)}</span><button class="link danger-link small" type="button" data-inc-pay-del aria-label="Remove this payment">Remove</button></span></div>`).join("")}</div>` : ""}
       ${av && (!x.when || x.when === "any") && Math.abs(av.avg - x.amount) > Math.max(1, x.amount * 0.05) ? `<div class="inc-avg small"><span>Your average over the last ${av.n} months is <b>${fmt(av.avg)}</b>.</span><button class="link small" type="button" data-inc-use-avg="${av.avg}">Use ${fmt(av.avg)}</button></div>` : ""}</div>`; }).join("");
   const total = extraExpected(), gotAll = list.reduce((a, x) => a + gotIn(x, k), 0);
