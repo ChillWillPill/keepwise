@@ -37,6 +37,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .bell-n{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:99px;background:var(--rust);color:var(--card);font:700 .72rem/20px var(--body);text-align:center;padding:0 5px}
 .app-main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .view{max-width:720px;margin:0 auto;padding:20px 16px 32px;display:flex;flex-direction:column;gap:18px}
+.view [data-out]:empty{display:none}  /* a section with nothing to show takes no room, so it leaves no gap */
 .tabbar{flex:none;display:grid;grid-template-columns:repeat(6,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .app.typing .tabbar{display:none}
 .tab{appearance:none;border:0;background:none;color:var(--muted);font:500 clamp(.6rem,2.9vw,.78rem)/1.2 var(--body);display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 8px;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}

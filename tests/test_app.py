@@ -1262,6 +1262,24 @@ async def tell_them_after_split_changes(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def no_empty_gaps_between_sections(ctx):
+    # a section with nothing to show must not leave a hole on the screen
+    gaps = """(() => { const k = [...document.querySelectorAll('#view > *')].map(e => [e, e.getBoundingClientRect()]).filter(([e, r]) => r.height > 0 && getComputedStyle(e).position !== 'fixed');
+      let worst = 0, at = ''; for (let i = 1; i < k.length; i++){ const g = k[i][1].top - k[i-1][1].bottom; if (g > worst){ worst = g; at = (k[i-1][0].dataset.out || k[i-1][0].className || k[i-1][0].tagName) + ' -> ' + (k[i][0].dataset.out || k[i][0].className || k[i][0].tagName); } }
+      return [Math.round(worst), at, [...document.querySelectorAll('#view [data-out]')].filter(e => !e.innerHTML.trim() && e.getBoundingClientRect().height === 0 && getComputedStyle(e).display !== 'none').length]; })()"""
+    for welcome in (False, True):
+        pg = await open_app(ctx, welcome=welcome)
+        if welcome:
+            await pg.evaluate("(() => { const s = JSON.parse(localStorage.getItem('keepwise-app-v1') || '{}'); s.hideNote = true; s.subs = (s.subs || []).map(x => ({...x, renewDay: null, renewDate: null})); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); localStorage.setItem('keepwise-welcome-done', '1'); })()")
+            await pg.reload(); await pg.wait_for_timeout(400)
+        for name in ("month", "subs", "cheaper", "codes", "plan", "split"):
+            if await pg.locator(f"[data-tab={name}]").count() == 0: continue
+            await tab(pg, name)
+            worst, at, hidden = await pg.evaluate(gaps)
+            assert worst <= 19, f"{name}: a {worst}px hole between {at}"
+            assert hidden == 0, f"{name}: {hidden} empty sections still take a slot"
+
+@test
 async def cancel_help_links(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
     await pg.click("[data-sub=s1] [data-keep=drop]"); await pg.click("[data-sub=s6] [data-keep=drop]"); await pg.wait_for_timeout(120)
