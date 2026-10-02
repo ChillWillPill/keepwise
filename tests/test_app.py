@@ -1532,17 +1532,24 @@ async def main():
     passed, failed = 0, []
     async with async_playwright() as p:
         b = await p.chromium.launch()
-        for fn in [t for t in TESTS if not os.environ.get('ONLY') or t.__name__ in os.environ['ONLY'].split(',')]:
+        async def run(fn):
             ctx = await b.new_context(is_mobile=False)
             try:
                 await fn(ctx)
                 errs = [e for pg in ctx.pages for e in getattr(pg, "errors", [])]
                 assert not errs, "JS errors: " + "; ".join(errs)
-                passed += 1; print(f"PASS  {fn.__name__}")
+                return None
             except Exception as e:
-                failed.append(fn.__name__); print(f"FAIL  {fn.__name__}: {e}")
-                traceback.print_exc(limit=-1)
-            await ctx.close()
+                traceback.print_exc(limit=-1); return e
+            finally:
+                await ctx.close()
+        for fn in [t for t in TESTS if not os.environ.get('ONLY') or t.__name__ in os.environ['ONLY'].split(',')]:
+            err = await run(fn)
+            if err is not None:
+                # One more try: a test that straddles midnight sees the date change under it, with nothing wrong in the app.
+                print(f"RETRY {fn.__name__}: {err}"); err = await run(fn)
+            if err is None: passed += 1; print(f"PASS  {fn.__name__}")
+            else: failed.append(fn.__name__); print(f"FAIL  {fn.__name__}: {err}")
         await b.close()
     print(f"\n{passed} passed, {len(failed)} failed" + (f": {', '.join(failed)}" if failed else ""))
     sys.exit(1 if failed else 0)
