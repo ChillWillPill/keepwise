@@ -202,6 +202,23 @@ async def currency_label_never_overlaps_amount_anywhere(ctx):
         await pg.click("#history [data-pay-del]"); await pg.wait_for_timeout(80)
 
 @test
+async def every_currency_can_be_chosen(ctx):
+    pg = await open_app(ctx)
+    codes = await pg.locator("#m-cur option").evaluate_all("els => els.map(e => e.value)")
+    assert len(codes) == len(set(codes)) == 154 and codes[:8] == ["USD", "GBP", "EUR", "CAD", "AUD", "INR", "PKR", "AED"], len(codes)
+    for c in ("JPY", "MXN", "NGN", "SAR", "BDT", "TRY", "ZAR", "CNY", "BRL", "CHF", "KRW", "EGP", "ZWG"):
+        assert c in codes, c
+    assert await pg.locator("#m-cur optgroup").evaluate_all("els => els.map(e => e.label)") == ["Most used", "All currencies"]
+    for c, mark in (("NGN", "NGN"), ("JPY", "¥"), ("SAR", "SAR"), ("ZWG", "ZWG")):   # the amounts carry the chosen currency, even one the phone may not know
+        await pg.select_option("#m-cur", c); await pg.wait_for_timeout(150)
+        v = await pg.inner_text("#view"); assert mark in v and "$" not in v.replace("MX$", ""), f"{c}: {v[:200]}"
+        assert (await state(pg))["cur"] == c
+    r = await pg.evaluate(CHECK_MONEY); assert not r["bad"], r
+    await tab(pg, "plan"); assert await pg.locator("[data-bind=cur] option").count() == 154 and await pg.input_value("[data-bind=cur]") == "ZWG"
+    r = await pg.evaluate(CHECK_MONEY); assert not r["bad"], r
+    assert not pg.errors, pg.errors
+
+@test
 async def month_compare_chart(ctx):
     pg = await open_app(ctx)
     await pg.click("[data-compare]"); await pg.wait_for_timeout(150)
@@ -543,7 +560,7 @@ async def shared_off_shows_setup(ctx):
         await tab(pg, name); assert "Claude" not in await pg.inner_text("#app"), name
     await pg.click("[data-shared-soon] [data-mode=local]"); await pg.wait_for_timeout(120)
     assert await pg.locator("[data-new-split]").count() == 1 and (await state(pg))["splitMode"] == "local", "one tap back to splitting on this phone"
-    assert await pg.evaluate("document.getElementById('bell').hidden")
+    assert not await pg.evaluate("document.getElementById('bell').hidden"), "the bell is always there"
     await pg.close()
     pg = await ctx.new_page(); await pg.add_init_script("window.claude = {use: async () => null}")  # in Claude but signed out
     await pg.goto(URL); await pg.wait_for_timeout(400); await tab(pg, "split")
@@ -556,21 +573,25 @@ async def shared_join_notify_inbox(ctx):
     await pg.evaluate("__mock.db.doc('members/u_alex').set({joinedAt:1}); __mock.db.doc('members/u_sam').set({joinedAt:1});")
     await tab(pg, "split"); await pg.click("[data-mode=shared]"); await pg.wait_for_timeout(250)
     assert "members/u_me" in await pg.evaluate("[...__mock.store.keys()]")
+    bell = lambda: pg.evaluate("document.getElementById('bell-n').hidden ? 0 : +document.getElementById('bell-n').textContent")
+    b0 = await bell()   # this phone's own notes are already counted; a friend's change adds one more
     await pg.evaluate("__mock.db.doc('splits/abc').set({title:'Pizza night',amount:60,tag:'Dinner',paidBy:'u_alex',method:'equal',parts:{u_me:1,u_alex:1,u_sam:1},date:'2026-09-29',createdBy:'u_alex',createdAt:Date.now()})")
     await pg.wait_for_timeout(300)
     assert await pg.inner_text("#toast") == "Alex added you to “Pizza night”"
-    assert await pg.inner_text("#bell-n") == "1"
+    assert await bell() == b0 + 1
     assert "You owe Alex $20" in await text(pg, "[data-out=splitSum]")
     # a split that doesn't involve me must not notify
     await pg.evaluate("__mock.db.doc('splits/xyz').set({title:'Their lunch',amount:10,tag:'Lunch',paidBy:'u_alex',method:'equal',parts:{u_alex:1,u_sam:1},createdBy:'u_alex',createdAt:Date.now()})")
-    await pg.wait_for_timeout(250); assert await pg.inner_text("#bell-n") == "1"
+    await pg.wait_for_timeout(250); assert await bell() == b0 + 1
     # friend edits it
     await pg.evaluate("__mock.db.doc('splits/abc').update({amount:90,updatedBy:'u_alex',updatedAt:Date.now()+5})")
     await pg.wait_for_timeout(250)
     assert "edited" in await pg.inner_text("#toast")
     await pg.click("#bell"); await pg.wait_for_timeout(250)
-    v = await text(pg, "#view"); assert "Notifications" in v and "Pizza night" in v and "New" in v, v
-    assert await pg.evaluate("document.getElementById('bell-n').hidden")
+    v = await text(pg, "#view"); assert "Notifications" in v and "Pizza night" in v and "unread" in v, v
+    assert await pg.locator(".note-row.unread", has_text="Pizza night").count() == 1 and await bell() >= 1, "opening the list does not mark anything read"
+    await pg.click("[data-note-all]"); await pg.wait_for_timeout(250)
+    assert await pg.evaluate("document.getElementById('bell-n').hidden") and await pg.locator(".note-row.unread").count() == 0
     st = await pg.evaluate("__mock.store.get('data/users/u_me/state')"); assert st and st["lastSeen"] > 0
     await pg.click("[data-go-split]"); await pg.wait_for_timeout(200)
     assert "You owe Alex $30" in await text(pg, "[data-out=splitSum]")
@@ -1410,6 +1431,50 @@ async def android_reminders_for_income_and_each_renewal(ctx):
     # tapping an income reminder opens Month
     await tab(pg, "codes"); await pg.evaluate("window.__n.listener({actionId: 'tap', notification: {extra: {kind: 'income'}}})"); await pg.wait_for_timeout(150)
     assert (await state(pg))["tab"] == "month"
+    assert not pg.errors, pg.errors
+
+@test
+async def notifications_bell_counts_read_and_unread(ctx):
+    # 6 October: pay was due yesterday, so there is at least money to confirm, plus whatever renews this week
+    pg = await open_at(ctx, (2026, 10, 5, 9, 0))
+    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
+    await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=pay]"); await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("1420")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 6, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    bell = lambda: pg.evaluate("document.getElementById('bell-n').hidden ? 0 : +document.getElementById('bell-n').textContent.replace('+', '')")
+    assert await pg.locator("#bell").is_visible()
+    await pg.click("#bell"); await pg.wait_for_timeout(200)
+    rows = pg.locator(".note-row"); n = await rows.count(); assert 2 <= n <= 9, n
+    v = await text(pg, "#view"); assert "Did your pay arrive?" in v and "$1,420 was expected Oct 5" in v and "renews" in v, v
+    assert await pg.locator(".note-row.unread").count() == n and await bell() == n and f"{n} unread" in await text(pg, "[data-note-count]"), "everything starts unread and the count matches"
+    # mark one as read, then back to unread: the row, the count and the bell all follow
+    first = rows.nth(0); await first.locator("[data-note-toggle]").click(); await pg.wait_for_timeout(120)
+    assert await pg.locator(".note-row.unread").count() == n - 1 and await bell() == n - 1 and f"{n - 1} unread" in await text(pg, "[data-note-count]")
+    assert (await rows.nth(0).locator("[data-note-toggle]").inner_text()).strip() == "Mark as unread"
+    await rows.nth(0).locator("[data-note-toggle]").click(); await pg.wait_for_timeout(120)
+    assert await pg.locator(".note-row.unread").count() == n and await bell() == n
+    # it survives closing and reopening the app
+    await rows.nth(1).locator("[data-note-toggle]").click(); await pg.wait_for_timeout(120)
+    await pg.reload(); await pg.wait_for_timeout(400); assert await bell() == n - 1
+    # tapping a note marks it read and takes you there
+    await pg.click("#bell"); await pg.wait_for_timeout(200)
+    await pg.locator(".note-row", has_text="Did your pay arrive?").locator("[data-note-open]").click(); await pg.wait_for_timeout(200)
+    assert (await state(pg))["tab"] == "month" and await pg.locator("[data-arrived]").count() == 1 and await bell() == n - 2
+    # mark all as read clears the bell; one can still be set back to unread
+    await pg.click("#bell"); await pg.wait_for_timeout(200); await pg.click("[data-note-all]"); await pg.wait_for_timeout(200)
+    assert await bell() == 0 and await pg.locator(".note-row.unread").count() == 0 and "All read" in await text(pg, "[data-note-count]") and await pg.locator("[data-note-all]").is_disabled()
+    await pg.locator(".note-row").nth(0).locator("[data-note-toggle]").click(); await pg.wait_for_timeout(120); assert await bell() == 1
+    await pg.click("[data-note-all]"); await pg.wait_for_timeout(150); assert await bell() == 0
+    # answering the question removes its note; a later payday is a new, unread note
+    await pg.click("[data-close-inbox]"); await pg.click("[data-arrive=pay] [data-arrive-yes]"); await pg.wait_for_timeout(200)
+    await pg.click("#bell"); await pg.wait_for_timeout(200); assert "Did your pay arrive?" not in await text(pg, "#view")
+    await pg.click("[data-close-inbox]")
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 11, 6, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    assert await bell() >= 1
+    await pg.click("#bell"); await pg.wait_for_timeout(200)
+    assert await pg.locator(".note-row.unread", has_text="Did your pay arrive?").count() == 1 and "expected Nov 5" in await text(pg, "#view")
+    assert await pg.locator(".note-row.unread").count() == await bell(), "the bell always equals the unread rows"
     assert not pg.errors, pg.errors
 
 @test

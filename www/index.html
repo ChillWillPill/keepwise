@@ -65,6 +65,12 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .bell{appearance:none;position:relative;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
 .bell[hidden],[data-loan-cardrow][hidden],[data-loan-cardother][hidden]{display:none}
 .bell:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.note-row{gap:6px}
+.note-main{appearance:none;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:0;display:flex;gap:10px;align-items:flex-start;width:100%;cursor:pointer}
+.note-txt{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
+.note-dot{flex:none;width:9px;height:9px;border-radius:50%;margin-top:7px;background:transparent}
+.note-row.unread .note-dot{background:var(--green)}
+.note-row:not(.unread) .name{font-weight:500;color:var(--muted)}
 .bell-n{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:99px;background:var(--rust);color:var(--card);font:700 .72rem/20px var(--body);text-align:center;padding:0 5px}
 .app-main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .view{max-width:720px;margin:0 auto;padding:20px 16px 32px;display:flex;flex-direction:column;gap:18px}
@@ -130,6 +136,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-o
 .icon-btn{appearance:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
 .icon-btn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .hdr-actions{display:flex;gap:8px;align-items:center}
+@media (max-width:359px){.brand{gap:8px}.brand small{display:none}.brand b{font-size:1.05rem}.hdr-actions{gap:5px}.hdr-actions .icon-btn,.hdr-actions .bell{width:38px;height:38px}.logo{width:34px;height:34px}}
 .home-link{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none;border-radius:12px;-webkit-tap-highlight-color:transparent}
 .home-link:focus-visible{outline:2px solid var(--green);outline-offset:3px}
 .btn:focus-visible,.link:focus-visible,.chip:focus-visible{outline:2px solid var(--green);outline-offset:2px}
@@ -532,7 +539,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
       <div><b class="wordmark">Keep<span>Wise</span></b><small>What you keep</small></div></a><div style="flex:1"></div>
       <div class="hdr-actions"><button class="icon-btn" id="theme-btn" type="button" aria-label="Theme"></button>
       <button class="icon-btn acct-btn" id="acct-btn" type="button" aria-label="Account and sign in"></button>
-      <button class="bell" id="bell" type="button" aria-label="Notifications" hidden><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bell-n" id="bell-n" hidden>0</span></button></div>
+      <button class="bell" id="bell" type="button" aria-label="Notifications"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bell-n" id="bell-n" hidden>0</span></button></div>
     </div>
   </header>
   <main class="app-main" id="main"><div class="view" id="view"></div></main>
@@ -587,14 +594,19 @@ const DAY = 864e5;
 const todayMid = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const isoDaysAgo = n => { const d = todayMid(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };  // local date, not UTC
 const daysSince = iso => { if (!iso) return 999; const [y,m,d] = iso.split("-").map(Number); return Math.round((todayMid() - new Date(y, m-1, d)) / DAY); };
-const CURRENCIES = [["USD","US dollar"],["GBP","British pound"],["EUR","Euro"],["CAD","Canadian dollar"],["AUD","Australian dollar"],["INR","Indian rupee"],["PKR","Pakistani rupee"],["AED","UAE dirham"]];
+// The eight most used come first; every other currency in circulation follows, by country name.
+const COMMON_CUR = [["USD","US dollar"],["GBP","British pound"],["EUR","Euro"],["CAD","Canadian dollar"],["AUD","Australian dollar"],["INR","Indian rupee"],["PKR","Pakistani rupee"],["AED","UAE dirham"]];
+const MORE_CUR = "AFN Afghan afghani|ALL Albanian lek|DZD Algerian dinar|AOA Angolan kwanza|ARS Argentine peso|AMD Armenian dram|AWG Aruban florin|AZN Azerbaijani manat|BSD Bahamian dollar|BHD Bahraini dinar|BDT Bangladeshi taka|BBD Barbadian dollar|BYN Belarusian ruble|BZD Belize dollar|BMD Bermudian dollar|BTN Bhutanese ngultrum|BOB Bolivian boliviano|BAM Bosnia and Herzegovina mark|BWP Botswana pula|BRL Brazilian real|BND Brunei dollar|BGN Bulgarian lev|BIF Burundian franc|KHR Cambodian riel|CVE Cape Verdean escudo|KYD Cayman Islands dollar|XAF Central African CFA franc|XPF CFP franc|CLP Chilean peso|CNY Chinese yuan|COP Colombian peso|KMF Comorian franc|CDF Congolese franc|CRC Costa Rican colon|CUP Cuban peso|CZK Czech koruna|DKK Danish krone|DJF Djiboutian franc|DOP Dominican peso|XCD East Caribbean dollar|EGP Egyptian pound|ERN Eritrean nakfa|SZL Eswatini lilangeni|ETB Ethiopian birr|FKP Falkland Islands pound|FJD Fijian dollar|GMD Gambian dalasi|GEL Georgian lari|GHS Ghanaian cedi|GIP Gibraltar pound|GTQ Guatemalan quetzal|GNF Guinean franc|GYD Guyanese dollar|HTG Haitian gourde|HNL Honduran lempira|HKD Hong Kong dollar|HUF Hungarian forint|ISK Icelandic krona|IDR Indonesian rupiah|IRR Iranian rial|IQD Iraqi dinar|ILS Israeli new shekel|JMD Jamaican dollar|JPY Japanese yen|JOD Jordanian dinar|KZT Kazakhstani tenge|KES Kenyan shilling|KWD Kuwaiti dinar|KGS Kyrgyzstani som|LAK Lao kip|LBP Lebanese pound|LSL Lesotho loti|LRD Liberian dollar|LYD Libyan dinar|MOP Macanese pataca|MGA Malagasy ariary|MWK Malawian kwacha|MYR Malaysian ringgit|MVR Maldivian rufiyaa|MRU Mauritanian ouguiya|MUR Mauritian rupee|MXN Mexican peso|MDL Moldovan leu|MNT Mongolian tugrik|MAD Moroccan dirham|MZN Mozambican metical|MMK Myanmar kyat|NAD Namibian dollar|NPR Nepalese rupee|ANG Netherlands Antillean guilder|TWD New Taiwan dollar|NZD New Zealand dollar|NIO Nicaraguan cordoba|NGN Nigerian naira|KPW North Korean won|MKD North Macedonian denar|NOK Norwegian krone|OMR Omani rial|PAB Panamanian balboa|PGK Papua New Guinean kina|PYG Paraguayan guarani|PEN Peruvian sol|PHP Philippine peso|PLN Polish zloty|QAR Qatari riyal|RON Romanian leu|RUB Russian ruble|RWF Rwandan franc|SHP Saint Helena pound|WST Samoan tala|STN Sao Tome and Principe dobra|SAR Saudi riyal|RSD Serbian dinar|SCR Seychellois rupee|SLE Sierra Leonean leone|SGD Singapore dollar|SBD Solomon Islands dollar|SOS Somali shilling|ZAR South African rand|KRW South Korean won|SSP South Sudanese pound|LKR Sri Lankan rupee|SDG Sudanese pound|SRD Surinamese dollar|SEK Swedish krona|CHF Swiss franc|SYP Syrian pound|TJS Tajikistani somoni|TZS Tanzanian shilling|THB Thai baht|TOP Tongan paanga|TTD Trinidad and Tobago dollar|TND Tunisian dinar|TRY Turkish lira|TMT Turkmenistani manat|UGX Ugandan shilling|UAH Ukrainian hryvnia|UYU Uruguayan peso|UZS Uzbekistani som|VUV Vanuatu vatu|VES Venezuelan bolivar|VND Vietnamese dong|XOF West African CFA franc|YER Yemeni rial|ZMW Zambian kwacha|ZWG Zimbabwe gold".split("|").map(x => [x.slice(0, 3), x.slice(4)]);
+const CURRENCIES = [...COMMON_CUR, ...MORE_CUR];
+const curOptions = (sel, skip) => { const o = ([c, n]) => c === skip ? "" : `<option value="${c}" ${c === sel ? "selected" : ""}>${c} · ${n}</option>`;
+  return `<optgroup label="Most used">${COMMON_CUR.map(o).join("")}</optgroup><optgroup label="All currencies">${MORE_CUR.map(o).join("")}</optgroup>`; };
 let FMT_CUR = null;  // set only while a statement is previewed in its own currency
 function fmt(v){
   const n = r2(v), whole = Math.abs(n % 1) < 0.005;
   try { return new Intl.NumberFormat("en-US", {style:"currency", currency:FMT_CUR || S.cur, minimumFractionDigits: whole?0:2, maximumFractionDigits: whole?0:2}).format(n); }
-  catch(e){ return n.toFixed(2); }
+  catch(e){ return `${FMT_CUR || S.cur} ${n.toLocaleString("en-US", {minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2})}`; }  // a currency this phone does not know still shows its code
 }
-const sym = () => { try { return new Intl.NumberFormat("en-US",{style:"currency",currency:S.cur,maximumFractionDigits:0}).formatToParts(0).find(p=>p.type==="currency").value; } catch(e){ return "$"; } };
+const sym = () => { try { return new Intl.NumberFormat("en-US",{style:"currency",currency:S.cur,maximumFractionDigits:0}).formatToParts(0).find(p=>p.type==="currency").value; } catch(e){ return S.cur || "$"; } };
 function toast(msg, undo){
   const t = $("toast"); t.textContent = msg;
   if (undo){ const b = document.createElement("button"); b.type = "button"; b.className = "toast-undo"; b.textContent = "Undo";
@@ -1191,7 +1203,7 @@ function fxCard(){
   const opt = (mode, title, body) => `<label class="fx-opt${fx.mode === mode ? " on" : ""}"><input type="radio" name="fxmode" value="${mode}" ${fx.mode === mode ? "checked" : ""}><span><b>${title}</b>${body || ""}</span></label>`;
   return `<section class="card fx-card"><h3>${R.cur && R.cur === fx.from ? `This statement looks like it’s in ${esc(curName(fx.from))}s.` : "Which currency is this statement in?"}</h3>
     <p class="muted small">Your plan is in ${esc(curName(S.cur))}s (${S.cur}). Choose what to do with these numbers.</p>
-    <label class="field"><span>Statement currency</span><select data-fx-from>${CURRENCIES.filter(([c]) => c !== S.cur).map(([c, n]) => `<option value="${c}" ${c === fx.from ? "selected" : ""}>${c} · ${n}</option>`).join("")}</select></label>
+    <label class="field"><span>Statement currency</span><select data-fx-from>${curOptions(fx.from, S.cur)}</select></label>
     ${opt("convert", `Convert to ${S.cur}`, `<span class="fx-rate">1 ${esc(fx.from)} = <input data-fx-rate inputmode="decimal" enterkeyhint="done" placeholder="rate" value="${esc(fx.rate)}" aria-label="How many ${S.cur} one ${esc(fx.from)} is worth"> ${S.cur}</span><small class="muted">Use the rate your bank gave you. KeepWise does not look rates up.</small>`)}
     ${opt("same", "Use the numbers as they are", `<small class="muted">Pick this if the statement is really in ${S.cur}.</small>`)}
     ${opt("switch", `Switch my plan to ${esc(fx.from)}`, `<small class="muted">Your existing numbers stay as typed. Only the currency label changes.</small>`)}</section>`;
@@ -1333,7 +1345,7 @@ V.month = () => {
   <div data-out="reviewCard">${OUT.reviewCard()}</div>
   ${importCard()}
   <div class="grid2">
-    <label class="field"><span>Currency</span><select data-bind="cur" id="m-cur">${CURRENCIES.map(([c,n]) => `<option value="${c}" ${c===S.cur?"selected":""}>${c} · ${n}</option>`).join("")}</select></label>
+    <label class="field"><span>Currency</span><select data-bind="cur" id="m-cur">${curOptions(S.cur)}</select></label>
     <label class="field"><span data-out="incomeLabel">${OUT.incomeLabel()}</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month"></span></label>
   </div>
   <p class="muted small">Changing currency does not convert the numbers. 90 stays 90.</p>
@@ -1692,7 +1704,7 @@ V.plan = () => `
   <h1>Plan</h1>
   <div class="grid2">
     <label class="field"><span>${OUT.incomeLabel()}</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}"></span>${(S.extras || []).length ? `<small class="muted small">Plus ${fmt(extraExpected())} other income, on the Month tab.</small>` : ""}</label>
-    <label class="field"><span>Currency</span><select data-bind="cur">${CURRENCIES.map(([c,n]) => `<option value="${c}" ${c===S.cur?"selected":""}>${c} · ${n}</option>`).join("")}</select></label>
+    <label class="field"><span>Currency</span><select data-bind="cur">${curOptions(S.cur)}</select></label>
   </div>
   <section class="card"><h2 class="h-info">Envelopes${infoBtn("envelopes", "About Envelopes")}</h2>${infoTip("envelopes", "The share of your income each envelope should hold. Subscriptions are managed on the Subs tab and count toward Miscellaneous.")}
     <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr));align-items:end">
@@ -1934,20 +1946,43 @@ function notifications(){
   });
   return out.sort((a,b) => b.t - a.t);
 }
-const unreadCount = () => notifications().filter(n => n.t > SH.lastSeen).length;
+// What this phone itself has to tell you: money to confirm, charges and paydays close by, subscriptions that look
+// unused, a loan about to end. Each note has a key that changes when its date does, so a new charge is a new note.
+function localNotes(){
+  const out = [], t = todayMid(), add = (key, text, detail, go) => out.push({key: "L:" + key, text, detail, go, local: true});
+  (payOn() ? paydaysBetween(dayPlus(t, -7), dayPlus(t, -1)).slice(-1) : []).filter(d => !((S.payGot || "") >= isoOf(d))).forEach(d => add(`a:pay:${isoOf(d)}`, "Did your pay arrive?", `${fmt(+S.pay.amount || 0)} was expected ${dayMonth(d)}.`, "month"));
+  (S.extras || []).forEach(x => { for (let i = 1; i <= 7; i++){ const d = dayPlus(t, -i); if (incomeDueOn(x, d)){ if (!incomeLogged(x, isoOf(d))) add(`a:${x.id}:${isoOf(d)}`, `Did ${x.name} arrive?`, `${fmt(+x.amount || 0)} was expected ${dayMonth(d)}.`, "month"); break; } } });
+  (payOn() ? paydaysBetween(t, dayPlus(t, 1)) : []).forEach(d => add(`pd:${isoOf(d)}`, `Payday ${whenLabel(daysUntil(d)).toLowerCase()}`, `${fmt(+S.pay.amount || 0)} expected.`, "month"));
+  S.subs.map(x => ({x, d: nextRenewal(x)})).filter(v => v.d && daysUntil(v.d) <= 7).sort((a, b) => a.d - b.d).forEach(({x, d}) => { const n = daysUntil(d), w = whenLabel(n).toLowerCase();
+    if (x.keep === "drop") add(`c:${x.id}:${isoOf(d)}`, `Cancel ${x.name} before it renews`, `You chose to drop it. It renews ${w}, ${fmt(x.price)}.`, "subs");
+    else add(`r:${x.id}:${isoOf(d)}`, `${x.name} renews ${w}`, `${fmt(x.price)} on ${dayMonth(d)}.`, "subs"); });
+  const C = compute(); if (C.flagged.length) add(`f:${C.planKey}:${C.flagged.length}`, `${C.flagged.length} subscription${C.flagged.length === 1 ? " looks" : "s look"} unused`, `Dropping ${C.flagged.length === 1 ? "it" : "them"} would keep ${fmt(C.flaggedSave)} a month.`, "subs");
+  (S.loans || []).filter(l => l.end && !loanDone(l)).forEach(l => { const f = loanFinish(l), n = f ? daysUntil(f.date) : 99; if (n >= 0 && n <= 30) add(`l:${l.id}:${l.end}`, `${l.name || loanKind(l.kind)} ends ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `After that, ${fmt(loanMonthly(l))} a month stays with you.`, "plan"); });
+  return out;
+}
+const allNotes = () => [...localNotes(), ...notifications()];
+// Read and unread are yours to set. A note from your circle also counts as read once Mark all as read has passed it.
+const noteRead = n => { const R = S.noteRead || {}, U = S.noteUnread || {}; return R[n.key] ? true : U[n.key] ? false : !n.local && n.t <= SH.lastSeen; };
+function setNoteRead(n, read){ S.noteRead = S.noteRead || {}; S.noteUnread = S.noteUnread || {}; if (read){ S.noteRead[n.key] = 1; delete S.noteUnread[n.key]; } else { delete S.noteRead[n.key]; S.noteUnread[n.key] = 1; } }
+function pruneNotes(list){ const live = new Set(list.map(n => n.key)); ["noteRead", "noteUnread"].forEach(m => Object.keys(S[m] || {}).forEach(k => { if (k.startsWith("L:") && !live.has(k)) delete S[m][k]; })); }
+const unreadCount = () => allNotes().filter(n => !noteRead(n)).length;
 function renderBell(){
   const b = $("bell"); if (!b) return;
-  b.hidden = SH.state !== "ready";
+  b.hidden = UI.welcome != null;
   const n = unreadCount(), badge = $("bell-n");
-  badge.hidden = !n; badge.textContent = n > 9 ? "9+" : String(n);
-  b.setAttribute("aria-label", n ? `Notifications, ${n} new` : "Notifications");
+  badge.hidden = !n; badge.textContent = n > 99 ? "99+" : String(n);
+  b.setAttribute("aria-label", n ? `Notifications, ${n} unread` : "Notifications");
 }
 V.inbox = () => {
-  const list = notifications(), seen = UI.inboxSeen || 0;
+  const list = allNotes(), un = list.filter(n => !noteRead(n)).length;
+  const row = n => { const read = noteRead(n);
+    return `<div class="row note-row${read ? "" : " unread"}" data-note="${esc(n.key)}"><button type="button" class="note-main" data-note-open aria-label="${esc(n.text)}${read ? "" : ", unread"}"><span class="note-dot" aria-hidden="true"></span><span class="note-txt"><span class="name">${esc(n.text)}</span>${n.detail ? `<span class="muted small">${esc(n.detail)}</span>` : ""}</span>${n.t ? `<span class="muted small">${ago(n.t)}</span>` : ""}</button>
+      <button type="button" class="link plain small" data-note-toggle style="align-self:flex-end">${read ? "Mark as unread" : "Mark as read"}</button></div>`; };
   return `<div class="inline" style="justify-content:space-between"><h1 class="h-info">Notifications${infoBtn("inbox", "About notifications")}</h1><button class="btn small" type="button" data-close-inbox>Done</button></div>
-    ${infoTip("inbox", "Activity from your shared circle: splits that include you, and payments.")}
-    ${list.length ? `<div class="rows">${list.map(n => `<div class="row"><div class="row-top"><div>${n.t > seen ? `<span class="pill ok" style="margin-right:6px">New</span>` : ""}<span class="name">${esc(n.text)}</span>${n.detail ? `<div class="muted small">${esc(n.detail)}</div>` : ""}</div><div class="muted small">${ago(n.t)}</div></div></div>`).join("")}</div>
-    <button class="btn" type="button" data-go-split>Open shared splits</button>` : `<p class="empty">Nothing yet. When a friend adds a split with you in it, it shows here.</p>`}`;
+    ${infoTip("inbox", "Charges and paydays coming up, money to confirm, and subscriptions that look unused. They are worked out on this phone. Tap one to go there.")}
+    ${list.length ? `<div class="inline" style="justify-content:space-between"><span class="muted small" data-note-count>${un ? `${un} unread` : "All read"}</span><button class="link small" type="button" data-note-all ${un ? "" : "disabled"}>Mark all as read</button></div>
+      <div class="rows">${list.map(row).join("")}</div>` : `<p class="empty">You’re all caught up. Charges coming up, paydays and money to confirm will show here.</p>`}
+    ${SH.state === "ready" ? `<button class="btn" type="button" data-go-split>Open shared splits</button>` : ""}`;
 };
 function ago(t){ if (!t) return ""; const m = Math.round((Date.now() - t) / 6e4); if (m < 1) return "now"; if (m < 60) return m + "m"; const h = Math.round(m / 60); if (h < 24) return h + "h"; const d = Math.round(h / 24); return d < 7 ? d + "d" : new Date(t).toLocaleDateString("en-US", {month:"short", day:"numeric"}); }
 
@@ -1976,7 +2011,7 @@ async function resolveNames(){
 function onShared(fromNames){
   if (!fromNames) resolveNames();
   if (SH.loaded.splits && SH.loaded.pays){
-    const keys = notifications().filter(n => n.t > SH.lastSeen);
+    const keys = notifications().filter(n => !noteRead(n));
     if (SH.known){ const fresh = keys.filter(n => !SH.known.has(n.key)); if (fresh.length) toast(fresh.length === 1 ? fresh[0].text : `${fresh.length} new updates from your circle`); }
     SH.known = new Set(notifications().map(n => n.key));
   }
@@ -2001,7 +2036,6 @@ async function initShared(){
   } catch(e){ SH.state = "off"; if (S.tab === "split") render(true); }
 }
 async function markSeen(){
-  UI.inboxSeen = SH.lastSeen;
   const t = Date.now(); SH.lastSeen = t; renderBell();
   if (SH.state === "ready") { try { await SH.db.doc(`data/users/${SH.me}/state`).set({lastSeen: t}); } catch(e){} }
 }
@@ -2315,7 +2349,7 @@ V.welcome = () => {
     <button class="link plain w-alt" type="button" data-w-example>Look around with an example first</button>
     ${IS_IOS && STANDALONE ? (UI.movePaste ? moveBox() : `<button class="link small w-alt" type="button" data-move-paste>I already use KeepWise in my browser</button>`) : ""}</div>`;
   if (step === 1) return `<div class="welcome">${dots(1)}<h1 class="w-title">What comes in?</h1><p class="w-sub">Your take-home pay, after tax.</p>
-    <div class="grid2"><label class="field"><span>Currency</span><select data-w="cur">${CURRENCIES.map(([c, n]) => `<option value="${c}" ${c === DRAFT.cur ? "selected" : ""}>${c} · ${n}</option>`).join("")}</select></label>
+    <div class="grid2"><label class="field"><span>Currency</span><select data-w="cur">${curOptions(DRAFT.cur)}</select></label>
     <label class="field"><span>How often you’re paid</span><select data-w="pay">${PAY_WHEN.map(([k, n]) => `<option value="${k}" ${k === DRAFT.pay ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
     <label class="field"><span>${DRAFT.pay === "monthly" ? "Money coming in each month" : "Each paycheck"}</span><span class="money-in w-big"><em>${esc((() => { try { return new Intl.NumberFormat("en-US", {style:"currency", currency: DRAFT.cur, maximumFractionDigits:0}).formatToParts(0).find(p => p.type === "currency").value; } catch(e){ return "$"; } })())}</em><input data-w="income" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(DRAFT.income)}" aria-label="${DRAFT.pay === "monthly" ? "Money coming in each month" : "Each paycheck"}"></span>
       ${DRAFT.pay !== "monthly" && numv(DRAFT.income) ? `<small class="muted small">That is ${new Intl.NumberFormat("en-US", {style:"currency", currency: DRAFT.cur, maximumFractionDigits: 0}).format(numv(DRAFT.income) * PAY_BASE[DRAFT.pay])} in an ordinary month.</small>` : ""}</label>
@@ -2932,6 +2966,7 @@ function refreshOuts(){
     const f = OUT[el.dataset.out]; if (f) el.innerHTML = f();
   });
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
+  renderBell();
 }
 const numv = v => { const n = parseFloat(String(v).replace(/[^0-9.]/g,"")); return isNaN(n) || !isFinite(n) ? 0 : n; };  // amounts are never negative
 
@@ -3244,7 +3279,7 @@ const view = $("view");
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
 $("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
-$("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; if (UI.inbox) markSeen(); render(false); });
+$("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; UI.plus = false; if (UI.inbox){ pruneNotes(allNotes()); save(); } render(false); });
 
 view.addEventListener("input", e => {
   const t = e.target;
@@ -3468,6 +3503,11 @@ view.addEventListener("click", async e => {
     welcomeDone(); ex.lastBackup = S.lastBackup; ex.a2hsHide = S.a2hsHide; ex.started = S.started;
     ex.tab = "plan"; S = ex; save(); render(false); toast(b.dataset.resetYes === "blank" ? "Started empty." : "Example loaded."); return; }
   if (b.dataset.filter){ S.filter = b.dataset.filter; save(); render(true); return; }
+  if (b.hasAttribute("data-note-all")){ allNotes().forEach(n => setNoteRead(n, true)); save(); markSeen(); render(true); toast("All marked as read."); return; }
+  const noteEl = b.closest("[data-note]");
+  if (noteEl && UI.inbox){ const n = allNotes().find(x => x.key === noteEl.dataset.note); if (!n) return;
+    if (b.hasAttribute("data-note-toggle")){ setNoteRead(n, !noteRead(n)); save(); renderBell(); render(true); return; }
+    if (b.hasAttribute("data-note-open")){ setNoteRead(n, true); UI.inbox = false; if (n.go) S.tab = n.go; else { S.tab = "split"; S.splitMode = "shared"; } save(); render(false); return; } }
   if (b.hasAttribute("data-close-inbox")){ UI.inbox = false; render(false); return; }
   if (b.hasAttribute("data-go-split")){ UI.inbox = false; S.tab = "split"; S.splitMode = "shared"; save(); render(false); return; }
   if (b.dataset.mode){ S.splitMode = b.dataset.mode; splitDraft = null; UI.editPay = null; save(); render(true); if (S.splitMode === "shared") joinCircle(); return; }
