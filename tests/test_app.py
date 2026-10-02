@@ -1645,7 +1645,7 @@ async def plus_screen_gives_reasons_and_prices(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     await pg.locator("[data-plus-open]").first.scroll_into_view_if_needed(); await pg.locator("[data-plus-open]").first.click(); await pg.wait_for_timeout(200)
     v = await text(pg, "#view")
-    for reason in ("Live splits with friends", "Your money on every device", "Business Account", "A shared household", "Reminders on every phone", "Receipt photos", "Moments"):
+    for reason in ("Live splits with friends", "Your money on every device", "Business Account", "A shared household", "Offers near you", "Reminders on every phone", "Receipt photos", "Moments"):
         assert reason in v, reason
     assert "straight from your contacts" in v
     # prices exactly as set: 12 from 15 for the first six months, 140 from 180 a year

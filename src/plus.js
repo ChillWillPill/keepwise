@@ -3,11 +3,13 @@
 const PLUS_PRICE = {monthly: 15, monthlyEarly: 12, earlyMonths: 6, yearly: 180, yearlyEarly: 140};
 const usd = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
 const HOME_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>';
+const PIN_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.500-5.700-6.500-10.500a6.500 6.500 0 0 1 13 0C18.500 15.300 12 21 12 21z"/><circle cx="12" cy="10.500" r="2.300"/></svg>';
 const PLUS_REASONS = () => [
   [I.users, "Live splits with friends", "Add friends straight from your contacts. Everyone sees the same split on their own phone, and knows the moment it changes."],
   [I.redo, "Your money on every device", "Sign in once and your month follows you to your phone, tablet and computer. It is backed up with encryption only you can unlock."],
   [I.work, "Business Account", "Give your work money its own books. Income, costs and subscriptions stay separate from personal, with a running tax set-aside and a year-end export ready for your accountant."],
   [HOME_IC, "A shared household", "Run one month with your partner or family. Each person keeps their own sign-in, and you all see the same plan."],
+  [PIN_IC, "Offers near you", "Official discounts, vouchers and promo codes from stores in your city, matched to your approximate area and nothing more precise."],
   [BELL, "Reminders on every phone", "Renewal and payday reminders on iPhone and the web too, so a charge never arrives unannounced."],
   [I.camera, "Receipt photos", "Attach the receipt to a split, so nobody has to ask what was paid."],
   [I.heart, "Moments", "Turn the splits from a trip or a wedding into a private album worth keeping."],
