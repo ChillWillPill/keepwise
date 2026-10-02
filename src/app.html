@@ -118,6 +118,7 @@ a.btn{display:block;text-decoration:none}
 .meter{height:9px;border-radius:99px;background:var(--chip);overflow:hidden}
 .meter i{display:block;height:100%;border-radius:99px;background:var(--green)}
 .meter i.over{background:var(--rust)}
+.meter i.debt{background:var(--gold)}
 
 .pill{display:inline-block;font-size:.76rem;font-weight:600;border-radius:99px;padding:3px 9px;white-space:nowrap}
 .pill.flag{background:var(--rust-soft);color:var(--rust)}
@@ -696,7 +697,7 @@ function compute(){
   S.expenses.forEach(e => { const w = swapFor("expense", e.id), a = w ? +w.altCost : +e.amount || 0; if (e.env === "needs") needs += a; else misc += a; });
   const liveSubs = S.subs.filter(s => s.keep !== "drop");
   liveSubs.forEach(s => { const w = swapFor("sub", s.id), a = w ? +w.altCost : subMonthly(s); if (s.env === "needs") needs += a; else misc += a; });
-  needs += loansMonthly();
+  const loans = loansMonthly(); needs += loans;  // debt payments are part of what must go out; Month shows them on their own row
   const bonus = payBonus(planPeriodNow());
   const income = (+S.income || 0) + extraExpected() + bonus.extra;
   const savings = income - needs - misc;
@@ -721,7 +722,7 @@ function compute(){
   const setAside = (S.deposits || []).filter(x => x.month === planKey).reduce((a,x) => a + x.amount, 0);
   const endSaved = S.efSaved + savings - setAside;
   const toSetAside = Math.max(0, r2(savings - setAside));
-  return {flags, needs, misc, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: P.name, planPeriod: P, payBonus: bonus, planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
+  return {flags, needs, loans, misc, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: P.name, planPeriod: P, payBonus: bonus, planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
 }
 function linkedItem(w){
   const [type, id] = w.link.split(":");
@@ -1369,7 +1370,7 @@ OUT.envelopes = () => {
   const C = compute();
   const rows = [
     ["save","Savings","Money you keep", Math.max(0,C.savings), C.envSave, true],
-    ["needs","Expenditures","Bills, food, getting around", C.needs, C.envNeeds, false],
+    ["needs","Expenditures","Bills, food, getting around", r2(C.needs - C.loans), C.envNeeds, false],
     ["misc","Miscellaneous","The rest of life", C.misc, C.envMisc, false]
   ];
   return `<div class="rows">${rows.map(([k, n, d, v, env, isSave]) => {
@@ -1381,8 +1382,23 @@ OUT.envelopes = () => {
         <div class="meter"><i class="${over ? "over" : ""}" style="width:${pct}%"></i></div>
         <span class="env-hint small muted">${open ? "Hide details" : "Details"}<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span>
       </button>
-      ${open ? envDetail(k, C) : ""}</div>`;}).join("")}</div>`;
+      ${open ? envDetail(k, C) : ""}</div>`;}).join("")}${loansRow(C)}</div>`;
 };
+// Loans and debts: what goes to repayments each month. Read-only here; the loans themselves are edited on Plan.
+function loansRow(C){
+  const live = (S.loans || []).filter(l => !loanDone(l)); if (!live.length) return "";
+  const share = C.income > 0 ? C.loans / C.income * 100 : 0, open = UI.openEnv === "loans", owed = r2(live.reduce((a, l) => a + (+l.total || 0), 0));
+  return `<div class="row env-row${open ? " open" : ""}" data-loans-row>
+    <button type="button" class="env-head" data-env-open="loans" aria-expanded="${open}">
+      <div class="row-top"><div><div class="name" style="font-size:1.1rem">Loans & debts</div><div class="muted small">${live.length} repayment${live.length === 1 ? "" : "s"} each month</div></div>
+      <div><div class="name tnum" style="font-size:1.1rem">${fmt(C.loans)}</div><div class="small tnum muted">${C.income > 0 ? `${share < 1 ? "under 1" : Math.round(share)}% of income` : "a month"}</div></div></div>
+      <div class="meter"><i class="debt" style="width:${Math.min(100, share)}%"></i></div>
+      <span class="env-hint small muted">${open ? "Hide details" : "Details"}<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span>
+    </button>
+    ${open ? `<div class="env-body">${live.map(l => { const f = loanFinish(l); return `<div class="line"><div><div>${esc(l.name || loanKind(l.kind))}</div><div class="muted small">${esc(loanKind(l.kind))}${f ? ` · ${f.est ? "about " : "ends "}${monthYear(f.date)}` : ""}</div></div><span class="tnum">${fmt(loanMonthly(l))}</span></div>`; }).join("")}
+      ${owed > 0 ? `<p class="muted small">You owe ${fmt(owed)} in total.</p>` : ""}
+      <button class="btn" type="button" data-go="plan">Manage loans on Plan</button></div>` : ""}</div>`;
+}
 function envDetail(k, C){
   if (k === "save"){
     const deps = (S.deposits || []).slice().sort((a,b) => (b.date||"").localeCompare(a.date||""));
@@ -1397,8 +1413,7 @@ function envDetail(k, C){
   return `<div class="env-body">
     ${exp.map(e => { const w = swapFor("expense", e.id); return `<div class="line" data-exp="${e.id}"><div><div>${esc(e.name)}</div><div class="muted small">${w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
     ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Subscription · ${fmt(sb.price)}/yr` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subMonthly(sb))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
-    ${k === "needs" ? (S.loans || []).filter(l => !loanDone(l)).map(l => `<div class="line"><div><div>${esc(l.name || loanKind(l.kind))}</div><div class="muted small">${esc(loanKind(l.kind))}</div></div><div class="inline"><span class="tnum">${fmt(loanMonthly(l))}</span><button class="link" type="button" data-go="plan">Manage</button></div></div>`).join("") : ""}
-    ${!exp.length && !subs.length && !(k === "needs" && loansMonthly() > 0) ? `<p class="muted">Nothing here yet.</p>` : ""}
+    ${!exp.length && !subs.length ? `<p class="muted">Nothing here yet.</p>` : ""}
     <div class="inline add-line" data-add-line="${k}"><input data-new-name placeholder="Add a line" aria-label="New line name" enterkeyhint="next" value="${esc((LINE_DRAFT[k]||{}).n||"")}" style="flex:2 1 140px"><input data-new-amt inputmode="decimal" placeholder="0" aria-label="Amount per month" enterkeyhint="done" value="${esc((LINE_DRAFT[k]||{}).a||"")}" style="flex:1 1 80px"><button class="btn" type="button" data-add-line-btn>Add</button></div>
   </div>`;
 }
@@ -1674,7 +1689,7 @@ V.plan = () => `
     <div id="reset-confirm"></div>
     <p class="small legal-links"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`;
 OUT.envCheck = () => { const t = S.env.needs + S.env.misc + S.env.save; return t === 100 ? `<p class="muted small">Adds up to 100%.</p>` : `<p class="err">These add up to ${t}%. Make them total 100%.</p>`; };
-OUT.expTotal = () => { const C = compute(); return `<p class="small tnum">Expenditures ${fmt(C.needs)} · Misc ${fmt(C.misc)} (with subscriptions and swaps)</p>`; };
+OUT.expTotal = () => { const C = compute(); return `<p class="small tnum">Expenditures ${fmt(r2(C.needs - C.loans))} · Misc ${fmt(C.misc)} (with subscriptions and swaps)${C.loans > 0 ? ` · Loans & debts ${fmt(C.loans)}` : ""}</p>`; };
 OUT.saveSplit = () => { const C = compute(); return C.savings > 0 ? `<p class="small tnum">This month: ${fmt(C.toEF)} to emergency fund, ${fmt(C.toGoal)} to ${esc(S.goalName || "your goal")}.${C.efTarget ? ` Fund target ${fmt(C.efTarget)}.` : ""}</p>` : `<p class="err">Nothing is left to save this month.</p>`; };
 
 // ---- Split ----
@@ -2691,7 +2706,7 @@ OUT.loans = () => {
       ${done ? `<p class="muted small">Ended ${shortDate(l.end)}. It no longer counts in your plan.</p>` : f ? `<p class="small ${f.est ? "muted" : ""}">${f.est ? `About ${f.months} month${f.months === 1 ? "" : "s"} to go at this pace, around ${monthYear(f.date)}. Interest is not included.` : f.months === 0 ? `Ends ${shortDate(l.end)}.` : `Ends ${monthYear(f.date)}, ${f.months} month${f.months === 1 ? "" : "s"} from now.`}</p>` : ""}
       <button class="link plain small" type="button" data-loan-edit aria-label="Edit ${esc(l.name || loanKind(l.kind))}" style="align-self:flex-end">Edit</button></div>`; }).join("");
   return `<section class="card inc-card loan-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Loans and debt${infoBtn("loans", "About loans and debt")}</h2>${live.length ? `<span class="muted small tnum">${fmt(loansMonthly())}/mo</span>` : ""}</div>
-    ${infoTip("loans", "Loan and credit card payments count toward Expenditures until the end date passes. A card’s yearly fee is spread across the year. Interest is worked out only when the payment, amount left, installments left and end date are all filled in. With an amount left and no end date, the finish is estimated from your payments and does not include interest.")}
+    ${infoTip("loans", "Loan and credit card payments come out of what you keep each month until the end date passes, and show as Loans & debts on the Month tab. A card’s yearly fee is spread across the year. Interest is worked out only when the payment, amount left, installments left and end date are all filled in. With an amount left and no end date, the finish is estimated from your payments and does not include interest.")}
     ${rows}${UI.loanAdd ? `<div class="inc-row editing">${loanForm(null)}</div>` : `<button class="btn" type="button" data-loan-add>${I.plus}Add a loan or credit card</button>`}
     ${live.length && owed > 0 ? `<p class="muted small">You owe ${fmt(owed)} in total across ${live.filter(l => +l.total > 0).length} of these.</p>` : !list.length && !UI.loanAdd ? `<p class="muted small">Bank loans, student debt, credit cards and anything else you are paying back.</p>` : ""}</section>`;
 };
@@ -3485,7 +3500,7 @@ view.addEventListener("submit", async e => {
     if (rec.kind === "card"){ rec.card = String(fd.get("card") || "Visa"); if (rec.card === "Other") rec.card = String(fd.get("cardOther") || "").trim().slice(0, 30) || "Other"; rec.fee = numv(fd.get("fee")) || 0; } else if (old0) { delete old0.card; delete old0.fee; }
     if (old) Object.assign(old, rec); else loanList().push({id: uid(), ...rec});
     UI.loanAdd = false; UI.loanEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
-    toast(old ? "Loan updated." : `Added. ${fmt(loanMonthly(rec))} a month now counts in Expenditures.`); return; }
+    toast(old ? "Loan updated." : `Added. ${fmt(loanMonthly(rec))} a month now counts in Loans & debts.`); return; }
   if (kind === "income"){
     const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), when = fd.get("when") || "any";
     if (!name){ toast("Say where the money comes from."); f.querySelector("[name=name]").focus(); return; }

@@ -1764,6 +1764,8 @@ async def keepwise_plus_codes_show_as_eligible(ctx):
 async def loans_section_counts_and_finishes(ctx):
     pg = await open_at(ctx, (2026, 10, 5, 10, 0)); await tab(pg, "plan")
     need0 = money((await text(pg, "[data-out=expTotal]")).split("·")[0])
+    await tab(pg, "month"); kept0 = money(await text(pg, "[data-out=envelopes] .env-row >> nth=0")); assert await pg.locator("[data-loans-row]").count() == 0, "no row until there is a loan"
+    await tab(pg, "plan")
     box = await text(pg, "[data-out=loans]"); assert "Loans and debt" in box and "Add a loan or credit card" in box
     await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
     assert [o.strip() for o in await f.locator("[name=kind] option").all_inner_texts()] == ["Bank loan", "Personal loan", "Student debt", "Credit card", "Car loan", "Mortgage", "Other debt"]
@@ -1774,16 +1776,24 @@ async def loans_section_counts_and_finishes(ctx):
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
     box = await text(pg, "[data-out=loans]")
     assert "Student debt" in box and "$60 a week" in box and "$260/mo" in box and "$5,200 left" in box and "About 20 months to go" in box and "Jun 2028" in box and "Interest is not included" in box, box
-    assert abs(money((await text(pg, "[data-out=expTotal]")).split("·")[0]) - need0 - 260) < 0.01, "the payment counts toward Expenditures"
+    et = await text(pg, "[data-out=expTotal]")
+    assert abs(money(et.split("·")[0]) - need0) < 0.01 and "Loans & debts $260" in et, "the payment sits apart from Expenditures: " + et
     # a bank loan with an end date
     await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
     await f.locator("[name=name]").fill("Car"); await f.locator("[name=kind]").select_option("car"); await f.locator("[name=pay]").fill("300"); await f.locator("[name=end]").fill("2027-04-05")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
     box = await text(pg, "[data-out=loans]"); assert "Ends Apr 2027, 6 months from now" in box and "$560/mo" in box, box
     assert len((await state(pg))["loans"]) == 2
-    # it shows in the Expenditures details on Month
-    await tab(pg, "month"); await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(150)
-    d = await text(pg, "[data-out=envelopes]"); assert "Student debt" in d and "Car" in d and "$300" in d
+    # Month has its own Loans & debts row: read-only, it lowers what you keep, and Expenditures does not count it twice
+    await tab(pg, "month"); row = pg.locator("[data-loans-row]")
+    head = await row.inner_text(); assert "Loans & debts" in head and "$560" in head and "2 repayments each month" in head and "% of income" in head, head
+    assert abs(kept0 - money(await text(pg, "[data-out=envelopes] .env-row >> nth=0")) - 560) < 0.01, "what you keep drops by the repayments"
+    await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(150); assert "Student debt" not in await text(pg, ".env-body")
+    await pg.click("[data-env-open=loans]"); await pg.wait_for_timeout(150)
+    d = await row.inner_text(); assert "Student debt" in d and "Car" in d and "$300" in d and "ends Apr 2027" in d and "You owe $5,200 in total" in d, d
+    assert await row.locator("input, select, [data-del-exp]").count() == 0, "nothing to edit here"
+    await row.locator("[data-go=plan]").click(); await pg.wait_for_timeout(150); assert await pg.locator("[data-out=loans]").count() == 1
+    await tab(pg, "month")
     # once the end date has passed it stops counting
     await pg.clock.set_fixed_time(__import__("datetime").datetime(2027, 4, 20, 10, 0)); await tab(pg, "plan"); await pg.wait_for_timeout(150)
     # picking an end date, or tapping Done on the keyboard, never empties the card (the iPhone date picker takes focus away)
@@ -1831,7 +1841,7 @@ async def loans_section_counts_and_finishes(ctx):
     assert await pg.input_value("form[data-form=loan] [name=card]") == "Other" and await pg.input_value("form[data-form=loan] [name=cardOther]") == "Target RedCard"
     await pg.locator("form[data-form=loan] [data-loan-del]").click(); await pg.wait_for_timeout(150)
     box = await text(pg, "[data-out=loans]"); assert "Paid off" in box and "no longer counts" in box and "$260/mo" in box, box
-    assert abs(money((await text(pg, "[data-out=expTotal]")).split("·")[0]) - need0 - 260) < 0.01
+    assert "Loans & debts $260" in await text(pg, "[data-out=expTotal]")
     # edit and remove, with undo
     await pg.locator("[data-loan]").first.locator("[data-loan-edit]").click(); await pg.wait_for_timeout(120)
     await pg.locator("form[data-form=loan] [data-loan-del]").click(); await pg.wait_for_timeout(150)
