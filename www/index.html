@@ -1490,10 +1490,10 @@ function envDetail(k, C){
   const exp = S.expenses.filter(e => e.env === k);
   const subs = C.liveSubs.filter(s => s.env === k);
   return `<div class="env-body">
+    ${k === "misc" ? spendsIn(C.planKey).slice().sort((a, b) => (b.date || "").localeCompare(a.date || "") || S.spends.indexOf(b) - S.spends.indexOf(a)).map(x => `<div class="line" data-spend="${x.id}"><div><div>${esc(x.name)}${x.ocur ? ` <span class="muted small">${esc(fmtIn(x.orig, x.ocur))}</span>` : ""}</div><div class="muted small">${shortDate(x.date)} · one time</div></div><div class="inline"><span class="tnum">${fmt(x.amount)}</span><button class="link danger-link" type="button" data-spend-del>Remove</button></div></div>`).join("") : ""}
     ${exp.map(e => { const w = swapFor("expense", e.id); return `<div class="line" data-exp="${e.id}"><div><div>${esc(e.name)}</div><div class="muted small">${w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
     ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Subscription · ${fmt(sb.price)}/yr` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subMonthly(sb))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
     ${k === "misc" ? (S.trips || []).filter(t => t.settled === "counted" && t.countKey === C.planKey).map(t => `<div class="line"><div><div>Trip: ${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))} · counted this month only</div></div><span class="tnum">${fmt(tripTotal(t))}</span></div>`).join("") : ""}
-    ${k === "misc" ? spendsIn(C.planKey).slice().sort((a, b) => (b.date || "").localeCompare(a.date || "")).map(x => `<div class="line" data-spend="${x.id}"><div><div>${esc(x.name)}${x.ocur ? ` <span class="muted small">${esc(fmtIn(x.orig, x.ocur))}</span>` : ""}</div><div class="muted small">${shortDate(x.date)} · one time</div></div><div class="inline"><span class="tnum">${fmt(x.amount)}</span><button class="link danger-link" type="button" data-spend-del>Remove</button></div></div>`).join("") : ""}
     ${!exp.length && !subs.length && !(k === "misc" && (C.trips > 0 || C.spends > 0)) ? `<p class="muted">Nothing here yet.</p>` : ""}
     <div class="inline add-line" data-add-line="${k}"><input data-new-name placeholder="Add a line" aria-label="New line name" enterkeyhint="next" value="${esc((LINE_DRAFT[k]||{}).n||"")}" style="flex:2 1 140px"><input data-new-amt inputmode="decimal" placeholder="0" aria-label="Amount per month" enterkeyhint="done" value="${esc((LINE_DRAFT[k]||{}).a||"")}" style="flex:1 1 80px"><button class="btn" type="button" data-add-line-btn>Add</button></div>
   </div>`;
@@ -1535,17 +1535,37 @@ function plainly(){
 // KeepWise only receives the words, and keeps no audio.
 const MIC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.500 11a6.500 6.500 0 0 0 13 0M12 17.500V21"/></svg>';
 const voiceCan = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition) && !window.Capacitor;
-let voiceRec = null;
+// While listening, the words appear as they are heard and a Stop button is always there. It sends on its own after a
+// short pause, when the phone says it is done, or when Stop is tapped. Phones differ in when they report a final result,
+// so the last words heard are what gets sent, whichever of those comes first.
+const STOP_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.500"/></svg>';
+const VOICE = {rec: null, text: "", quiet: 0, max: 0, done: false};
+function voicePaint(){
+  const b = $("ask-mic"), o = $("ask-out"), on = !!VOICE.rec;
+  if (b){ b.setAttribute("aria-pressed", String(on)); b.classList.toggle("listening", on); b.innerHTML = on ? STOP_IC : MIC; b.setAttribute("aria-label", on ? "Stop listening and send" : "Speak instead of typing"); }
+  if (o && on){ o.hidden = false; o.innerHTML = `<span class="muted small">Listening. Say it in English, then pause or tap Stop.</span><br><b data-voice-heard>${esc(VOICE.text || "…")}</b><br><button class="btn small" type="button" data-voice-stop style="margin-top:8px">Stop and send</button>`; }
+}
+function voiceFinish(send){
+  const rec = VOICE.rec; if (!rec || VOICE.done) return; VOICE.done = true;
+  clearTimeout(VOICE.quiet); clearTimeout(VOICE.max); VOICE.rec = null;
+  try { rec.onresult = rec.onend = rec.onerror = null; rec.stop(); } catch(e){}
+  const said = VOICE.text.trim(), o = $("ask-out"), i = $("ask-in"); voicePaint();
+  if (send && said && i){ i.value = said; if (i.form) i.form.dispatchEvent(new Event("submit", {bubbles: true, cancelable: true})); return; }
+  if (o){ o.textContent = ASK.last || ""; o.hidden = !ASK.last; }
+  if (send && !said) toast("Nothing was heard. Tap the microphone and try again.");
+}
 function voiceToggle(){
-  if (voiceRec){ try { voiceRec.stop(); } catch(e){} return; }
+  if (VOICE.rec){ voiceFinish(true); return; }
   const R = window.SpeechRecognition || window.webkitSpeechRecognition; if (!R) return;
-  const rec = new R(), btn = $("ask-mic"), done = () => { voiceRec = null; const b = $("ask-mic"); if (b){ b.setAttribute("aria-pressed", "false"); b.classList.remove("listening"); } };
-  rec.lang = "en-US"; rec.interimResults = false; rec.maxAlternatives = 1;
-  rec.onresult = e => { const said = e.results && e.results[0] && e.results[0][0] ? String(e.results[0][0].transcript || "").trim() : ""; done(); if (!said) return;
-    const i = $("ask-in"), f = i && i.form; if (!i) return; i.value = said; if (f) f.dispatchEvent(new Event("submit", {bubbles: true, cancelable: true})); };
-  rec.onerror = e => { done(); toast(e && (e.error === "not-allowed" || e.error === "service-not-allowed") ? "The microphone is off for KeepWise. Allow it in your browser settings, or type instead." : e && e.error === "no-speech" ? "Nothing was heard. Tap the microphone and try again." : "Could not hear that. Try again, or type instead."); };
-  rec.onend = done;
-  try { rec.start(); voiceRec = rec; if (btn){ btn.setAttribute("aria-pressed", "true"); btn.classList.add("listening"); } toast("Listening. Say it in English, like “dinner 30 euros”."); } catch(e){ done(); }
+  const rec = new R(); rec.lang = "en-US"; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+  rec.onresult = e => { let t = "", fin = false; for (let k = 0; k < e.results.length; k++){ const r = e.results[k]; if (r && r[0]) t += (t ? " " : "") + String(r[0].transcript || "").trim(); if (r && r.isFinal) fin = true; }
+    VOICE.text = t.trim(); const h = document.querySelector("[data-voice-heard]"); if (h) h.textContent = VOICE.text || "…";
+    clearTimeout(VOICE.quiet); if (fin) voiceFinish(true); else VOICE.quiet = setTimeout(() => voiceFinish(true), 1800); };
+  rec.onerror = e => { const err = e && e.error; if (err === "no-speech" && VOICE.text){ voiceFinish(true); return; }
+    voiceFinish(false); toast(err === "not-allowed" || err === "service-not-allowed" ? "The microphone is off for KeepWise. Allow it in your browser settings, or type instead." : err === "no-speech" ? "Nothing was heard. Tap the microphone and try again." : "Could not hear that. Try again, or type instead."); };
+  rec.onend = () => voiceFinish(true);
+  VOICE.text = ""; VOICE.done = false;
+  try { rec.start(); VOICE.rec = rec; VOICE.max = setTimeout(() => voiceFinish(true), 20000); voicePaint(); } catch(e){ VOICE.rec = null; toast("Could not start listening. Type instead."); }
 }
 // Ask reads everything KeepWise holds on this phone: trips, loans, paydays, other income, charges coming up and the bell.
 function answerMore(t, C){
@@ -2740,7 +2760,7 @@ const tripTotal = t => r2((t.items || []).reduce((a, x) => a + (+x.amount || 0),
 const isoDate = iso => { const [y, m, d] = String(iso).split("-").map(Number); return new Date(y, m - 1, d); };
 const tripState = t => { const today = isoOf(todayMid()); return t.settled === "counted" ? "counted" : t.settled === "separate" ? "separate" : today < t.start ? "upcoming" : today > t.end ? "ended" : "active"; };
 const activeTrip = () => (S.trips || []).find(t => tripState(t) === "active") || null;
-const spendsIn = k => (S.spends || []).filter(x => inMonth(x.date, k));
+const spendsIn = k => (S.spends || []).filter(x => x.k ? x.k === k : inMonth(x.date, k));
 const spendsTotal = k => r2(spendsIn(k).reduce((a, x) => a + (+x.amount || 0), 0));
 const tripsCounted = k => r2((S.trips || []).filter(t => t.settled === "counted" && t.countKey === k).reduce((a, t) => a + tripTotal(t), 0));
 const tripRange = t => t.start === t.end ? shortDate(t.start) : `${shortDate(t.start)} to ${shortDate(t.end)}`;
@@ -2811,7 +2831,7 @@ async function logSpend(text){  // returns what to say back, or null when the te
     return `Added to Subs: ${each}${yearly ? " a year" : " a month"}.`; }
   if (kind === "bill"){ lines.forEach(l => S.expenses.push({id: uid(), name: l.name, amount: l.amount, env: "needs"})); save();
     return `Added to Expenditures as a monthly bill: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`; }
-  const today = isoOf(todayMid()); S.spends = S.spends || []; lines.forEach(l => S.spends.push({id: uid(), date: today, name: l.name, amount: l.amount, ...(l.ocur ? {orig: l.orig, ocur: l.ocur, rate: l.rate} : {})})); save();
+  const today = isoOf(todayMid()), monthKey = compute().planKey; S.spends = S.spends || []; lines.forEach(l => S.spends.push({id: uid(), date: today, k: monthKey, name: l.name, amount: l.amount, ...(l.ocur ? {orig: l.orig, ocur: l.ocur, rate: l.rate} : {})})); save();
   return `Added to this month under Miscellaneous, one time: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
 }
 const FX_FAIL = cur => `Could not get today’s rate for ${cur}. Check your connection and try again, or type the amount in ${S.cur}.`;
@@ -3314,6 +3334,7 @@ function render(keepScroll){
   if (!keepScroll){ v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   renderTabs(); renderBell();
   main.scrollTop = keepScroll ? top : 0;
+  if (VOICE.rec) voicePaint();  // a redraw while listening keeps the Stop button and the words heard so far
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
 }
 const OPEN_FORMS = 'form[data-form="settle"],form[data-form="trip"],form[data-form="lockSet"],form[data-form="lockOff"],form[data-form="loan"],form[data-form="exp"],form[data-form="subEdit"],form[data-form="codeEdit"]';
@@ -3744,6 +3765,7 @@ view.addEventListener("click", async e => {
   // ---- other income
   const blankInc = () => ({name: "", kind: "side", when: "any", day: 1, wd: 5, next: isoDaysAgo(0), amount: ""});
   if (b.hasAttribute("data-ask-mic")){ voiceToggle(); return; }
+  if (b.hasAttribute("data-voice-stop")){ voiceFinish(true); return; }
   const spendEl = b.closest("[data-spend]");
   if (spendEl && b.hasAttribute("data-spend-del")){ const u = undoable(), gone = (S.spends || []).find(x => x.id === spendEl.dataset.spend); S.spends = (S.spends || []).filter(x => x !== gone); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; }
   if (b.hasAttribute("data-trip-add")){ UI.tripAdd = true; UI.tripEdit = null; render(true); const i = view.querySelector('form[data-form="trip"] [name=name]'); if (i) i.focus(); return; }
@@ -4052,7 +4074,7 @@ view.addEventListener("submit", async e => {
   if (kind === "ask"){ const q = $("ask-in").value.trim(); if (!q) return;
     const wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), asking = /\?|\b(afford|how|what|when|who|which|can i|should|is|are|do|does)\b/i.test(q);
     if (/\d/.test(q) && (wantsAdd || !asking)){ const said = await logSpend(q);
-      if (said){ ASK.last = said; refreshOuts(); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
+      if (said){ ASK.last = said; refreshOuts(); renderBell(); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
     ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
   if (kind === "lockSet"){ const old = String(fd.get("old") || ""), pin = String(fd.get("pin") || ""), pin2 = String(fd.get("pin2") || "");
     if (UI.lockForm === "change" && !(await lockPinOk(old))){ toast("The current passcode is not right."); return; }
@@ -4164,6 +4186,8 @@ $("vcf").addEventListener("change", e => {
 // A first visit gets the short setup instead of someone else's numbers. People who already use KeepWise never see it.
 let firstRun = false; try { if (localStorage.getItem(KEY)) welcomeDone(); else firstRun = !localStorage.getItem(WELCOME_KEY) && !window.KEEPWISE_NO_SETUP; } catch(e){}  // tests can skip the setup
 if (firstRun) UI.welcome = 0;
+// One-offs logged before they carried their month: a recent one belongs to the month the plan is showing now.
+try { const pk = planPeriodNow().key, recent = isoDaysAgo(3); (S.spends || []).forEach(x => { if (!x.k) x.k = (x.date || "") >= recent ? pk : periodKeyOfIso(x.date); }); } catch(e){}
 if (S.tab === "subs") remindSeen();  // opening straight onto Subs counts as checking them
 save();
 applyTheme();

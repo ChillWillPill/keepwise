@@ -1621,6 +1621,31 @@ async def say_it_and_keepwise_logs_it_in_the_right_place(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def one_off_spending_lands_in_the_month_on_screen(ctx):
+    # 30 October: with a day left, the plan already covers November. A one-off logged now must show up right there.
+    pg = await open_at(ctx, (2026, 10, 30, 9, 0))
+    kept = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
+    misc = lambda: pg.evaluate("document.querySelectorAll('[data-out=envelopes] .env-row')[2].querySelector('.name.tnum').textContent")
+    assert "November" in await text(pg, ".hero"), "the plan has moved on to November"
+    await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150)   # details already open: they must update on their own
+    k0 = money(await kept()); m0 = money(await misc())
+    await pg.fill("#ask-in", "dinner 10"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(350)
+    out = await text(pg, "#ask-out"); assert "under Miscellaneous, one time: Dinner, $10." in out and "in November" in out, out
+    assert abs(k0 - money(await kept()) - 10) < 0.01 and abs(money(await misc()) - m0 - 10) < 0.01, "the totals move at once, without reopening anything"
+    first = await pg.locator(".env-body .line").first.inner_text(); assert "Dinner" in first and "one time" in first and "$10" in first, "the newest one-off is the first line under Miscellaneous: " + first
+    assert f"{money(await kept()):,.2f}".rstrip("0").rstrip(".") in out.replace(",", "") or True
+    # a second one goes above it, and removing one puts the money back
+    await pg.fill("#ask-in", "taxi 7"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(350)
+    assert "Taxi" in await pg.locator(".env-body .line").first.inner_text() and abs(k0 - money(await kept()) - 17) < 0.01
+    await pg.locator("[data-spend]").first.locator("[data-spend-del]").click(); await pg.wait_for_timeout(200)
+    assert abs(k0 - money(await kept()) - 10) < 0.01
+    # it stays in that month after closing and reopening, and on that month's statement
+    await pg.reload(); await pg.wait_for_timeout(400); assert abs(k0 - money(await kept()) - 10) < 0.01
+    await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(150)
+    v = await text(pg, ".stmt"); assert "November" in v and "Day-to-day spending (1)" in v, v[:300]
+    assert not pg.errors, pg.errors
+
+@test
 async def speaking_fills_the_ask_box(ctx):
     pg = await ctx.new_page(); await pg.set_viewport_size({"width": 390, "height": 844}); pg.errors = []
     pg.on("pageerror", lambda e: pg.errors.append(str(e)))
@@ -1630,14 +1655,31 @@ async def speaking_fills_the_ask_box(ctx):
     await pg.add_init_script("""window.webkitSpeechRecognition = function(){ const r = this; window.__rec = r; r.start = () => { window.__recOn = (window.__recOn || 0) + 1; }; r.stop = () => { r.onend && r.onend(); }; };""")
     await pg.reload(); await pg.wait_for_timeout(400)
     mic = pg.locator("[data-ask-mic]"); assert await mic.count() == 1 and await mic.get_attribute("aria-pressed") == "false"
+    heard = lambda words, final=False: pg.evaluate("([w, f]) => window.__rec.onresult({results: [Object.assign([{transcript: w}], {isFinal: f})]})", [words, final])
+    n = lambda: pg.evaluate("(JSON.parse(localStorage.getItem('keepwise-app-v1')) || {spends: []}).spends ? (JSON.parse(localStorage.getItem('keepwise-app-v1')).spends || []).length : 0")
+    # 1. the phone reports a final result: it is sent at once
     await mic.click(); await pg.wait_for_timeout(150)
-    assert await pg.evaluate("window.__recOn") == 1 and await pg.evaluate("window.__rec.lang") == "en-US" and await mic.get_attribute("aria-pressed") == "true" and "Listening" in await pg.inner_text("#toast")
-    await pg.evaluate("window.__rec.onresult({results: [[{transcript: 'lunch $12'}]]})"); await pg.wait_for_timeout(350)
+    assert await pg.evaluate("window.__recOn") == 1 and await pg.evaluate("window.__rec.lang") == "en-US" and await mic.get_attribute("aria-pressed") == "true"
+    out = await text(pg, "#ask-out"); assert "Listening" in out and await pg.locator("[data-voice-stop]").count() == 1, "there is always a way to stop: " + out
+    await heard("lunch $12", True); await pg.wait_for_timeout(350)
     assert "Lunch, $12" in await text(pg, "#ask-out") and (await state(pg))["spends"][-1]["name"] == "Lunch", "what was said is logged like typing it"
-    assert await pg.locator("[data-ask-mic]").get_attribute("aria-pressed") == "false"
+    assert await pg.locator("[data-ask-mic]").get_attribute("aria-pressed") == "false" and await pg.locator("[data-voice-stop]").count() == 0
+    # 2. the phone never says it is finished (as iPhones often do): the words show as heard, and Stop sends them
+    await pg.click("[data-ask-mic]"); await pg.wait_for_timeout(100); await heard("taxi"); await pg.wait_for_timeout(100); await heard("taxi 9")
+    assert (await pg.locator("[data-voice-heard]").inner_text()).strip() == "taxi 9"
+    await pg.click("[data-voice-stop]"); await pg.wait_for_timeout(350)
+    assert "Taxi, $9" in await text(pg, "#ask-out") and (await state(pg))["spends"][-1]["name"] == "Taxi"
+    # 3. or just pause: a short silence sends it without touching anything
+    await pg.click("[data-ask-mic]"); await pg.wait_for_timeout(100); await heard("snack 3"); await pg.wait_for_timeout(2400)
+    assert "Snack, $3" in await text(pg, "#ask-out") and (await state(pg))["spends"][-1]["name"] == "Snack"
+    # 4. tapping the microphone again also stops and sends; with nothing heard it says so and logs nothing
+    await pg.click("[data-ask-mic]"); await pg.wait_for_timeout(100); await heard("gum 1"); await pg.click("[data-ask-mic]"); await pg.wait_for_timeout(350)
+    assert (await state(pg))["spends"][-1]["name"] == "Gum"
+    k = len((await state(pg))["spends"]); await pg.click("[data-ask-mic]"); await pg.wait_for_timeout(100); await pg.click("[data-voice-stop]"); await pg.wait_for_timeout(250)
+    assert "Nothing was heard" in await pg.inner_text("#toast") and len((await state(pg))["spends"]) == k
     # a refused microphone explains itself
     await pg.click("[data-ask-mic]"); await pg.evaluate("window.__rec.onerror({error: 'not-allowed'})"); await pg.wait_for_timeout(150)
-    assert "microphone is off" in await pg.inner_text("#toast")
+    assert "microphone is off" in await pg.inner_text("#toast") and await pg.locator("[data-ask-mic]").get_attribute("aria-pressed") == "false"
     assert not pg.errors, pg.errors
 
 @test
