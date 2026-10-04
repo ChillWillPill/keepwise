@@ -2651,7 +2651,7 @@ async def month_can_start_on_payday(ctx):
     await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
     await f.locator("[name=day]").select_option("25"); await f.locator("[name=amount]").fill("5200"); await f.locator("[name=monthStart]").select_option("25")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
-    note = await text(pg, "[data-out=planNote]"); assert "19 days left in October" in note and "Your October runs Sep 25 to Oct 24" in note, note
+    note = await text(pg, "[data-out=planNote]"); assert "19 days left in your month, Sep 25 to Oct 24." in note and "October" not in note, note
     st = await state(pg); assert st["monthStart"] == 25 and "2026-10" in st["statements"] and st["statements"]["2026-10"]["range"] == "Sep 25 to Oct 24"
     up = await text(pg, "[data-out=payBox]"); assert "on the 25th" in up and "Oct 25" in up
     # a payment logged on Sep 26 belongs to this October; one on Sep 20 does not
@@ -2662,7 +2662,10 @@ async def month_can_start_on_payday(ctx):
     await pg.close()
     p2 = await open_at(ctx, (2026, 10, 26, 10, 0))
     assert "is closed" in (await text(p2, "[data-out=monthClose]")).lower(), "the month closes on the 24th, not the 31st"
-    assert "November" in await text(p2, "[data-out=planNote]")
+    assert "days left in your month, Oct 25 to Nov 24." in await text(p2, "[data-out=planNote]"), await text(p2, "[data-out=planNote]")
+    # two days before the month ends the plan moves on, and says so with dates rather than a month name
+    p3 = await open_at(ctx, (2026, 11, 23, 10, 0)); n3 = await text(p3, "[data-out=planNote]")
+    assert n3 == "Your month ends tomorrow, Nov 24, so this plan covers the next one: Nov 25 to Dec 24.", n3
 
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")

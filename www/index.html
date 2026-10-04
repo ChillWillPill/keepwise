@@ -791,8 +791,11 @@ function compute(){
   const now = new Date(), P0 = periodOf(now), left = Math.round((P0.end - todayMid()) / DAY);
   const nextMonth = left <= 2;
   const P = nextMonth ? periodOf(new Date(P0.end.getFullYear(), P0.end.getMonth(), P0.end.getDate() + 1)) : P0;
-  const runs = monthStartDay() !== 1 ? ` Your ${P.name} runs ${rangeText(P)}.` : "";
-  const planNote = (nextMonth ? (left === 0 ? `Today is the last day of ${P0.name}, so this plan covers ${P.name}.` : left === 1 ? `${P0.name} ends tomorrow, so this plan covers ${P.name}.` : `${left} days left in ${P0.name}. This plan covers ${P.name}.`) : `${left} days left in ${P0.name}. This plan covers ${P0.name}.`) + runs;
+  // With a month that starts on payday, calendar names mislead ("September ends tomorrow" on 3 October), so dates are used.
+  const own = monthStartDay() !== 1, endDay = dayMonth(P0.end);
+  const planNote = own
+    ? (nextMonth ? (left === 0 ? `Your month ends today, so this plan covers the next one: ${rangeText(P)}.` : left === 1 ? `Your month ends tomorrow, ${endDay}, so this plan covers the next one: ${rangeText(P)}.` : `${left} days left in your month, which ends ${endDay}. This plan covers the next one: ${rangeText(P)}.`) : `${left} days left in your month, ${rangeText(P0)}.`)
+    : (nextMonth ? (left === 0 ? `Today is the last day of ${P0.name}, so this plan covers ${P.name}.` : left === 1 ? `${P0.name} ends tomorrow, so this plan covers ${P.name}.` : `${left} days left in ${P0.name}. This plan covers ${P.name}.`) : `${left} days left in ${P0.name}. This plan covers ${P0.name}.`);
   const planKey = P.key;
   const setAside = (S.deposits || []).filter(x => x.month === planKey).reduce((a,x) => a + x.amount, 0);
   const endSaved = S.efSaved + savings - setAside;
@@ -2642,7 +2645,7 @@ OUT.extraIncome = () => {
     const got = gotIn(x, k), exp = extraMonthly(x), pct = exp > 0 ? Math.min(100, got / exp * 100) : (got ? 100 : 0), av = extraAverage(x);
     const pays = (x.got || []).filter(p => inMonth(p.date, k)).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     return `<div class="inc-row" data-inc="${x.id}"><div class="row-top"><div><div class="name">${esc(x.name)}</div><div class="muted small">${fmt(extraMonthly(x))}/mo · ${esc(whenText(x))}</div></div>
-        <div style="text-align:right"><div class="name tnum ${got >= exp && got > 0 ? "good" : ""}">${fmt(got)}</div><div class="muted small">received in ${mName}</div></div></div>
+        <div style="text-align:right"><div class="name tnum ${got >= exp && got > 0 ? "good" : ""}">${fmt(got)}</div><div class="muted small">${monthStartDay() !== 1 ? `received since ${dayMonth(periodOf(new Date()).start)}` : `received in ${mName}`}</div></div></div>
       <div class="meter"><i style="width:${pct}%"></i></div>
       ${UI.incLog === x.id ? `<form class="inc-log" data-form="incomeLog"><span class="money-in" style="flex:1 1 110px"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="Amount" value="${x.when && x.when !== "any" ? esc(x.amount) : ""}" aria-label="Amount received"></span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}" aria-label="Date received" style="flex:1 1 130px"><button class="btn small primary" type="submit">Save</button><button class="link plain small" type="button" data-inc-log-cancel>Cancel</button></form>`
         : `<div class="inline" style="justify-content:space-between">${x.when === "monthly" && pays.length ? `<span class="pill ok" data-inc-logged>${I.check}Logged</span>`
