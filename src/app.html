@@ -1835,7 +1835,8 @@ V.plan = () => `
     ${S.example ? `<button class="btn primary" type="button" data-w-start>Set up my month</button>` : ""}
     <div class="inline"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank">Start empty</button></div>
     <div id="reset-confirm"></div>
-    <p class="small legal-links"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`;
+    <p class="small legal-links"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>
+  ${helpCard()}`;
 // The three shares always total 100: Expenditures and Miscellaneous are chosen, Savings is what is left. If the two
 // chosen ones would pass 100, the one not being edited gives way.
 function envFix(edited){
@@ -3669,7 +3670,13 @@ function accHeader(){ return `<div class="inline" style="justify-content:space-b
 const accErrBox = () => `<div data-out="accErr">${OUT.accErr()}</div>`;
 OUT.accErr = () => ACC.err ? `<p class="err" role="alert">${esc(ACC.err)}</p>` : "";
 const legalLinks = `<a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>`;
-V.account = () => {
+// Help and contact. Support runs on KeepWise's own social accounts; add a line here when another account opens.
+const SOCIAL = [["X", "@MyKeepWise", "https://x.com/MyKeepWise"], ["Instagram", "@mykeepwise", "https://www.instagram.com/mykeepwise"]];
+const helpCard = () => `<section class="card" data-help><h2>Help and contact</h2>
+  <p class="muted small">Questions, a problem, or an idea? Message us and a person will read it.</p>
+  ${SOCIAL.map(([net, handle, url]) => `<a class="btn" href="${url}" target="_blank" rel="noopener" data-help-link="${net}">Message ${esc(handle)} on ${esc(net)}</a>`).join("")}
+  <p class="muted small">KeepWise will never ask for your password, your passcode or your bank details in a message. Please keep personal and financial details out of public posts.</p></section>`;
+const accView = () => {
   if (ACC.state === "preview") return `${accHeader()}<section class="card"><h2>Sign in on the KeepWise website</h2><p class="muted">Accounts can’t open inside this preview. Open the website to sign in with Google or email. Everything else works here as normal.</p><a class="btn primary" href="${SITE_URL}" target="_blank" rel="noopener">Open KeepWise</a></section>`;
   if (ACC.state === "off") return `${accHeader()}<section class="card"><h2>Accounts are coming soon</h2><p class="muted">KeepWise works fully without an account. Everything you enter stays on this phone.</p></section>`;
   if (ACC.state === "idle" || ACC.state === "loading") return `${accHeader()}<section class="card"><p class="muted">Connecting…</p></section>`;
@@ -3677,6 +3684,7 @@ V.account = () => {
   if (!ACC.user) return accSignIn();
   return accComplete() ? accProfile() : accFinish();
 };
+V.account = () => accView() + helpCard();
 function accSignIn(){
   const m = ACC.mode;
   return `${accHeader()}
