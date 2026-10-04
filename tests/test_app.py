@@ -404,9 +404,9 @@ async def codes_search_vote_add(ctx):
 async def plan_envelopes_lines_priority(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     # the three shares always total 100: you choose Expenditures and Misc, Savings is what is left and cannot be typed
-    env = lambda: pg.evaluate("[...document.querySelectorAll('[data-env],[data-env-save]')].map(e => +e.value)")
+    env = lambda: pg.evaluate("[...document.querySelectorAll('[data-env],[data-env-save]')].map(e => +(e.value !== undefined ? e.value : e.textContent))")
     tot = lambda: pg.evaluate("(() => { const e = JSON.parse(localStorage.getItem('keepwise-app-v1')).env; return [e.needs, e.misc, e.save]; })()")
-    assert await pg.locator("[data-env-save]").get_attribute("readonly") is not None and await pg.locator("[data-env=save]").count() == 0
+    assert await pg.locator("input[data-env-save]").count() == 0 and await pg.locator("[data-env=save]").count() == 0, "Savings is shown, not typed"
     m0 = (await env())[1]
     await pg.fill("[data-env=needs]", "70"); await pg.wait_for_timeout(80)
     assert await env() == [70, m0, 30 - m0] == await tot() and f"Savings is what is left: {30 - m0}%" in await text(pg, "[data-out=envCheck]")
@@ -1471,9 +1471,6 @@ async def notes_and_notifications_open_the_exact_place(ctx):
     pg.on("pageerror", lambda e: pg.errors.append(str(e)))
     await pg.clock.install(time=datetime.datetime(2026, 10, 6, 9, 0)); await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;" + NOTIF_MOCK)
     await pg.goto(URL); await pg.wait_for_timeout(300)
-    # the Ask box and its microphone slot sit at the top of Month, above the lists
-    order = await pg.evaluate("(() => { const a = document.querySelector('form[data-form=ask]').getBoundingClientRect().top, b = document.querySelector('[data-out=envelopes]').getBoundingClientRect().top, c = document.querySelector('[data-out=headline]').getBoundingClientRect().top; return c < a && a < b; })()")
-    assert order, "Ask comes right after the headline"
     await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
     await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
     f = pg.locator("form[data-form=pay]"); await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("1420")
@@ -1895,6 +1892,106 @@ async def a_currency_word_means_your_own_currency_first(ctx):
     await say("lunch 12 pounds"); sp = last(await state(pg)); assert sp["amount"] == 12 and sp.get("ocur") is None
     # a word with one usual meaning is converted: euros into pounds
     r = await say("dinner 30 euros"); sp = last(await state(pg)); assert sp["ocur"] == "EUR" and sp["amount"] == 25.8, sp
+    assert not pg.errors, pg.errors
+
+@test
+async def split_shows_as_expected_and_counts_only_when_paid(ctx):
+    pg = await open_at(ctx, (2026, 10, 8, 9, 0))
+    kept = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
+    # the example month: you owe Jordan 37.50, and someone owes you
+    await tab(pg, "split"); rows = await pg.locator("[data-settle]").all_inner_texts()
+    inrow = [r for r in rows if "owes you" in r][0]; who = inrow.split(" owes you")[0].strip(); amt = money(inrow.split("owes you")[1].split()[0])
+    oid = await pg.locator("[data-settle]", has_text="Jordan").get_attribute("data-settle"); iid = await pg.locator("[data-settle]", has_text=who + " owes you").get_attribute("data-settle")
+    n0 = len((await state(pg))["settlements"])
+    # Month: both are listed in Coming up as expected, and what you keep has not moved
+    await tab(pg, "month"); k1 = money(await kept())
+    owe = await text(pg, f"[data-up-split='{oid}']"); got = await text(pg, f"[data-up-split='{iid}']")
+    assert "You owe Jordan" in owe and "$37.50" in owe and "Not counted until it is paid" in owe and f"{who} owes you" in got and "+$" in got
+    # pay Jordan 20 of it: the month drops by 20, the rest is still expected
+    await tab(pg, "split"); await pg.locator(f"[data-settle='{oid}'] [data-settle-btn]").click(); await pg.wait_for_timeout(150)
+    f = pg.locator("form[data-form=settle]"); assert await f.locator("[name=count]").is_checked()
+    await f.locator("[name=amount]").fill("20"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(300)
+    assert "Counted in" in await pg.inner_text("#toast")
+    await tab(pg, "month"); assert abs(k1 - money(await kept()) - 20) < 0.01 and "$17.50" in await text(pg, f"[data-up-split='{oid}']")
+    # the other person pays in full: it comes back into the month, and their row is gone
+    await tab(pg, "split"); await pg.locator(f"[data-settle='{iid}'] [data-settle-btn]").click(); await pg.wait_for_timeout(150)
+    await pg.locator("form[data-form=settle] [type=submit]").click(); await pg.wait_for_timeout(300)
+    await tab(pg, "month"); assert abs(k1 - money(await kept()) - (20 - amt)) < 0.01 and await pg.locator(f"[data-up-split='{iid}']").count() == 0
+    await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150); d = await text(pg, ".env-body")
+    assert "Paid Jordan (split)" in d and f"{who} paid you back" in d and "money back" in d, d
+    await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(100)
+    # unticked, a payment is recorded in Split and the month is left alone
+    await tab(pg, "split"); await pg.locator(f"[data-settle='{oid}'] [data-settle-btn]").click(); await pg.wait_for_timeout(150)
+    f = pg.locator("form[data-form=settle]"); await f.locator("[name=count]").uncheck(); await f.locator("[name=amount]").fill("7.50"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(300)
+    await tab(pg, "month"); assert abs(k1 - money(await kept()) - (20 - amt)) < 0.01 and "$10" in await text(pg, f"[data-up-split='{oid}']")
+    st = await state(pg); assert len(st["settlements"]) == n0 + 3 and len([x for x in st["spends"] if x.get("sid")]) == 2
+    assert not pg.errors, pg.errors
+
+@test
+async def giving_is_a_line_you_name_yourself(ctx):
+    pg = await open_at(ctx, (2026, 10, 8, 9, 0))
+    kept = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
+    k0 = money(await kept()); await tab(pg, "plan")
+    card = await text(pg, "[data-giving]"); assert "anything you give on a regular basis" in card
+    await pg.click("[data-give-add]"); f = pg.locator("form[data-form=give]")
+    causes = await f.locator("[name=cause] option").all_inner_texts(); assert causes[:4] == ["Children", "Orphans", "Veterans", "Emergency relief"] and causes[-1] == "Other"
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(100); assert "Enter the amount" in await pg.inner_text("#toast")
+    await f.locator("[name=name]").fill("Local food bank"); await f.locator("[name=cause]").select_option("relief"); await f.locator("[name=every]").select_option("wk"); await f.locator("[name=amount]").fill("12")
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    card = await text(pg, "[data-giving]"); assert "Local food bank" in card and "Emergency relief · every week" in card and "$52/mo" in card and "$624 a year" in card, card
+    await pg.click("[data-give-add]"); f = pg.locator("form[data-form=give]"); await f.locator("[name=every]").select_option("yr"); await f.locator("[name=amount]").fill("120"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    g = (await state(pg))["giving"]; assert [(x["name"], x["cause"], x["every"], x["amount"]) for x in g] == [("Local food bank", "relief", "wk", 12), ("", "children", "yr", 120)], g
+    # it comes out of what you keep at its monthly cost, under Miscellaneous
+    await tab(pg, "month"); assert abs(k0 - money(await kept()) - 62) < 0.01
+    await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150); d = await text(pg, ".env-body"); assert "Local food bank" in d and "Giving · Every week" in d and "$52" in d and "Children" in d, d
+    # edit and remove, with Undo
+    await tab(pg, "plan"); await pg.locator("[data-give]", has_text="Local food bank").locator("[data-give-edit]").click(); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=give]"); await f.locator("[name=every]").select_option("2x"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    assert "$24/mo" in await pg.locator("[data-give]", has_text="Local food bank").inner_text()
+    await pg.locator("[data-give]", has_text="Local food bank").locator("[data-give-edit]").click(); await pg.wait_for_timeout(100); await pg.click("form[data-form=give] [data-give-del]"); await pg.wait_for_timeout(200)
+    assert len((await state(pg))["giving"]) == 1; await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(200); assert len((await state(pg))["giving"]) == 2
+    assert not pg.errors, pg.errors
+
+@test
+async def the_owl_button_opens_ask_on_any_tab_and_can_be_moved(ctx):
+    pg = await open_at(ctx, (2026, 10, 8, 9, 0)); fab = pg.locator("#wise")
+    # Month keeps its headline clear: Ask sits at the foot of the page, as one card
+    order = await pg.evaluate("(() => { const a = document.querySelector('form[data-form=ask]').getBoundingClientRect().top, b = document.querySelector('[data-out=envelopes]').getBoundingClientRect().top; return a > b; })()")
+    assert order and await pg.locator("form[data-form=ask]").count() == 1 and await pg.locator("[data-ask-sheet]").count() == 0
+    box = await fab.bounding_box(); assert await fab.is_visible() and box["x"] + box["width"] <= 390 and box["y"] + box["height"] < 844 - 60, f"the button floats above the tab bar: {box}"
+    for name in ("subs", "cheaper", "codes", "plan", "split", "month"):
+        await tab(pg, name); assert await fab.is_visible(), name
+    # from another tab: tap it, log something, and the answer is right there; still only one Ask box on the page
+    await tab(pg, "subs"); await fab.click(); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-ask-sheet] form[data-form=ask]").count() == 1 and await pg.locator("#ask-in").count() == 1 and not await fab.is_visible()
+    panel = await pg.locator(".ask-panel").bounding_box(); assert panel["x"] >= 0 and panel["x"] + panel["width"] <= 390 and panel["y"] >= 60
+    await pg.fill("#ask-in", "coffee 4"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(350)
+    assert "Coffee, $4" in await text(pg, "#ask-out") and await pg.locator("[data-ask-sheet]").count() == 1 and (await state(pg))["spends"][-1]["name"] == "Coffee"
+    await pg.locator("[data-ask-sheet] [data-ask]").first.click(); await pg.wait_for_timeout(200); assert len(await text(pg, "#ask-out")) > 10
+    # scrolled far down the page, it still opens right where you are looking, not back at the top
+    await pg.locator(".ask-panel [data-ask-close]").click(); await pg.wait_for_timeout(150); await tab(pg, "plan")
+    await pg.evaluate("document.getElementById('main').scrollTop = 1500; window.scrollTo(0, 1500)"); await pg.wait_for_timeout(100)
+    sc = await pg.evaluate("document.getElementById('main').scrollTop + window.scrollY"); assert sc > 400, sc
+    await fab.click(); await pg.wait_for_timeout(250); pb = await pg.locator(".ask-panel").bounding_box()
+    assert 60 <= pb["y"] < 200 and pb["y"] + pb["height"] <= 844, f"the panel is on screen where you are: {pb}"
+    assert await pg.evaluate("document.getElementById('main').scrollTop + window.scrollY") == sc, "and the page has not jumped"
+    await pg.click("[data-info=ask]"); await pg.wait_for_timeout(150); assert await pg.locator("[data-ask-sheet] [data-info-tip=ask]").count() == 1
+    await tab(pg, "subs") if False else None; await pg.locator(".ask-panel [data-ask-close]").click(); await pg.wait_for_timeout(150); await tab(pg, "subs"); await fab.click(); await pg.wait_for_timeout(200)
+    # close with the X or by tapping outside; you are still on the same tab
+    await pg.locator(".ask-panel [data-ask-close]").click(); await pg.wait_for_timeout(150); assert await pg.locator("[data-ask-sheet]").count() == 0 and (await state(pg))["tab"] == "subs" and await fab.is_visible()
+    await fab.click(); await pg.wait_for_timeout(150); await pg.mouse.click(195, 800); await pg.wait_for_timeout(150); assert await pg.locator("[data-ask-sheet]").count() == 0
+    # opened on Month, the card at the foot steps aside so there is never a second box
+    await tab(pg, "month"); await fab.click(); await pg.wait_for_timeout(150); assert await pg.locator("form[data-form=ask]").count() == 1 and await pg.locator("[data-ask-sheet] form[data-form=ask]").count() == 1
+    await pg.locator(".ask-panel [data-ask-close]").click(); await pg.wait_for_timeout(150)
+    # a quick drag does nothing; hold for a moment and it moves, stays inside the screen, and is remembered
+    b0 = await fab.bounding_box(); cx, cy = b0["x"] + 28, b0["y"] + 28
+    await pg.mouse.move(cx, cy); await pg.mouse.down(); await pg.clock.run_for(600); await pg.mouse.move(120, 300, steps=4); await pg.mouse.up(); await pg.wait_for_timeout(100)
+    b1 = await fab.bounding_box(); assert abs(b1["x"] + 28 - 120) < 3 and abs(b1["y"] + 28 - 300) < 3, b1
+    assert await pg.locator("[data-ask-sheet]").count() == 0, "letting go after a move does not open it"
+    await pg.mouse.move(120, 300); await pg.mouse.down(); await pg.clock.run_for(600); await pg.mouse.move(-200, 5000, steps=3); await pg.mouse.up()
+    b2 = await fab.bounding_box(); assert b2["x"] >= 0 and b2["y"] + b2["height"] <= 844 - 60, f"it cannot be lost off screen: {b2}"
+    await pg.reload(); await pg.wait_for_timeout(400); b3 = await pg.locator("#wise").bounding_box(); assert abs(b3["x"] - b2["x"]) < 2 and abs(b3["y"] - b2["y"]) < 2
+    await pg.clock.run_for(600); await pg.locator("#wise").click(); await pg.wait_for_timeout(150); assert await pg.locator("[data-ask-sheet]").count() == 1, "a plain tap still opens it"
     assert not pg.errors, pg.errors
 
 @test

@@ -69,7 +69,11 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .pw-rules li{display:flex;gap:6px;align-items:center}
 .pw-rules svg{width:13px;height:13px;flex:none;opacity:.3}
 .pw-rules li.ok{color:var(--green)} .pw-rules li.ok svg{opacity:1}
-.tour{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:40;width:min(92vw,440px);background:var(--card);color:var(--ink);border:1px solid color-mix(in srgb,var(--gold) 45%,var(--line));border-radius:20px;padding:16px 18px;box-shadow:0 24px 60px -20px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:8px}
+.tour{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:40;width:min(92vw,440px);background:#14382a;color:#f6f1e6;border:1px solid rgba(224,187,94,.55);border-radius:22px;padding:18px 18px 16px;box-shadow:0 28px 70px -12px rgba(0,0,0,.6),0 0 0 6px rgba(224,187,94,.14);display:flex;flex-direction:column;gap:8px}
+#tour .muted{color:rgba(246,241,230,.78)}#tour .link,#tour .link.plain{color:#f1d68a}#tour .pill.gold{background:rgba(224,187,94,.2);color:#f1d68a}#tour h3{color:#fff}
+#tour .btn{background:transparent;color:#f6f1e6;border-color:rgba(246,241,230,.35);box-shadow:none}#tour .btn.primary{background:#f1d68a;color:#14382a;border-color:#f1d68a;font-weight:700}
+.tour-who{display:flex;align-items:center;gap:10px}.tour-who img{width:34px;height:34px;border-radius:50%;background:#fbf8f2;flex:none}
+@media (prefers-reduced-motion:no-preference){.tour{animation:tourin .28s cubic-bezier(.2,.9,.3,1.2) both}@keyframes tourin{from{opacity:0;transform:translateX(-50%) translateY(14px) scale(.97)}to{opacity:1;transform:translateX(-50%)}}}
 .tour[hidden]{display:none}
 .tour h3{font:600 1.2rem/1.2 var(--display);letter-spacing:-.02em;margin:0}
 .tour p{margin:0;line-height:1.45}
@@ -77,7 +81,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .tour-nav{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
 .app.touring .app-main,.app.touring .tabbar,.app.touring .app-header{pointer-events:none}
 .app.touring .view{padding-bottom:70vh}  /* room to bring anything, even the last card, up above the tour card */
-.tour-focus{outline:2.5px solid var(--gold);outline-offset:4px;border-radius:18px;transition:outline-color .2s}
+.tour-focus{outline:2.5px solid var(--gold);outline-offset:4px;border-radius:18px;transition:outline-color .2s;position:relative;z-index:5;box-shadow:0 0 0 200vmax rgba(20,26,22,.42)}  /* the rest of the page dims so the part being explained stands out */
 .lockscreen{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));text-align:center;overflow:auto}
 .lockscreen[hidden]{display:none}
 .app.locked{visibility:hidden}
@@ -105,6 +109,15 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .view [data-out]:empty{display:none}  /* a section with nothing to show takes no room, so it leaves no gap */
 .tabbar{flex:none;display:grid;grid-template-columns:repeat(6,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .app.typing .tabbar{display:none}
+.wise-fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:30;width:56px;height:56px;border-radius:50%;border:1px solid var(--line);background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.18);padding:0;display:grid;place-items:center;cursor:pointer;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;transition:transform .15s ease,box-shadow .15s ease}
+.wise-fab[hidden]{display:none}.wise-fab img{width:44px;height:44px;border-radius:50%;pointer-events:none}
+.wise-fab.moving{transform:scale(1.12);box-shadow:0 10px 26px rgba(0,0,0,.28);cursor:grabbing}
+.app.typing .wise-fab,.app.welcoming .wise-fab,.app.touring .wise-fab{display:none}
+.ask-sheet{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;padding:calc(76px + env(safe-area-inset-top,0px)) 12px 12px}
+.ask-back{position:absolute;inset:0;border:0;padding:0;background:rgba(20,26,22,.38);cursor:default}
+.ask-panel{position:relative;width:100%;max-width:520px;max-height:100%;overflow-y:auto;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+@media (prefers-reduced-motion:no-preference){.ask-panel{animation:viewin .18s ease-out both}}
+@media print{.wise-fab,.ask-sheet{display:none!important}}
 .tab{appearance:none;border:0;background:none;color:var(--muted);font:500 clamp(.6rem,2.9vw,.78rem)/1.2 var(--body);display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 8px;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
 .tab span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em}
 .tab .ti{display:grid;place-items:center;width:52px;max-width:92%;height:30px;border-radius:99px;transition:background .2s ease,color .2s ease}
@@ -153,6 +166,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-o
 .money-in em{font-style:normal;color:var(--muted);flex:none;white-space:nowrap}
 .money-in input{flex:1;min-width:0;border:0;background:transparent;padding:11px 0;border-radius:0}
 .money-in input:focus{outline:none}
+.money-in.auto{background:transparent;border-style:dashed;justify-content:space-between}.money-in.auto b{font-weight:600;font-size:1rem}
 .money-in:focus-within{outline:2px solid var(--green);outline-offset:1px;border-color:transparent}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -575,7 +589,9 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
   </header>
   <main class="app-main" id="main"><div class="view" id="view"></div></main>
   <nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
+  <button class="wise-fab" id="wise" type="button" aria-label="Ask KeepWise, or log spending. Hold to move this button." hidden></button>
 </div>
+<div id="asksheet" hidden></div>
 <div class="tour" id="tour" role="dialog" aria-label="Tour of KeepWise" hidden></div>
 <div class="lockscreen" id="lockscreen" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
@@ -773,6 +789,7 @@ function compute(){
   const liveSubs = S.subs.filter(s => s.keep !== "drop");
   liveSubs.forEach(s => { const w = swapFor("sub", s.id), a = w ? +w.altCost : subMonthly(s); if (s.env === "needs") needs += a; else misc += a; });
   const trips = tripsCounted(planPeriodNow().key), spends = spendsTotal(planPeriodNow().key); misc += trips + spends;  // a finished trip you chose to count is a one-off in that month
+  const giving = givingMonthly(); misc += giving;  // what you give regularly counts under Miscellaneous
   const loans = loansMonthly(); needs += loans;  // debt payments are part of what must go out; Month shows them on their own row
   const bonus = payBonus(planPeriodNow());
   const income = (+S.income || 0) + extraExpected() + bonus.extra;
@@ -1373,19 +1390,22 @@ function bizPreview(){
     </section>
   </div>`;
 }
+// Ask KeepWise lives in one place at a time: at the foot of the Month tab, or, when the owl button is tapped on any
+// tab, in a panel over the page. Same box, same microphone, same answers.
+function askCard(sheet){ return `<section class="card${sheet ? " ask-panel" : ""}" aria-labelledby="askh"${sheet ? ' role="dialog" aria-modal="true"' : ""}>
+    <div class="inline" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><h2 id="askh" class="h-info">Ask KeepWise${infoBtn("ask", "About Ask KeepWise")}</h2>${sheet ? `<button class="icon-btn" type="button" data-ask-close aria-label="Close Ask KeepWise"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>` : ""}</div>
+    ${infoTip("ask", "Ask about your plan, or type or say what you spent and it is logged for you. Answers use the same numbers you see on this page.")}
+    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 160px">${voiceCan() ? `<button class="icon-btn" type="button" id="ask-mic" data-ask-mic aria-label="Speak instead of typing" aria-pressed="false">${MIC}</button>` : ""}<button class="btn" type="submit">Ask</button></form>
+    <div id="ask-out" class="ask-out" ${ASK.last ? "" : "hidden"}>${esc(ASK.last)}</div>
+    <div class="chips ask-chips" data-scroll-x><button class="chip" type="button" data-plain style="font-weight:700">Say it plainly</button>${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+  </section>`; }
+const askSheet = () => `<div class="ask-sheet" data-ask-sheet><button class="ask-back" type="button" data-ask-close aria-label="Close Ask KeepWise"></button>${askCard(true)}</div>`;
 V.month = () => {
   if (UI.biz) return spaceSwitch() + bizPreview();
   const C = compute();
   return `${spaceSwitch()}${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on the Plan tab, or import a bank statement. Everything stays on this device." : "Add your other bills on the Plan tab and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>
-  <section class="card" aria-labelledby="askh">
-    <h2 id="askh" class="h-info">Ask KeepWise${infoBtn("ask", "About Ask KeepWise")}</h2>
-    ${infoTip("ask", "Ask about your plan, or type or say what you spent and it is logged for you. Answers use the same numbers you see on this page.")}
-    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 160px">${voiceCan() ? `<button class="icon-btn" type="button" id="ask-mic" data-ask-mic aria-label="Speak instead of typing" aria-pressed="false">${MIC}</button>` : ""}<button class="btn" type="submit">Ask</button></form>
-    <div id="ask-out" class="ask-out" ${ASK.last ? "" : "hidden"}>${esc(ASK.last)}</div>
-    <div class="chips ask-chips" data-scroll-x><button class="chip" type="button" data-plain style="font-weight:700">Say it plainly</button>${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
-  </section>
   <div data-out="monthClose">${OUT.monthClose()}</div>
   <div data-out="keepSafe">${OUT.keepSafe()}</div>
   <div data-out="arrived">${OUT.arrived()}</div>
@@ -1405,7 +1425,8 @@ V.month = () => {
   <div data-out="dropCard">${OUT.dropCard()}</div>
   <div data-out="envelopes">${OUT.envelopes()}</div>
   <div data-out="historyCard">${OUT.historyCard()}</div>
-  <section class="card"><h2>How to use it</h2><div data-out="howto">${OUT.howto()}</div></section>`;
+  <section class="card"><h2>How to use it</h2><div data-out="howto">${OUT.howto()}</div></section>
+  ${UI.askOpen ? "" : askCard(false)}`;
 };
 OUT.planNote = () => esc(compute().planNote);
 OUT.sym = () => esc(sym());
@@ -1496,7 +1517,8 @@ function envDetail(k, C){
   const exp = S.expenses.filter(e => e.env === k);
   const subs = C.liveSubs.filter(s => s.env === k);
   return `<div class="env-body">
-    ${k === "misc" ? spendsIn(C.planKey).slice().sort((a, b) => (b.date || "").localeCompare(a.date || "") || S.spends.indexOf(b) - S.spends.indexOf(a)).map(x => `<div class="line" data-spend="${x.id}"><div><div>${esc(x.name)}${x.ocur ? ` <span class="muted small">${esc(fmtIn(x.orig, x.ocur))}</span>` : ""}</div><div class="muted small">${shortDate(x.date)} · one time</div></div><div class="inline"><span class="tnum">${fmt(x.amount)}</span><button class="link danger-link" type="button" data-spend-del>Remove</button></div></div>`).join("") : ""}
+    ${k === "misc" ? spendsIn(C.planKey).slice().sort((a, b) => (b.date || "").localeCompare(a.date || "") || S.spends.indexOf(b) - S.spends.indexOf(a)).map(x => `<div class="line" data-spend="${x.id}"><div><div>${esc(x.name)}${x.ocur ? ` <span class="muted small">${esc(fmtIn(x.orig, x.ocur))}</span>` : ""}</div><div class="muted small">${shortDate(x.date)} · ${x.amount < 0 ? "money back" : "one time"}</div></div><div class="inline"><span class="tnum ${x.amount < 0 ? "good" : ""}">${x.amount < 0 ? "+" + fmt(-x.amount) : fmt(x.amount)}</span><button class="link danger-link" type="button" data-spend-del>Remove</button></div></div>`).join("") : ""}
+    ${k === "misc" ? (S.giving || []).map(g => `<div class="line" data-give-line="${g.id}"><div><div>${esc(g.name || giveCause(g.cause))}</div><div class="muted small">Giving · ${esc(giveEvery(g.every)[1])}</div></div><div class="inline"><span class="tnum">${fmt(giveMonthly(g))}</span><button class="link plain" type="button" data-go="plan">Edit</button></div></div>`).join("") : ""}
     ${exp.map(e => { const w = swapFor("expense", e.id); return `<div class="line" data-exp="${e.id}"><div><div>${esc(e.name)}</div><div class="muted small">${w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
     ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Subscription · ${fmt(sb.price)}/yr` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subMonthly(sb))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
     ${k === "misc" ? (S.trips || []).filter(t => t.settled === "counted" && t.countKey === C.planKey).map(t => `<div class="line"><div><div>Trip: ${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))} · counted this month only</div></div><span class="tnum">${fmt(tripTotal(t))}</span></div>`).join("") : ""}
@@ -1813,12 +1835,13 @@ V.plan = () => `
   </div>
   <section class="card"><h2 class="h-info">Envelopes${infoBtn("envelopes", "About Envelopes")}</h2>${infoTip("envelopes", "Set the share of income for Expenditures and Misc. Savings is what is left, so they always total 100%. Subscriptions are on the Subs tab and count toward Miscellaneous.")}
     <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr));align-items:end">
-      ${[["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => k === "save" ? `<label class="field"><span>${n}</span><span class="money-in"><input data-env-save readonly tabindex="-1" class="calc" value="${S.env.save}" aria-label="Savings, worked out as what is left"><em>%</em></span></label>` : `<label class="field"><span>${n}</span><span class="money-in"><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"><em>%</em></span></label>`).join("")}
+      ${[["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => k === "save" ? `<div class="field"><span>${n}</span><span class="money-in auto" role="status" aria-label="Savings, worked out as what is left"><b class="tnum" data-env-save>${S.env.save}</b><em>%</em></span></div>` : `<label class="field"><span>${n}</span><span class="money-in"><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"><em>%</em></span></label>`).join("")}
     </div><div data-out="envCheck">${OUT.envCheck()}</div></section>
   <section class="card"><h2>What goes out each month</h2>
     <div data-out="expTotal">${OUT.expTotal()}</div>
     <div data-out="expList" style="display:flex;flex-direction:column;gap:10px">${OUT.expList()}</div></section>
   <div data-out="loans">${OUT.loans()}</div>
+  <div data-out="giving">${OUT.giving()}</div>
   <section class="card"><h2>Savings</h2>
     <div class="grid2"><label class="field"><span>Emergency fund so far</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="efSaved" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.efSaved}"></span></label>
     <label class="field"><span>Target, months of needs</span><input data-bind="efMonths" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.efMonths}"></label></div>
@@ -1950,6 +1973,7 @@ OUT.splitSum = () => {
       ? `<form class="settle-form" data-form="settle" data-settle="${esc(x.p.id)}" data-amt="${Math.abs(x.net)}"><span class="${x.net > 0 ? "good" : "bad"}">${x.net > 0 ? `${esc(x.p.name)} owes you ${fmt(x.net)}` : `You owe ${esc(x.p.name)} ${fmt(-x.net)}`}</span>
           <label class="field"><span>${x.net > 0 ? "How much did you get?" : "How much did you pay?"}</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" value="${r2(Math.abs(x.net))}" aria-label="Amount paid"></span></label>
           <p class="muted small">Change it for a part payment. The rest stays owed.</p>
+          <label class="check small"><input type="checkbox" name="count" checked> <span>${x.net > 0 ? "Count it as money back in my month" : "Count it as spending in my month"}</span></label>
           <div class="grid2"><button class="btn small" type="button" data-settle-cancel>Cancel</button><button class="btn small primary" type="submit">Record payment</button></div></form>`
       : `<div data-settle="${esc(x.p.id)}" data-amt="${Math.abs(x.net)}"><span class="${x.net > 0 ? "good" : "bad"}">${x.net > 0 ? `${esc(x.p.name)} owes you ${fmt(x.net)}` : `You owe ${esc(x.p.name)} ${fmt(-x.net)}`}</span><button class="btn small" type="button" data-settle-btn>${x.net > 0 ? "Got paid" : "Paid"}</button></div>`).join("")}</div>` : `<p class="muted">Everyone is square.</p>`}`;
 };
@@ -2294,7 +2318,11 @@ OUT.comingUp = () => {
         <div class="up-main"><div class="name">Payday</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(+S.pay.amount || 0)}</div></div>`).join("");
   const billRows = billsSoon(7).map(({e, d}) => `<div class="up-row" data-up-bill="${e.id}"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
         <div class="up-main"><div class="name">${esc(e.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · you pay this yourself</div></div><div class="tnum name">${fmt(e.amount)}</div></div>`).join("");
-  if (!soon.length && !arriving.length && !payRows && !billRows) return "";
+  let bal = []; try { bal = myBalances(); } catch(e){}
+  // What Split says is owed, either way. It is shown here as expected money only: it changes what you keep when it is paid.
+  const splitRows = bal.slice(0, 4).map(x => `<div class="up-row${x.net > 0 ? " in" : ""}" data-up-split="${esc(x.p.id)}"><div class="up-date"><b style="font-size:.8rem">Split</b><span>open</span></div>
+        <div class="up-main"><div class="name">${x.net > 0 ? `${esc(x.p.name)} owes you` : `You owe ${esc(x.p.name)}`}</div><div class="small ${x.net > 0 ? "good" : "muted"}">Not counted until it is paid</div></div><div class="tnum name ${x.net > 0 ? "good" : ""}">${x.net > 0 ? "+" : ""}${fmt(Math.abs(x.net))}</div></div>`).join("") + (bal.length > 4 ? `<p class="small muted" data-up-split-more>And ${bal.length - 4} more in Split.</p>` : "");
+  if (!soon.length && !arriving.length && !payRows && !billRows && !splitRows) return "";
   const inRows = arriving.map(({x, d}) => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
         <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(x.amount)}</div></div>`).join("");
   const total = soon.filter(x => x.s.keep !== "drop").reduce((a, x) => a + x.s.price, 0);
@@ -2302,9 +2330,9 @@ OUT.comingUp = () => {
     <div class="up-list">${soon.map(({s, d}) => { const n = daysUntil(d), drop = s.keep === "drop";
       return `<div class="up-row${drop ? " drop" : ""}"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
         <div class="up-main"><div class="name">${esc(s.name)}</div><div class="small ${drop ? "bad" : "muted"}">${drop ? `You chose to drop it. Cancel before ${n === 0 ? "today ends" : "it renews"}.` : whenLabel(n)}</div></div>
-        <div class="tnum name">${fmt(s.price)}</div></div>`; }).join("")}${billRows}${payRows}${inRows}</div>
+        <div class="tnum name">${fmt(s.price)}</div></div>`; }).join("")}${billRows}${payRows}${inRows}${splitRows}</div>
     ${total ? `<p class="small muted">${fmt(total)} will be charged this week.</p>` : ""}
-    ${soon.length ? `<div class="linkrow"><button class="link" type="button" data-go="subs">All subscriptions</button></div>` : ""}</section>`;
+    ${soon.length || splitRows ? `<div class="linkrow">${soon.length ? `<button class="link" type="button" data-go="subs">All subscriptions</button>` : ""}${splitRows ? `<button class="link" type="button" data-go="split">Open Split</button>` : ""}</div>` : ""}</section>`;
 };
 
 /* ================= how to cancel (official help pages, checked by hand) ================= */
@@ -3100,6 +3128,27 @@ async function tellSend(text, name){
 /* ================= loans and debt ================= */
 // A loan is a payment with a finish line. The payment counts toward Expenditures until the end date passes.
 // With a total and no end date, the finish is worked out from the payments alone, without interest, and says so.
+// Giving: money you choose to give regularly. You say who it goes to; KeepWise lists no organisations, takes no payment
+// and sends nothing anywhere. It is a line in your plan, counted under Miscellaneous at its monthly cost.
+const GIVE_CAUSES = [["children","Children"],["orphans","Orphans"],["veterans","Veterans"],["relief","Emergency relief"],["health","Health"],["education","Education"],["faith","Faith"],["family","Family and community"],["animals","Animals"],["other","Other"]];
+const GIVE_EVERY = [["mo","Every month"],["wk","Every week"],["2x","Twice a month"],["yr","Every year"]];
+const giveCause = k => (GIVE_CAUSES.find(x => x[0] === k) || GIVE_CAUSES[9])[1], giveEvery = k => GIVE_EVERY.find(x => x[0] === k) || GIVE_EVERY[0];
+const giveMonthly = g => { const a = +g.amount || 0; return r2(g.every === "wk" ? a * 52 / 12 : g.every === "2x" ? a * 2 : g.every === "yr" ? a / 12 : a); };
+const givingMonthly = () => r2((S.giving || []).reduce((a, g) => a + giveMonthly(g), 0));
+function giveForm(g){
+  const d = g || {name: "", cause: "children", amount: "", every: "mo"}, opt = (list, v) => list.map(([k, n]) => `<option value="${k}" ${k === v ? "selected" : ""}>${n}</option>`).join("");
+  return `<form class="inc-form" data-form="give"><label class="field"><span>Who it goes to</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Local food bank" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
+    <div class="grid2"><label class="field"><span>Cause</span><select name="cause">${opt(GIVE_CAUSES, d.cause)}</select></label><label class="field"><span>How often</span><select name="every">${opt(GIVE_EVERY, d.every)}</select></label></div>
+    <label class="field"><span>Amount each time</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.amount)}"></span></label>
+    ${editBtns(!g, "data-give-del", "Add giving", "data-give-cancel")}</form>`;
+}
+OUT.giving = () => { const list = S.giving || [], tot = givingMonthly();
+  return `<section class="card inc-card" data-giving><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Giving${infoBtn("giving", "About Giving")}</h2>${list.length ? `<span class="muted small tnum">${fmt(tot)}/mo</span>` : ""}</div>
+    ${infoTip("giving", "Money you give regularly, to anyone you choose. It counts under Miscellaneous at its monthly cost. KeepWise does not collect or send donations.")}
+    ${list.map(g => UI.giveEdit === g.id ? `<div class="inc-row editing" data-give="${g.id}">${giveForm(g)}</div>` : `<div class="inc-row" data-give="${g.id}"><div class="row-top"><div><div class="name">${esc(g.name || giveCause(g.cause))}</div><div class="muted small">${esc(giveCause(g.cause))} · ${esc(giveEvery(g.every)[1].toLowerCase())}</div></div><div style="text-align:right"><div class="name tnum">${fmt(g.amount)}</div>${g.every === "mo" ? "" : `<div class="muted small tnum">${fmt(giveMonthly(g))}/mo</div>`}</div></div>
+      <button class="link plain small" type="button" data-give-edit aria-label="Edit ${esc(g.name || giveCause(g.cause))}" style="align-self:flex-end">Edit</button></div>`).join("")}
+    ${UI.giveAdd ? `<div class="inc-row editing">${giveForm(null)}</div>` : `<button class="btn" type="button" data-give-add>${I.plus}Add giving</button>`}
+    ${list.length ? `<p class="muted small">That is ${fmt(r2(tot * 12))} a year.</p>` : UI.giveAdd ? "" : `<p class="muted small">Charity, family support, your place of worship: anything you give on a regular basis.</p>`}</section>`; };
 const LOAN_KINDS = [["bank","Bank loan"],["personal","Personal loan"],["student","Student debt"],["card","Credit card"],["car","Car loan"],["home","Mortgage"],["other","Other debt"]];
 const LOAN_EVERY = [["mo","Every month","a month"],["wk","Every week","a week"],["2wk","Every 2 weeks","every 2 weeks"],["yr","Every year","a year"]];
 const CARD_TYPES = ["Visa", "Mastercard", "American Express", "Discover", "UnionPay", "Other"];
@@ -3367,7 +3416,7 @@ function tourShow(){
   const target = document.querySelector(sel), m = $("main");
   if (target && !target.offsetParent && target.closest("details")) target.closest("details").open = true;
   if (target){ if (sel !== "#view" && sel !== "#bell"){ target.classList.add("tour-focus"); m.scrollTop += target.getBoundingClientRect().top - m.getBoundingClientRect().top - 14; } else { m.scrollTop = 0; if (sel === "#bell") target.classList.add("tour-focus"); } }
-  el.innerHTML = `<div class="tour-top"><span class="muted small" data-tour-count>${TOUR.i + 1} of ${n}</span><button class="link plain small" type="button" data-tour-skip>Skip tour</button></div>
+  el.innerHTML = `<div class="tour-top"><span class="tour-who"><img alt="" src="${(document.querySelector(".logo") || {}).src || ""}"><span class="muted small" data-tour-count>${TOUR.i + 1} of ${n}</span></span><button class="link plain small" type="button" data-tour-skip>Skip tour</button></div>
     <h3>${title}</h3><p class="muted">${text}</p>
     <div class="tour-nav">${TOUR.i ? `<button class="btn small" type="button" data-tour-back>Back</button>` : ""}<button class="btn small primary" type="button" data-tour-next>${TOUR.i === n - 1 ? "Finish" : "Next"}</button></div>`;
 }
@@ -3478,6 +3527,9 @@ function renderTabs(){
 function render(keepScroll){
   const main = $("main"), top = main.scrollTop;
   const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : V[S.tab]();
+  const askOk = !STMT.result && !UI.pdfLock && !UI.account && UI.welcome == null && !UI.biz; if (!askOk) UI.askOpen = false;
+  const sheet = $("asksheet"); if (sheet){ sheet.innerHTML = UI.askOpen ? askSheet() : ""; sheet.hidden = !UI.askOpen; }
+  const fab = $("wise"); if (fab) fab.hidden = !askOk || !!UI.askOpen;
   appEl.classList.toggle("welcoming", UI.welcome != null && !UI.account && !STMT.result);
   if (!keepScroll){ v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   renderTabs(); renderBell();
@@ -3485,7 +3537,7 @@ function render(keepScroll){
   if (VOICE.rec) voicePaint();  // a redraw while listening keeps the Stop button and the words heard so far
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
 }
-const OPEN_FORMS = 'form[data-form="settle"],form[data-form="trip"],form[data-form="lockSet"],form[data-form="lockOff"],form[data-form="loan"],form[data-form="exp"],form[data-form="subEdit"],form[data-form="codeEdit"]';
+const OPEN_FORMS = 'form[data-form="settle"],form[data-form="trip"],form[data-form="lockSet"],form[data-form="lockOff"],form[data-form="loan"],form[data-form="exp"],form[data-form="give"],form[data-form="subEdit"],form[data-form="codeEdit"]';
 function refreshOuts(){
   const active = document.activeElement;
   document.querySelectorAll("#view [data-out]").forEach(el => {
@@ -3696,6 +3748,10 @@ function accBusy(on){ ACC.busy = on; document.querySelectorAll("#view .acc-form 
 
 // ---- events ----
 $("acct-btn").addEventListener("click", () => { UI.account = !UI.account; UI.inbox = false; ACC.err = ""; if (UI.account) accInit(); render(false); });
+// The Ask panel sits outside the page, fixed to the screen, so it opens where you are however far you have scrolled.
+// Everything the page listens for is listened for there too, so its box, chips and microphone behave exactly the same.
+(() => { const v = $("view"), sh = $("asksheet"), add = v.addEventListener.bind(v); if (!sh) return;
+  v.addEventListener = (type, fn, opt) => { add(type, fn, opt); sh.addEventListener(type, fn, opt); }; })();
 $("view").addEventListener("input", e => {
   const t = e.target;
   if (t.id === "acc-email") ACC.email = t.value;
@@ -3809,8 +3865,28 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.settle = null; UI.survey = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
+// The owl button: tap to ask or log from any tab. Hold it for a moment and it lifts, then it can be dragged anywhere on
+// the screen; where it is left is remembered on this device.
+(() => { const fab = $("wise"), KEY = "keepwise-ask-pos"; if (!fab) return;
+  const logo = document.querySelector(".logo"); fab.innerHTML = `<img alt="" draggable="false" src="${logo ? logo.src : ""}">`;
+  const place = p => { const w = innerWidth, h = innerHeight, x = Math.min(w - 64, Math.max(8, p.x)), y = Math.min(h - 150, Math.max(76, p.y)); fab.style.left = x + "px"; fab.style.top = y + "px"; fab.style.right = "auto"; fab.style.bottom = "auto"; return {x, y}; };
+  try { const p = JSON.parse(localStorage.getItem(KEY) || "null"); if (p && isFinite(p.x) && isFinite(p.y)) place(p); } catch(e){}
+  addEventListener("resize", () => { if (fab.style.left) place({x: parseFloat(fab.style.left), y: parseFloat(fab.style.top)}); });
+  let d = null;
+  fab.addEventListener("pointerdown", e => { const r = fab.getBoundingClientRect(); d = {x: e.clientX, y: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top, on: false, moved: false};
+    try { fab.setPointerCapture(e.pointerId); } catch(err){}
+    d.t = setTimeout(() => { if (d){ d.on = true; fab.classList.add("moving"); try { navigator.vibrate && navigator.vibrate(12); } catch(err){} } }, 450); });
+  fab.addEventListener("pointermove", e => { if (!d) return;
+    if (d.on){ d.moved = true; place({x: e.clientX - d.dx, y: e.clientY - d.dy}); e.preventDefault(); }
+    else if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) > 12){ clearTimeout(d.t); d.cancel = true; } });
+  const end = () => { if (!d) return; clearTimeout(d.t); const was = d; d = null; fab.classList.remove("moving");
+    if (was.on){ fab.dataset.dragged = "1"; setTimeout(() => { delete fab.dataset.dragged; }, 350); try { localStorage.setItem(KEY, JSON.stringify({x: parseFloat(fab.style.left) || 0, y: parseFloat(fab.style.top) || 0})); } catch(err){} } };
+  fab.addEventListener("pointerup", end); fab.addEventListener("pointercancel", end);
+  fab.addEventListener("contextmenu", e => e.preventDefault());
+  fab.addEventListener("click", () => { if (fab.dataset.dragged) return; UI.askOpen = true; UI.info = null; render(true); });
+})();
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; UI.plus = false; if (UI.inbox){ pruneNotes(allNotes()); save(); } render(false); });
 
 view.addEventListener("input", e => {
@@ -3845,7 +3921,7 @@ view.addEventListener("input", e => {
     save(); refreshOuts(); return;
   }
   if (t.dataset.env){ const k = t.dataset.env; S.env[k] = numv(t.value); envFix(k); if (numv(t.value) > 100) t.value = 100;
-    view.querySelectorAll("[data-env]").forEach(el => { if (el !== t) el.value = S.env[el.dataset.env]; }); const sv = view.querySelector("[data-env-save]"); if (sv) sv.value = S.env.save;
+    view.querySelectorAll("[data-env]").forEach(el => { if (el !== t) el.value = S.env[el.dataset.env]; }); const sv = view.querySelector("[data-env-save]"); if (sv) sv.textContent = S.env.save;
     save(); refreshOuts(); return; }
   const exp = t.closest("[data-exp]");
   if (exp){ const it = S.expenses.find(x => x.id === exp.dataset.exp); if (!it) return;
@@ -3914,6 +3990,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-payday-clear")){ S.pay = null; S.monthStart = 1; UI.payEdit = false; save(); render(true); toast("Pay schedule removed. Your month runs from the 1st again."); return; }
   // ---- other income
   const blankInc = () => ({name: "", kind: "side", when: "any", day: 1, wd: 5, next: isoDaysAgo(0), amount: ""});
+  if (b.hasAttribute("data-ask-close")){ if (VOICE.rec) voiceFinish(false); UI.askOpen = false; render(true); return; }
   if (b.hasAttribute("data-ask-mic")){ voiceToggle(); return; }
   if (b.hasAttribute("data-voice-stop")){ voiceFinish(true); return; }
   const spendEl = b.closest("[data-spend]");
@@ -4066,7 +4143,7 @@ view.addEventListener("click", async e => {
     $("reset-confirm").innerHTML = `<div class="note" style="margin-top:10px"><p>${kind === "blank" ? "Clear everything and start empty?" : "Replace your numbers with the example?"} This can’t be undone.</p><div class="inline" style="margin-top:10px"><button class="btn" type="button" data-reset-no>Keep my data</button><button class="btn danger" type="button" data-reset-yes="${kind}">${kind === "blank" ? "Clear it" : "Load example"}</button></div></div>`; return; }
   if (b.hasAttribute("data-reset-no")){ $("reset-confirm").innerHTML = ""; return; }
   if (b.dataset.resetYes){ const ex = example();
-    if (b.dataset.resetYes === "blank"){ Object.assign(ex, {income:0, efSaved:0, expenses:[], loans:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0, example:false, statements:{}, extras:[]}); }
+    if (b.dataset.resetYes === "blank"){ Object.assign(ex, {income:0, efSaved:0, expenses:[], loans:[], giving:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0, example:false, statements:{}, extras:[]}); }
     welcomeDone(); ex.lastBackup = S.lastBackup; ex.a2hsHide = S.a2hsHide; ex.started = S.started;
     ex.tab = "plan"; S = ex; save(); render(false); toast(b.dataset.resetYes === "blank" ? "Started empty." : "Example loaded."); return; }
   if (b.dataset.filter){ S.filter = b.dataset.filter; save(); render(true); return; }
@@ -4110,6 +4187,10 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
   if (b.hasAttribute("data-receipt-close")){ UI.receiptInfo = false; render(true); return; }
   const loanRow = b.closest("[data-loan]"), loanX = loanRow && loanList().find(x => x.id === loanRow.dataset.loan);
+  if (b.hasAttribute("data-give-add")){ UI.giveAdd = true; UI.giveEdit = null; render(true); const i = view.querySelector('form[data-form="give"] [name=name]'); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-give-cancel")){ UI.giveAdd = false; UI.giveEdit = null; render(true); return; }
+  if (b.hasAttribute("data-give-edit")){ UI.giveEdit = b.closest("[data-give]").dataset.give; UI.giveAdd = false; render(true); return; }
+  if (b.hasAttribute("data-give-del")){ const u = undoable(), g = (S.giving || []).find(x => x.id === UI.giveEdit); S.giving = (S.giving || []).filter(x => x !== g); UI.giveEdit = null; save(); render(true); toast(`Removed ${g ? g.name || giveCause(g.cause) : "it"}.`, u); return; }
   if (b.hasAttribute("data-loan-add")){ UI.loanAdd = true; UI.loanEdit = null; UI.loanDraft = {kind: "bank", name: "", pay: "", every: "mo", total: "", end: "", left: ""}; render(true); const f = view.querySelector('form[data-form="loan"] [name=pay]'); if (f) f.focus(); return; }
   if (b.hasAttribute("data-loan-edit") && loanX){ UI.loanEdit = loanX.id; UI.loanAdd = false; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || ""}; render(true); return; }
   if (b.hasAttribute("data-loan-cancel")){ UI.loanAdd = false; UI.loanEdit = null; render(true); return; }
@@ -4148,7 +4229,7 @@ view.addEventListener("click", async e => {
   if (pay){ const x = S.settlements.find(y => y.id === pay.dataset.pay); if (!x) return;
     if (b.hasAttribute("data-pay-edit")){ UI.editPay = x.id; render(true); return; }
     if (b.hasAttribute("data-pay-cancel")){ UI.editPay = null; render(true); return; }
-    if (b.hasAttribute("data-pay-del")){ S.settlements = S.settlements.filter(y => y !== x); UI.editPay = null; save(); render(true); toast(backInList(x)); return; }
+    if (b.hasAttribute("data-pay-del")){ S.settlements = S.settlements.filter(y => y !== x); S.spends = (S.spends || []).filter(y => y.sid !== x.id); /* what it added to the month goes with it */ UI.editPay = null; save(); render(true); toast(backInList(x)); return; }
     if (b.hasAttribute("data-pay-save")){ const a = numv(pay.querySelector("[data-pay-amt]").value), dt = pay.querySelector("[data-pay-date]").value;
       if (a <= 0){ toast("Enter an amount above zero, or delete the payment."); return; }
       x.amount = a; if (dt) x.date = dt; UI.editPay = null; save(); render(true); toast("Payment updated."); return; }
@@ -4216,12 +4297,14 @@ view.addEventListener("submit", async e => {
     if (!(amt > 0)){ toast("Enter the amount that was paid."); return; }
     if (amt > owed + 0.005){ toast(got ? `${bal.p.name} only owes you ${fmt(owed)}.` : `You only owe ${bal.p.name} ${fmt(owed)}.`); return; }
     UI.settle = null; if (isField(document.activeElement)) document.activeElement.blur();
+    const sid = uid(), counted = fd.get("count") ? ` Counted in ${compute().planMonth}.` : "";
+    if (fd.get("count")){ S.spends = S.spends || []; S.spends.push({id: uid(), sid, date: isoOf(todayMid()), k: compute().planKey, name: got ? `${bal.p.name} paid you back` : `Paid ${bal.p.name} (split)`, amount: got ? -amt : amt}); if (shared()) save(); }
     const rest = left > 0.005 ? ` ${fmt(left)} is still owed.` : "";
     if (shared()){ const me = SH.me, rec = got ? {from: pid, to: me} : {from: me, to: pid};
-      await shWrite(() => SH.db.collection("payments").doc(uid() + uid()).set({...rec, amount: amt, date: isoDaysAgo(0), createdBy: me, createdAt: Date.now()}), (got ? `Recorded ${fmt(amt)} from ${bal.p.name}.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}.`) + rest + (got ? " Undo it in History." : ` ${bal.p.name} was notified.`)); render(true); return; }
-    if (got) S.settlements.push({id: uid(), from: pid, to: "me", amount: amt, date: isoDaysAgo(0)});
-    else S.settlements.push({id: uid(), from: "me", to: pid, amount: amt, date: isoDaysAgo(0)});
-    tellSettled(pid, amt, got, left); save(); render(true); toast((got ? `Recorded ${fmt(amt)} from ${bal.p.name}.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}.`) + rest + " Undo it in History."); return; }
+      await shWrite(() => SH.db.collection("payments").doc(uid() + uid()).set({...rec, amount: amt, date: isoDaysAgo(0), createdBy: me, createdAt: Date.now()}), (got ? `Recorded ${fmt(amt)} from ${bal.p.name}.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}.`) + rest + counted + (got ? " Undo it in History." : ` ${bal.p.name} was notified.`)); render(true); return; }
+    if (got) S.settlements.push({id: sid, from: pid, to: "me", amount: amt, date: isoDaysAgo(0)});
+    else S.settlements.push({id: sid, from: "me", to: pid, amount: amt, date: isoDaysAgo(0)});
+    tellSettled(pid, amt, got, left); save(); render(true); toast((got ? `Recorded ${fmt(amt)} from ${bal.p.name}.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}.`) + rest + counted + " Undo it in History."); return; }
   if (kind === "tripAdd"){ const t = tripList().find(x => x.id === f.closest("[data-trip]").dataset.trip); if (!t) return; const lines = parseSpend(fd.get("q"), t.cur);
     if (!lines.length){ toast("Type what you spent, like “uber 20”."); return; }
     const bad = await convertLines(lines); if (bad){ toast(FX_FAIL(bad)); return; }
@@ -4249,6 +4332,10 @@ view.addEventListener("submit", async e => {
   if (kind === "lockOff"){ if (!(await lockPinOk(String(fd.get("old") || "")))){ toast("That passcode is not right."); return; }
     lockStore(null); UI.lockForm = null; if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast("App lock is off."); return; }
   if (kind === "pdfLock"){ const pw = String(fd.get("pw") || ""); if (!pw){ toast("Enter the statement password."); return; } const file = UI.pdfLock && UI.pdfLock.file; if (file) openStatement(file, pw); return; }
+  if (kind === "give"){ const name = String(fd.get("name") || "").trim().slice(0, 40), amount = numv(fd.get("amount")); if (!(amount > 0)){ toast("Enter the amount you give each time."); f.querySelector("[name=amount]").focus(); return; }
+    const rec = {name, cause: String(fd.get("cause") || "other"), amount, every: String(fd.get("every") || "mo")}, old = UI.giveEdit && (S.giving || []).find(x => x.id === UI.giveEdit);
+    if (old) Object.assign(old, rec); else (S.giving = S.giving || []).push({id: uid(), ...rec});
+    UI.giveAdd = false; UI.giveEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? "Giving updated." : `Added. ${fmt(giveMonthly(rec))} a month now counts under Miscellaneous.`); return; }
   if (kind === "exp"){ const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), env = fd.get("env") === "misc" ? "misc" : "needs";
     if (!name){ toast("Give the line a name."); f.querySelector("[name=name]").focus(); return; }
     const old = UI.expEdit && S.expenses.find(x => x.id === UI.expEdit);
