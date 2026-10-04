@@ -194,6 +194,7 @@ details.card:not([open]){gap:0}
 .btn.small.done svg{width:14px;height:14px}
 @keyframes kw-flash{from{background:var(--green-soft)}to{background:transparent}}
 .flash{animation:kw-flash 1.4s ease-out}
+.ask-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:2px 4px}.ask-chips::-webkit-scrollbar{display:none}.ask-chips .chip{flex:none;white-space:nowrap}
 @media (prefers-reduced-motion: reduce){.flash{animation:none}}
 details summary{cursor:pointer;font-weight:600;color:var(--green);list-style:none}
 details summary::-webkit-details-marker{display:none}
@@ -748,6 +749,7 @@ function compute(){
   const savings = income - needs - misc;
   const flagged = liveSubs.filter(s => flags[s.id].length && s.keep !== "keep");
   const flaggedSave = flagged.reduce((a, s) => { const w = swapFor("sub", s.id); return a + (w ? +w.altCost : subMonthly(s)); }, 0);
+  if (S.env.needs + S.env.misc + S.env.save !== 100) envFix();   // a plan restored from elsewhere is held to the same rule
   const envNeeds = income * S.env.needs / 100, envMisc = income * S.env.misc / 100, envSave = income * S.env.save / 100;
   const efTarget = S.efMonths * needs;
   const efGap = Math.max(0, efTarget - S.efSaved);
@@ -1281,6 +1283,7 @@ const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th","st","nd
 
 // ---- occasional subscription check-in ----
 function reviewPick(){
+  const asked = UI.survey && S.subs.find(x => x.id === UI.survey); if (asked) return asked;   // opened from a note or a notification
   const today = isoDaysAgo(0);
   if (S.reviewSnooze === today) return null;
   const cands = S.subs.filter(s => s.keep !== "drop" && !isOurs(s) && (!s.reviewedAt || daysSince(s.reviewedAt) > 30)).sort((a, b) => subMonthly(b) - subMonthly(a)).slice(0, 5);
@@ -1292,14 +1295,14 @@ OUT.reviewCard = () => {
   const s = reviewPick(); if (!s) return "";
   const since = s.since ? `You’ve paid ${fmt(s.paid || 0)} since ${monthsLabel(s.since)}.` : `It costs ${fmt(subMonthly(s))} a month.`;
   return `<section class="card review" data-review-id="${s.id}"><p class="label">Quick check</p>
-    <h3 style="font-size:1.15rem">How much do you use ${esc(s.name)}?</h3>
+    <h3 style="font-size:1.15rem">${UI.survey === s.id ? `Still using ${esc(s.name)}?` : `How much do you use ${esc(s.name)}?`}</h3>
     <p class="muted">${since}</p>
     <div class="review-btns"><button class="btn" type="button" data-review="lot">A lot</button><button class="btn" type="button" data-review="barely">Barely</button><button class="btn danger" type="button" data-review="none">Not at all</button></div>
     <button class="link plain small" type="button" data-review="later" style="align-self:center">Ask me later</button></section>`;
 };
 function handleReview(kind, id){
-  if (kind === "later"){ S.reviewSnooze = isoDaysAgo(0); save(); refreshOuts(); return; }
-  const s = S.subs.find(x => x.id === id); if (!s) return;
+  if (kind === "later"){ UI.survey = null; S.reviewSnooze = isoDaysAgo(0); save(); refreshOuts(); return; }
+  const s = S.subs.find(x => x.id === id); if (!s) return; UI.survey = null;
   s.reviewedAt = isoDaysAgo(0); remindSeen();
   if (kind === "lot"){ s.last = isoDaysAgo(0); s.low = false; toast(`Keeping ${s.name}.`); }
   if (kind === "barely"){ s.low = true; s.keep = "auto"; toast(`${s.name} is flagged. Review it on Subs.`); }
@@ -1346,6 +1349,13 @@ V.month = () => {
   return `${spaceSwitch()}${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on the Plan tab, or import a bank statement. Everything stays on this device." : "Add your other bills on the Plan tab and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>
+  <section class="card" aria-labelledby="askh">
+    <h2 id="askh" class="h-info">Ask KeepWise${infoBtn("ask", "About Ask KeepWise")}</h2>
+    ${infoTip("ask", "Ask about your plan, or type or say what you spent and it is logged for you. Answers use the same numbers you see on this page.")}
+    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 160px">${voiceCan() ? `<button class="icon-btn" type="button" id="ask-mic" data-ask-mic aria-label="Speak instead of typing" aria-pressed="false">${MIC}</button>` : ""}<button class="btn" type="submit">Ask</button></form>
+    <div id="ask-out" class="ask-out" ${ASK.last ? "" : "hidden"}>${esc(ASK.last)}</div>
+    <div class="chips ask-chips" data-scroll-x><button class="chip" type="button" data-plain style="font-weight:700">Say it plainly</button>${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+  </section>
   <div data-out="monthClose">${OUT.monthClose()}</div>
   <div data-out="keepSafe">${OUT.keepSafe()}</div>
   <div data-out="arrived">${OUT.arrived()}</div>
@@ -1364,15 +1374,7 @@ V.month = () => {
   <div data-out="dropCard">${OUT.dropCard()}</div>
   <div data-out="envelopes">${OUT.envelopes()}</div>
   <div data-out="historyCard">${OUT.historyCard()}</div>
-  <section class="card"><h2>How to use it</h2><div data-out="howto">${OUT.howto()}</div></section>
-  <section class="card" aria-labelledby="askh">
-    <h2 id="askh" class="h-info">Ask KeepWise${infoBtn("ask", "About Ask KeepWise")}</h2>
-    ${infoTip("ask", "Ask about your plan in plain words. Answers use the same numbers shown above.")}
-    <button class="btn primary" type="button" data-plain style="width:auto;align-self:flex-start;padding:12px 20px">Say it plainly</button>
-    <div class="chips">${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
-    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 160px">${voiceCan() ? `<button class="icon-btn" type="button" id="ask-mic" data-ask-mic aria-label="Speak instead of typing" aria-pressed="false">${MIC}</button>` : ""}<button class="btn" type="submit">Ask</button></form>
-    <div id="ask-out" class="ask-out" ${ASK.last ? "" : "hidden"}>${esc(ASK.last)}</div>
-  </section>`;
+  <section class="card"><h2>How to use it</h2><div data-out="howto">${OUT.howto()}</div></section>`;
 };
 OUT.planNote = () => esc(compute().planNote);
 OUT.sym = () => esc(sym());
@@ -1777,9 +1779,9 @@ V.plan = () => `
     <label class="field"><span>${OUT.incomeLabel()}</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}"></span>${(S.extras || []).length ? `<small class="muted small">Plus ${fmt(extraExpected())} other income, on the Month tab.</small>` : ""}</label>
     <label class="field"><span>Currency</span><select data-bind="cur">${curOptions(S.cur)}</select></label>
   </div>
-  <section class="card"><h2 class="h-info">Envelopes${infoBtn("envelopes", "About Envelopes")}</h2>${infoTip("envelopes", "The share of your income each envelope should hold. Subscriptions are managed on the Subs tab and count toward Miscellaneous.")}
+  <section class="card"><h2 class="h-info">Envelopes${infoBtn("envelopes", "About Envelopes")}</h2>${infoTip("envelopes", "Set the share of income for Expenditures and Misc. Savings is what is left, so they always total 100%. Subscriptions are on the Subs tab and count toward Miscellaneous.")}
     <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr));align-items:end">
-      ${[["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => `<label class="field"><span>${n}</span><span class="money-in"><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"><em>%</em></span></label>`).join("")}
+      ${[["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => k === "save" ? `<label class="field"><span>${n}</span><span class="money-in"><input data-env-save readonly tabindex="-1" class="calc" value="${S.env.save}" aria-label="Savings, worked out as what is left"><em>%</em></span></label>` : `<label class="field"><span>${n}</span><span class="money-in"><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"><em>%</em></span></label>`).join("")}
     </div><div data-out="envCheck">${OUT.envCheck()}</div></section>
   <section class="card"><h2>What goes out each month</h2>
     <div data-out="expTotal">${OUT.expTotal()}</div>
@@ -1804,7 +1806,14 @@ V.plan = () => `
     <div class="inline"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank">Start empty</button></div>
     <div id="reset-confirm"></div>
     <p class="small legal-links"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`;
-OUT.envCheck = () => { const t = S.env.needs + S.env.misc + S.env.save; return t === 100 ? `<p class="muted small">Adds up to 100%.</p>` : `<p class="err">These add up to ${t}%. Make them total 100%.</p>`; };
+// The three shares always total 100: Expenditures and Miscellaneous are chosen, Savings is what is left. If the two
+// chosen ones would pass 100, the one not being edited gives way.
+function envFix(edited){
+  const e = S.env, c = v => Math.min(100, Math.max(0, Math.round(+v || 0))); e.needs = c(e.needs); e.misc = c(e.misc);
+  if (e.needs + e.misc > 100){ if (edited === "misc") e.needs = 100 - e.misc; else e.misc = 100 - e.needs; }
+  e.save = 100 - e.needs - e.misc;
+}
+OUT.envCheck = () => `<p class="muted small">${S.env.save > 0 ? `Savings is what is left: ${S.env.save}% of your income, ${fmt(compute().envSave)} a month.` : "Nothing is left for Savings. Lower Expenditures or Misc to set some aside."}</p>`;
 OUT.expTotal = () => { const C = compute(); return `<p class="small tnum">Expenditures ${fmt(r2(C.needs - C.loans))} · Misc ${fmt(C.misc)} (with subscriptions and swaps)${C.loans > 0 ? ` · Loans & debts ${fmt(C.loans)}` : ""}</p>`; };
 OUT.saveSplit = () => { const C = compute(); return C.savings > 0 ? `<p class="small tnum">This month: ${fmt(C.toEF)} to emergency fund, ${fmt(C.toGoal)} to ${esc(S.goalName || "your goal")}.${C.efTarget ? ` Fund target ${fmt(C.efTarget)}.` : ""}</p>` : `<p class="err">Nothing is left to save this month.</p>`; };
 
@@ -2026,17 +2035,30 @@ function notifications(){
 }
 // What this phone itself has to tell you: money to confirm, charges and paydays close by, subscriptions that look
 // unused, a loan about to end. Each note has a key that changes when its date does, so a new charge is a new note.
+// A subscription is worth asking about again once 20 days have passed since the last answer.
+const surveyDue = x => x.keep !== "drop" && !isOurs(x) && !(x.reviewedAt && x.reviewedAt >= isoDaysAgo(20));
+// Take someone to the exact card a note or a notification is about, and mark it for a moment so the eye finds it.
+function goTo(tabName, sel){
+  UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = tabName; save(); render(false);
+  const el = sel && view.querySelector(sel), m = $("main"); if (!el) return false;
+  m.scrollTop += el.getBoundingClientRect().top - m.getBoundingClientRect().top - 16;
+  UI.flashSel = sel; clearTimeout(UI.flashSelT); UI.flashSelT = setTimeout(() => { UI.flashSel = null; }, 1500);
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); return true;
+}
+// The page redraws its boxes whenever a number changes; keep the mark on the card that was just opened.
+function flashKeep(){ if (!UI.flashSel) return; const el = view.querySelector(UI.flashSel); if (el) el.classList.add("flash"); }
+function openSurvey(id){ UI.survey = id; return goTo("subs", "[data-review-id]"); }
 function localNotes(){
-  const out = [], t = todayMid(), add = (key, text, detail, go) => out.push({key: "L:" + key, text, detail, go, local: true});
-  (payOn() ? paydaysBetween(dayPlus(t, -7), dayPlus(t, -1)).slice(-1) : []).filter(d => !((S.payGot || "") >= isoOf(d))).forEach(d => add(`a:pay:${isoOf(d)}`, "Did your pay arrive?", `${fmt(+S.pay.amount || 0)} was expected ${dayMonth(d)}.`, "month"));
-  (S.extras || []).forEach(x => { for (let i = 1; i <= 7; i++){ const d = dayPlus(t, -i); if (incomeDueOn(x, d)){ if (!incomeLogged(x, isoOf(d))) add(`a:${x.id}:${isoOf(d)}`, `Did ${x.name} arrive?`, `${fmt(+x.amount || 0)} was expected ${dayMonth(d)}.`, "month"); break; } } });
-  (payOn() ? paydaysBetween(t, dayPlus(t, 1)) : []).forEach(d => add(`pd:${isoOf(d)}`, `Payday ${whenLabel(daysUntil(d)).toLowerCase()}`, `${fmt(+S.pay.amount || 0)} expected.`, "month"));
+  const out = [], t = todayMid(), add = (key, text, detail, go, sel, sub, loan) => out.push({key: "L:" + key, text, detail, go, sel, sub, loan, local: true});
+  arrivals(true).forEach(v => add(`a:${v.key}:${isoOf(v.date)}`, v.key === "pay" ? "Did your pay arrive?" : `Did ${v.name} arrive?`, `${fmt(v.amount)} was expected ${dayMonth(v.date)}.`, "month", `[data-arrive="${v.key}"]`));
+  (payOn() ? paydaysBetween(t, dayPlus(t, 1)) : []).forEach(d => add(`pd:${isoOf(d)}`, `Payday ${whenLabel(daysUntil(d)).toLowerCase()}`, `${fmt(+S.pay.amount || 0)} expected.`, "month", '[data-out="comingUp"]'));
   S.subs.map(x => ({x, d: nextRenewal(x)})).filter(v => v.d && daysUntil(v.d) <= 7).sort((a, b) => a.d - b.d).forEach(({x, d}) => { const n = daysUntil(d), w = whenLabel(n).toLowerCase();
-    if (x.keep === "drop") add(`c:${x.id}:${isoOf(d)}`, `Cancel ${x.name} before it renews`, `You chose to drop it. It renews ${w}, ${fmt(x.price)}.`, "subs");
-    else add(`r:${x.id}:${isoOf(d)}`, `${x.name} renews ${w}`, `${fmt(x.price)} on ${dayMonth(d)}.`, "subs"); });
-  (S.trips || []).filter(t => tripState(t) === "ended").forEach(t => add(`t:${t.id}:${t.end}`, `Your ${t.name} trip is over`, `You spent ${fmt(tripTotal(t))}. Choose whether it counts in this month or stays separate.`, "month"));
-  const C = compute(); if (C.flagged.length) add(`f:${C.planKey}:${C.flagged.length}`, `${C.flagged.length} subscription${C.flagged.length === 1 ? " looks" : "s look"} unused`, `Dropping ${C.flagged.length === 1 ? "it" : "them"} would keep ${fmt(C.flaggedSave)} a month.`, "subs");
-  (S.loans || []).filter(l => l.end && !loanDone(l)).forEach(l => { const f = loanFinish(l), n = f ? daysUntil(f.date) : 99; if (n >= 0 && n <= 30) add(`l:${l.id}:${l.end}`, `${l.name || loanKind(l.kind)} ends ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `After that, ${fmt(loanMonthly(l))} a month stays with you.`, "plan"); });
+    if (x.keep === "drop") add(`c:${x.id}:${isoOf(d)}`, `Cancel ${x.name} before it renews`, `You chose to drop it. It renews ${w}, ${fmt(x.price)}.`, "subs", `[data-sub="${x.id}"]`);
+    else add(`r:${x.id}:${isoOf(d)}`, `${x.name} renews ${w}`, `${fmt(x.price)} on ${dayMonth(d)}.${surveyDue(x) ? " Still using it?" : ""}`, "subs", `[data-sub="${x.id}"]`, x.id); });
+  (S.trips || []).filter(t => tripState(t) === "ended").forEach(t => add(`t:${t.id}:${t.end}`, `Your ${t.name} trip is over`, `You spent ${fmt(tripTotal(t))}. Choose whether it counts in this month or stays separate.`, "month", `[data-trip="${t.id}"]`));
+  const C = compute(); if (C.flagged.length) add(`f:${C.planKey}:${C.flagged.length}`, `${C.flagged.length} subscription${C.flagged.length === 1 ? " looks" : "s look"} unused`, `Dropping ${C.flagged.length === 1 ? "it" : "them"} would keep ${fmt(C.flaggedSave)} a month.`, "subs", `[data-sub="${C.flagged[0].id}"]`);
+  (S.loans || []).filter(loanNeedsDetails).forEach(l => add(`ld:${l.id}`, `Finish the details for ${l.name || loanKind(l.kind)}`, "Add the amount left or the end date, so KeepWise can show when it ends and your statement is complete.", "plan", `[data-loan="${l.id}"]`, null, l.id));
+  (S.loans || []).filter(l => l.end && !loanDone(l)).forEach(l => { const f = loanFinish(l), n = f ? daysUntil(f.date) : 99; if (n >= 0 && n <= 30) add(`l:${l.id}:${l.end}`, `${l.name || loanKind(l.kind)} ends ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `After that, ${fmt(loanMonthly(l))} a month stays with you.`, "plan", `[data-loan="${l.id}"]`); });
   return out;
 }
 const allNotes = () => [...localNotes(), ...notifications()];
@@ -2741,20 +2763,40 @@ const tripDays = t => Math.round((isoDate(t.end) - isoDate(t.start)) / DAY) + 1;
 // "add uber $20, then $50 dinner" becomes two lines. Nothing is sent anywhere; it is read on this phone.
 // Currency named in what you type. Only words and signs that can mean one thing are read; a bare number is taken in the
 // trip's spending currency, or your own if the trip has none.
-const CUR_WORDS = {euro: "EUR", euros: "EUR", pound: "GBP", pounds: "GBP", quid: "GBP", yen: "JPY", dirham: "AED", dirhams: "AED", dollar: "USD", dollars: "USD", bucks: "USD"};
+const CUR_WORDS = {euro: "EUR", euros: "EUR", pound: "GBP", pounds: "GBP", quid: "GBP", yen: "JPY", dirham: "AED", dirhams: "AED", dollar: "USD", dollars: "USD", bucks: "USD", pk: "PKR"};
 const CUR_SIGNS = {"€": "EUR", "£": "GBP", "¥": "JPY", "₹": "INR"};
 const CUR_NOT_WORDS = new Set(["ALL", "TOP", "TRY", "CUP", "MOP", "PEN", "GEL", "BAM", "BOB", "RON", "SOS", "MAD", "COP", "LAK", "ARS"]);  // codes that are also everyday words
-const DOLLAR_CUR = c => /^(USD|CAD|AUD|NZD|SGD|HKD)$/.test(c || "");
+const DOLLAR_CUR = c => CUR_KIN.dollar.list.includes(c || "");
+// Words many countries share. On a trip they mean the currency you chose to pay in there; otherwise your own currency. If neither
+// fits, a word with one usual meaning takes it (dollars: USD), and a word without one (rupees, pesos) is asked about.
+const CUR_KIN = {
+  dollar: {list: ["USD","CAD","AUD","NZD","SGD","HKD","TWD","JMD","BSD","BBD","BZD","BMD","BND","FJD","GYD","KYD","LRD","NAD","SBD","SRD","TTD","XCD","ZWL"], def: "USD"},
+  rupee: {list: ["INR","PKR","LKR","NPR","MUR","SCR"], def: null},
+  pound: {list: ["GBP","EGP","LBP","SYP","SDG","SSP","GIP","FKP","SHP"], def: "GBP"},
+  peso: {list: ["MXN","PHP","ARS","CLP","COP","CUP","DOP","UYU"], def: null},
+  dinar: {list: ["KWD","BHD","JOD","IQD","RSD","TND","DZD","LYD"], def: null},
+  dirham: {list: ["AED","MAD"], def: "AED"},
+  riyal: {list: ["SAR","QAR","OMR","YER","IRR"], def: "SAR"},
+  franc: {list: ["CHF","XOF","XAF","XPF","CDF","RWF","BIF","DJF","GNF","KMF"], def: "CHF"},
+  krona: {list: ["SEK","NOK","DKK","ISK","CZK"], def: null},
+  shilling: {list: ["KES","UGX","TZS","SOS"], def: null},
+  yen: {list: ["JPY"], def: "JPY"}, yuan: {list: ["CNY"], def: "CNY"}, lira: {list: ["TRY"], def: "TRY"}, taka: {list: ["BDT"], def: "BDT"}, baht: {list: ["THB"], def: "THB"}, ringgit: {list: ["MYR"], def: "MYR"}, rand: {list: ["ZAR"], def: "ZAR"}, reais: {list: ["BRL"], def: "BRL"}, euro: {list: ["EUR"], def: "EUR"}
+};
+const CUR_KIN_WORD = {dollars: "dollar", bucks: "dollar", rupees: "rupee", rs: "rupee", pounds: "pound", quid: "pound", pesos: "peso", dinars: "dinar", dirhams: "dirham", riyals: "riyal", rial: "riyal", rials: "riyal", francs: "franc", kronor: "krona", kroner: "krona", krone: "krona", shillings: "shilling", euros: "euro", liras: "lira"};
+function familyCur(word, tripCur){
+  const w = String(word || "").toLowerCase(), f = CUR_KIN[CUR_KIN_WORD[w] || w]; if (!f) return null;
+  return f.list.includes(tripCur) ? tripCur : f.list.includes(S.cur) ? S.cur : f.def || "?" + (CUR_KIN_WORD[w] || w);
+}
 function parseSpend(text, tripCur){
-  const parts = String(text || "").split(/[,;\n]|\bthen\b/i).flatMap(p => { const both = p.split(/\band\b/i); return both.length > 1 && both.every(x => /\d/.test(x)) ? both : [p]; });
+  const parts = String(text || "").split(/,(?!\d{3}(?!\d))|[;\n]|\bthen\b/i).flatMap(p => { const both = p.split(/\band\b/i); return both.length > 1 && both.every(x => /\d/.test(x)) ? both : [p]; });
   return parts.map(part => {
     let p = part.trim().replace(/^(please\s+)?(add|spent|paid|log|put)\b\s*/i, ""), cur = null;
     const m = p.match(/([$€£¥₹]\s*)?(\d[\d,]*(?:\.\d+)?)/); if (!m) return null;
     const amount = +m[2].replace(/,/g, ""); if (!(amount > 0) || amount > 1e9) return null;
     const sign = (m[1] || "").trim(), after = p.slice(m.index + m[0].length), before = p.slice(0, m.index);
     let rest = before + " " + after;
-    if (sign) cur = sign === "$" ? (DOLLAR_CUR(S.cur) ? S.cur : DOLLAR_CUR(tripCur) ? tripCur : "USD") : CUR_SIGNS[sign];
-    else { const aft = after.match(/^\s*([A-Za-z€£¥₹]+)/), bef = before.match(/([A-Za-z]+)\s*$/), pick = w => { if (!w) return null; const u = w.toUpperCase(); return CUR_SIGNS[w] || CUR_WORDS[w.toLowerCase()] || (u.length === 3 && !CUR_NOT_WORDS.has(u) && CURRENCIES.some(c => c[0] === u) ? u : null); };
+    if (sign) cur = sign === "$" ? familyCur("dollar", tripCur) : sign === "£" ? familyCur("pound", tripCur) : sign === "₹" ? familyCur("rupee", tripCur) : CUR_SIGNS[sign];
+    else { const aft = after.match(/^\s*([A-Za-z€£¥₹]+)/), bef = before.match(/([A-Za-z]+)\s*$/), pick = w => { if (!w) return null; const u = w.toUpperCase(); return CUR_SIGNS[w] || familyCur(w, tripCur) || CUR_WORDS[w.toLowerCase()] || (u.length === 3 && !CUR_NOT_WORDS.has(u) && CURRENCIES.some(c => c[0] === u) ? u : null); };
       if (aft && pick(aft[1])){ cur = pick(aft[1]); rest = before + " " + after.slice(aft[0].length); }
       else if (bef && pick(bef[1])){ cur = pick(bef[1]); rest = before.slice(0, bef.index) + " " + after; } }
     let name = rest.replace(/\b(for|on|at|to|in|of)\s*$/i, "").replace(/^\s*(for|on|at|to|in|of)\b/i, "").replace(/\s+/g, " ").trim();
@@ -2778,7 +2820,7 @@ async function fxRate(from, to){
 }
 const fmtIn = (v, cur) => { const old = FMT_CUR; FMT_CUR = cur; try { return fmt(v); } finally { FMT_CUR = old; } };
 async function convertLines(lines){  // each line into your own currency; null if a rate could not be fetched
-  for (const l of lines){ if (!l.cur || l.cur === S.cur) continue; const rate = await fxRate(l.cur, S.cur); if (!rate) return l.cur; l.orig = l.amount; l.ocur = l.cur; l.rate = rate; l.amount = r2(l.amount * rate); }
+  for (const l of lines){ if (!l.cur || l.cur === S.cur) continue; if (l.cur[0] === "?") return l.cur; const rate = await fxRate(l.cur, S.cur); if (!rate) return l.cur; l.orig = l.amount; l.ocur = l.cur; l.rate = rate; l.amount = r2(l.amount * rate); }
   return null;
 }
 function tripAddSpend(t, lines){ const today = isoOf(todayMid()); lines.forEach(l => (t.items = t.items || []).push({id: uid(), date: today, name: l.name, amount: l.amount, ...(l.ocur ? {orig: l.orig, ocur: l.ocur, rate: l.rate} : {})})); }
@@ -2788,13 +2830,77 @@ function tripSpendReply(t, lines){ const sum = r2(lines.reduce((a, l) => a + l.a
 // subscription joins Subs, and plain spending goes to the trip that is running, or to this month as a one-off.
 function spendKind(text){
   const t = " " + String(text).toLowerCase() + " ";
+  if (LOAN_WORDS.test(t)) return "loan";
   if (/\b(subscription|subscriptions|sub)\b/.test(t)) return "sub";
   if (/\b(bill|bills|expenditure|expenditures|every month|each month|monthly)\b/.test(t)) return "bill";
   if (/\b(misc|miscellaneous|one[- ]?off|one time)\b/.test(t)) return "misc";
   return null;
 }
+// Typed or spoken, a command is tidied the same way first. Phones often hear a currency code as loose letters
+// ("PK PR", "P K R", "U S D") and put "OK" or "hey" in front; neither should change what gets done.
+function tidySaid(text){
+  const isCur = c => CURRENCIES.some(x => x[0] === c.toUpperCase());
+  let t = String(text || "").replace(/\s+/g, " ").trim().replace(/^((ok|okay|hey|hi|um|uh|so|well|please|keepwise|keep wise)[\s,.!]+)+/i, "");
+  t = t.replace(/\b([a-z])[\s.]+([a-z])[\s.]+([a-z])\b\.?/gi, (m, a, b, c) => isCur(a + b + c) ? (a + b + c).toUpperCase() : m);
+  t = t.replace(/\b([a-z])([a-z])[\s,]+([a-z])([a-z])\b/gi, (m, a, b, c, d) => a.toLowerCase() === c.toLowerCase() && isCur(a + b + d) ? (a + b + d).toUpperCase() : m);
+  t = t.replace(/\b([a-z]{2})[\s]+([a-z])\b(?!['’])/gi, (m, ab, c) => isCur(ab + c) && /\d/.test(t) && !/^(a|i)$/i.test(c) ? (ab + c).toUpperCase() : m);
+  return t;
+}
+// "change the loan amount from 24,500 PKR to 29,500 PKR", "update netflix to 12", "remove gym". These change or remove
+// something that is already there. They never add anything: if the item cannot be found, KeepWise says so and stops.
+const CHANGE_VERB = /^\s*(please\s+)?(change|update|set|edit|make|correct|fix|increase|decrease|raise|lower|reduce)\b/i, REMOVE_VERB = /^\s*(please\s+)?(remove|delete|cancel|drop)\b/i;
+function findTarget(text, oldAmount){
+  const t = " " + text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ") + " ", words = n => String(n || "").toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(w => w.length > 2 && !/^\d+$/.test(w));
+  const score = n => { const w = words(n); return w.length ? w.filter(x => t.includes(" " + x + " ")).length / w.length : 0; };
+  const all = [...(S.loans || []).filter(l => !loanDone(l)).map(l => ({type: "loan", x: l, name: l.name || loanKind(l.kind), amount: +l.pay || 0, sc: Math.max(score(l.name), score(loanKind(l.kind)))})),
+    ...S.expenses.map(e => ({type: "exp", x: e, name: e.name, amount: +e.amount || 0, sc: score(e.name)})), ...S.subs.map(e => ({type: "sub", x: e, name: e.name, amount: +e.price || 0, sc: score(e.name)}))];
+  const near = c => oldAmount > 0 && Math.abs(c.amount - oldAmount) <= Math.max(0.02, oldAmount * 0.02);
+  let c = all.filter(x => x.sc > 0); const best = Math.max(0, ...c.map(x => x.sc)); c = c.filter(x => x.sc === best);
+  if (c.length > 1 && c.some(near)) c = c.filter(near);
+  if (!c.length && LOAN_WORDS.test(text)){ c = all.filter(x => x.type === "loan"); if (c.length > 1 && c.some(near)) c = c.filter(near); }
+  if (!c.length && oldAmount > 0){ c = all.filter(near); }
+  return c;
+}
+async function logChange(text){
+  const remove = REMOVE_VERB.test(text), body = text.replace(remove ? REMOVE_VERB : CHANGE_VERB, " ");
+  const m = body.match(/^(.*?)\bfrom\b(.*)\b(?:to|into)\b(.*)$/i) || body.match(/^(.*)\b(?:to|into|as|at)\b(.*)$/i);
+  const newPart = remove ? "" : m ? m[m.length - 1] : body, oldPart = !remove && m && m.length === 4 ? m[2] : "";
+  const nv = remove ? null : parseSpend(newPart)[0], ov = oldPart ? parseSpend(oldPart)[0] : null;
+  if (!remove && !nv) return "Say the new amount, like “change rent to 1,250”. Nothing was changed.";
+  if (nv && ov && !nv.cur) nv.cur = ov.cur; if (nv && ov && !ov.cur) ov.cur = nv.cur;
+  const bad = await convertLines([nv, ov].filter(Boolean)); if (bad) return FX_FAIL(bad);
+  const c = findTarget(remove || !m ? body : m[1], ov ? ov.amount : 0);
+  if (!c.length) return `I could not find which one you mean, so nothing was changed. Say its name, like “${remove ? "remove Netflix" : "change Netflix to 12"}”.`;
+  if (c.length > 1) return `That could be ${c.slice(0, 4).map(x => x.name).join(" or ")}. Say which one, so the right one is changed. Nothing was changed.`;
+  const it = c[0], conv = l => l.ocur ? `${fmtIn(l.orig, l.ocur)} (${fmt(l.amount)} at today’s rate)` : fmt(l.amount), keep = () => ` You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
+  if (remove){ if (it.type === "loan") S.loans = S.loans.filter(x => x !== it.x); else if (it.type === "exp") S.expenses = S.expenses.filter(x => x !== it.x); else S.subs = S.subs.filter(x => x !== it.x); save(); return `Removed ${it.name}, ${fmt(it.amount)}.${keep()}`; }
+  const owed = it.type === "loan" && LOAN_LEFT.test(m ? m[1] : body), was = owed ? +it.x.total || 0 : it.amount;
+  if (it.type === "loan"){ if (owed) it.x.total = nv.amount; else it.x.pay = nv.amount; } else if (it.type === "exp") it.x.amount = nv.amount; else it.x.price = nv.amount;
+  save(); return `Updated ${it.name}: ${owed ? "left to pay is now" : it.type === "loan" ? "the payment is now" : "it is now"} ${conv(nv)}${was ? `, it was ${fmt(was)}` : ""}.${keep()}`;
+}
+// "personal loan 24,500 PKR, remaining total 249,989": the first number is the payment, a number described as remaining,
+// left, balance, total or owed is the amount still to pay, and "12 installments" is how many payments are left. A loan
+// goes to Loans and debt, never to the bills, so the amount owed is not mistaken for something paid every month.
+const LOAN_WORDS = /\b(loan|loans|debt|debts|mortgage|emi|installments?|instalments?|credit card)\b/i;
+const LOAN_LEFT = /\b(remaining|remains|left|balance|total|owe|owed|outstanding|still)\b/i, LOAN_COUNT = /\b(installments?|instalments?|payments|months)\b/i;
+function loanKindOf(text){ const t = String(text).toLowerCase(); return /credit card/.test(t) ? "card" : /mortgage|home loan|house loan/.test(t) ? "home" : /student/.test(t) ? "student" : /\b(car|auto|vehicle)\b/.test(t) ? "car" : /personal/.test(t) ? "personal" : /bank/.test(t) ? "bank" : "other"; }
+async function logLoan(text){
+  const lines = parseSpend(String(text).replace(/\b(every month|each month|monthly|per month|a month)\b/gi, " ")); if (!lines.length) return null;
+  const pay = lines.find(l => !LOAN_LEFT.test(l.name) && !(LOAN_COUNT.test(l.name) && !LOAN_WORDS.test(l.name.replace(LOAN_COUNT, ""))) ) || null;
+  if (!pay) return "Say the payment first, like “personal loan 250 a month, 3,000 remaining”.";
+  const rest = lines.filter(l => l !== pay), owed = rest.find(l => LOAN_LEFT.test(l.name)), count = rest.find(l => l !== owed && LOAN_COUNT.test(l.name) && Number.isInteger(l.amount) && l.amount < 1000);
+  if (owed && !owed.cur) owed.cur = pay.cur;   // the amount left is in the same money as the payment unless it says otherwise
+  const money = [pay, owed].filter(Boolean), bad = await convertLines(money); if (bad) return FX_FAIL(bad);
+  const kind = loanKindOf(text), conv = l => l.ocur ? `${fmtIn(l.orig, l.ocur)} (${fmt(l.amount)} at today’s rate)` : fmt(l.amount);
+  let name = pay.name.replace(/\b(amount|payment|payments|installments?|instalments?|emi|my|of|is|a)\b/gi, " ").replace(/\s+/g, " ").trim(); if (!name || name === "Spending") name = loanKind(kind); name = name[0].toUpperCase() + name.slice(1);
+  const rec = {id: uid(), kind, name, pay: pay.amount, every: "mo", total: owed ? owed.amount : 0, end: "", left: count ? count.amount : 0}; if (kind === "card"){ rec.card = "Other"; rec.fee = 0; }
+  loanList().push(rec); save();
+  return `Added to Loans and debt: ${name}, ${conv(pay)} a month${owed ? `, with ${conv(owed)} left to pay` : ""}${count ? ` over ${count.amount} installments` : ""}. ${owed ? "" : "Add the amount left on the Plan tab to see when it ends. "}You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
+}
+const loanNeedsDetails = l => !loanDone(l) && !(+l.total > 0) && !l.end;
 const SPEND_NOISE = /\b(as\s+an?\s+|as\s+|to\s+(my\s+)?|under\s+|in\s+)?(subscription|subscriptions|sub|bill|bills|expenditure|expenditures|misc|miscellaneous|one[- ]?off|one time|every month|each month|monthly|yearly|a year|per year|annual|annually)\b/gi;
 async function logSpend(text){  // returns what to say back, or null when the text is not a spending line
+  if (spendKind(text) === "loan") return logLoan(text);
   const kind = spendKind(text), yearly = /\b(yearly|a year|per year|annual|annually)\b/i.test(text), trip = kind ? null : activeTrip();
   const lines = parseSpend(String(text).replace(SPEND_NOISE, " "), trip && trip.cur); if (!lines.length) return null;
   const bad = await convertLines(lines); if (bad) return FX_FAIL(bad);
@@ -2807,7 +2913,7 @@ async function logSpend(text){  // returns what to say back, or null when the te
   const today = isoOf(todayMid()), monthKey = compute().planKey; S.spends = S.spends || []; lines.forEach(l => S.spends.push({id: uid(), date: today, k: monthKey, name: l.name, amount: l.amount, ...(l.ocur ? {orig: l.orig, ocur: l.ocur, rate: l.rate} : {})})); save();
   return `Added to this month under Miscellaneous, one time: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
 }
-const FX_FAIL = cur => `Could not get today’s rate for ${cur}. Check your connection and try again, or type the amount in ${S.cur}.`;
+const FX_FAIL = cur => String(cur)[0] === "?" ? (f => `Which ${f}s? Say the code, like “dinner 500 ${CUR_KIN[f].list[0]}” or “dinner 500 ${CUR_KIN[f].list[1]}”, or set your currency on the Plan tab. Nothing was added.`)(String(cur).slice(1)) : `Could not get today’s rate for ${cur}. Check your connection and try again, or type the amount in ${S.cur}.`;
 function tripForm(t){
   const d = t || {name: "", start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 6)), budget: "", cur: ""};
   return `<form class="inc-form" data-form="trip"><label class="field"><span>Trip</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Miami weekend" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
@@ -2858,11 +2964,14 @@ function incomeDueOn(x, d){
 // logged on that day or shortly before it (money often lands a day or two early), or by "It won't come".
 const incomeGrace = x => x.when === "weekly" ? 2 : 5;
 const incomeLogged = (x, iso) => { const from = isoOf(dayPlus(isoDate(iso), -incomeGrace(x))); return (x.got || []).some(p => (p.date || "") >= from) || x.skip === iso; };
-function arrivals(){  // what was due in the last 7 days, from yesterday back, and has no answer yet
+// Only dates on or after the day the pay or the income was added (or its schedule last changed) are asked about.
+const paySince = () => (S.pay && S.pay.since) || isoOf(todayMid());
+const incSince = x => x.added || isoOf(todayMid());
+function arrivals(all){  // what was due in the last 7 days, from yesterday back, and has no answer yet; `all` ignores "ask me tomorrow"
   const t = todayMid(), out = [];
-  if (S.arriveSnooze === isoOf(t)) return out;
-  if (payOn()){ const d = paydaysBetween(dayPlus(t, -7), dayPlus(t, -1)).pop(); if (d && !((S.payGot || "") >= isoOf(d))) out.push({key: "pay", name: "Your pay", amount: +S.pay.amount || 0, date: d}); }
-  (S.extras || []).forEach(x => { for (let i = 1; i <= 7; i++){ const d = dayPlus(t, -i); if (incomeDueOn(x, d)){ if (!incomeLogged(x, isoOf(d))) out.push({key: x.id, name: x.name, amount: +x.amount || 0, date: d, x}); break; } } });
+  if (!all && S.arriveSnooze === isoOf(t)) return out;
+  if (payOn()){ const d = paydaysBetween(dayPlus(t, -7), dayPlus(t, -1)).filter(x => isoOf(x) >= paySince()).pop(); if (d && !((S.payGot || "") >= isoOf(d))) out.push({key: "pay", name: "Your pay", amount: +S.pay.amount || 0, date: d}); }
+  (S.extras || []).forEach(x => { for (let i = 1; i <= 7; i++){ const d = dayPlus(t, -i); if (incomeDueOn(x, d)){ if (isoOf(d) >= incSince(x) && !incomeLogged(x, isoOf(d))) out.push({key: x.id, name: x.name, amount: +x.amount || 0, date: d, x}); break; } } });
   return out.sort((a, b) => a.date - b.date);
 }
 OUT.arrived = () => { const list = arrivals(); if (!list.length) return "";
@@ -3106,10 +3215,10 @@ function renewPlan(){
 function arrivePlan(){  // the morning after money was due, if it has not been logged by then
   const R = S.remind || {}; if (!R.on) return [];
   const now = new Date(), t = todayMid(), out = [], at = d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10, 0);
-  const add = (name, amount, d) => { const when = at(d) > now ? at(d) : at(t); out.push({at: when, title: `Did ${name} arrive?`, body: `${fmt(amount)} was expected ${dayMonth(d)}. Open KeepWise to log it.`}); };
-  arrivals().forEach(a => add(a.key === "pay" ? "your pay" : a.name, a.amount, a.date));
-  if (payOn()){ const d = paydaysBetween(t, dayPlus(t, 40))[0]; if (d && !((S.payGot || "") >= isoOf(d))) add("your pay", +S.pay.amount || 0, d); }
-  (S.extras || []).forEach(x => { const d = nextIncome(x); if (d && !incomeLogged(x, isoOf(d))) add(x.name, +x.amount || 0, d); });
+  const add = (key, name, amount, d) => { const when = at(d) > now ? at(d) : at(t); out.push({at: when, key, date: isoOf(d), title: `Did ${name} arrive?`, body: `${fmt(amount)} was expected ${dayMonth(d)}. Tap to log it.`}); };
+  arrivals(true).forEach(a => add(a.key, a.key === "pay" ? "your pay" : a.name, a.amount, a.date));
+  if (payOn()){ const d = paydaysBetween(t, dayPlus(t, 40))[0]; if (d && !((S.payGot || "") >= isoOf(d))) add("pay", "your pay", +S.pay.amount || 0, d); }
+  (S.extras || []).forEach(x => { const d = nextIncome(x); if (d && !incomeLogged(x, isoOf(d))) add(x.id, x.name, +x.amount || 0, d); });
   return out.sort((a, b) => a.at - b.at).slice(0, ARRIVE_IDS.length).map((x, i) => ({...x, id: ARRIVE_IDS[i]}));
 }
 function remindText(x){ const s = x.sub, r = nextRenewal(s);
@@ -3124,20 +3233,22 @@ async function remindApply(){
       P.addListener("localNotificationActionPerformed", remindAnswer); }
     await P.cancel({notifications: [...REMIND_IDS, ...RENEW_IDS, ...ARRIVE_IDS].map(id => ({id}))});
     const plan = [...remindPlan(), ...renewPlan()], inc = arrivePlan(); if (!plan.length && !inc.length) return;
-    await P.schedule({notifications: [...plan.map(x => ({id: x.id, ...remindText(x), schedule: {at: x.at, allowWhileIdle: true}, actionTypeId: "KW_USE", extra: {subId: x.sub.id, cycle: x.cycle}})),
-      ...inc.map(x => ({id: x.id, title: x.title, body: x.body, schedule: {at: x.at, allowWhileIdle: true}, extra: {kind: "income"}}))]});
+    await P.schedule({notifications: [...plan.map(x => ({id: x.id, ...remindText(x), schedule: {at: x.at, allowWhileIdle: true}, actionTypeId: "KW_USE", extra: {subId: x.sub.id, cycle: x.cycle, at: isoOf(x.at)}})),
+      ...inc.map(x => ({id: x.id, title: x.title, body: x.body, schedule: {at: x.at, allowWhileIdle: true}, extra: {kind: "income", key: x.key, date: x.date}}))]});
   } catch(e){}
 }
 // Answering, or opening Subs during the 10 days, ends this month's reminders.
 function remindSeen(){ const R = S.remind, c = R && R.on ? remindCycles()[0] : null; if (c && todayMid() >= c.start) R.seen = c.key; }
 function remindAnswer(e){
-  if (e && e.notification && e.notification.extra && e.notification.extra.kind === "income"){ UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = "month"; render(false); save(); return; }
-  const id = e && e.notification && e.notification.extra && e.notification.extra.subId, s = S.subs.find(x => x.id === id);
-  UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; S.tab = "subs";
-  remindSeen(); render(false);
-  if (s && ["lot", "barely", "none"].includes(e.actionId)) handleReview(e.actionId, id); else save();
-  if (s){ UI.flashSub = id; clearTimeout(UI.flashT); UI.flashT = setTimeout(() => { UI.flashSub = null; }, 1500); render(true);
-    const el = document.querySelector(`[data-sub="${id}"]`); if (el) el.scrollIntoView({block: "center"}); }
+  const x = (e && e.notification && e.notification.extra) || {};
+  if (x.kind === "income"){ const still = arrivals(true).find(a => a.key === x.key && (!x.date || isoOf(a.date) === x.date));
+    if (still){ S.arriveSnooze = null; goTo("month", `[data-arrive="${still.key}"]`); } else { goTo("month", x.key === "pay" ? '[data-out="payBox"]' : `[data-inc="${x.key}"]`); toast("That one is already logged. Thanks."); }
+    return; }
+  const id = x.subId, sub = S.subs.find(v => v.id === id), answered = sub && sub.reviewedAt && x.at && sub.reviewedAt >= x.at;
+  if (!sub){ goTo("subs"); return; }
+  if (answered || sub.keep === "drop"){ goTo("subs", `[data-sub="${id}"]`); toast(`You already answered about ${sub.name}. Thanks.`); return; }
+  if (["lot", "barely", "none"].includes(e.actionId)){ goTo("subs", `[data-sub="${id}"]`); handleReview(e.actionId, id); render(true); const el = view.querySelector(`[data-sub="${id}"]`); if (el){ el.scrollIntoView({block: "center"}); flashKeep(); } return; }
+  remindSeen(); openSurvey(id);   // tapped the notification itself: ask the question here
 }
 OUT.remindBox = () => {
   if (!notifPlugin()) return "";
@@ -3319,7 +3430,7 @@ function refreshOuts(){
     const f = OUT[el.dataset.out]; if (f) el.innerHTML = f();
   });
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
-  renderBell();
+  flashKeep(); renderBell();
 }
 const numv = v => { const n = parseFloat(String(v).replace(/[^0-9.]/g,"")); return isNaN(n) || !isFinite(n) ? 0 : n; };  // amounts are never negative
 
@@ -3634,7 +3745,7 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.settle = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.settle = null; UI.survey = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; UI.plus = false; if (UI.inbox){ pruneNotes(allNotes()); save(); } render(false); });
 
@@ -3669,7 +3780,9 @@ view.addEventListener("input", e => {
     if (k === "ruleDays") S.ruleDays = Math.max(1, Math.round(S.ruleDays));
     save(); refreshOuts(); return;
   }
-  if (t.dataset.env){ S.env[t.dataset.env] = Math.max(0, Math.round(numv(t.value))); save(); refreshOuts(); return; }
+  if (t.dataset.env){ const k = t.dataset.env; S.env[k] = numv(t.value); envFix(k); if (numv(t.value) > 100) t.value = 100;
+    view.querySelectorAll("[data-env]").forEach(el => { if (el !== t) el.value = S.env[el.dataset.env]; }); const sv = view.querySelector("[data-env-save]"); if (sv) sv.value = S.env.save;
+    save(); refreshOuts(); return; }
   const exp = t.closest("[data-exp]");
   if (exp){ const it = S.expenses.find(x => x.id === exp.dataset.exp); if (!it) return;
     return; }
@@ -3893,7 +4006,14 @@ view.addEventListener("click", async e => {
   const noteEl = b.closest("[data-note]");
   if (noteEl && UI.inbox){ const n = allNotes().find(x => x.key === noteEl.dataset.note); if (!n) return;
     if (b.hasAttribute("data-note-toggle")){ setNoteRead(n, !noteRead(n)); save(); renderBell(); render(true); return; }
-    if (b.hasAttribute("data-note-open")){ setNoteRead(n, true); UI.inbox = false; if (n.go) S.tab = n.go; else { S.tab = "split"; S.splitMode = "shared"; } save(); render(false); return; } }
+    if (b.hasAttribute("data-note-open")){ setNoteRead(n, true);
+      if (!n.go){ UI.inbox = false; S.tab = "split"; S.splitMode = "shared"; save(); render(false); return; }
+      const sub = n.sub && S.subs.find(x => x.id === n.sub);
+      if (String(n.key).startsWith("L:a:") && S.arriveSnooze) S.arriveSnooze = null;   // asked to see it: show the card even after "ask me tomorrow"
+      const loanX = n.loan && loanList().find(l => l.id === n.loan);
+      if (loanX){ UI.loanAdd = false; UI.loanEdit = loanX.id; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || ""}; }   // open the loan card ready to fill in
+      if (sub && surveyDue(sub)) openSurvey(sub.id); else goTo(n.go, n.sel);
+      return; } }
   if (b.hasAttribute("data-close-inbox")){ UI.inbox = false; render(false); return; }
   if (b.hasAttribute("data-go-split")){ UI.inbox = false; S.tab = "split"; S.splitMode = "shared"; save(); render(false); return; }
   if (b.dataset.mode){ S.splitMode = b.dataset.mode; splitDraft = null; UI.editPay = null; save(); render(true); if (S.splitMode === "shared") joinCircle(); return; }
@@ -3996,7 +4116,9 @@ view.addEventListener("submit", async e => {
   if (kind === "pay"){
     const when = fd.get("when") || "monthly", amount = numv(fd.get("amount"));
     if (!amount){ toast("Enter what each paycheck is, after tax."); f.querySelector("[name=amount]").focus(); return; }
+    const prevPay = S.pay;
     S.pay = {when, amount, day: fd.get("day") ? +fd.get("day") : undefined, day2: when === "twice" ? +fd.get("day2") || 15 : undefined, wd: when === "weekly" ? +fd.get("wd") : undefined, next: when === "biweekly" ? String(fd.get("next") || isoDaysAgo(0)) : undefined};
+    S.pay.since = prevPay && prevPay.when === S.pay.when && prevPay.day === S.pay.day && prevPay.day2 === S.pay.day2 && prevPay.wd === S.pay.wd && prevPay.next === S.pay.next && prevPay.since ? prevPay.since : isoDaysAgo(0);
     S.income = r2(amount * PAY_BASE[when]); S.monthStart = Math.min(28, Math.max(1, +fd.get("monthStart") || 1));
     UI.payEdit = false; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Saved. Your plan counts ${fmt(S.income)} a month from pay.`); return; }
   if (kind === "loan"){
@@ -4015,7 +4137,7 @@ view.addEventListener("submit", async e => {
     if (!amount){ toast("Enter an amount above zero."); f.querySelector("[name=amount]").focus(); return; }
     const rec = {name, kind: fd.get("kind") || "other", when, amount, day: when === "monthly" ? +fd.get("day") || 1 : undefined, wd: when === "weekly" ? +fd.get("wd") : undefined, next: when === "biweekly" ? String(fd.get("next") || isoDaysAgo(0)) : undefined};
     const old = UI.incEdit && extras().find(x => x.id === UI.incEdit);
-    if (old) Object.assign(old, rec); else extras().push({id: uid(), got: [], ...rec});
+    if (old){ if (old.when !== rec.when || old.day !== rec.day || old.wd !== rec.wd || old.next !== rec.next) rec.added = isoDaysAgo(0); Object.assign(old, rec); } else extras().push({id: uid(), got: [], added: isoDaysAgo(0), ...rec});
     UI.incAdd = false; UI.incEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(old ? `${name} updated.` : `Added ${name}. Your plan now counts it.`); return; }
   if (kind === "incomeLog"){ const x = extras().find(v => v.id === f.closest("[data-inc]").dataset.inc), a = numv(fd.get("amount")); if (!x) return;
     if (!a){ toast("Enter the amount you received."); return; }
@@ -4044,10 +4166,12 @@ view.addEventListener("submit", async e => {
     const cur = CURRENCIES.some(c => c[0] === fd.get("cur")) && fd.get("cur") !== S.cur ? String(fd.get("cur")) : "";
     if (old) Object.assign(old, {name, start, end, budget, cur}); else tripList().push({id: uid(), name, start, end, budget, cur, items: [], settled: null});
     UI.tripAdd = false; UI.tripEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `${name} is set. Spending you add on those days goes to the trip.`); return; }
-  if (kind === "ask"){ const q = $("ask-in").value.trim(); if (!q) return;
-    const wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), asking = /\?|\b(afford|how|what|when|who|which|can i|should|is|are|do|does)\b/i.test(q);
-    if (/\d/.test(q) && (wantsAdd || !asking)){ const said = await logSpend(q);
-      if (said){ ASK.last = said; refreshOuts(); renderBell(); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
+  if (kind === "ask"){ const q = tidySaid($("ask-in").value); if (!q) return;
+    if (CHANGE_VERB.test(q) || (REMOVE_VERB.test(q) && !/\?/.test(q) && !/\bshould\b/i.test(q))){ const u = undoable(), before = JSON.stringify(S), said = await logChange(q);
+      ASK.last = said; render(true); const o = $("ask-out"); o.hidden = false; o.textContent = said; $("ask-in").value = ""; $("ask-in").blur(); if (JSON.stringify(S) !== before) toast("Done.", u); return; }
+    const wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), asking = /\?|^\s*(is|are|do|does|should|can)\b|\b(afford|how|what|when|who|which|can i|should i)\b/i.test(q);
+    if (/\d/.test(q) && (wantsAdd || !asking)){ const u = undoable(), before = JSON.stringify(S), said = await logSpend(q);
+      if (said){ ASK.last = said; refreshOuts(); renderBell(); if (JSON.stringify(S) !== before) toast("Logged.", u); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
     ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
   if (kind === "lockSet"){ const old = String(fd.get("old") || ""), pin = String(fd.get("pin") || ""), pin2 = String(fd.get("pin2") || "");
     if (UI.lockForm === "change" && !(await lockPinOk(old))){ toast("The current passcode is not right."); return; }
@@ -4159,6 +4283,9 @@ $("vcf").addEventListener("change", e => {
 // A first visit gets the short setup instead of someone else's numbers. People who already use KeepWise never see it.
 let firstRun = false; try { if (localStorage.getItem(KEY)) welcomeDone(); else firstRun = !localStorage.getItem(WELCOME_KEY) && !window.KEEPWISE_NO_SETUP; } catch(e){}  // tests can skip the setup
 if (firstRun) UI.welcome = 0;
+try { if (S.env) envFix(); } catch(e){}   // older plans could hold shares that did not total 100
+// Pay and income set up before KeepWise recorded when: count them as added today, so nothing earlier is asked about.
+try { if (S.pay && S.pay.when && !S.pay.since) S.pay.since = isoDaysAgo(0); (S.extras || []).forEach(x => { if (!x.added) x.added = isoDaysAgo(0); }); } catch(e){}
 // One-offs logged before they carried their month: a recent one belongs to the month the plan is showing now.
 try { const pk = planPeriodNow().key, recent = isoDaysAgo(3); (S.spends || []).forEach(x => { if (!x.k) x.k = (x.date || "") >= recent ? pk : periodKeyOfIso(x.date); }); } catch(e){}
 if (S.tab === "subs") remindSeen();  // opening straight onto Subs counts as checking them

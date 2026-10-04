@@ -70,7 +70,7 @@ async def layout_tabbar_flush_every_size(ctx):
 
 OVERFLOW = """(()=>{const vw=document.documentElement.clientWidth,bad=[];
 document.querySelectorAll('#view *, .app-header *, #tabbar *').forEach(el=>{
-  if(el.closest('svg')||el.closest('.sr'))return; const r=el.getBoundingClientRect(); if(!r.width)return;
+  if(el.closest('svg')||el.closest('.sr'))return; if(el.parentElement&&el.parentElement.closest('[data-scroll-x]'))return; /* a row that scrolls sideways on purpose; the row itself is still checked */ const r=el.getBoundingClientRect(); if(!r.width)return;
   if(r.left<-0.5||r.right>vw+0.5) bad.push((el.className||el.tagName)+':'+Math.round(r.left)+'-'+Math.round(r.right));
   if(/^(SPAN|B|P|H1|H2|H3|BUTTON|DIV)$/.test(el.tagName)&&el.children.length===0&&getComputedStyle(el).textOverflow!=='ellipsis'&&el.scrollWidth>el.clientWidth+1&&getComputedStyle(el).overflowX!=='visible') bad.push('clipped '+el.textContent.slice(0,20));
 });
@@ -403,10 +403,18 @@ async def codes_search_vote_add(ctx):
 @test
 async def plan_envelopes_lines_priority(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
+    # the three shares always total 100: you choose Expenditures and Misc, Savings is what is left and cannot be typed
+    env = lambda: pg.evaluate("[...document.querySelectorAll('[data-env],[data-env-save]')].map(e => +e.value)")
+    tot = lambda: pg.evaluate("(() => { const e = JSON.parse(localStorage.getItem('keepwise-app-v1')).env; return [e.needs, e.misc, e.save]; })()")
+    assert await pg.locator("[data-env-save]").get_attribute("readonly") is not None and await pg.locator("[data-env=save]").count() == 0
+    m0 = (await env())[1]
     await pg.fill("[data-env=needs]", "70"); await pg.wait_for_timeout(80)
-    assert "add up to 110%" in await text(pg, "[data-out=envCheck]")
-    await pg.fill("[data-env=needs]", "60"); await pg.wait_for_timeout(80)
-    assert "Adds up to 100%" in await text(pg, "[data-out=envCheck]")
+    assert await env() == [70, m0, 30 - m0] == await tot() and f"Savings is what is left: {30 - m0}%" in await text(pg, "[data-out=envCheck]")
+    await pg.fill("[data-env=needs]", "95"); await pg.wait_for_timeout(80); assert await env() == [95, 5, 0] and "Nothing is left for Savings" in await text(pg, "[data-out=envCheck]"), "the other share gives way"
+    await pg.fill("[data-env=misc]", "40"); await pg.wait_for_timeout(80); assert await env() == [60, 40, 0]
+    await pg.fill("[data-env=needs]", "999"); await pg.wait_for_timeout(80); assert await env() == [100, 0, 0] == await tot(), "never above 100"
+    await pg.fill("[data-env=needs]", "60"); await pg.fill("[data-env=misc]", "20"); await pg.wait_for_timeout(80); assert await env() == [60, 20, 20] and sum(await tot()) == 100
+    assert await pg.locator("[data-out=envCheck] .err").count() == 0
     n0 = await pg.locator("[data-exp]").count()
     await pg.click("[data-add-exp]"); await pg.wait_for_timeout(100)
     await pg.click("form[data-form=exp] [type=submit]"); await pg.wait_for_timeout(100); assert "Give the line a name" in await pg.inner_text("#toast")
@@ -1456,6 +1464,51 @@ async def android_reminders_for_income_and_each_renewal(ctx):
     assert (await state(pg))["tab"] == "month"
     assert not pg.errors, pg.errors
 
+@test
+async def notes_and_notifications_open_the_exact_place(ctx):
+    # the Android app on 6 October. Pay on the 5th is set up today, so the 5th that already passed is not asked about.
+    pg = await ctx.new_page(); await pg.set_viewport_size({"width": 390, "height": 844}); pg.errors = []
+    pg.on("pageerror", lambda e: pg.errors.append(str(e)))
+    await pg.clock.install(time=datetime.datetime(2026, 10, 6, 9, 0)); await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;" + NOTIF_MOCK)
+    await pg.goto(URL); await pg.wait_for_timeout(300)
+    # the Ask box and its microphone slot sit at the top of Month, above the lists
+    order = await pg.evaluate("(() => { const a = document.querySelector('form[data-form=ask]').getBoundingClientRect().top, b = document.querySelector('[data-out=envelopes]').getBoundingClientRect().top, c = document.querySelector('[data-out=headline]').getBoundingClientRect().top; return c < a && a < b; })()")
+    assert order, "Ask comes right after the headline"
+    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
+    await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=pay]"); await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("1420")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    assert (await state(pg))["pay"]["since"] == "2026-10-06"
+    await tab(pg, "subs"); await pg.click("[data-remind-on]"); await pg.wait_for_timeout(100); await pg.clock.run_for(2000); await tab(pg, "month")
+    assert await pg.locator("[data-arrived]").count() == 0, "nothing from before the pay was added"
+    await pg.click("#bell"); await pg.wait_for_timeout(150); assert "arrive" not in await text(pg, "#view"); await pg.click("[data-close-inbox]")
+    # 6 November: the day after the next payday it asks. "Ask me tomorrow" hides the card, the bell note brings it back.
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 11, 6, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    assert await pg.locator("[data-arrive=pay]").count() == 1
+    await pg.click("[data-arrived] [data-arrive-later]"); await pg.wait_for_timeout(150); assert await pg.locator("[data-arrive=pay]").count() == 0
+    await tab(pg, "codes"); await pg.click("#bell"); await pg.wait_for_timeout(150)
+    await pg.locator(".note-row", has_text="Did your pay arrive?").locator("[data-note-open]").click(); await pg.wait_for_timeout(200)
+    assert (await state(pg))["tab"] == "month" and await pg.locator("[data-arrive=pay].flash").count() == 1, "the note opens the question itself"
+    assert await pg.evaluate("(() => { const r = document.querySelector('[data-arrive=pay]').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; })()"), "and it is on screen"
+    # the notification for that payday, tapped while unanswered, lands on the same card; once logged it says so
+    tap = "window.__n.listener({actionId: 'tap', notification: {extra: {kind: 'income', key: 'pay', date: '2026-11-05'}}})"
+    await tab(pg, "plan"); await pg.evaluate(tap); await pg.wait_for_timeout(200)
+    assert (await state(pg))["tab"] == "month" and await pg.locator("[data-arrive=pay].flash").count() == 1
+    await pg.click("[data-arrive=pay] [data-arrive-yes]"); await pg.wait_for_timeout(200)
+    await tab(pg, "plan"); await pg.evaluate(tap); await pg.wait_for_timeout(200)
+    assert (await state(pg))["tab"] == "month" and "already logged" in await pg.inner_text("#toast") and await pg.locator("[data-arrive=pay]").count() == 0
+    # a "Still using it?" notification opens that subscription's question; answering it once is enough
+    sub = (await state(pg))["subs"][0]; sid, name = sub["id"], sub["name"]
+    ask = "window.__n.listener({actionId: 'tap', notification: {extra: {subId: %r, cycle: 'x', at: '2026-11-04'}}})" % sid
+    await tab(pg, "month"); await pg.evaluate(ask); await pg.wait_for_timeout(200)
+    card = pg.locator(f"[data-review-id='{sid}']"); assert (await state(pg))["tab"] == "subs" and await card.count() == 1 and f"Still using {name}?" in await card.inner_text()
+    await card.locator("[data-review=lot]").click(); await pg.wait_for_timeout(200)
+    assert [x for x in (await state(pg))["subs"] if x["id"] == sid][0]["reviewedAt"] == "2026-11-06"
+    await tab(pg, "month"); await pg.evaluate(ask); await pg.wait_for_timeout(200)
+    assert (await state(pg))["tab"] == "subs" and f"You already answered about {name}. Thanks." in await pg.inner_text("#toast")
+    assert await pg.locator(f"[data-review-id='{sid}']").count() == 0 and await pg.locator(f"[data-sub='{sid}'].flash").count() == 1, "it shows the subscription, not the question again"
+    assert not pg.errors, pg.errors
+
 BIO_MOCK = """window.__bio = {made: 0, asked: 0, pass: true};
 window.PublicKeyCredential = {isUserVerifyingPlatformAuthenticatorAvailable: async () => true};
 Object.defineProperty(navigator, 'credentials', {configurable: true, value: {
@@ -1566,7 +1619,7 @@ async def trips_keep_their_own_budget_until_you_decide(ctx):
     await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(200); assert len((await state(pg))["trips"]) == 1
     assert not pg.errors, pg.errors
 
-FX_ROUTE = {"eur": {"usd": 1.1253, "pkr": 311.3, "gbp": 0.86}, "gbp": {"usd": 1.31}}
+FX_ROUTE = {"eur": {"usd": 1.1253, "pkr": 311.3, "gbp": 0.86}, "gbp": {"usd": 1.31}, "usd": {"nzd": 1.7}}
 async def fx_routes(pg, ok=True):
     async def cdn(route):
         base = route.request.url.rsplit("/", 1)[-1].split(".")[0]
@@ -1680,6 +1733,114 @@ async def speaking_fills_the_ask_box(ctx):
     # a refused microphone explains itself
     await pg.click("[data-ask-mic]"); await pg.evaluate("window.__rec.onerror({error: 'not-allowed'})"); await pg.wait_for_timeout(150)
     assert "microphone is off" in await pg.inner_text("#toast") and await pg.locator("[data-ask-mic]").get_attribute("aria-pressed") == "false"
+    assert not pg.errors, pg.errors
+
+@test
+async def a_loan_said_out_loud_goes_to_loans_not_bills(ctx):
+    pg = await open_at(ctx, (2026, 10, 8, 9, 0))
+    async def cdn(route):
+        base = route.request.url.rsplit("/", 1)[-1].split(".")[0]
+        await route.fulfill(json={"date": "2026-10-08", base: {"usd": 0.0036}}) if base == "pkr" else await route.abort()
+    await pg.route("https://cdn.jsdelivr.net/**", cdn); await pg.route("https://open.er-api.com/**", lambda r: r.abort())
+    async def say(q):
+        await pg.fill("#ask-in", q); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(350); return (await text(pg, "#ask-out")).replace("\u00a0", " ")
+    st0 = await state(pg); n_exp, n_loan = len(st0["expenses"]), len(st0.get("loans") or [])
+    # the payment and what is still owed, in another currency: one loan, nothing added to the monthly bills
+    r = await say("personal loan amount is 24,500 PKR, remaining total amount 249,989")
+    assert "Added to Loans and debt: Personal loan, PKR 24,500 ($88.20 at today’s rate) a month, with PKR 249,989 ($899.96 at today’s rate) left to pay." in r, r
+    st = await state(pg); l = st["loans"][-1]
+    assert len(st["expenses"]) == n_exp and len(st["loans"]) == n_loan + 1, "the amount owed is never a monthly bill"
+    assert (l["kind"], l["name"], l["pay"], l["total"], l["every"]) == ("personal", "Personal loan", 88.2, 899.96, "mo"), l
+    # a payment alone is fine, with installments if said; it asks for the rest once, in the bell
+    r = await say("add car loan 310 a month, 18 installments"); assert "Added to Loans and debt: Car loan, $310 a month over 18 installments. Add the amount left on the Plan tab" in r, r
+    car = (await state(pg))["loans"][-1]; assert (car["kind"], car["pay"], car["total"], car["left"]) == ("car", 310, 0, 18), car
+    await pg.click("#bell"); await pg.wait_for_timeout(150)
+    assert await pg.locator(".note-row", has_text="Finish the details for Car loan").count() == 1 and await pg.locator(".note-row", has_text="Finish the details for Personal loan").count() == 0
+    await pg.locator(".note-row", has_text="Finish the details for Car loan").locator("[data-note-open]").click(); await pg.wait_for_timeout(250)
+    f = pg.locator("form[data-form=loan]"); assert (await state(pg))["tab"] == "plan" and await f.count() == 1 and await f.locator("[name=pay]").input_value() == "310", "the note opens that loan, ready to fill in"
+    await f.locator("[name=total]").fill("5580"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    await pg.click("#bell"); await pg.wait_for_timeout(150); assert await pg.locator(".note-row", has_text="Finish the details").count() == 0, "once filled in, it stops asking"
+    await pg.click("[data-close-inbox]"); await tab(pg, "month")
+    # questions about loans are still questions
+    assert "Added" not in await say("how much do my loans cost?")
+    assert not pg.errors, pg.errors
+
+@test
+async def changing_or_removing_by_command_never_adds_anything(ctx):
+    pg = await open_at(ctx, (2026, 10, 8, 9, 0))
+    async def cdn(route):
+        base = route.request.url.rsplit("/", 1)[-1].split(".")[0]
+        await route.fulfill(json={"date": "2026-10-08", base: {"usd": 0.0036}}) if base == "pkr" else await route.abort()
+    await pg.route("https://cdn.jsdelivr.net/**", cdn); await pg.route("https://open.er-api.com/**", lambda r: r.abort())
+    async def say(q):
+        await pg.fill("#ask-in", q); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(350); return (await text(pg, "#ask-out")).replace("\u00a0", " ")
+    counts = lambda st: (len(st["expenses"]), len(st["subs"]), len(st.get("spends") or []), len(st.get("loans") or []))
+    await tab(pg, "plan"); await pg.click("[data-add-exp]"); await pg.wait_for_timeout(100); f = pg.locator("form[data-form=exp]")
+    await f.locator("[name=name]").fill("Personal loan amount"); await f.locator("[name=amount]").fill("88.20"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    await tab(pg, "month"); c0 = counts(await state(pg)); pl = lambda st: [e for e in st["expenses"] if e["name"] == "Personal loan amount"][0]["amount"]
+    # exactly what the phone heard: a stray "OK" and the currency code in pieces
+    r = await say("OK change the loan amount from 24,500 PK PR to 29,500 PK")
+    assert "Updated Personal loan amount: it is now PKR 29,500 ($106.20 at today’s rate), it was $88.20." in r, r
+    st = await state(pg); assert counts(st) == c0 and pl(st) == 106.2, "changed in place, nothing added"
+    # Undo puts it back
+    await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(200); assert pl(await state(pg)) == 88.2
+    # typed, by name, in your own currency
+    sub = (await state(pg))["subs"][0]
+    r = await say(f"update {sub['name']} to 12.50"); assert f"Updated {sub['name']}: it is now $12.50" in r, r
+    assert (await state(pg))["subs"][0]["price"] == 12.5 and counts(await state(pg)) == c0
+    # a real loan: the payment, then what is left
+    await say("car loan 310 a month, 5,000 remaining"); c1 = counts(await state(pg)); assert c1[3] == c0[3] + 1
+    r = await say("change car loan payment to 325"); assert "Updated Car loan: the payment is now $325, it was $310." in r, r
+    r = await say("set the car loan remaining balance to 4,675"); assert "Updated Car loan: left to pay is now $4,675, it was $5,000." in r, r
+    l = (await state(pg))["loans"][-1]; assert (l["pay"], l["total"]) == (325, 4675) and counts(await state(pg)) == c1
+    # not found, or no amount: it says so and touches nothing
+    snap = await state(pg)
+    r = await say("change my yacht fund to 900"); assert "could not find which one you mean, so nothing was changed" in r, r
+    r = await say("change rent"); assert "Nothing was changed" in r, r
+    after = await state(pg); assert counts(after) == c1 and after["expenses"] == snap["expenses"] and after["subs"] == snap["subs"]
+    # remove by name, with Undo
+    r = await say("remove personal loan amount"); assert "Removed Personal loan amount, $88.20." in r and counts(await state(pg))[0] == c1[0] - 1, r
+    await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(200); assert counts(await state(pg)) == c1
+    # and plain spending still offers Undo
+    await say("coffee 4"); assert counts(await state(pg))[2] == c1[2] + 1; await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(200); assert counts(await state(pg)) == c1
+    # the pieces a phone makes of a currency code are read the same way
+    for q in ("tea 500 p k r", "tea 500 PK R", "hey, okay add tea 500 PK PR"):
+        r = await say(q); assert "Tea, PKR 500 ($1.80 at today’s rate)" in r, (q, r)
+    assert not pg.errors, pg.errors
+
+@test
+async def a_currency_word_means_your_own_currency_first(ctx):
+    pg = await open_at(ctx, (2026, 10, 8, 9, 0)); await fx_routes(pg)
+    async def say(q):
+        await pg.fill("#ask-in", q); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(350); return (await text(pg, "#ask-out")).replace("\u00a0", " ")
+    last = lambda st: st["spends"][-1]
+    # New Zealand dollars: "$50" and "50 dollars" are your dollars, with no conversion
+    await pg.select_option("#m-cur", "NZD"); await pg.wait_for_timeout(150)
+    for q in ("add $50 in uber expense", "uber 50 dollars", "uber 50 bucks"):
+        await say(q); sp = last(await state(pg)); assert sp["amount"] == 50 and sp.get("ocur") is None, (q, sp)
+    # on a trip to the USA paid in US dollars, "50 dollars" is USD, converted into New Zealand dollars
+    await pg.click("[data-trip-add]"); f = "form[data-form=trip] "
+    await pg.fill(f + "[name=name]", "New York"); await pg.fill(f + "[name=start]", "2026-10-08"); await pg.fill(f + "[name=end]", "2026-10-10"); await pg.select_option(f + "[name=cur]", "USD")
+    await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(250)
+    r = await say("add 50 dollars uber"); it = (await state(pg))["trips"][0]["items"][-1]
+    assert (it["orig"], it["ocur"], it["amount"]) == (50, "USD", 85) and "to New York" in r, (it, r)
+    r = await say("$20 lunch"); it = (await state(pg))["trips"][0]["items"][-1]; assert (it["ocur"], it["amount"]) == ("USD", 34), it
+    # once the trip is over, dollars are New Zealand dollars again
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 12, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    await say("uber 50 dollars"); sp = last(await state(pg)); assert sp["amount"] == 50 and sp.get("ocur") is None, sp
+    # Indian rupees: "rupees" and "rs" are INR, never PKR
+    await pg.select_option("#m-cur", "INR"); await pg.wait_for_timeout(150)
+    for q in ("add 5,000 rupees for dinner", "dinner rs 5000", "dinner 5000 rupee"):
+        await say(q); sp = last(await state(pg)); assert sp["amount"] == 5000 and sp.get("ocur") is None and sp["name"] == "Dinner", (q, sp)
+    # and the other way round
+    await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(150)
+    await say("add 5,000 rupees for dinner"); sp = last(await state(pg)); assert sp["amount"] == 5000 and sp.get("ocur") is None, sp
+    # a plan in pounds sterling that hears "rupees" cannot know which: it asks, and adds nothing
+    await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150); n = len((await state(pg))["spends"])
+    r = await say("dinner 5,000 rupees"); assert "Which rupees?" in r and "Nothing was added" in r and len((await state(pg))["spends"]) == n, r
+    await say("lunch 12 pounds"); sp = last(await state(pg)); assert sp["amount"] == 12 and sp.get("ocur") is None
+    # a word with one usual meaning is converted: euros into pounds
+    r = await say("dinner 30 euros"); sp = last(await state(pg)); assert sp["ocur"] == "EUR" and sp["amount"] == 25.8, sp
     assert not pg.errors, pg.errors
 
 @test
