@@ -136,6 +136,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-o
 .money-in em{font-style:normal;color:var(--muted);flex:none;white-space:nowrap}
 .money-in input{flex:1;min-width:0;border:0;background:transparent;padding:11px 0;border-radius:0}
 .money-in input:focus{outline:none}
+.needs>.card{background:none;border:0;box-shadow:none;padding:0;border-radius:0}.needs>.card>.label{display:none}.needs{border-color:color-mix(in srgb,var(--gold) 40%,var(--line))}
 .money-in.auto{background:transparent;border-style:dashed;justify-content:space-between}.money-in.auto b{font-weight:600;font-size:1rem}
 .money-in:focus-within{outline:2px solid var(--green);outline-offset:1px;border-color:transparent}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -1308,6 +1309,12 @@ function reviewPick(){
   let h = 0; for (const ch of today) h = (h * 31 + ch.charCodeAt(0)) >>> 0; // same pick all day, a different one tomorrow
   return cands[h % cands.length];
 }
+// Needs you: everything KeepWise is waiting on you for, in one card and one kind of question at a time. Money that was
+// due comes first, then bills you pay yourself, then the quick check on a subscription. Next steps through them.
+function needGroups(){ return [["arrived", OUT.arrived()], ["bills", OUT.billsDue()], ["review", OUT.reviewCard()]].filter(g => g[1]); }
+OUT.needs = () => { const g = needGroups(); if (!g.length) return "";
+  const i = Math.max(0, g.findIndex(x => x[0] === UI.needKind)), cur = g[i];
+  return `<section class="card needs" data-needs="${cur[0]}"><div class="inline" style="justify-content:space-between;align-items:center"><p class="label" style="margin:0">Needs you</p>${g.length > 1 ? `<span class="inline" style="gap:10px"><span class="pill grey" data-need-count>${i + 1} of ${g.length}</span><button class="link small" type="button" data-need-next>Next</button></span>` : ""}</div>${cur[1]}</section>`; };
 OUT.reviewCard = () => {
   const s = reviewPick(); if (!s) return "";
   const since = s.since ? `You’ve paid ${fmt(s.paid || 0)} since ${monthsLabel(s.since)}.` : `It costs ${fmt(subMonthly(s))} a month.`;
@@ -1378,10 +1385,8 @@ V.month = () => {
   <div data-out="headline">${OUT.headline()}</div></section>
   <div data-out="monthClose">${OUT.monthClose()}</div>
   <div data-out="keepSafe">${OUT.keepSafe()}</div>
-  <div data-out="arrived">${OUT.arrived()}</div>
-  <div data-out="billsDue">${OUT.billsDue()}</div>
+  <div data-out="needs">${OUT.needs()}</div>
   <div data-out="comingUp">${OUT.comingUp()}</div>
-  <div data-out="reviewCard">${OUT.reviewCard()}</div>
   ${importCard()}
   <div class="grid2">
     <label class="field"><span>Currency</span><select data-bind="cur" id="m-cur">${curOptions(S.cur)}</select></label>
@@ -2065,6 +2070,7 @@ function notifications(){
 const surveyDue = x => x.keep !== "drop" && !isOurs(x) && !(x.reviewedAt && x.reviewedAt >= isoDaysAgo(20));
 // Take someone to the exact card a note or a notification is about, and mark it for a moment so the eye finds it.
 function goTo(tabName, sel){
+  if (sel && tabName === "month") UI.needKind = /data-arrive/.test(sel) ? "arrived" : /data-bill-due/.test(sel) ? "bills" : UI.needKind;   // bring the right question to the front
   UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = tabName; save(); render(false);
   const el = sel && view.querySelector(sel), m = $("main"); if (!el) return false;
   m.scrollTop += el.getBoundingClientRect().top - m.getBoundingClientRect().top - 16;
@@ -3960,6 +3966,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-payday-clear")){ S.pay = null; S.monthStart = 1; UI.payEdit = false; save(); render(true); toast("Pay schedule removed. Your month runs from the 1st again."); return; }
   // ---- other income
   const blankInc = () => ({name: "", kind: "side", when: "any", day: 1, wd: 5, next: isoDaysAgo(0), amount: ""});
+  if (b.hasAttribute("data-need-next")){ const g = needGroups(), i = Math.max(0, g.findIndex(x => x[0] === UI.needKind)); UI.needKind = g.length ? g[(i + 1) % g.length][0] : null; refreshOuts(); return; }
   if (b.hasAttribute("data-ask-close")){ if (VOICE.rec) voiceFinish(false); UI.askOpen = false; render(true); return; }
   if (b.hasAttribute("data-ask-mic")){ voiceToggle(); return; }
   if (b.hasAttribute("data-voice-stop")){ voiceFinish(true); return; }

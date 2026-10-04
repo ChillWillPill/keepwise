@@ -685,7 +685,7 @@ async def import_rejects_bad_files(ctx):
 @test
 async def subscription_check_in(ctx):
     pg = await open_app(ctx)
-    card = pg.locator("[data-out=reviewCard] .review"); assert await card.count() == 1
+    card = pg.locator("[data-out=needs] .review"); assert await card.count() == 1
     name = re.search(r"use (.+)\?", await card.inner_text()).group(1)
     await card.locator("[data-review=barely]").click(); await pg.wait_for_timeout(120)
     s = [x for x in (await state(pg))["subs"] if x["name"] == name][0]
@@ -693,12 +693,12 @@ async def subscription_check_in(ctx):
     await tab(pg, "subs")
     assert "You said you barely use it" in await pg.locator(f"[data-sub={s['id']}]").inner_text()
     await tab(pg, "month")
-    name2 = re.search(r"use (.+)\?", await pg.locator("[data-out=reviewCard] .review").inner_text()).group(1)
+    name2 = re.search(r"use (.+)\?", await pg.locator("[data-out=needs] .review").inner_text()).group(1)
     assert name2 != name, "a reviewed subscription is not asked again"
-    await pg.click("[data-out=reviewCard] [data-review=none]"); await pg.wait_for_timeout(120)
+    await pg.click("[data-out=needs] [data-review=none]"); await pg.wait_for_timeout(120)
     assert [x for x in (await state(pg))["subs"] if x["name"] == name2][0]["keep"] == "drop"
-    await pg.click("[data-out=reviewCard] [data-review=later]"); await pg.wait_for_timeout(120)
-    assert await pg.locator("[data-out=reviewCard] .review").count() == 0
+    await pg.click("[data-out=needs] [data-review=later]"); await pg.wait_for_timeout(120)
+    assert await pg.locator("[data-out=needs] .review").count() == 0
 
 # ---------------- add a line keeps what was typed ----------------
 @test
@@ -1558,6 +1558,35 @@ async def asks_once_if_a_bill_you_pay_yourself_was_paid(ctx):
     await tab(pg, "plan"); await pg.locator("[data-exp]", has_text="Electricity").locator("[data-exp-edit]").click(); await pg.wait_for_timeout(100)
     f = pg.locator("form[data-form=exp]"); await f.locator("[name=due]").select_option(""); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     await tab(pg, "month"); assert await pg.locator("[data-bills-due]").count() == 0
+    assert not pg.errors, pg.errors
+
+@test
+async def needs_you_is_one_card_with_one_kind_of_question_at_a_time(ctx):
+    # 6 October: pay was due yesterday and so was the electricity bill, and there is a subscription to check
+    pg = await open_at(ctx, (2026, 10, 2, 9, 0))
+    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
+    await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=pay]"); await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("1420"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    await tab(pg, "plan"); await pg.click("[data-add-exp]"); await pg.wait_for_timeout(100); f = pg.locator("form[data-form=exp]")
+    await f.locator("[name=name]").fill("Electricity"); await f.locator("[name=amount]").fill("90"); await f.locator("[name=due]").select_option("5"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 6, 9, 0)); await tab(pg, "month")
+    assert await pg.locator("[data-needs]").count() == 1, "one card, not three"
+    card = pg.locator("[data-needs]"); assert await card.get_attribute("data-needs") == "arrived" and "1 of 3" in await card.inner_text()
+    assert await pg.locator("[data-arrive=pay]").count() == 1 and await pg.locator("[data-bill-due]").count() == 0 and await pg.locator("[data-needs] .review").count() == 0, "money that was due comes first, alone"
+    # Next steps through the kinds and comes back round
+    await pg.click("[data-need-next]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-needs]").get_attribute("data-needs") == "bills" and "2 of 3" in await pg.locator("[data-needs]").inner_text() and await pg.locator("[data-bill-due]").count() == 1
+    await pg.click("[data-need-next]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-needs] .review").count() == 1
+    await pg.click("[data-need-next]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-arrive=pay]").count() == 1
+    # answering one moves on to what is left, and the count follows
+    await pg.click("[data-arrive=pay] [data-arrive-yes]"); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-needs]").get_attribute("data-needs") == "bills" and "1 of 2" in await pg.locator("[data-needs]").inner_text()
+    # a bell note brings its own question to the front
+    await pg.click("[data-need-next]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-needs] .review").count() == 1
+    await pg.click("#bell"); await pg.wait_for_timeout(150); await pg.locator(".note-row", has_text="Did you pay Electricity?").locator("[data-note-open]").click(); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-bill-due].flash").count() == 1
+    await pg.click("[data-bill-due] [data-bill-yes]"); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-needs]").get_attribute("data-needs") == "review" and await pg.locator("[data-need-next]").count() == 0, "with one thing left there is nothing to step through"
+    await pg.click("[data-needs] [data-review=later]"); await pg.wait_for_timeout(150); assert await pg.locator("[data-needs]").count() == 0, "nothing waiting, no card"
     assert not pg.errors, pg.errors
 
 BIO_MOCK = """window.__bio = {made: 0, asked: 0, pass: true};
