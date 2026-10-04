@@ -1462,6 +1462,106 @@ Object.defineProperty(navigator, 'credentials', {configurable: true, value: {
   get: async () => { window.__bio.asked++; if (!window.__bio.pass || window.__bioFail) throw new Error('NotAllowedError'); return {id: 'x'}; }}});"""
 
 @test
+async def coming_up_drops_logged_income_and_yearly_dates_show_the_year(ctx):
+    # 2 October: a monthly income is due tomorrow, so it is in Coming up
+    pg = await open_at(ctx, (2026, 10, 2, 9, 0))
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]")
+    await f.locator("[name=name]").fill("Family"); await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=income]"); await f.locator("[name=day]").select_option("3"); await f.locator("[name=amount]").fill("1000")
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    up = await text(pg, "[data-out=comingUp]"); assert "Family" in up and "Tomorrow · money in" in up, up
+    # it lands a day early and is logged: Coming up, the bell and "Did it arrive?" all agree it is done
+    row = pg.locator("[data-inc]", has_text="Family"); await row.locator("[data-inc-log]").click(); await pg.click("form[data-form=incomeLog] [type=submit]"); await pg.wait_for_timeout(250)
+    assert "Family" not in await text(pg, "[data-out=comingUp]"), "a logged payment is no longer coming up"
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 3, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    assert "Family" not in await text(pg, "[data-out=comingUp]")
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 4, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    assert await pg.locator("[data-arrived]").count() == 0 or "Family" not in await text(pg, "[data-arrived]"), "and nobody is asked whether it arrived"
+    await pg.click("#bell"); await pg.wait_for_timeout(150); assert "Did Family arrive?" not in await text(pg, "#view"); await pg.click("[data-close-inbox]")
+    # removing the log puts it back
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 2, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    await pg.locator("[data-inc]", has_text="Family").locator("[data-inc-pay-del]").click(); await pg.wait_for_timeout(200)
+    assert "Family" in await text(pg, "[data-out=comingUp]")
+    # a yearly subscription always shows its year; a monthly one only when the date falls in another year
+    await tab(pg, "subs"); await pg.click("text=Add a subscription"); f = "form[data-form=addSub] "
+    await pg.fill(f + "[name=name]", "MovieBox"); await pg.fill(f + "[name=price]", "40"); await pg.select_option(f + "[name=cycle]", "yr"); await pg.fill(f + "[name=renew]", "2027-10-03")
+    await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(250)
+    assert "Renews Oct 3, 2027" in await text(pg, "[data-sub]:has-text('MovieBox')")
+    await pg.click("text=Add a subscription"); await pg.fill(f + "[name=name]", "CloudBox"); await pg.fill(f + "[name=price]", "5"); await pg.fill(f + "[name=renew]", "2026-10-20")
+    await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(250)
+    r = await text(pg, "[data-sub]:has-text('CloudBox')"); assert "Renews Oct 20" in r and "2026" not in r, r
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 12, 25, 9, 0)); await tab(pg, "month"); await tab(pg, "subs")
+    assert "Renews Jan 20, 2027" in await text(pg, "[data-sub]:has-text('CloudBox')"), "a date in another year says so"
+    assert not pg.errors, pg.errors
+
+@test
+async def trips_keep_their_own_budget_until_you_decide(ctx):
+    # 8 October. Plan a trip from the 10th to the 12th with a 600 budget.
+    pg = await open_at(ctx, (2026, 10, 8, 9, 0))
+    kept = lambda: pg.evaluate("(() => { const el = document.querySelector('[data-out=envelopes] .env-row .name.tnum'); return el.textContent; })()")
+    kept0 = money(await kept())
+    assert "Plan a trip" in await text(pg, "[data-out=trips]") and await pg.locator("[data-trips]").count() == 0
+    await pg.click("[data-trip-add]"); f = "form[data-form=trip] "
+    await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(100); assert "Give the trip a name" in await pg.inner_text("#toast")
+    await pg.fill(f + "[name=name]", "Miami weekend"); await pg.fill(f + "[name=start]", "2026-10-12"); await pg.fill(f + "[name=end]", "2026-10-10")
+    await pg.evaluate("document.activeElement.blur()"); await pg.wait_for_timeout(250); assert await pg.input_value(f + "[name=name]") == "Miami weekend", "leaving a field keeps the card"
+    await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(100); assert "cannot end before it starts" in await pg.inner_text("#toast")
+    await pg.fill(f + "[name=start]", "2026-10-10"); await pg.fill(f + "[name=end]", "2026-10-12"); await pg.fill(f + "[name=budget]", "600"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(200)
+    card = await text(pg, "[data-trips]"); assert "Miami weekend" in card and "Oct 10 to Oct 12" in card and "Starts in 2 days" in card and "$600 left of $600" in card, card
+    # before the trip, "add ..." in the Ask box has nowhere to go and says so; ordinary questions still work
+    await pg.fill("#ask-in", "add uber $20"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(150)
+    assert "no trip running today" in await text(pg, "#ask-out") and (await state(pg))["trips"][0]["items"] == []
+    await pg.fill("#ask-in", "can I afford 100"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(150); assert (await text(pg, "#ask-out")).startswith("Yes")
+    # day 2 of the trip: the Ask box takes spending straight to the trip, dated today, with no questions
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 11, 14, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    assert "Day 2 of 3" in await text(pg, "[data-trips]")
+    await pg.fill("#ask-in", "add uber $20, then $50 dinner"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(200)
+    assert "Added 2 lines, $70, to Miami weekend. $70 spent of $600." in await text(pg, "#ask-out"), await text(pg, "#ask-out")
+    items = (await state(pg))["trips"][0]["items"]; assert [(x["name"], x["amount"], x["date"]) for x in items] == [("Uber", 20, "2026-10-11"), ("Dinner", 50, "2026-10-11")], items
+    await pg.fill("#ask-in", "coffee 4.50"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(200); assert "Added Coffee, $4.50, to Miami weekend" in await text(pg, "#ask-out")
+    await pg.fill("#ask-in", "can I afford 100?"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(150); assert (await text(pg, "#ask-out")).startswith("Yes"), "a question is still a question during a trip"
+    # the trip's own box works the same way, and "and" only splits when both sides have an amount
+    await pg.fill("form[data-form=tripAdd] [name=q]", "bed and breakfast 480; museum 15 and taxi 12"); await pg.click("form[data-form=tripAdd] [type=submit]"); await pg.wait_for_timeout(200)
+    names = [x["name"] for x in (await state(pg))["trips"][0]["items"]]; assert names[-3:] == ["Bed and breakfast", "Museum", "Taxi"], names
+    card = await text(pg, "[data-trips]"); assert "$581.50" in card and "$18.50 left of $600" in card, card
+    await pg.fill("form[data-form=tripAdd] [name=q]", "souvenirs 40"); await pg.click("form[data-form=tripAdd] [type=submit]"); await pg.wait_for_timeout(200)
+    assert "$21.50 over the $600 budget" in await text(pg, "[data-trips]")
+    assert abs(money(await kept()) - kept0) < 0.01, "while the trip runs, the month is untouched"
+    # details list every line by day; a line can be removed
+    await pg.click("[data-trip-open]"); await pg.wait_for_timeout(150); d = await text(pg, "[data-trips]"); assert "Oct 11 · $621.50" in d and "Souvenirs" in d, d
+    await pg.locator("[data-trip-item]", has_text="Souvenirs").locator("[data-trip-item-del]").click(); await pg.wait_for_timeout(200)
+    assert "$18.50 left of $600" in await text(pg, "[data-trips]")
+    # the statement shows the trip apart, and says it is not in the totals
+    await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(150)
+    st = await text(pg, "[data-st-trips]"); assert "TRIPS KEPT APART" in st.upper() and "Miami weekend" in st and "$581.50 of $600" in st and "not decided yet" in st and "Not included in Out or Kept" in st, st
+    await pg.click("[data-stmt-back]"); await tab(pg, "month")
+    # 13 October: the trip is over. Month asks what to do, and the bell carries a note.
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 13, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    card = await text(pg, "[data-trips]"); assert "Ended" in card and "This trip is over" in card and "Count it in October" in card and "Keep it separate" in card, card
+    await pg.click("#bell"); await pg.wait_for_timeout(150); assert "Your Miami weekend trip is over" in await text(pg, "#view"); await pg.click("[data-close-inbox]")
+    assert abs(money(await kept()) - kept0) < 0.01
+    # keep it separate: the month never changes
+    await pg.click("[data-trip-settle=separate]"); await pg.wait_for_timeout(200)
+    assert "Kept separate" in await text(pg, "[data-trips]") and abs(money(await kept()) - kept0) < 0.01 and "month is unchanged" in await pg.inner_text("#toast")
+    # change your mind: count it, and it comes out of what you keep this month, under Miscellaneous
+    if not await pg.locator("[data-trip-settle=counted]").count(): await pg.click("[data-trip-open]"); await pg.wait_for_timeout(100)
+    await pg.click("[data-trip-settle=counted]"); await pg.wait_for_timeout(250)
+    assert "Counted in October" in await text(pg, "[data-trips]") and abs(kept0 - money(await kept()) - 581.5) < 0.01, await kept()
+    await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150); assert "Trip: Miami weekend" in await text(pg, ".env-body") and "counted this month only" in await text(pg, ".env-body")
+    await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(150)
+    v = await text(pg, ".stmt"); assert "Trip: Miami weekend" in v and "$581.50" in v and await pg.locator("[data-st-trips]").count() == 0, v
+    await pg.click("[data-stmt-back]"); await tab(pg, "month")
+    # next month it no longer counts: it was a one-off
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 11, 10, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    assert abs(money(await kept()) - kept0) < 0.01 and "Counted in October" in await text(pg, "[data-trips]")
+    # editing and removing follow the card pattern, with undo
+    await pg.click("[data-trip-edit]"); await pg.fill("form[data-form=trip] [name=name]", "Miami"); await pg.click("form[data-form=trip] [type=submit]"); await pg.wait_for_timeout(200)
+    assert (await state(pg))["trips"][0]["name"] == "Miami"
+    await pg.click("[data-trip-edit]"); await pg.click("[data-trip-del]"); await pg.wait_for_timeout(200); assert (await state(pg))["trips"] == []
+    await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(200); assert len((await state(pg))["trips"]) == 1
+    assert not pg.errors, pg.errors
+
+@test
 async def app_lock_with_passcode_and_biometrics(ctx):
     pg = await open_app(ctx); await pg.add_init_script(BIO_MOCK); await pg.reload(); await pg.wait_for_timeout(400)
     locked = lambda: pg.evaluate("!document.getElementById('lockscreen').hidden")

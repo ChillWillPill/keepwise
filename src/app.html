@@ -728,6 +728,7 @@ function compute(){
   S.expenses.forEach(e => { const w = swapFor("expense", e.id), a = w ? +w.altCost : +e.amount || 0; if (e.env === "needs") needs += a; else misc += a; });
   const liveSubs = S.subs.filter(s => s.keep !== "drop");
   liveSubs.forEach(s => { const w = swapFor("sub", s.id), a = w ? +w.altCost : subMonthly(s); if (s.env === "needs") needs += a; else misc += a; });
+  const trips = tripsCounted(planPeriodNow().key); misc += trips;  // a finished trip you chose to count is a one-off in that month
   const loans = loansMonthly(); needs += loans;  // debt payments are part of what must go out; Month shows them on their own row
   const bonus = payBonus(planPeriodNow());
   const income = (+S.income || 0) + extraExpected() + bonus.extra;
@@ -753,7 +754,7 @@ function compute(){
   const setAside = (S.deposits || []).filter(x => x.month === planKey).reduce((a,x) => a + x.amount, 0);
   const endSaved = S.efSaved + savings - setAside;
   const toSetAside = Math.max(0, r2(savings - setAside));
-  return {flags, needs, loans, misc, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: P.name, planPeriod: P, payBonus: bonus, planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
+  return {flags, needs, loans, trips, misc, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: P.name, planPeriod: P, payBonus: bonus, planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
 }
 function linkedItem(w){
   const [type, id] = w.link.split(":");
@@ -1342,6 +1343,7 @@ V.month = () => {
   <p class="muted small">Changing currency does not convert the numbers. 90 stays 90.</p>
   <div data-out="payBox">${OUT.payBox()}</div>
   <div data-out="extraIncome">${OUT.extraIncome()}</div>
+  <div data-out="trips">${OUT.trips()}</div>
   <div data-out="stack">${OUT.stack()}</div>
   <div data-out="dropCard">${OUT.dropCard()}</div>
   <div data-out="envelopes">${OUT.envelopes()}</div>
@@ -1352,7 +1354,7 @@ V.month = () => {
     ${infoTip("ask", "Ask about your plan in plain words. Answers use the same numbers shown above.")}
     <button class="btn primary" type="button" data-plain style="width:auto;align-self:flex-start;padding:12px 20px">Say it plainly</button>
     <div class="chips">${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
-    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask about your month" aria-label="Ask KeepWise" style="flex:1 1 200px"><button class="btn" type="submit">Ask</button></form>
+    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 200px"><button class="btn" type="submit">Ask</button></form>
     <div id="ask-out" class="ask-out" ${ASK.last ? "" : "hidden"}>${esc(ASK.last)}</div>
   </section>`;
 };
@@ -1447,7 +1449,8 @@ function envDetail(k, C){
   return `<div class="env-body">
     ${exp.map(e => { const w = swapFor("expense", e.id); return `<div class="line" data-exp="${e.id}"><div><div>${esc(e.name)}</div><div class="muted small">${w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
     ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Subscription · ${fmt(sb.price)}/yr` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subMonthly(sb))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
-    ${!exp.length && !subs.length ? `<p class="muted">Nothing here yet.</p>` : ""}
+    ${k === "misc" ? (S.trips || []).filter(t => t.settled === "counted" && t.countKey === C.planKey).map(t => `<div class="line"><div><div>Trip: ${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))} · counted this month only</div></div><span class="tnum">${fmt(tripTotal(t))}</span></div>`).join("") : ""}
+    ${!exp.length && !subs.length && !(k === "misc" && C.trips > 0) ? `<p class="muted">Nothing here yet.</p>` : ""}
     <div class="inline add-line" data-add-line="${k}"><input data-new-name placeholder="Add a line" aria-label="New line name" enterkeyhint="next" value="${esc((LINE_DRAFT[k]||{}).n||"")}" style="flex:2 1 140px"><input data-new-amt inputmode="decimal" placeholder="0" aria-label="Amount per month" enterkeyhint="done" value="${esc((LINE_DRAFT[k]||{}).a||"")}" style="flex:1 1 80px"><button class="btn" type="button" data-add-line-btn>Add</button></div>
   </div>`;
 }
@@ -1550,7 +1553,7 @@ OUT.subsList = () => {
     const nr = nextRenewal(s), nd = nr ? daysUntil(nr) : null;
     const editing = UI.renewEdit === s.id;
     const renewEditor = !editing ? "" : `<div class="renew-set"><span class="small muted">Renews on</span>${s.cycle === "yr" ? `<input type="date" data-renew-date value="${esc(s.renewDate || "")}" aria-label="Next renewal date for ${esc(s.name)}">` : `<select data-renew-day aria-label="Renewal day for ${esc(s.name)}"><option value="">Pick a day</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${s.renewDay === i + 1 ? "selected" : ""}>${ordinal(i + 1)} of each month</option>`).join("")}</select>`}<button class="link plain small" type="button" data-renew-cancel>Done</button></div>`;
-    const renew = editing ? "" : nr ? `<button class="link plain small renew-btn" type="button" data-renew-open aria-label="Change renewal date for ${esc(s.name)}">Renews ${nd === 0 ? "today" : nd === 1 ? "tomorrow" : nr.toLocaleDateString("en-US", {month: "short", day: "numeric"})}</button>`
+    const renew = editing ? "" : nr ? `<button class="link plain small renew-btn" type="button" data-renew-open aria-label="Change renewal date for ${esc(s.name)}">Renews ${nd === 0 ? "today" : nd === 1 ? "tomorrow" : dateWithYear(nr, s.cycle === "yr")}</button>`
       : `<button class="link plain small renew-btn add" type="button" data-renew-open aria-label="Add renewal date for ${esc(s.name)}">+ Renewal date</button>`;
     if (UI.subEdit === s.id) return `<div class="row" data-sub="${s.id}"><form class="inc-form" data-form="subEdit">
       <label class="field"><span>Name</span><input name="name" value="${esc(s.name)}" enterkeyhint="next" autocomplete="off"></label>
@@ -1567,7 +1570,7 @@ OUT.subsList = () => {
       <div class="inline" style="justify-content:space-between">
         <div class="seg" role="group" aria-label="${esc(s.name)}"><button type="button" data-keep="keep" aria-pressed="${k === "keep"}">Keep</button><button type="button" data-keep="auto" aria-pressed="${k === "auto"}" title="Let your rules decide">Auto</button><button type="button" class="drop" data-keep="drop" aria-pressed="${k === "drop"}">Drop</button></div>
         <span class="inline">${d === 0 ? `<button class="btn small done" type="button" data-used disabled aria-label="${esc(s.name)} is marked as used today">${I.check}Used today</button>` : `<button class="btn small" type="button" data-used aria-label="Mark ${esc(s.name)} as used today">I used it today</button>`}<button class="btn small" type="button" data-sub-edit aria-label="Edit ${esc(s.name)}">Edit</button></span></div>
-      ${k === "drop" ? `<div class="drop-help"><p class="small">Cancel ${nr ? `before ${nd === 0 ? "today ends" : nr.toLocaleDateString("en-US", {month: "short", day: "numeric"})}` : "before it renews"}, in the app or site where you signed up.</p>${cancelLink(s)}</div>` : ""}</div>`;}).join("")}</div>`;
+      ${k === "drop" ? `<div class="drop-help"><p class="small">Cancel ${nr ? `before ${nd === 0 ? "today ends" : dateWithYear(nr, s.cycle === "yr")}` : "before it renews"}, in the app or site where you signed up.</p>${cancelLink(s)}</div>` : ""}</div>`;}).join("")}</div>`;
 };
 
 // ---- Cheaper ----
@@ -1948,6 +1951,7 @@ function localNotes(){
   S.subs.map(x => ({x, d: nextRenewal(x)})).filter(v => v.d && daysUntil(v.d) <= 7).sort((a, b) => a.d - b.d).forEach(({x, d}) => { const n = daysUntil(d), w = whenLabel(n).toLowerCase();
     if (x.keep === "drop") add(`c:${x.id}:${isoOf(d)}`, `Cancel ${x.name} before it renews`, `You chose to drop it. It renews ${w}, ${fmt(x.price)}.`, "subs");
     else add(`r:${x.id}:${isoOf(d)}`, `${x.name} renews ${w}`, `${fmt(x.price)} on ${dayMonth(d)}.`, "subs"); });
+  (S.trips || []).filter(t => tripState(t) === "ended").forEach(t => add(`t:${t.id}:${t.end}`, `Your ${t.name} trip is over`, `You spent ${fmt(tripTotal(t))}. Choose whether it counts in this month or stays separate.`, "month"));
   const C = compute(); if (C.flagged.length) add(`f:${C.planKey}:${C.flagged.length}`, `${C.flagged.length} subscription${C.flagged.length === 1 ? " looks" : "s look"} unused`, `Dropping ${C.flagged.length === 1 ? "it" : "them"} would keep ${fmt(C.flaggedSave)} a month.`, "subs");
   (S.loans || []).filter(l => l.end && !loanDone(l)).forEach(l => { const f = loanFinish(l), n = f ? daysUntil(f.date) : 99; if (n >= 0 && n <= 30) add(`l:${l.id}:${l.end}`, `${l.name || loanKind(l.kind)} ends ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `After that, ${fmt(loanMonthly(l))} a month stays with you.`, "plan"); });
   return out;
@@ -2050,7 +2054,9 @@ function buildStatement(){
   return {key: k, updated: isoDaysAgo(0), income: r2(C.income), incomeLines: inc, confirmed: old.confirmed, actual: old.actual, needs: r2(C.needs), misc: r2(C.misc), kept: r2(C.savings),
     setAside: r2(C.setAside), efSaved: r2(S.efSaved), cur: S.cur, range: monthStartDay() !== 1 ? rangeText(C.planPeriod) : undefined, lines, subs: live, swaps,
     splits: {count: splits.length, total: r2(splits.reduce((a, x) => a + (+x.amount || 0), 0))},
-    settled: {count: pays.length, total: r2(pays.reduce((a, x) => a + (+x.amount || 0), 0))}};
+    settled: {count: pays.length, total: r2(pays.reduce((a, x) => a + (+x.amount || 0), 0))},
+    trips: (S.trips || []).filter(t => t.settled === "counted" ? t.countKey === k : (inMonth(t.end, k) || inMonth(t.start, k) || (t.items || []).some(x => inMonth(x.date, k))))
+      .map(t => ({n: t.name, r: tripRange(t), a: tripTotal(t), b: r2(+t.budget || 0), m: t.settled === "counted" ? "counted" : t.settled === "separate" ? "separate" : "open"}))};
 }
 function recordStatement(){
   if (UI.welcome != null) return;  // nothing to record while setting up
@@ -2102,7 +2108,9 @@ V.statement = () => {
       ${row("<b>Expenditures</b>", `<b>${f(s.needs)}</b>`)}
       ${s.lines.filter(l => l.e !== "needs").map(l => row(esc(l.n), f(l.a))).join("")}
       ${live.length ? row(`Subscriptions (${live.length})`, f(live.reduce((a, x) => a + x.m, 0))) : ""}
+      ${(s.trips || []).filter(t => t.m === "counted").map(t => row(`Trip: ${esc(t.n)} <span class="muted small">${esc(t.r)}</span>`, f(t.a))).join("")}
       ${row("<b>Miscellaneous</b>", `<b>${f(s.misc)}</b>`)}</section>
+    ${(s.trips || []).some(t => t.m !== "counted") ? `<section data-st-trips><h3>Trips kept apart</h3>${s.trips.filter(t => t.m !== "counted").map(t => row(`${esc(t.n)} <span class="muted small">${esc(t.r)}${t.m === "open" ? " · not decided yet" : ""}</span>`, t.b > 0 ? `${f(t.a)} of ${f(t.b)}` : f(t.a))).join("")}<p class="muted small">Not included in Out or Kept above.</p></section>` : ""}
     ${s.subs.length ? `<section><h3>Subscriptions</h3>${live.map(x => row(esc(x.n), f(x.m) + "/mo")).join("")}${dropped.length ? dropped.map(x => row(`${esc(x.n)} <span class="pill flag">Dropped</span>`, `<s class="muted">${f(x.m)}</s>`)).join("") : ""}</section>` : ""}
     ${s.swaps.length ? `<section><h3>Cheaper swaps in use</h3>${s.swaps.map(x => row(`${esc(x.t)} → ${esc(x.a)}`, `<span class="good">${f(x.s)}/mo kept</span>`)).join("")}</section>` : ""}
     <section><h3>Savings</h3>${row("Set aside this month", f(s.setAside))}${row("Emergency fund balance", f(s.efSaved))}</section>
@@ -2130,6 +2138,7 @@ function nextRenewal(s){
   if (r < t) r = new Date(t.getFullYear(), t.getMonth() + 1, Math.min(s.renewDay, daysInMonth(t.getFullYear(), t.getMonth() + 1)));
   return r;
 }
+const dateWithYear = (d, always) => d.toLocaleDateString("en-US", always || d.getFullYear() !== new Date().getFullYear() ? {month: "short", day: "numeric", year: "numeric"} : {month: "short", day: "numeric"});
 const daysUntil = d => Math.round((d - todayMid()) / DAY);
 const whenLabel = n => n === 0 ? "Today" : n === 1 ? "Tomorrow" : `In ${n} days`;
 function setRenewalFrom(s, iso){  // iso date of a charge
@@ -2138,9 +2147,9 @@ function setRenewalFrom(s, iso){  // iso date of a charge
 }
 OUT.comingUp = () => {
   const soon = S.subs.map(s => ({s, d: nextRenewal(s)})).filter(x => x.d && daysUntil(x.d) <= 7).sort((a, b) => a.d - b.d);
-  const arriving = (S.extras || []).map(x => ({x, d: nextIncome(x)})).filter(v => v.d && daysUntil(v.d) <= 7).sort((a, b) => a.d - b.d);
+  const arriving = (S.extras || []).map(x => ({x, d: nextIncome(x)})).filter(v => v.d && daysUntil(v.d) <= 7 && !incomeLogged(v.x, isoOf(v.d))).sort((a, b) => a.d - b.d);
   const t0 = todayMid(), t7 = new Date(t0); t7.setDate(t7.getDate() + 7);
-  const payRows = (payOn() ? paydaysBetween(t0, t7) : []).map(d => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
+  const payRows = (payOn() ? paydaysBetween(t0, t7) : []).filter(d => !((S.payGot || "") >= isoOf(d))).map(d => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
         <div class="up-main"><div class="name">Payday</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(+S.pay.amount || 0)}</div></div>`).join("");
   if (!soon.length && !arriving.length && !payRows) return "";
   const inRows = arriving.map(({x, d}) => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
@@ -2629,6 +2638,68 @@ OUT.payBox = () => {
   return `<div class="pay-line"><span>${I.month.replace("<svg ", '<svg width="18" height="18" ')}<span><b>${fmt(+S.pay.amount || 0)}</b> ${esc(payWhenText())}${n ? ` · next payday <b>${daysUntil(n) === 0 ? "today" : daysUntil(n) === 1 ? "tomorrow" : n.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})}</b>` : S.pay.when === "biweekly" ? " · add your next payday" : ""}${ms !== 1 ? `<br><span class="muted small">Your ${esc(P.name)} runs ${rangeText(P)}.</span>` : ""}</span></span><button class="link small" type="button" data-payday-edit>Change</button></div>`;
 };
 
+/* ================= trips (a pot of its own, apart from the month until you decide) ================= */
+// A trip has dates and, if you want, a budget. What you spend on it is logged against the trip and stays out of the
+// month. When the trip is over you choose: count it in a month, or keep it apart as budget against spent. Either way
+// the monthly statement says which.
+const tripList = () => S.trips || (S.trips = []);
+const tripTotal = t => r2((t.items || []).reduce((a, x) => a + (+x.amount || 0), 0));
+const isoDate = iso => { const [y, m, d] = String(iso).split("-").map(Number); return new Date(y, m - 1, d); };
+const tripState = t => { const today = isoOf(todayMid()); return t.settled === "counted" ? "counted" : t.settled === "separate" ? "separate" : today < t.start ? "upcoming" : today > t.end ? "ended" : "active"; };
+const activeTrip = () => (S.trips || []).find(t => tripState(t) === "active") || null;
+const tripsCounted = k => r2((S.trips || []).filter(t => t.settled === "counted" && t.countKey === k).reduce((a, t) => a + tripTotal(t), 0));
+const tripRange = t => t.start === t.end ? shortDate(t.start) : `${shortDate(t.start)} to ${shortDate(t.end)}`;
+const tripDays = t => Math.round((isoDate(t.end) - isoDate(t.start)) / DAY) + 1;
+// "add uber $20, then $50 dinner" becomes two lines. Nothing is sent anywhere; it is read on this phone.
+function parseSpend(text){
+  const parts = String(text || "").split(/[,;\n]|\bthen\b/i).flatMap(p => { const both = p.split(/\band\b/i); return both.length > 1 && both.every(x => /\d/.test(x)) ? both : [p]; });
+  return parts.map(part => {
+    const p = part.trim().replace(/^(please\s+)?(add|spent|paid|log|put)\b\s*/i, "");
+    const m = p.match(/(?:[$£€₹]\s*|\brs\.?\s*)?(\d[\d,]*(?:\.\d+)?)/i); if (!m) return null;
+    const amount = +m[1].replace(/,/g, ""); if (!(amount > 0) || amount > 1e9) return null;
+    let name = (p.slice(0, m.index) + " " + p.slice(m.index + m[0].length)).replace(/\b(for|on|at|to|in|of)\s*$/i, "").replace(/^\s*(for|on|at|to|in|of)\b/i, "").replace(/\s+/g, " ").trim();
+    name = name.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").slice(0, 40);
+    return {name: name ? name[0].toUpperCase() + name.slice(1) : "Spending", amount: r2(amount)};
+  }).filter(Boolean);
+}
+function tripAddSpend(t, lines){ const today = isoOf(todayMid()); lines.forEach(l => (t.items = t.items || []).push({id: uid(), date: today, name: l.name, amount: l.amount})); }
+function tripSpendReply(t, lines){ const sum = r2(lines.reduce((a, l) => a + l.amount, 0)), tot = tripTotal(t);
+  return `Added ${lines.length === 1 ? `${lines[0].name}, ${fmt(lines[0].amount)},` : `${lines.length} lines, ${fmt(sum)},`} to ${t.name}. ${fmt(tot)} spent${+t.budget > 0 ? ` of ${fmt(t.budget)}${tot > t.budget ? `, ${fmt(r2(tot - t.budget))} over` : ""}` : ""}.`; }
+function tripForm(t){
+  const d = t || {name: "", start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 6)), budget: ""};
+  return `<form class="inc-form" data-form="trip"><label class="field"><span>Trip</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Miami weekend" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
+    <div class="grid2"><label class="field"><span>Starts</span><input name="start" type="date" value="${esc(d.start)}"></label><label class="field"><span>Ends</span><input name="end" type="date" value="${esc(d.end)}"></label></div>
+    <label class="field"><span>Budget <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="budget" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.budget || "")}"></span></label>
+    ${editBtns(!t, "data-trip-del", "Add trip", "data-trip-cancel")}</form>`;
+}
+function tripCard(t){
+  if (UI.tripEdit === t.id) return `<div class="inc-row editing" data-trip="${t.id}">${tripForm(t)}</div>`;
+  const st = tripState(t), tot = tripTotal(t), b = +t.budget || 0, over = b > 0 && tot > b + 0.005, open = UI.tripOpen === t.id, C = compute();
+  const dayNo = Math.round((todayMid() - isoDate(t.start)) / DAY) + 1, toGo = daysUntil(isoDate(t.start));
+  const tag = st === "active" ? `<span class="pill ok">Day ${dayNo} of ${tripDays(t)}</span>` : st === "upcoming" ? `<span class="pill grey">${toGo === 1 ? "Starts tomorrow" : `Starts in ${toGo} days`}</span>`
+    : st === "ended" ? `<span class="pill gold">Ended</span>` : st === "counted" ? `<span class="pill grey">Counted in ${esc(keyLabel(t.countKey).split(" ")[0])}</span>` : `<span class="pill grey">Kept separate</span>`;
+  const days = {}; (t.items || []).forEach(x => (days[x.date] = days[x.date] || []).push(x));
+  return `<div class="inc-row" data-trip="${t.id}"><div class="row-top"><div><div class="name">${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))}</div></div><div style="text-align:right">${tag}</div></div>
+    <div class="row-top"><div class="muted small">${b > 0 ? (over ? `${fmt(r2(tot - b))} over the ${fmt(b)} budget` : `${fmt(r2(b - tot))} left of ${fmt(b)}`) : "No budget set"}</div><div class="name tnum ${over ? "bad" : ""}">${fmt(tot)}<span class="muted small"> spent</span></div></div>
+    ${b > 0 ? `<div class="meter"><i class="${over ? "over" : ""}" style="width:${Math.min(100, tot / b * 100)}%"></i></div>` : ""}
+    ${st === "ended" ? `<div class="part-help" style="border-radius:14px"><b>This trip is over. What should happen to the ${fmt(tot)}?</b><p class="muted small">Count it and it comes out of what you keep in ${esc(C.planMonth)}. Keep it separate and your month is untouched. You can change this later.</p>
+      <div class="grid2"><button class="btn small" type="button" data-trip-settle="separate">Keep it separate</button><button class="btn small primary" type="button" data-trip-settle="counted">Count it in ${esc(C.planMonth)}</button></div></div>` : ""}
+    ${st === "counted" || st === "separate" ? "" : `<form class="inline" data-form="tripAdd" style="gap:8px"><input name="q" placeholder="uber 20, dinner 50" aria-label="Add spending to ${esc(t.name)}" enterkeyhint="send" autocomplete="off" autocapitalize="off" style="flex:1 1 150px"><button class="btn small" type="submit">Add</button></form>`}
+    <div class="inline" style="justify-content:space-between"><button class="link plain small" type="button" data-trip-open aria-expanded="${open}">${open ? "Hide details" : `Details${(t.items || []).length ? ` (${t.items.length})` : ""}`}</button><button class="link plain small" type="button" data-trip-edit aria-label="Edit ${esc(t.name)}">Edit</button></div>
+    ${open ? `<div class="inc-pays">${Object.keys(days).sort().reverse().map(d => `<div class="muted small" style="margin-top:6px">${shortDate(d)} · ${fmt(r2(days[d].reduce((a, x) => a + x.amount, 0)))}</div>${days[d].map(x => `<div class="line" data-trip-item="${x.id}"><span>${esc(x.name)}</span><span class="inline"><span class="tnum">${fmt(x.amount)}</span><button class="link danger-link small" type="button" data-trip-item-del aria-label="Remove ${esc(x.name)}">Remove</button></span></div>`).join("")}`).join("") || `<p class="muted small">Nothing logged yet.</p>`}
+      ${st === "counted" ? `<p class="muted small">This trip counts in ${esc(keyLabel(t.countKey))}, under Miscellaneous.</p><button class="link small" type="button" data-trip-settle="separate" style="align-self:flex-start">Keep it separate instead</button>` : st === "separate" ? `<p class="muted small">This trip is kept apart from your months.</p><button class="link small" type="button" data-trip-settle="counted" style="align-self:flex-start">Count it in ${esc(C.planMonth)} instead</button>` : ""}</div>` : ""}</div>`;
+}
+OUT.trips = () => {
+  const list = (S.trips || []).slice().sort((a, b) => (b.start || "").localeCompare(a.start || ""));
+  if (!list.length && !UI.tripAdd) return `<button class="link small inc-add" type="button" data-trip-add>${I.plus}Plan a trip <span class="muted">a budget of its own, apart from your month</span></button>`;
+  const order = {active: 0, ended: 1, upcoming: 2, separate: 3, counted: 3}, sorted = list.sort((a, b) => order[tripState(a)] - order[tripState(b)]), done = sorted.filter(t => order[tripState(t)] === 3), live = sorted.filter(t => order[tripState(t)] < 3);
+  const shown = UI.tripsAll ? sorted : [...live, ...done.slice(0, 1)];
+  return `<section class="card inc-card" data-trips><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Trips${infoBtn("trips", "About trips")}</h2></div>
+    ${infoTip("trips", "A trip keeps its own budget. Type what you spend, like “uber 20, dinner 50”, and it is logged to the trip for today. It stays out of your month until the trip is over, when you choose to count it or keep it separate.")}
+    ${shown.map(tripCard).join("")}${sorted.length > shown.length ? `<button class="link small" type="button" data-trips-all style="align-self:center">Show ${sorted.length - shown.length} earlier trip${sorted.length - shown.length === 1 ? "" : "s"}</button>` : ""}
+    ${UI.tripAdd ? `<div class="inc-row editing">${tripForm(null)}</div>` : `<button class="btn" type="button" data-trip-add>${I.plus}Plan a trip</button>`}</section>`;
+};
+
 /* ================= did it arrive? (asked from the day after money was due) ================= */
 // Payday and scheduled income are only expected until someone says they landed. From the day after the due date, and
 // for a week, Month asks once. Yes logs it (or confirms the pay), Not yet asks again tomorrow.
@@ -2639,7 +2710,10 @@ function incomeDueOn(x, d){
   if (x.when === "biweekly" && x.next){ const [y, m, dd] = x.next.split("-").map(Number), n = Math.round((d - new Date(y, m - 1, dd)) / DAY); return n % 14 === 0; }
   return false;
 }
-const incomeLogged = (x, iso) => (x.got || []).some(p => (p.date || "") >= iso) || x.skip === iso;
+// One rule, used by Coming up, "Did it arrive?", the bell and the phone reminders: a due date is settled by a payment
+// logged on that day or shortly before it (money often lands a day or two early), or by "It won't come".
+const incomeGrace = x => x.when === "weekly" ? 2 : 5;
+const incomeLogged = (x, iso) => { const from = isoOf(dayPlus(isoDate(iso), -incomeGrace(x))); return (x.got || []).some(p => (p.date || "") >= from) || x.skip === iso; };
 function arrivals(){  // what was due in the last 7 days, from yesterday back, and has no answer yet
   const t = todayMid(), out = [];
   if (S.arriveSnooze === isoOf(t)) return out;
@@ -3036,7 +3110,7 @@ function render(keepScroll){
   main.scrollTop = keepScroll ? top : 0;
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
 }
-const OPEN_FORMS = 'form[data-form="lockSet"],form[data-form="lockOff"],form[data-form="loan"],form[data-form="exp"],form[data-form="subEdit"],form[data-form="codeEdit"]';
+const OPEN_FORMS = 'form[data-form="trip"],form[data-form="lockSet"],form[data-form="lockOff"],form[data-form="loan"],form[data-form="exp"],form[data-form="subEdit"],form[data-form="codeEdit"]';
 function refreshOuts(){
   const active = document.activeElement;
   document.querySelectorAll("#view [data-out]").forEach(el => {
@@ -3360,7 +3434,7 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; UI.plus = false; if (UI.inbox){ pruneNotes(allNotes()); save(); } render(false); });
 
@@ -3420,7 +3494,7 @@ view.addEventListener("change", e => {
     const s = S.subs.find(x => x.id === t.closest("[data-sub]").dataset.sub); if (!s) return;
     if (t.hasAttribute("data-renew-day")) s.renewDay = +t.value || undefined; else s.renewDate = t.value || undefined;
     UI.renewEdit = null; save(); render(true); const n = nextRenewal(s);
-    toast(n ? `${s.name} renews ${n.toLocaleDateString("en-US", {month: "long", day: "numeric"})}.` : `Renewal date cleared for ${s.name}.`); return; }
+    toast(n ? `${s.name} renews ${n.toLocaleDateString("en-US", s.cycle === "yr" || n.getFullYear() !== new Date().getFullYear() ? {month: "long", day: "numeric", year: "numeric"} : {month: "long", day: "numeric"})}.` : `Renewal date cleared for ${s.name}.`); return; }
   if (splitDraft && t.dataset.part){ if (t.checked) splitDraft.parts[t.dataset.part] = splitDraft.method === "equal" ? 1 : ""; else delete splitDraft.parts[t.dataset.part]; render(true); return; }
   if (t.dataset.expEnv !== undefined || t.hasAttribute("data-exp-env") || t.dataset.alt || t.hasAttribute("data-exp-amt")) { refreshOuts(); }
 });
@@ -3462,6 +3536,19 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-payday-clear")){ S.pay = null; S.monthStart = 1; UI.payEdit = false; save(); render(true); toast("Pay schedule removed. Your month runs from the 1st again."); return; }
   // ---- other income
   const blankInc = () => ({name: "", kind: "side", when: "any", day: 1, wd: 5, next: isoDaysAgo(0), amount: ""});
+  if (b.hasAttribute("data-trip-add")){ UI.tripAdd = true; UI.tripEdit = null; render(true); const i = view.querySelector('form[data-form="trip"] [name=name]'); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-trip-cancel")){ UI.tripAdd = false; UI.tripEdit = null; render(true); return; }
+  if (b.hasAttribute("data-trips-all")){ UI.tripsAll = true; refreshOuts(); return; }
+  const tripEl = b.closest("[data-trip]"), tripX = tripEl && tripList().find(x => x.id === tripEl.dataset.trip);
+  if (tripX){
+    if (b.hasAttribute("data-trip-open")){ UI.tripOpen = UI.tripOpen === tripX.id ? null : tripX.id; refreshOuts(); return; }
+    if (b.hasAttribute("data-trip-edit")){ UI.tripEdit = tripX.id; UI.tripAdd = false; render(true); return; }
+    if (b.hasAttribute("data-trip-del")){ const u = undoable(); S.trips = tripList().filter(x => x !== tripX); UI.tripEdit = null; save(); render(true); toast(`Removed ${tripX.name}.`, u); return; }
+    if (b.dataset.tripSettle){ const u = undoable(), C = compute();
+      if (b.dataset.tripSettle === "counted"){ tripX.settled = "counted"; tripX.countKey = C.planKey; save(); render(true); toast(`${fmt(tripTotal(tripX))} from ${tripX.name} now counts in ${C.planMonth}.`, u); }
+      else { tripX.settled = "separate"; delete tripX.countKey; save(); render(true); toast(`${tripX.name} is kept separate. Your month is unchanged.`, u); }
+      return; }
+    if (b.hasAttribute("data-trip-item-del")){ const it = b.closest("[data-trip-item]"), u = undoable(), gone = (tripX.items || []).find(x => x.id === it.dataset.tripItem); tripX.items = (tripX.items || []).filter(x => x !== gone); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; } }
   if (b.hasAttribute("data-arrive-later")){ S.arriveSnooze = isoOf(todayMid()); save(); refreshOuts(); toast("We’ll ask again tomorrow."); return; }
   const arr = b.closest("[data-arrive]");
   if (arr && (b.hasAttribute("data-arrive-yes") || b.hasAttribute("data-arrive-no"))){ const iso = arr.dataset.arriveDate, yes = b.hasAttribute("data-arrive-yes"), u = undoable();
@@ -3734,7 +3821,23 @@ view.addEventListener("submit", async e => {
     if (!a){ toast("Enter the amount you received."); return; }
     (x.got = x.got || []).push({id: uid(), date: String(fd.get("date") || isoDaysAgo(0)), amount: a}); UI.incLog = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Logged ${fmt(a)} from ${x.name}.`); return; }
   if (kind === "closeMonth"){ const key = f.closest("[data-close]").dataset.close; closeMonth(key, numv(fd.get("amount"))); return; }
-  if (kind === "ask"){ const q = $("ask-in").value.trim(); if (!q) return; ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
+  if (kind === "tripAdd"){ const t = tripList().find(x => x.id === f.closest("[data-trip]").dataset.trip), lines = parseSpend(fd.get("q")); if (!t) return;
+    if (!lines.length){ toast("Type what you spent, like “uber 20”."); return; }
+    tripAddSpend(t, lines); save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(tripSpendReply(t, lines)); return; }
+  if (kind === "trip"){ const name = String(fd.get("name") || "").trim(), start = String(fd.get("start") || ""), end = String(fd.get("end") || ""), budget = numv(fd.get("budget")), ok = d => /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(isoDate(d).getTime());
+    if (!name){ toast("Give the trip a name."); f.querySelector("[name=name]").focus(); return; }
+    if (!ok(start) || !ok(end)){ toast("Pick the start and end dates."); return; }
+    if (end < start){ toast("The trip cannot end before it starts."); return; }
+    const old = UI.tripEdit && tripList().find(x => x.id === UI.tripEdit);
+    if (old) Object.assign(old, {name, start, end, budget}); else tripList().push({id: uid(), name, start, end, budget, items: [], settled: null});
+    UI.tripAdd = false; UI.tripEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `${name} is set. Spending you add on those days goes to the trip.`); return; }
+  if (kind === "ask"){ const q = $("ask-in").value.trim(); if (!q) return;
+    const spend = parseSpend(q), wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), trip = activeTrip();
+    if (spend.length && (wantsAdd || (trip && !/\?|afford|how|what|when|can i|should/i.test(q)))){
+      if (trip){ tripAddSpend(trip, spend); save(); ASK.last = tripSpendReply(trip, spend); refreshOuts(); }
+      else ASK.last = "There is no trip running today. Plan a trip further down this tab, and what you add during its dates goes straight to it.";
+      const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; }
+    ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
   if (kind === "lockSet"){ const old = String(fd.get("old") || ""), pin = String(fd.get("pin") || ""), pin2 = String(fd.get("pin2") || "");
     if (UI.lockForm === "change" && !(await lockPinOk(old))){ toast("The current passcode is not right."); return; }
     if (!/^\d{4,8}$/.test(pin)){ toast("Use 4 to 8 digits."); return; }
