@@ -69,6 +69,15 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .pw-rules li{display:flex;gap:6px;align-items:center}
 .pw-rules svg{width:13px;height:13px;flex:none;opacity:.3}
 .pw-rules li.ok{color:var(--green)} .pw-rules li.ok svg{opacity:1}
+.tour{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:40;width:min(92vw,440px);background:var(--card);color:var(--ink);border:1px solid color-mix(in srgb,var(--gold) 45%,var(--line));border-radius:20px;padding:16px 18px;box-shadow:0 24px 60px -20px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:8px}
+.tour[hidden]{display:none}
+.tour h3{font:600 1.2rem/1.2 var(--display);letter-spacing:-.02em;margin:0}
+.tour p{margin:0;line-height:1.45}
+.tour-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.tour-nav{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+.app.touring .app-main,.app.touring .tabbar,.app.touring .app-header{pointer-events:none}
+.app.touring .view{padding-bottom:70vh}  /* room to bring anything, even the last card, up above the tour card */
+.tour-focus{outline:2.5px solid var(--gold);outline-offset:4px;border-radius:18px;transition:outline-color .2s}
 .lockscreen{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));text-align:center;overflow:auto}
 .lockscreen[hidden]{display:none}
 .app.locked{visibility:hidden}
@@ -82,6 +91,8 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .lock-pad button:active{background:var(--chip)}
 .lock-pad button.ghost{border-color:transparent;background:none;font-size:.95rem;font-weight:500}
 @media (max-height:620px){.lock-pad{grid-template-columns:repeat(3,60px);gap:8px}.lock-pad button{width:60px;height:60px;font-size:1.25rem}}
+#ask-mic.listening{background:var(--green);color:var(--card);border-color:var(--green);animation:micpulse 1.2s ease-in-out infinite}
+@keyframes micpulse{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--green) 22%,transparent)}}
 .note-row{gap:6px}
 .note-main{appearance:none;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:0;display:flex;gap:10px;align-items:flex-start;width:100%;cursor:pointer}
 .note-txt{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
@@ -195,7 +206,8 @@ a.btn{display:block;text-decoration:none}
 .summary3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .summary3 b{display:block;font:600 1.5rem/1.2 var(--display);font-variant-numeric:tabular-nums;margin-top:4px}
 .balances{border-top:1px solid var(--line)}
-.balances div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.settle-form{display:flex;flex-direction:column;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.balances>div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
 .entry{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:start}
 .ico{width:48px;height:48px;border-radius:14px;background:var(--chip);display:grid;place-items:center;color:var(--ink)}
 .ico svg{width:24px;height:24px}
@@ -563,6 +575,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
   <main class="app-main" id="main"><div class="view" id="view"></div></main>
   <nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
 </div>
+<div class="tour" id="tour" role="dialog" aria-label="Tour of KeepWise" hidden></div>
 <div class="lockscreen" id="lockscreen" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <input type="file" id="stmt" accept=".csv,.pdf,text/csv,application/pdf" class="sr" tabindex="-1" aria-hidden="true">
@@ -729,7 +742,7 @@ function applyTheme(){
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
 (S.settlements || (S.settlements = [])).forEach(x => { if (!x.id) x.id = uid(); });
-const save = () => { if (UI.welcome != null || window.__kwErasing) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} remindSync(); };
+const save = () => { if (UI.welcome != null || window.__kwErasing || window.__kwTour) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} remindSync(); };
 window.addEventListener("pagehide", save);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
 
@@ -758,7 +771,7 @@ function compute(){
   S.expenses.forEach(e => { const w = swapFor("expense", e.id), a = w ? +w.altCost : +e.amount || 0; if (e.env === "needs") needs += a; else misc += a; });
   const liveSubs = S.subs.filter(s => s.keep !== "drop");
   liveSubs.forEach(s => { const w = swapFor("sub", s.id), a = w ? +w.altCost : subMonthly(s); if (s.env === "needs") needs += a; else misc += a; });
-  const trips = tripsCounted(planPeriodNow().key); misc += trips;  // a finished trip you chose to count is a one-off in that month
+  const trips = tripsCounted(planPeriodNow().key), spends = spendsTotal(planPeriodNow().key); misc += trips + spends;  // a finished trip you chose to count is a one-off in that month
   const loans = loansMonthly(); needs += loans;  // debt payments are part of what must go out; Month shows them on their own row
   const bonus = payBonus(planPeriodNow());
   const income = (+S.income || 0) + extraExpected() + bonus.extra;
@@ -784,7 +797,7 @@ function compute(){
   const setAside = (S.deposits || []).filter(x => x.month === planKey).reduce((a,x) => a + x.amount, 0);
   const endSaved = S.efSaved + savings - setAside;
   const toSetAside = Math.max(0, r2(savings - setAside));
-  return {flags, needs, loans, trips, misc, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: P.name, planPeriod: P, payBonus: bonus, planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
+  return {flags, needs, loans, trips, spends, misc, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: P.name, planPeriod: P, payBonus: bonus, planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
 }
 function linkedItem(w){
   const [type, id] = w.link.split(":");
@@ -1384,7 +1397,7 @@ V.month = () => {
     ${infoTip("ask", "Ask about your plan in plain words. Answers use the same numbers shown above.")}
     <button class="btn primary" type="button" data-plain style="width:auto;align-self:flex-start;padding:12px 20px">Say it plainly</button>
     <div class="chips">${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
-    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 200px"><button class="btn" type="submit">Ask</button></form>
+    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 160px">${voiceCan() ? `<button class="icon-btn" type="button" id="ask-mic" data-ask-mic aria-label="Speak instead of typing" aria-pressed="false">${MIC}</button>` : ""}<button class="btn" type="submit">Ask</button></form>
     <div id="ask-out" class="ask-out" ${ASK.last ? "" : "hidden"}>${esc(ASK.last)}</div>
   </section>`;
 };
@@ -1480,7 +1493,8 @@ function envDetail(k, C){
     ${exp.map(e => { const w = swapFor("expense", e.id); return `<div class="line" data-exp="${e.id}"><div><div>${esc(e.name)}</div><div class="muted small">${w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
     ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Subscription · ${fmt(sb.price)}/yr` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subMonthly(sb))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
     ${k === "misc" ? (S.trips || []).filter(t => t.settled === "counted" && t.countKey === C.planKey).map(t => `<div class="line"><div><div>Trip: ${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))} · counted this month only</div></div><span class="tnum">${fmt(tripTotal(t))}</span></div>`).join("") : ""}
-    ${!exp.length && !subs.length && !(k === "misc" && C.trips > 0) ? `<p class="muted">Nothing here yet.</p>` : ""}
+    ${k === "misc" ? spendsIn(C.planKey).slice().sort((a, b) => (b.date || "").localeCompare(a.date || "")).map(x => `<div class="line" data-spend="${x.id}"><div><div>${esc(x.name)}${x.ocur ? ` <span class="muted small">${esc(fmtIn(x.orig, x.ocur))}</span>` : ""}</div><div class="muted small">${shortDate(x.date)} · one time</div></div><div class="inline"><span class="tnum">${fmt(x.amount)}</span><button class="link danger-link" type="button" data-spend-del>Remove</button></div></div>`).join("") : ""}
+    ${!exp.length && !subs.length && !(k === "misc" && (C.trips > 0 || C.spends > 0)) ? `<p class="muted">Nothing here yet.</p>` : ""}
     <div class="inline add-line" data-add-line="${k}"><input data-new-name placeholder="Add a line" aria-label="New line name" enterkeyhint="next" value="${esc((LINE_DRAFT[k]||{}).n||"")}" style="flex:2 1 140px"><input data-new-amt inputmode="decimal" placeholder="0" aria-label="Amount per month" enterkeyhint="done" value="${esc((LINE_DRAFT[k]||{}).a||"")}" style="flex:1 1 80px"><button class="btn" type="button" data-add-line-btn>Add</button></div>
   </div>`;
 }
@@ -1517,8 +1531,48 @@ function plainly(){
   if (Math.abs(net) >= 0.01) lines.push(net > 0 ? `Friends and family owe you ${fmt(net)} overall.` : `You owe friends and family ${fmt(-net)} overall.`);
   return lines.join("\n");
 }
+// Speaking instead of typing, in English, where the browser offers it. The phone or browser turns speech into text;
+// KeepWise only receives the words, and keeps no audio.
+const MIC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.500 11a6.500 6.500 0 0 0 13 0M12 17.500V21"/></svg>';
+const voiceCan = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition) && !window.Capacitor;
+let voiceRec = null;
+function voiceToggle(){
+  if (voiceRec){ try { voiceRec.stop(); } catch(e){} return; }
+  const R = window.SpeechRecognition || window.webkitSpeechRecognition; if (!R) return;
+  const rec = new R(), btn = $("ask-mic"), done = () => { voiceRec = null; const b = $("ask-mic"); if (b){ b.setAttribute("aria-pressed", "false"); b.classList.remove("listening"); } };
+  rec.lang = "en-US"; rec.interimResults = false; rec.maxAlternatives = 1;
+  rec.onresult = e => { const said = e.results && e.results[0] && e.results[0][0] ? String(e.results[0][0].transcript || "").trim() : ""; done(); if (!said) return;
+    const i = $("ask-in"), f = i && i.form; if (!i) return; i.value = said; if (f) f.dispatchEvent(new Event("submit", {bubbles: true, cancelable: true})); };
+  rec.onerror = e => { done(); toast(e && (e.error === "not-allowed" || e.error === "service-not-allowed") ? "The microphone is off for KeepWise. Allow it in your browser settings, or type instead." : e && e.error === "no-speech" ? "Nothing was heard. Tap the microphone and try again." : "Could not hear that. Try again, or type instead."); };
+  rec.onend = done;
+  try { rec.start(); voiceRec = rec; if (btn){ btn.setAttribute("aria-pressed", "true"); btn.classList.add("listening"); } toast("Listening. Say it in English, like “dinner 30 euros”."); } catch(e){ done(); }
+}
+// Ask reads everything KeepWise holds on this phone: trips, loans, paydays, other income, charges coming up and the bell.
+function answerMore(t, C){
+  const today = todayMid(), list = a => a.join("\n");
+  if (/\b(trip|trips|travel|holiday|vacation)\b/.test(t)){ const trips = (S.trips || []).slice().sort((a, b) => (b.start || "").localeCompare(a.start || "")), tr = activeTrip() || trips.find(x => tripState(x) === "ended") || trips[0];
+    if (!tr) return "You have no trips yet. Plan one on the Month tab and its spending stays apart from your month.";
+    const tot = tripTotal(tr), st = tripState(tr), b = +tr.budget || 0;
+    return `${tr.name} (${tripRange(tr)}): ${fmt(tot)} spent${b > 0 ? ` of ${fmt(b)}, ${tot > b ? `${fmt(r2(tot - b))} over` : `${fmt(r2(b - tot))} left`}` : ""}. ${st === "active" ? "It is running now." : st === "upcoming" ? `It starts ${dateWithYear(isoDate(tr.start))}.` : st === "ended" ? "It is over. Choose on Month whether it counts in this month." : st === "counted" ? `It counts in ${keyLabel(tr.countKey)}.` : "It is kept separate from your months."}`; }
+  if (/\b(loan|loans|mortgage|credit card|installment|installments|debts?)\b/.test(t) && (S.loans || []).some(l => !loanDone(l))){ const live = S.loans.filter(l => !loanDone(l)), owed = r2(live.reduce((a, l) => a + (+l.total || 0), 0));
+    return list([`Loans and debts: ${fmt(C.loans)} a month${owed > 0 ? `, ${fmt(owed)} owed in total` : ""}.`, ...live.map(l => { const f = loanFinish(l); return `${l.name || loanKind(l.kind)}: ${fmt(loanMonthly(l))}/mo${f ? `, ${f.est ? "about " : "ends "}${monthYear(f.date)}` : ""}`; })]); }
+  if (/payday|paid next|next pay|when.*(get|am i) paid|salary/.test(t)){ if (!payOn()) return `Your plan counts ${fmt(+S.income || 0)} regular pay a month. Set your payday on the Month tab and KeepWise will track it.`;
+    const d = paydaysBetween(today, dayPlus(today, 62))[0]; return d ? `Your next payday is ${dateWithYear(d)}, ${whenLabel(daysUntil(d)).toLowerCase()}: ${fmt(+S.pay.amount || 0)}.` : "No payday is set in the next two months."; }
+  if (/\b(income|earn|earning|coming in|side job|received)\b/.test(t)){ const k = todayKey(), ex = S.extras || [];
+    return list([`${C.planMonth}: ${fmt(C.income)} expected in. Regular pay ${fmt(+S.income || 0)}${ex.length ? `, other income ${fmt(extraExpected())}` : ""}.`, ...ex.map(x => `${x.name}: ${fmt(gotIn(x, k))} received of ${fmt(extraMonthly(x))}`)]); }
+  if (/renew|next charge|coming up|due (this|next)|this week|upcoming/.test(t)){ const soon = S.subs.filter(x => x.keep !== "drop").map(x => ({x, d: nextRenewal(x)})).filter(v => v.d && daysUntil(v.d) <= 7).sort((a, b) => a.d - b.d);
+    return soon.length ? list([`${soon.length} charge${soon.length === 1 ? "" : "s"} in the next 7 days, ${fmt(soon.reduce((a, v) => a + v.x.price, 0))} in all:`, ...soon.map(v => `${v.x.name}: ${fmt(v.x.price)}, ${whenLabel(daysUntil(v.d)).toLowerCase()}`)]) : "Nothing is due to be charged in the next 7 days."; }
+  if (/(how much|total|cost).*(subscri)|subscri.*(cost|total|how much)/.test(t)){ const m = r2(C.liveSubs.reduce((a, x) => a + subMonthly(x), 0)); return C.liveSubs.length ? `${C.liveSubs.length} subscriptions cost ${fmt(m)} a month, ${fmt(r2(m * 12))} a year.` : "You have no subscriptions on your list yet."; }
+  if (/notification|attention|to do|todo|remind|anything new|what.s new/.test(t)){ const n = allNotes().filter(x => !noteRead(x)); return n.length ? list([`${n.length} thing${n.length === 1 ? "" : "s"} to look at:`, ...n.map(x => x.text)]) : "Nothing needs your attention right now."; }
+  if (/\b(goal|saving for|target)\b/.test(t) && S.goalName){ return `${S.goalName}: ${fmt(C.toGoal)} goes to it this month${+S.goalAmt > 0 && C.toGoal > 0 ? `, so ${fmt(S.goalAmt)} takes about ${Math.ceil(S.goalAmt / C.toGoal)} months` : ""}.`; }
+  if (/\b(codes?|promo)\b/.test(t)) return S.codes.length ? `You have ${S.codes.length} code${S.codes.length === 1 ? "" : "s"} saved: ${S.codes.slice(0, 5).map(c => c.store).join(", ")}.` : "You have no codes saved yet.";
+  if (/last month|previous month|statement/.test(t)){ const keys = statementKeys().filter(k => k !== C.planKey); return keys.length ? `${keyLabel(keys[0])}: ${fmt(keptOf(S.statements[keys[0]]))} kept. See every month under Monthly statements.` : "Your first monthly statement is still in progress."; }
+  if (/\b(spend|spending|going out|goes out|expenses|bills|outgoings)\b/.test(t) && !/\d/.test(t)) return `${C.planMonth}: ${fmt(C.needs + C.misc)} goes out. Bills and living ${fmt(r2(C.needs - C.loans))}${C.loans > 0 ? `, loans and debts ${fmt(C.loans)}` : ""}, everything else ${fmt(C.misc)}.`;
+  return null;
+}
 function answer(q){
   const C = compute(), t = q.toLowerCase();
+  const more = answerMore(t, C); if (more) return more;
   const amt = (t.match(/(\d[\d,]*(?:\.\d+)?)/) || [])[1];
   if (/afford|buy|spend|purchase/.test(t) && amt){
     const a = +amt.replace(/,/g,""), left = C.savings - a;
@@ -1543,7 +1597,7 @@ function answer(q){
     return `Needs: ${fmt(C.needs)} of ${fmt(C.envNeeds)}${o > 0 ? ` (${fmt(o)} over)` : ""}.\nMisc: ${fmt(C.misc)} of ${fmt(C.envMisc)}${m > 0 ? ` (${fmt(m)} over)` : ""}.\nSavings: ${fmt(C.savings)} against a ${fmt(C.envSave)} envelope.`;
   }
   if (/save|keep|left|end/.test(t)) return `${C.planMonth}: ${fmt(C.income)} in, ${fmt(C.needs + C.misc)} out, ${fmt(C.savings)} kept. Drop what your rules flag and it’s ${fmt(C.savings + C.flaggedSave)}.`;
-  return "I can answer from your numbers: what you’ll save, what to cancel, whether you can afford something, who owes you, and when your emergency fund is full.";
+  return "I can answer from your numbers: what you’ll save, what to cancel, whether you can afford something, who owes you, your trips, loans, payday, income, charges coming up, and when your emergency fund is full. I can also log spending: try “coffee 4” or “add rent 1200 as a bill”.";
 }
 
 // ---- Subs ----
@@ -1749,6 +1803,7 @@ V.plan = () => `
   <section class="card"><h2>Your data</h2><p class="muted small">Your money data stays on this device and is never uploaded. KeepWise gives estimates, not financial advice.</p>
     <div data-out="backupBox">${OUT.backupBox()}</div>
     <div data-out="lockBox">${OUT.lockBox()}</div>
+    <button class="link small" type="button" data-tour-start style="align-self:center">Replay the tour</button>
     <div data-out="installBtn">${OUT.installBtn()}</div>
     <button class="btn" type="button" data-history>Monthly statements</button>
     <button class="btn" type="button" data-import-open>Import a bank statement (CSV or PDF)</button>
@@ -1857,7 +1912,12 @@ OUT.splitSum = () => {
     <div><span class="muted small">You're owed</span><b class="good">${fmt(owed)}</b></div>
     <div><span class="muted small">You owe</span><b class="bad">${fmt(owe)}</b></div>
     <div><span class="muted small">${net >= 0 ? "Net you're owed" : "Net you owe"}</span><b class="${net >= 0 ? "good" : "bad"}">${fmt(Math.abs(net))}</b></div></div></div>
-    ${b.length ? `<div class="balances">${b.map(x => `<div data-settle="${esc(x.p.id)}" data-amt="${Math.abs(x.net)}"><span class="${x.net > 0 ? "good" : "bad"}">${x.net > 0 ? `${esc(x.p.name)} owes you ${fmt(x.net)}` : `You owe ${esc(x.p.name)} ${fmt(-x.net)}`}</span><button class="btn small" type="button" data-settle-btn>${x.net > 0 ? "Got paid" : "Paid"}</button></div>`).join("")}</div>` : `<p class="muted">Everyone is square.</p>`}`;
+    ${b.length ? `<div class="balances">${b.map(x => UI.settle === x.p.id
+      ? `<form class="settle-form" data-form="settle" data-settle="${esc(x.p.id)}" data-amt="${Math.abs(x.net)}"><span class="${x.net > 0 ? "good" : "bad"}">${x.net > 0 ? `${esc(x.p.name)} owes you ${fmt(x.net)}` : `You owe ${esc(x.p.name)} ${fmt(-x.net)}`}</span>
+          <label class="field"><span>${x.net > 0 ? "How much did you get?" : "How much did you pay?"}</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" value="${r2(Math.abs(x.net))}" aria-label="Amount paid"></span></label>
+          <p class="muted small">Change it for a part payment. The rest stays owed.</p>
+          <div class="grid2"><button class="btn small" type="button" data-settle-cancel>Cancel</button><button class="btn small primary" type="submit">Record payment</button></div></form>`
+      : `<div data-settle="${esc(x.p.id)}" data-amt="${Math.abs(x.net)}"><span class="${x.net > 0 ? "good" : "bad"}">${x.net > 0 ? `${esc(x.p.name)} owes you ${fmt(x.net)}` : `You owe ${esc(x.p.name)} ${fmt(-x.net)}`}</span><button class="btn small" type="button" data-settle-btn>${x.net > 0 ? "Got paid" : "Paid"}</button></div>`).join("")}</div>` : `<p class="muted">Everyone is square.</p>`}`;
 };
 // A small "i" next to a heading opens a short explanation, so screens stay clean and help is one tap away.
 const INFO_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg>';
@@ -2085,6 +2145,7 @@ function buildStatement(){
     setAside: r2(C.setAside), efSaved: r2(S.efSaved), cur: S.cur, range: monthStartDay() !== 1 ? rangeText(C.planPeriod) : undefined, lines, subs: live, swaps,
     splits: {count: splits.length, total: r2(splits.reduce((a, x) => a + (+x.amount || 0), 0))},
     settled: {count: pays.length, total: r2(pays.reduce((a, x) => a + (+x.amount || 0), 0))},
+    spends: {count: spendsIn(k).length, total: spendsTotal(k)},
     trips: (S.trips || []).filter(t => t.settled === "counted" ? t.countKey === k : (inMonth(t.end, k) || inMonth(t.start, k) || (t.items || []).some(x => inMonth(x.date, k))))
       .map(t => ({n: t.name, r: tripRange(t), a: tripTotal(t), b: r2(+t.budget || 0), m: t.settled === "counted" ? "counted" : t.settled === "separate" ? "separate" : "open"}))};
 }
@@ -2138,6 +2199,7 @@ V.statement = () => {
       ${row("<b>Expenditures</b>", `<b>${f(s.needs)}</b>`)}
       ${s.lines.filter(l => l.e !== "needs").map(l => row(esc(l.n), f(l.a))).join("")}
       ${live.length ? row(`Subscriptions (${live.length})`, f(live.reduce((a, x) => a + x.m, 0))) : ""}
+      ${s.spends && s.spends.count ? row(`Day-to-day spending (${s.spends.count})`, f(s.spends.total)) : ""}
       ${(s.trips || []).filter(t => t.m === "counted").map(t => row(`Trip: ${esc(t.n)} <span class="muted small">${esc(t.r)}</span>`, f(t.a))).join("")}
       ${row("<b>Miscellaneous</b>", `<b>${f(s.misc)}</b>`)}</section>
     ${(s.trips || []).some(t => t.m !== "counted") ? `<section data-st-trips><h3>Trips kept apart</h3>${s.trips.filter(t => t.m !== "counted").map(t => row(`${esc(t.n)} <span class="muted small">${esc(t.r)}${t.m === "open" ? " · not decided yet" : ""}</span>`, t.b > 0 ? `${f(t.a)} of ${f(t.b)}` : f(t.a))).join("")}<p class="muted small">Not included in Out or Kept above.</p></section>` : ""}
@@ -2377,7 +2439,8 @@ V.welcome = () => {
       <li>${I.split}<span><b>Splits bills</b> with friends and family</span></li></ul>
     <p class="w-safe">${I.lock}Everything stays on your phone. No bank login.</p>
     <button class="btn primary w-cta" type="button" data-w-next>Set up my month</button>
-    <button class="link plain w-alt" type="button" data-w-example>Look around with an example first</button>
+    <button class="link plain w-alt" type="button" data-tour-start>Take a one-minute tour first</button>
+    <button class="link plain w-alt" type="button" data-w-example>Look around with an example</button>
     ${IS_IOS && STANDALONE ? (UI.movePaste ? moveBox() : `<button class="link small w-alt" type="button" data-move-paste>I already use KeepWise in my browser</button>`) : ""}</div>`;
   if (step === 1) return `<div class="welcome">${dots(1)}<h1 class="w-title">What comes in?</h1><p class="w-sub">Your take-home pay, after tax.</p>
     <div class="grid2"><label class="field"><span>Currency</span><select data-w="cur">${curOptions(DRAFT.cur)}</select></label>
@@ -2677,29 +2740,87 @@ const tripTotal = t => r2((t.items || []).reduce((a, x) => a + (+x.amount || 0),
 const isoDate = iso => { const [y, m, d] = String(iso).split("-").map(Number); return new Date(y, m - 1, d); };
 const tripState = t => { const today = isoOf(todayMid()); return t.settled === "counted" ? "counted" : t.settled === "separate" ? "separate" : today < t.start ? "upcoming" : today > t.end ? "ended" : "active"; };
 const activeTrip = () => (S.trips || []).find(t => tripState(t) === "active") || null;
+const spendsIn = k => (S.spends || []).filter(x => inMonth(x.date, k));
+const spendsTotal = k => r2(spendsIn(k).reduce((a, x) => a + (+x.amount || 0), 0));
 const tripsCounted = k => r2((S.trips || []).filter(t => t.settled === "counted" && t.countKey === k).reduce((a, t) => a + tripTotal(t), 0));
 const tripRange = t => t.start === t.end ? shortDate(t.start) : `${shortDate(t.start)} to ${shortDate(t.end)}`;
 const tripDays = t => Math.round((isoDate(t.end) - isoDate(t.start)) / DAY) + 1;
 // "add uber $20, then $50 dinner" becomes two lines. Nothing is sent anywhere; it is read on this phone.
-function parseSpend(text){
+// Currency named in what you type. Only words and signs that can mean one thing are read; a bare number is taken in the
+// trip's spending currency, or your own if the trip has none.
+const CUR_WORDS = {euro: "EUR", euros: "EUR", pound: "GBP", pounds: "GBP", quid: "GBP", yen: "JPY", dirham: "AED", dirhams: "AED", dollar: "USD", dollars: "USD", bucks: "USD"};
+const CUR_SIGNS = {"€": "EUR", "£": "GBP", "¥": "JPY", "₹": "INR"};
+const CUR_NOT_WORDS = new Set(["ALL", "TOP", "TRY", "CUP", "MOP", "PEN", "GEL", "BAM", "BOB", "RON", "SOS", "MAD", "COP", "LAK", "ARS"]);  // codes that are also everyday words
+const DOLLAR_CUR = c => /^(USD|CAD|AUD|NZD|SGD|HKD)$/.test(c || "");
+function parseSpend(text, tripCur){
   const parts = String(text || "").split(/[,;\n]|\bthen\b/i).flatMap(p => { const both = p.split(/\band\b/i); return both.length > 1 && both.every(x => /\d/.test(x)) ? both : [p]; });
   return parts.map(part => {
-    const p = part.trim().replace(/^(please\s+)?(add|spent|paid|log|put)\b\s*/i, "");
-    const m = p.match(/(?:[$£€₹]\s*|\brs\.?\s*)?(\d[\d,]*(?:\.\d+)?)/i); if (!m) return null;
-    const amount = +m[1].replace(/,/g, ""); if (!(amount > 0) || amount > 1e9) return null;
-    let name = (p.slice(0, m.index) + " " + p.slice(m.index + m[0].length)).replace(/\b(for|on|at|to|in|of)\s*$/i, "").replace(/^\s*(for|on|at|to|in|of)\b/i, "").replace(/\s+/g, " ").trim();
+    let p = part.trim().replace(/^(please\s+)?(add|spent|paid|log|put)\b\s*/i, ""), cur = null;
+    const m = p.match(/([$€£¥₹]\s*)?(\d[\d,]*(?:\.\d+)?)/); if (!m) return null;
+    const amount = +m[2].replace(/,/g, ""); if (!(amount > 0) || amount > 1e9) return null;
+    const sign = (m[1] || "").trim(), after = p.slice(m.index + m[0].length), before = p.slice(0, m.index);
+    let rest = before + " " + after;
+    if (sign) cur = sign === "$" ? (DOLLAR_CUR(S.cur) ? S.cur : DOLLAR_CUR(tripCur) ? tripCur : "USD") : CUR_SIGNS[sign];
+    else { const aft = after.match(/^\s*([A-Za-z€£¥₹]+)/), bef = before.match(/([A-Za-z]+)\s*$/), pick = w => { if (!w) return null; const u = w.toUpperCase(); return CUR_SIGNS[w] || CUR_WORDS[w.toLowerCase()] || (u.length === 3 && !CUR_NOT_WORDS.has(u) && CURRENCIES.some(c => c[0] === u) ? u : null); };
+      if (aft && pick(aft[1])){ cur = pick(aft[1]); rest = before + " " + after.slice(aft[0].length); }
+      else if (bef && pick(bef[1])){ cur = pick(bef[1]); rest = before.slice(0, bef.index) + " " + after; } }
+    let name = rest.replace(/\b(for|on|at|to|in|of)\s*$/i, "").replace(/^\s*(for|on|at|to|in|of)\b/i, "").replace(/\s+/g, " ").trim();
     name = name.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").slice(0, 40);
-    return {name: name ? name[0].toUpperCase() + name.slice(1) : "Spending", amount: r2(amount)};
+    return {name: name ? name[0].toUpperCase() + name.slice(1) : "Spending", amount: r2(amount), cur: cur || tripCur || null};
   }).filter(Boolean);
 }
-function tripAddSpend(t, lines){ const today = isoOf(todayMid()); lines.forEach(l => (t.items = t.items || []).push({id: uid(), date: today, name: l.name, amount: l.amount})); }
-function tripSpendReply(t, lines){ const sum = r2(lines.reduce((a, l) => a + l.amount, 0)), tot = tripTotal(t);
-  return `Added ${lines.length === 1 ? `${lines[0].name}, ${fmt(lines[0].amount)},` : `${lines.length} lines, ${fmt(sum)},`} to ${t.name}. ${fmt(tot)} spent${+t.budget > 0 ? ` of ${fmt(t.budget)}${tot > t.budget ? `, ${fmt(r2(tot - t.budget))} over` : ""}` : ""}.`; }
+// Today's exchange rate, fetched only when something is logged in another currency and kept for the day. The request
+// names the two currencies and nothing else. Two free public sources are tried in turn.
+const FX_KEY = "keepwise-fx-v1";
+async function fxRate(from, to){
+  if (from === to) return 1;
+  const today = isoOf(todayMid()); let c = null; try { c = JSON.parse(localStorage.getItem(FX_KEY) || "null"); } catch(e){}
+  if (!(c && c.date === today && c.base === from && c.rates && c.rates[to] > 0)){ c = null; const f = from.toLowerCase();
+    const sources = [async () => { const j = await (await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${f}.min.json`)).json(), r = {}; Object.entries(j[f] || {}).forEach(([k, v]) => { r[k.toUpperCase()] = v; }); return r; },
+      async () => (await (await fetch(`https://open.er-api.com/v6/latest/${from}`)).json()).rates];
+    for (const get of sources){ try { const r = await get(); if (r && r[to] > 0){ c = {date: today, base: from, rates: Object.fromEntries(CURRENCIES.map(([k]) => [k, r[k]]).filter(x => x[1] > 0))}; break; } } catch(e){} }
+    if (c) try { localStorage.setItem(FX_KEY, JSON.stringify(c)); } catch(e){}
+  }
+  return c ? c.rates[to] : null;
+}
+const fmtIn = (v, cur) => { const old = FMT_CUR; FMT_CUR = cur; try { return fmt(v); } finally { FMT_CUR = old; } };
+async function convertLines(lines){  // each line into your own currency; null if a rate could not be fetched
+  for (const l of lines){ if (!l.cur || l.cur === S.cur) continue; const rate = await fxRate(l.cur, S.cur); if (!rate) return l.cur; l.orig = l.amount; l.ocur = l.cur; l.rate = rate; l.amount = r2(l.amount * rate); }
+  return null;
+}
+function tripAddSpend(t, lines){ const today = isoOf(todayMid()); lines.forEach(l => (t.items = t.items || []).push({id: uid(), date: today, name: l.name, amount: l.amount, ...(l.ocur ? {orig: l.orig, ocur: l.ocur, rate: l.rate} : {})})); }
+function tripSpendReply(t, lines){ const sum = r2(lines.reduce((a, l) => a + l.amount, 0)), tot = tripTotal(t), one = lines[0];
+  return `Added ${lines.length === 1 ? `${one.name}, ${one.ocur ? `${fmtIn(one.orig, one.ocur)} (${fmt(one.amount)} at today’s rate)` : fmt(one.amount)},` : `${lines.length} lines, ${fmt(sum)}${lines.some(l => l.ocur) ? " at today’s rate" : ""},`} to ${t.name}. ${fmt(tot)} spent${+t.budget > 0 ? ` of ${fmt(t.budget)}${tot > t.budget ? `, ${fmt(r2(tot - t.budget))} over` : ""}` : ""}.`; }
+// "add rent 1200 as a bill", "subscription spotify 11.99", "coffee 4". A bill or expenditure becomes a monthly line, a
+// subscription joins Subs, and plain spending goes to the trip that is running, or to this month as a one-off.
+function spendKind(text){
+  const t = " " + String(text).toLowerCase() + " ";
+  if (/\b(subscription|subscriptions|sub)\b/.test(t)) return "sub";
+  if (/\b(bill|bills|expenditure|expenditures|every month|each month|monthly)\b/.test(t)) return "bill";
+  if (/\b(misc|miscellaneous|one[- ]?off|one time)\b/.test(t)) return "misc";
+  return null;
+}
+const SPEND_NOISE = /\b(as\s+an?\s+|as\s+|to\s+(my\s+)?|under\s+|in\s+)?(subscription|subscriptions|sub|bill|bills|expenditure|expenditures|misc|miscellaneous|one[- ]?off|one time|every month|each month|monthly|yearly|a year|per year|annual|annually)\b/gi;
+async function logSpend(text){  // returns what to say back, or null when the text is not a spending line
+  const kind = spendKind(text), yearly = /\b(yearly|a year|per year|annual|annually)\b/i.test(text), trip = kind ? null : activeTrip();
+  const lines = parseSpend(String(text).replace(SPEND_NOISE, " "), trip && trip.cur); if (!lines.length) return null;
+  const bad = await convertLines(lines); if (bad) return FX_FAIL(bad);
+  const conv = l => l.ocur ? `${fmtIn(l.orig, l.ocur)} (${fmt(l.amount)} at today’s rate)` : fmt(l.amount), each = lines.map(l => `${l.name}, ${conv(l)}`).join("; ");
+  if (trip){ tripAddSpend(trip, lines); save(); return tripSpendReply(trip, lines); }
+  if (kind === "sub"){ lines.forEach(l => S.subs.push({id: uid(), name: l.name, price: l.amount, cycle: yearly ? "yr" : "mo", last: isoDaysAgo(0), group: "", env: "misc", keep: "auto"})); save();
+    return `Added to Subs: ${each}${yearly ? " a year" : " a month"}.`; }
+  if (kind === "bill"){ lines.forEach(l => S.expenses.push({id: uid(), name: l.name, amount: l.amount, env: "needs"})); save();
+    return `Added to Expenditures as a monthly bill: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`; }
+  const today = isoOf(todayMid()); S.spends = S.spends || []; lines.forEach(l => S.spends.push({id: uid(), date: today, name: l.name, amount: l.amount, ...(l.ocur ? {orig: l.orig, ocur: l.ocur, rate: l.rate} : {})})); save();
+  return `Added to this month under Miscellaneous, one time: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
+}
+const FX_FAIL = cur => `Could not get today’s rate for ${cur}. Check your connection and try again, or type the amount in ${S.cur}.`;
 function tripForm(t){
-  const d = t || {name: "", start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 6)), budget: ""};
+  const d = t || {name: "", start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 6)), budget: "", cur: ""};
   return `<form class="inc-form" data-form="trip"><label class="field"><span>Trip</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Miami weekend" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
     <div class="grid2"><label class="field"><span>Starts</span><input name="start" type="date" value="${esc(d.start)}"></label><label class="field"><span>Ends</span><input name="end" type="date" value="${esc(d.end)}"></label></div>
-    <label class="field"><span>Budget <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="budget" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.budget || "")}"></span></label>
+    <div class="grid2"><label class="field"><span>Budget <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="budget" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.budget || "")}"></span></label>
+      <label class="field"><span>You will pay in</span><select name="cur">${curOptions(d.cur || S.cur)}</select></label></div>
     ${editBtns(!t, "data-trip-del", "Add trip", "data-trip-cancel")}</form>`;
 }
 function tripCard(t){
@@ -2709,14 +2830,14 @@ function tripCard(t){
   const tag = st === "active" ? `<span class="pill ok">Day ${dayNo} of ${tripDays(t)}</span>` : st === "upcoming" ? `<span class="pill grey">${toGo === 1 ? "Starts tomorrow" : `Starts in ${toGo} days`}</span>`
     : st === "ended" ? `<span class="pill gold">Ended</span>` : st === "counted" ? `<span class="pill grey">Counted in ${esc(keyLabel(t.countKey).split(" ")[0])}</span>` : `<span class="pill grey">Kept separate</span>`;
   const days = {}; (t.items || []).forEach(x => (days[x.date] = days[x.date] || []).push(x));
-  return `<div class="inc-row" data-trip="${t.id}"><div class="row-top"><div><div class="name">${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))}</div></div><div style="text-align:right">${tag}</div></div>
+  return `<div class="inc-row" data-trip="${t.id}"><div class="row-top"><div><div class="name">${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))}${t.cur && t.cur !== S.cur ? ` · paying in ${esc(t.cur)}` : ""}</div></div><div style="text-align:right">${tag}</div></div>
     <div class="row-top"><div class="muted small">${b > 0 ? (over ? `${fmt(r2(tot - b))} over the ${fmt(b)} budget` : `${fmt(r2(b - tot))} left of ${fmt(b)}`) : "No budget set"}</div><div class="name tnum ${over ? "bad" : ""}">${fmt(tot)}<span class="muted small"> spent</span></div></div>
     ${b > 0 ? `<div class="meter"><i class="${over ? "over" : ""}" style="width:${Math.min(100, tot / b * 100)}%"></i></div>` : ""}
     ${st === "ended" ? `<div class="part-help" style="border-radius:14px"><b>This trip is over. What should happen to the ${fmt(tot)}?</b><p class="muted small">Count it and it comes out of what you keep in ${esc(C.planMonth)}. Keep it separate and your month is untouched. You can change this later.</p>
       <div class="grid2"><button class="btn small" type="button" data-trip-settle="separate">Keep it separate</button><button class="btn small primary" type="button" data-trip-settle="counted">Count it in ${esc(C.planMonth)}</button></div></div>` : ""}
-    ${st === "counted" || st === "separate" ? "" : `<form class="inline" data-form="tripAdd" style="gap:8px"><input name="q" placeholder="uber 20, dinner 50" aria-label="Add spending to ${esc(t.name)}" enterkeyhint="send" autocomplete="off" autocapitalize="off" style="flex:1 1 150px"><button class="btn small" type="submit">Add</button></form>`}
+    ${st === "counted" || st === "separate" ? "" : `<form class="inline" data-form="tripAdd" style="gap:8px"><input name="q" placeholder="${t.cur && t.cur !== S.cur ? `uber 20, dinner 50 (in ${esc(t.cur)})` : "uber 20, dinner 50"}" aria-label="Add spending to ${esc(t.name)}" enterkeyhint="send" autocomplete="off" autocapitalize="off" style="flex:1 1 150px"><button class="btn small" type="submit">Add</button></form>`}
     <div class="inline" style="justify-content:space-between"><button class="link plain small" type="button" data-trip-open aria-expanded="${open}">${open ? "Hide details" : `Details${(t.items || []).length ? ` (${t.items.length})` : ""}`}</button><button class="link plain small" type="button" data-trip-edit aria-label="Edit ${esc(t.name)}">Edit</button></div>
-    ${open ? `<div class="inc-pays">${Object.keys(days).sort().reverse().map(d => `<div class="muted small" style="margin-top:6px">${shortDate(d)} · ${fmt(r2(days[d].reduce((a, x) => a + x.amount, 0)))}</div>${days[d].map(x => `<div class="line" data-trip-item="${x.id}"><span>${esc(x.name)}</span><span class="inline"><span class="tnum">${fmt(x.amount)}</span><button class="link danger-link small" type="button" data-trip-item-del aria-label="Remove ${esc(x.name)}">Remove</button></span></div>`).join("")}`).join("") || `<p class="muted small">Nothing logged yet.</p>`}
+    ${open ? `<div class="inc-pays">${Object.keys(days).sort().reverse().map(d => `<div class="muted small" style="margin-top:6px">${shortDate(d)} · ${fmt(r2(days[d].reduce((a, x) => a + x.amount, 0)))}</div>${days[d].map(x => `<div class="line" data-trip-item="${x.id}"><span>${esc(x.name)}${x.ocur ? ` <span class="muted small">${esc(fmtIn(x.orig, x.ocur))}</span>` : ""}</span><span class="inline"><span class="tnum">${fmt(x.amount)}</span><button class="link danger-link small" type="button" data-trip-item-del aria-label="Remove ${esc(x.name)}">Remove</button></span></div>`).join("")}`).join("") || `<p class="muted small">Nothing logged yet.</p>`}
       ${st === "counted" ? `<p class="muted small">This trip counts in ${esc(keyLabel(t.countKey))}, under Miscellaneous.</p><button class="link small" type="button" data-trip-settle="separate" style="align-self:flex-start">Keep it separate instead</button>` : st === "separate" ? `<p class="muted small">This trip is kept apart from your months.</p><button class="link small" type="button" data-trip-settle="counted" style="align-self:flex-start">Count it in ${esc(C.planMonth)} instead</button>` : ""}</div>` : ""}</div>`;
 }
 OUT.trips = () => {
@@ -2725,7 +2846,7 @@ OUT.trips = () => {
   const order = {active: 0, ended: 1, upcoming: 2, separate: 3, counted: 3}, sorted = list.sort((a, b) => order[tripState(a)] - order[tripState(b)]), done = sorted.filter(t => order[tripState(t)] === 3), live = sorted.filter(t => order[tripState(t)] < 3);
   const shown = UI.tripsAll ? sorted : [...live, ...done.slice(0, 1)];
   return `<section class="card inc-card" data-trips><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Trips${infoBtn("trips", "About trips")}</h2></div>
-    ${infoTip("trips", "A trip keeps its own budget. Type what you spend, like “uber 20, dinner 50”, and it is logged to the trip for today. It stays out of your month until the trip is over, when you choose to count it or keep it separate.")}
+    ${infoTip("trips", "A trip keeps its own budget. Type what you spend, like “uber 20, dinner 50”, and it is logged to the trip for today. If you pay in another currency, pick it on the trip or say it (“dinner 30 euros”) and it is converted at today’s rate. It stays out of your month until the trip is over, when you choose to count it or keep it separate.")}
     ${shown.map(tripCard).join("")}${sorted.length > shown.length ? `<button class="link small" type="button" data-trips-all style="align-self:center">Show ${sorted.length - shown.length} earlier trip${sorted.length - shown.length === 1 ? "" : "s"}</button>` : ""}
     ${UI.tripAdd ? `<div class="inc-row editing">${tripForm(null)}</div>` : `<button class="btn" type="button" data-trip-add>${I.plus}Plan a trip</button>`}</section>`;
 };
@@ -2793,11 +2914,12 @@ function tellAbout(kind, x, old){  // kind: add, edit, delete
   if (!rows.length){ UI.tell = null; return; }
   UI.tell = {kind, title: x.title, at: kind === "edit" ? x.id : null, rows, group: now.length >= 2 && x.method !== "borrow" ? tellGroup(x, kind) : null, each: false};
 }
-function tellSettled(pid, amount, gotPaid){
+function tellSettled(pid, amount, gotPaid, left){
   if (shared()){ UI.tell = null; return; }
   const name = tellName(pid);
   UI.tell = {kind: "settle", title: name, at: null, group: null, each: false,
-    rows: [{id: pid, name, text: gotPaid ? `Got your ${fmt(amount)}, thank you. We are all square.` : `I paid you ${fmt(amount)}. We are all square.`}]};
+    rows: [{id: pid, name, text: left > 0.005 ? (gotPaid ? `Got your ${fmt(amount)}, thank you. ${fmt(left)} is still to come.` : `I paid you ${fmt(amount)}. I still owe you ${fmt(left)}.`)
+      : gotPaid ? `Got your ${fmt(amount)}, thank you. We are all square.` : `I paid you ${fmt(amount)}. We are all square.`}]};
 }
 const TELL_HEAD = {add: (t, who) => who ? `Let ${who} know about ${t}` : `Let everyone in ${t} know`, edit: (t, who) => `${t} changed. Let ${who || "them"} know`, delete: (t, who) => `${t} was deleted. Let ${who || "them"} know`, settle: t => `Let ${t} know`};
 function tellCard(){
@@ -3041,6 +3163,60 @@ async function remindTurnOn(){
   S.remind = {on: true}; save(); render(true); toast("Reminders are on.");
 }
 
+/* ================= the tour (a short walk through an example month) ================= */
+// The tour always runs on the example month, never on the person's own numbers. Their data is set aside in memory,
+// nothing is saved while the tour runs, and Skip puts everything back exactly as it was at any step.
+const TOUR_KEY = "keepwise-tour-done";
+const TOUR = {on: false, i: 0, saved: null, welcome: null, tab: null};
+const TOUR_STEPS = [
+  ["month", ".hero", "What you keep", "This is the number KeepWise is built around: what you will have left at the end of the month if the plan holds."],
+  ["month", 'form[data-form="ask"]', "Just say it", "Type or say what you spent, like “dinner 30 euros” or “add rent 1200 as a bill”. KeepWise puts it in the right place and converts the currency at today’s rate. It is free, and it is read on your phone."],
+  ["month", '[data-out="comingUp"]', "Coming up", "Charges and money due in the next 7 days, so nothing arrives as a surprise."],
+  ["month", '[data-out="envelopes"]', "Where it goes", "Savings, Expenditures and Miscellaneous, each against its share of your income. Tap Details on any of them to see what is inside."],
+  ["subs", '[data-out="subsList"]', "Subscriptions", "Everything you pay for on repeat. Mark what you use, and KeepWise flags what looks forgotten so you can keep it or drop it."],
+  ["cheaper", "#view", "Cheaper", "Ways to pay less for things already on your list, with what each one would keep per month and per year."],
+  ["codes", "#view", "Codes", "Promo codes you find, kept in one place and ready at checkout."],
+  ["plan", "#view", "Plan", "Your pay, monthly lines, loans and savings goals live here, along with backups and the app lock."],
+  ["split", "#view", "Split", "Split a bill with friends or family. KeepWise works out who owes what and writes the message for you to send."],
+  ["month", "#bell", "Notifications", "The bell collects what needs a look: money to confirm, charges this week and subscriptions that look unused."],
+];
+const tourSeen = () => { try { return !!localStorage.getItem(TOUR_KEY); } catch(e){ return true; } };
+function tourStart(){
+  if (TOUR.on) return;
+  window.__kwTour = true; TOUR.on = true; TOUR.i = 0; TOUR.welcome = UI.welcome; TOUR.saved = UI.welcome != null ? null : S; TOUR.tab = S.tab;
+  if (TOUR.saved){ window.__kwTour = false; save(); window.__kwTour = true; S = example(); }   // the person's month is saved first, then set aside
+  UI.welcome = null; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.stmt = null; UI.biz = false; UI.share = false;
+  appEl.classList.add("touring"); tourShow();
+}
+function tourShow(){
+  const el = $("tour"), n = TOUR_STEPS.length, last = TOUR.i >= n; el.hidden = false;
+  document.querySelectorAll(".tour-focus").forEach(x => x.classList.remove("tour-focus"));
+  if (last){ el.innerHTML = `<div class="tour-top"><span class="pill gold">Tour</span></div><h3>That is the whole app.</h3>
+      <p class="muted">${TOUR.saved ? "What you saw was an example month. Your own numbers are exactly as you left them." : "What you saw was an example month. Yours takes about a minute to set up."}</p>
+      <div class="tour-nav"><button class="btn small" type="button" data-tour-back>Back</button><button class="btn small primary" type="button" data-tour-end>${TOUR.saved ? "Back to my month" : "Set up my month"}</button></div>`; return; }
+  const [tabName, sel, title, text] = TOUR_STEPS[TOUR.i];
+  if (S.tab !== tabName || TOUR.i === 0){ S.tab = tabName; render(false); }
+  const target = document.querySelector(sel), m = $("main");
+  if (target && !target.offsetParent && target.closest("details")) target.closest("details").open = true;
+  if (target){ if (sel !== "#view" && sel !== "#bell"){ target.classList.add("tour-focus"); m.scrollTop += target.getBoundingClientRect().top - m.getBoundingClientRect().top - 14; } else { m.scrollTop = 0; if (sel === "#bell") target.classList.add("tour-focus"); } }
+  el.innerHTML = `<div class="tour-top"><span class="muted small" data-tour-count>${TOUR.i + 1} of ${n}</span><button class="link plain small" type="button" data-tour-skip>Skip tour</button></div>
+    <h3>${title}</h3><p class="muted">${text}</p>
+    <div class="tour-nav">${TOUR.i ? `<button class="btn small" type="button" data-tour-back>Back</button>` : ""}<button class="btn small primary" type="button" data-tour-next>${TOUR.i === n - 1 ? "Finish" : "Next"}</button></div>`;
+}
+function tourEnd(){
+  if (!TOUR.on) return;
+  document.querySelectorAll(".tour-focus").forEach(x => x.classList.remove("tour-focus"));
+  appEl.classList.remove("touring"); $("tour").hidden = true; TOUR.on = false; window.__kwTour = false;
+  try { localStorage.setItem(TOUR_KEY, "1"); } catch(e){}
+  if (TOUR.saved){ S = TOUR.saved; S.tab = TOUR.tab || "month"; TOUR.saved = null; } else { S.tab = "month"; UI.welcome = TOUR.welcome != null ? TOUR.welcome : null; }
+  render(false);
+}
+$("tour").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
+  if (b.hasAttribute("data-tour-skip") || b.hasAttribute("data-tour-end")){ const setup = b.hasAttribute("data-tour-end") && !TOUR.saved && TOUR.welcome != null; tourEnd(); if (setup){ UI.welcome = 1; render(false); } return; }
+  if (b.hasAttribute("data-tour-next")){ TOUR.i++; tourShow(); return; }
+  if (b.hasAttribute("data-tour-back")){ TOUR.i = Math.max(0, TOUR.i - 1); tourShow(); return; } });
+document.addEventListener("keydown", e => { if (TOUR.on && e.key === "Escape") tourEnd(); });
+
 /* ================= app lock (a passcode, and Face ID or fingerprint, checked on this phone) ================= */
 // The lock keeps out someone who picks up an unlocked phone. Only a salted, slow hash of the passcode is kept, in its
 // own storage key, so backups and "Copy my data" never carry it. It is a screen lock, not encryption of the data.
@@ -3140,7 +3316,7 @@ function render(keepScroll){
   main.scrollTop = keepScroll ? top : 0;
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
 }
-const OPEN_FORMS = 'form[data-form="trip"],form[data-form="lockSet"],form[data-form="lockOff"],form[data-form="loan"],form[data-form="exp"],form[data-form="subEdit"],form[data-form="codeEdit"]';
+const OPEN_FORMS = 'form[data-form="settle"],form[data-form="trip"],form[data-form="lockSet"],form[data-form="lockOff"],form[data-form="loan"],form[data-form="exp"],form[data-form="subEdit"],form[data-form="codeEdit"]';
 function refreshOuts(){
   const active = document.activeElement;
   document.querySelectorAll("#view [data-out]").forEach(el => {
@@ -3464,7 +3640,7 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.settle = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 $("bell").addEventListener("click", () => { UI.inbox = !UI.inbox; UI.account = false; UI.plus = false; if (UI.inbox){ pruneNotes(allNotes()); save(); } render(false); });
 
@@ -3552,6 +3728,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.go){ S.tab = b.dataset.go; UI.history = false; UI.stmt = null; save(); render(false); return; }
   // ---- first-run setup
   if (b.hasAttribute("data-w-start")){ DRAFT.cur = S.cur; DRAFT.income = ""; DRAFT.home = ""; DRAFT.pay = "monthly"; UI.welcome = 1; render(false); return; }
+  if (b.hasAttribute("data-tour-start")){ tourStart(); return; }
   if (b.hasAttribute("data-w-next")){
     if (UI.welcome === 1 && !numv(DRAFT.income)){ toast("Enter what comes in each month."); const i = view.querySelector('[data-w="income"]'); if (i) i.focus(); return; }
     UI.welcome = Math.min(3, UI.welcome + 1); render(false); const i = view.querySelector("[data-w=income],[data-w=home]"); if (i && !IS_IOS) i.focus(); return; }
@@ -3566,6 +3743,9 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-payday-clear")){ S.pay = null; S.monthStart = 1; UI.payEdit = false; save(); render(true); toast("Pay schedule removed. Your month runs from the 1st again."); return; }
   // ---- other income
   const blankInc = () => ({name: "", kind: "side", when: "any", day: 1, wd: 5, next: isoDaysAgo(0), amount: ""});
+  if (b.hasAttribute("data-ask-mic")){ voiceToggle(); return; }
+  const spendEl = b.closest("[data-spend]");
+  if (spendEl && b.hasAttribute("data-spend-del")){ const u = undoable(), gone = (S.spends || []).find(x => x.id === spendEl.dataset.spend); S.spends = (S.spends || []).filter(x => x !== gone); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; }
   if (b.hasAttribute("data-trip-add")){ UI.tripAdd = true; UI.tripEdit = null; render(true); const i = view.querySelector('form[data-form="trip"] [name=name]'); if (i) i.focus(); return; }
   if (b.hasAttribute("data-trip-cancel")){ UI.tripAdd = false; UI.tripEdit = null; render(true); return; }
   if (b.hasAttribute("data-trips-all")){ UI.tripsAll = true; refreshOuts(); return; }
@@ -3770,13 +3950,8 @@ view.addEventListener("click", async e => {
     const x = S.splits.find(y => y.id === sp.dataset.split), u = undoable();
     S.splits = S.splits.filter(y => y !== x); tellAbout("delete", x); save(); render(true); toast(`Deleted ${x ? x.title : "split"}.`, () => { UI.tell = null; u(); }); return; }
   const st = b.closest("[data-settle]");
-  if (st && b.hasAttribute("data-settle-btn")){ const pid = st.dataset.settle, amt = +st.dataset.amt, bal = myBalances().find(x => x.p.id === pid);
-    if (!bal) return;
-    if (shared()){ const me = SH.me, rec = bal.net > 0 ? {from:pid, to:me} : {from:me, to:pid};
-      await shWrite(() => SH.db.collection("payments").doc(uid() + uid()).set({...rec, amount:amt, date:isoDaysAgo(0), createdBy:me, createdAt:Date.now()}), bal.net > 0 ? `Recorded ${fmt(amt)} from ${bal.p.name}. Undo it in History.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}. ${bal.p.name} was notified.`); return; }
-    if (bal.net > 0) S.settlements.push({id:uid(), from:pid, to:"me", amount:amt, date:isoDaysAgo(0)});
-    else S.settlements.push({id:uid(), from:"me", to:pid, amount:amt, date:isoDaysAgo(0)});
-    tellSettled(pid, amt, bal.net > 0); save(); render(true); toast(bal.net > 0 ? `Recorded ${fmt(amt)} from ${bal.p.name}. Undo it in History.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}. Undo it in History.`); return; }
+  if (st && b.hasAttribute("data-settle-btn")){ UI.settle = st.dataset.settle; render(true); const i = view.querySelector('form[data-form="settle"] input'); if (i){ i.focus(); i.select(); } return; }
+  if (b.hasAttribute("data-settle-cancel")){ UI.settle = null; render(true); return; }
   const pay = b.closest("[data-pay]");
   if (pay && shared()){ const x = SH.pays.find(y => y.id === pay.dataset.pay); if (!x) return;
     if (b.hasAttribute("data-pay-edit")){ UI.editPay = x.id; render(true); return; }
@@ -3851,22 +4026,33 @@ view.addEventListener("submit", async e => {
     if (!a){ toast("Enter the amount you received."); return; }
     (x.got = x.got || []).push({id: uid(), date: String(fd.get("date") || isoDaysAgo(0)), amount: a}); UI.incLog = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Logged ${fmt(a)} from ${x.name}.`); return; }
   if (kind === "closeMonth"){ const key = f.closest("[data-close]").dataset.close; closeMonth(key, numv(fd.get("amount"))); return; }
-  if (kind === "tripAdd"){ const t = tripList().find(x => x.id === f.closest("[data-trip]").dataset.trip), lines = parseSpend(fd.get("q")); if (!t) return;
+  if (kind === "settle"){ const pid = f.dataset.settle, bal = myBalances().find(x => x.p.id === pid), amt = r2(numv(fd.get("amount"))); if (!bal) return;
+    const owed = r2(Math.abs(bal.net)), got = bal.net > 0, left = r2(owed - amt);
+    if (!(amt > 0)){ toast("Enter the amount that was paid."); return; }
+    if (amt > owed + 0.005){ toast(got ? `${bal.p.name} only owes you ${fmt(owed)}.` : `You only owe ${bal.p.name} ${fmt(owed)}.`); return; }
+    UI.settle = null; if (isField(document.activeElement)) document.activeElement.blur();
+    const rest = left > 0.005 ? ` ${fmt(left)} is still owed.` : "";
+    if (shared()){ const me = SH.me, rec = got ? {from: pid, to: me} : {from: me, to: pid};
+      await shWrite(() => SH.db.collection("payments").doc(uid() + uid()).set({...rec, amount: amt, date: isoDaysAgo(0), createdBy: me, createdAt: Date.now()}), (got ? `Recorded ${fmt(amt)} from ${bal.p.name}.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}.`) + rest + (got ? " Undo it in History." : ` ${bal.p.name} was notified.`)); render(true); return; }
+    if (got) S.settlements.push({id: uid(), from: pid, to: "me", amount: amt, date: isoDaysAgo(0)});
+    else S.settlements.push({id: uid(), from: "me", to: pid, amount: amt, date: isoDaysAgo(0)});
+    tellSettled(pid, amt, got, left); save(); render(true); toast((got ? `Recorded ${fmt(amt)} from ${bal.p.name}.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}.`) + rest + " Undo it in History."); return; }
+  if (kind === "tripAdd"){ const t = tripList().find(x => x.id === f.closest("[data-trip]").dataset.trip); if (!t) return; const lines = parseSpend(fd.get("q"), t.cur);
     if (!lines.length){ toast("Type what you spent, like “uber 20”."); return; }
+    const bad = await convertLines(lines); if (bad){ toast(FX_FAIL(bad)); return; }
     tripAddSpend(t, lines); save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(tripSpendReply(t, lines)); return; }
   if (kind === "trip"){ const name = String(fd.get("name") || "").trim(), start = String(fd.get("start") || ""), end = String(fd.get("end") || ""), budget = numv(fd.get("budget")), ok = d => /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(isoDate(d).getTime());
     if (!name){ toast("Give the trip a name."); f.querySelector("[name=name]").focus(); return; }
     if (!ok(start) || !ok(end)){ toast("Pick the start and end dates."); return; }
     if (end < start){ toast("The trip cannot end before it starts."); return; }
     const old = UI.tripEdit && tripList().find(x => x.id === UI.tripEdit);
-    if (old) Object.assign(old, {name, start, end, budget}); else tripList().push({id: uid(), name, start, end, budget, items: [], settled: null});
+    const cur = CURRENCIES.some(c => c[0] === fd.get("cur")) && fd.get("cur") !== S.cur ? String(fd.get("cur")) : "";
+    if (old) Object.assign(old, {name, start, end, budget, cur}); else tripList().push({id: uid(), name, start, end, budget, cur, items: [], settled: null});
     UI.tripAdd = false; UI.tripEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `${name} is set. Spending you add on those days goes to the trip.`); return; }
   if (kind === "ask"){ const q = $("ask-in").value.trim(); if (!q) return;
-    const spend = parseSpend(q), wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), trip = activeTrip();
-    if (spend.length && (wantsAdd || (trip && !/\?|afford|how|what|when|can i|should/i.test(q)))){
-      if (trip){ tripAddSpend(trip, spend); save(); ASK.last = tripSpendReply(trip, spend); refreshOuts(); }
-      else ASK.last = "There is no trip running today. Plan a trip further down this tab, and what you add during its dates goes straight to it.";
-      const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; }
+    const wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), asking = /\?|\b(afford|how|what|when|who|which|can i|should|is|are|do|does)\b/i.test(q);
+    if (/\d/.test(q) && (wantsAdd || !asking)){ const said = await logSpend(q);
+      if (said){ ASK.last = said; refreshOuts(); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
     ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
   if (kind === "lockSet"){ const old = String(fd.get("old") || ""), pin = String(fd.get("pin") || ""), pin2 = String(fd.get("pin2") || "");
     if (UI.lockForm === "change" && !(await lockPinOk(old))){ toast("The current passcode is not right."); return; }

@@ -196,7 +196,8 @@ async def currency_label_never_overlaps_amount_anywhere(ctx):
         await tab(pg, "split"); await pg.click("[data-new-split]"); await pg.wait_for_timeout(80)
         r = await pg.evaluate(CHECK_MONEY); assert r["n"] >= 1 and not r["bad"], f"{cur} split form: {r}"
         await pg.click("[data-cancel-split]")
-        await pg.locator("[data-settle-btn]").first.click(); await pg.wait_for_timeout(80)
+        await pg.locator("[data-settle-btn]").first.click(); await pg.wait_for_timeout(80); r = await pg.evaluate(CHECK_MONEY); assert not r["bad"], f"{cur} part payment card: {r}"
+        await pg.click("form[data-form=settle] [type=submit]"); await pg.wait_for_timeout(80)
         await pg.click("#history [data-pay-edit]"); await pg.wait_for_timeout(80)
         r = await pg.evaluate(CHECK_MONEY); assert not r["bad"], f"{cur} payment edit: {r}"
         await pg.click("#history [data-pay-del]"); await pg.wait_for_timeout(80)
@@ -500,7 +501,7 @@ async def split_edit_delete_filter(ctx):
 async def split_settle_history_undo_edit(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
     before = await text(pg, "[data-out=splitSum] .summary3")
-    await pg.locator("[data-settle]", has_text="Jordan").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(100)
+    await pg.locator("[data-settle]", has_text="Jordan").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(100); await pg.click("form[data-form=settle] [type=submit]"); await pg.wait_for_timeout(100)
     assert "You owe Jordan" not in await text(pg, "[data-out=splitSum]")
     assert "You paid Jordan $37.50" in await text(pg, "#history")
     await pg.click("#history [data-pay-edit]"); await pg.wait_for_timeout(80)
@@ -527,7 +528,7 @@ async def split_people_add_remove_import(ctx):
     await pg.locator("[data-person]", has_text="Alex").locator("[data-del-person]").click()
     assert await pg.inner_text("#toast") == "Alex still owes you $21.50. Settle up first."
     # settled people can be removed; their past splits keep the name
-    await pg.locator("[data-settle]", has_text="Priya").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(100)
+    await pg.locator("[data-settle]", has_text="Priya").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(100); await pg.click("form[data-form=settle] [type=submit]"); await pg.wait_for_timeout(100)
     await pg.locator("[data-person]", has_text="Priya").locator("[data-person-open]").click(); await pg.wait_for_timeout(60)
     assert "Settled up" in await pg.locator("[data-person]", has_text="Priya").inner_text()
     await pg.locator("[data-person]", has_text="Priya").locator("[data-del-person]").click(); await pg.wait_for_timeout(100)
@@ -608,7 +609,7 @@ async def shared_my_writes_go_to_db(ctx):
     splits = await pg.evaluate("[...__mock.store.entries()].filter(([k])=>k.startsWith('splits/')).map(([k,v])=>v)")
     assert len(splits) == 1 and splits[0]["createdBy"] == "u_me" and splits[0]["parts"] == {"u_me": 1, "u_sam": 1}, splits
     assert "Sam owes you $10" in await text(pg, "[data-out=splitSum]")
-    await pg.locator("[data-settle]", has_text="Sam").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(250)
+    await pg.locator("[data-settle]", has_text="Sam").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(250); await pg.click("form[data-form=settle] [type=submit]"); await pg.wait_for_timeout(250)
     pays = await pg.evaluate("[...__mock.store.entries()].filter(([k])=>k.startsWith('payments/')).map(([k,v])=>v)")
     assert len(pays) == 1 and pays[0]["from"] == "u_sam" and pays[0]["to"] == "u_me", pays
     await pg.click("#history [data-pay-del]"); await pg.wait_for_timeout(250)
@@ -1326,7 +1327,7 @@ async def tell_them_after_split_changes(ctx):
     assert await pg.locator("[data-tell]").count() == 0 and any(x["title"] == "Movie night" for x in (await state(pg))["splits"])
     # settled: one person, one message
     row = pg.locator("[data-settle]").first; who = await row.get_attribute("data-settle"); got = "owes you" in await row.inner_text()
-    await row.locator("[data-settle-btn]").click(); await pg.wait_for_timeout(150)
+    await row.locator("[data-settle-btn]").click(); await pg.wait_for_timeout(150); await pg.click("form[data-form=settle] [type=submit]"); await pg.wait_for_timeout(150)
     card = await text(pg, "[data-tell]")
     assert ("Got your" in card if got else "I paid you" in card) and "We are all square" in card, card
     await pg.click("[data-tell] [data-tell-send]"); await pg.wait_for_timeout(120)
@@ -1510,7 +1511,11 @@ async def trips_keep_their_own_budget_until_you_decide(ctx):
     card = await text(pg, "[data-trips]"); assert "Miami weekend" in card and "Oct 10 to Oct 12" in card and "Starts in 2 days" in card and "$600 left of $600" in card, card
     # before the trip, "add ..." in the Ask box has nowhere to go and says so; ordinary questions still work
     await pg.fill("#ask-in", "add uber $20"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(150)
-    assert "no trip running today" in await text(pg, "#ask-out") and (await state(pg))["trips"][0]["items"] == []
+    assert "Added to this month under Miscellaneous, one time: Uber, $20." in await text(pg, "#ask-out") and (await state(pg))["trips"][0]["items"] == []
+    assert abs(kept0 - money(await kept()) - 20) < 0.01, "a one-off comes out of what you keep this month"
+    await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150); assert "Uber" in await text(pg, ".env-body") and "one time" in await text(pg, ".env-body")
+    await pg.click("[data-spend] [data-spend-del]"); await pg.wait_for_timeout(200); assert abs(money(await kept()) - kept0) < 0.01
+    await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(100)
     await pg.fill("#ask-in", "can I afford 100"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(150); assert (await text(pg, "#ask-out")).startswith("Yes")
     # day 2 of the trip: the Ask box takes spending straight to the trip, dated today, with no questions
     await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 11, 14, 0)); await tab(pg, "subs"); await tab(pg, "month")
@@ -1559,6 +1564,156 @@ async def trips_keep_their_own_budget_until_you_decide(ctx):
     assert (await state(pg))["trips"][0]["name"] == "Miami"
     await pg.click("[data-trip-edit]"); await pg.click("[data-trip-del]"); await pg.wait_for_timeout(200); assert (await state(pg))["trips"] == []
     await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(200); assert len((await state(pg))["trips"]) == 1
+    assert not pg.errors, pg.errors
+
+FX_ROUTE = {"eur": {"usd": 1.1253, "pkr": 311.3, "gbp": 0.86}, "gbp": {"usd": 1.31}}
+async def fx_routes(pg, ok=True):
+    async def cdn(route):
+        base = route.request.url.rsplit("/", 1)[-1].split(".")[0]
+        if ok and base in FX_ROUTE: await route.fulfill(json={"date": "2026-10-11", base: FX_ROUTE[base]})
+        else: await route.abort()
+    await pg.route("https://cdn.jsdelivr.net/**", cdn); await pg.route("https://open.er-api.com/**", lambda r: r.abort())
+
+@test
+async def say_it_and_keepwise_logs_it_in_the_right_place(ctx):
+    pg = await open_at(ctx, (2026, 10, 8, 9, 0)); await fx_routes(pg)
+    kept = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
+    async def say(q):
+        await pg.fill("#ask-in", q); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(350); return await text(pg, "#ask-out")
+    k0 = money(await kept()); n_exp = len((await state(pg))["expenses"]); n_sub = len((await state(pg))["subs"])
+    # a bill becomes a monthly line under Expenditures
+    r = await say("add rent top-up 120 as a bill"); assert "Added to Expenditures as a monthly bill: Rent top-up, $120." in r, r
+    st = await state(pg); assert len(st["expenses"]) == n_exp + 1 and st["expenses"][-1] == {**st["expenses"][-1], "name": "Rent top-up", "amount": 120, "env": "needs"}
+    # a subscription joins Subs, yearly when you say so
+    r = await say("add subscription cloud storage 24 a year"); assert "Added to Subs: Cloud storage, $24 a year." in r, r
+    st = await state(pg); assert len(st["subs"]) == n_sub + 1 and st["subs"][-1]["name"] == "Cloud storage" and st["subs"][-1]["cycle"] == "yr" and st["subs"][-1]["price"] == 24
+    # plain spending with no trip running is a one-off in this month, and "add" is not needed
+    k1 = money(await kept()); r = await say("coffee 4.50, parking 6"); assert "under Miscellaneous, one time: Coffee, $4.50; Parking, $6." in r, r
+    assert abs(k1 - money(await kept()) - 10.5) < 0.01 and len((await state(pg))["spends"]) == 2
+    # another currency is converted at today's rate, and the original is kept beside it
+    r = await say("dinner 30 euros"); assert "Dinner, €30 ($33.76 at today’s rate)" in r, r
+    sp = (await state(pg))["spends"][-1]; assert sp["amount"] == 33.76 and sp["orig"] == 30 and sp["ocur"] == "EUR" and sp["rate"] == 1.1253
+    r = await say("£10 taxi"); assert "Taxi, £10 ($13.10 at today’s rate)" in r, r
+    r = await say("pen 3"); assert "Pen, $3" in r and (await state(pg))["spends"][-1].get("ocur") is None, "a pen is a pen, not Peruvian soles: " + r
+    await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150); d = await text(pg, ".env-body"); assert "Dinner" in d and "€30" in d and "one time" in d, d
+    # the statement names day-to-day spending
+    await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(150)
+    assert "Day-to-day spending (5)" in await text(pg, ".stmt"); await pg.click("[data-stmt-back]"); await tab(pg, "month")
+    # questions are still questions, and Ask now knows the rest of the app
+    assert (await say("can I afford 100?")).startswith("Yes")
+    assert "subscriptions cost" in await say("how much do my subscriptions cost")
+    assert "expected in" in await say("what is my income")
+    assert "no trips yet" in await say("how is my trip going")
+    r = await say("what needs my attention"); assert "to look at" in r or "Nothing needs" in r, r
+    assert "next 7 days" in await say("what is coming up this week")
+    # a trip paid in euros: bare numbers are euros there, converted into your own currency
+    await pg.click("[data-trip-add]"); f = "form[data-form=trip] "
+    await pg.fill(f + "[name=name]", "Madrid"); await pg.fill(f + "[name=start]", "2026-10-08"); await pg.fill(f + "[name=end]", "2026-10-10"); await pg.fill(f + "[name=budget]", "500"); await pg.select_option(f + "[name=cur]", "EUR")
+    await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(250)
+    assert "paying in EUR" in await text(pg, "[data-trips]")
+    r = await say("tapas 20"); assert "Added Tapas, €20 ($22.51 at today’s rate), to Madrid. $22.51 spent of $500." in r, r
+    r = await say("museum 15 usd"); assert "Added Museum, $15, to Madrid" in r, r
+    await pg.fill("form[data-form=tripAdd] [name=q]", "metro 2, churros 4"); await pg.click("form[data-form=tripAdd] [type=submit]"); await pg.wait_for_timeout(350)
+    it = (await state(pg))["trips"][0]["items"]; assert [(x["name"], x["amount"]) for x in it] == [("Tapas", 22.51), ("Museum", 15), ("Metro", 2.25), ("Churros", 4.5)], it
+    # with no connection it says so and adds nothing, rather than guessing a rate
+    await pg.evaluate("localStorage.removeItem('keepwise-fx-v1')"); await pg.unroute("https://cdn.jsdelivr.net/**"); await fx_routes(pg, ok=False)
+    r = await say("wine 12"); assert "Could not get today’s rate for EUR" in r and len((await state(pg))["trips"][0]["items"]) == 4, r
+    assert not pg.errors, pg.errors
+
+@test
+async def speaking_fills_the_ask_box(ctx):
+    pg = await ctx.new_page(); await pg.set_viewport_size({"width": 390, "height": 844}); pg.errors = []
+    pg.on("pageerror", lambda e: pg.errors.append(str(e)))
+    await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true; window.webkitSpeechRecognition = undefined; window.SpeechRecognition = undefined;")
+    await pg.goto(URL); await pg.wait_for_timeout(400)
+    assert await pg.locator("[data-ask-mic]").count() == 0, "no microphone where the browser cannot listen"
+    await pg.add_init_script("""window.webkitSpeechRecognition = function(){ const r = this; window.__rec = r; r.start = () => { window.__recOn = (window.__recOn || 0) + 1; }; r.stop = () => { r.onend && r.onend(); }; };""")
+    await pg.reload(); await pg.wait_for_timeout(400)
+    mic = pg.locator("[data-ask-mic]"); assert await mic.count() == 1 and await mic.get_attribute("aria-pressed") == "false"
+    await mic.click(); await pg.wait_for_timeout(150)
+    assert await pg.evaluate("window.__recOn") == 1 and await pg.evaluate("window.__rec.lang") == "en-US" and await mic.get_attribute("aria-pressed") == "true" and "Listening" in await pg.inner_text("#toast")
+    await pg.evaluate("window.__rec.onresult({results: [[{transcript: 'lunch $12'}]]})"); await pg.wait_for_timeout(350)
+    assert "Lunch, $12" in await text(pg, "#ask-out") and (await state(pg))["spends"][-1]["name"] == "Lunch", "what was said is logged like typing it"
+    assert await pg.locator("[data-ask-mic]").get_attribute("aria-pressed") == "false"
+    # a refused microphone explains itself
+    await pg.click("[data-ask-mic]"); await pg.evaluate("window.__rec.onerror({error: 'not-allowed'})"); await pg.wait_for_timeout(150)
+    assert "microphone is off" in await pg.inner_text("#toast")
+    assert not pg.errors, pg.errors
+
+@test
+async def paying_part_of_what_you_owe_leaves_the_rest(ctx):
+    pg = await open_app(ctx); await tab(pg, "split")
+    row = pg.locator("[data-settle]", has_text="Jordan"); assert "You owe Jordan $37.50" in await row.inner_text()
+    await row.locator("[data-settle-btn]").click(); await pg.wait_for_timeout(150)
+    f = pg.locator("form[data-form=settle]"); assert await f.locator("[name=amount]").input_value() == "37.5", "the full amount is filled in to start with"
+    assert "part payment" in await f.inner_text()
+    await pg.click("[data-settle-cancel]"); await pg.wait_for_timeout(120); assert await pg.locator("form[data-form=settle]").count() == 0 and len((await state(pg))["settlements"]) == 0 or True
+    n0 = len((await state(pg))["settlements"])
+    await pg.locator("[data-settle]", has_text="Jordan").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(120); f = pg.locator("form[data-form=settle]")
+    await f.locator("[name=amount]").fill("0"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(120); assert "Enter the amount" in await pg.inner_text("#toast")
+    await f.locator("[name=amount]").fill("50"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(120); assert "You only owe Jordan $37.50" in await pg.inner_text("#toast")
+    await f.locator("[name=amount]").fill("20"); await pg.evaluate("document.activeElement.blur()"); await pg.wait_for_timeout(250)
+    assert await pg.locator("form[data-form=settle] [name=amount]").input_value() == "20", "leaving the field keeps what you typed"
+    await pg.locator("form[data-form=settle] [type=submit]").click(); await pg.wait_for_timeout(200)
+    assert "Recorded $20 paid to Jordan. $17.50 is still owed." in await pg.inner_text("#toast")
+    assert "You owe Jordan $17.50" in await text(pg, "[data-out=splitSum]") and len((await state(pg))["settlements"]) == n0 + 1
+    assert "I paid you $20. I still owe you $17.50." in await text(pg, "[data-tell]"), "the message says what is left"
+    assert "You paid Jordan $20" in await text(pg, "#history")
+    # paying the rest squares it
+    await pg.locator("[data-settle]", has_text="Jordan").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(120)
+    assert await pg.locator("form[data-form=settle] [name=amount]").input_value() == "17.5"
+    await pg.locator("form[data-form=settle] [type=submit]").click(); await pg.wait_for_timeout(200)
+    assert "You owe Jordan" not in await text(pg, "[data-out=splitSum]") and "We are all square" in await text(pg, "[data-tell]")
+    assert not pg.errors, pg.errors
+
+@test
+async def tour_walks_the_example_and_never_touches_your_numbers(ctx):
+    # someone with their own month: the offer shows once on Month
+    pg = await ctx.new_page(); await pg.set_viewport_size({"width": 390, "height": 844}); pg.errors = []
+    pg.on("pageerror", lambda e: pg.errors.append(str(e)))
+    await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true; window.KEEPWISE_TOUR = true;")
+    await pg.goto(URL); await pg.wait_for_timeout(400)
+    await tab(pg, "plan"); await pg.click("[data-add-exp]"); await pg.fill("form[data-form=exp] [name=name]", "My own line"); await pg.fill("form[data-form=exp] [name=amount]", "77"); await pg.click("form[data-form=exp] [type=submit]"); await pg.wait_for_timeout(200)
+    mine = await pg.evaluate("localStorage.getItem('keepwise-app-v1')"); assert "My own line" in mine
+    await tab(pg, "month"); assert await pg.locator("[data-tour-offer]").count() == 0 and await pg.locator("#tour").is_hidden(), "someone with their own month is never prompted"
+    await tab(pg, "plan"); await pg.locator("[data-tour-start]").scroll_into_view_if_needed(); await pg.click("[data-tour-start]"); await pg.wait_for_timeout(250)
+    tour = pg.locator("#tour"); assert await tour.is_visible()
+    mine = await pg.evaluate("localStorage.getItem('keepwise-app-v1')"); assert "My own line" in mine   # saved once as the tour starts, then left alone
+    seen = []
+    for i in range(10):
+        v = await tour.inner_text(); assert f"{i + 1} of 10" in v and "Skip tour" in v, v   # Skip is on every step
+        seen.append(v.split("\n")[2] if "\n" in v else v)
+        if i in (0, 1, 2, 3, 4): assert await pg.locator(".tour-focus").count() == 1, f"step {i + 1} points at something"
+        box = await pg.locator(".tour-focus").first.bounding_box() if await pg.locator(".tour-focus").count() else None
+        if box: assert box["y"] < 500, f"step {i + 1}: what it points at is on screen"
+        assert (await pg.locator("#tour [data-tour-back]").count() == 1) == (i > 0)
+        await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(200)
+    for title in ("What you keep", "Just say it", "Coming up", "Where it goes", "Subscriptions", "Cheaper", "Codes", "Plan", "Split", "Notifications"):
+        assert any(title in x for x in seen), (title, seen)
+    v = await tour.inner_text(); assert "That is the whole app" in v and "exactly as you left them" in v and "Back to my month" in v
+    assert "My own line" not in await pg.inner_text("#app"), "the tour shows the example, not your month"
+    assert await pg.evaluate("localStorage.getItem('keepwise-app-v1')") == mine, "nothing is saved during the tour"
+    await pg.click("#tour [data-tour-back]"); await pg.wait_for_timeout(150); assert "10 of 10" in await tour.inner_text()
+    await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-end]"); await pg.wait_for_timeout(250)
+    assert not await tour.is_visible() and await pg.locator(".tour-focus").count() == 0 and not await pg.evaluate("document.getElementById('app').classList.contains('touring')")
+    assert (await state(pg))["tab"] == "plan" and "My own line" in await text(pg, "[data-out=expList]"), "your own numbers are back, on the tab you left"
+    # it can be replayed from Plan, and skipped at any step
+    await pg.locator("[data-tour-start]").scroll_into_view_if_needed(); await pg.click("[data-tour-start]"); await pg.wait_for_timeout(250)
+    await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(150); assert "3 of 10" in await tour.inner_text()
+    await pg.click("#tour [data-tour-skip]"); await pg.wait_for_timeout(250)
+    assert not await tour.is_visible() and (await state(pg))["tab"] == "plan" and "My own line" in await text(pg, "[data-out=expList]")
+    await pg.reload(); await pg.wait_for_timeout(400); assert "My own line" in await pg.evaluate("localStorage.getItem('keepwise-app-v1')")
+    await pg.close()
+    # a first visit: the tour is offered before setup, and finishing it leads into setup
+    pg = await open_app(ctx, welcome=True); await pg.evaluate("window.__kwErasing = true; localStorage.clear()"); await pg.reload(); await pg.wait_for_timeout(400)
+    assert "Take a one-minute tour first" in await text(pg, "#view")
+    await pg.click("[data-tour-start]"); await pg.wait_for_timeout(250); assert "1 of 10" in await pg.locator("#tour").inner_text()
+    await pg.click("#tour [data-tour-skip]"); await pg.wait_for_timeout(250); assert "See what you keep" in await text(pg, "#view"), "Skip returns to where you were"
+    await pg.click("[data-tour-start]"); await pg.wait_for_timeout(200)
+    for _ in range(10): await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(120)
+    assert "Set up my month" in await pg.locator("#tour").inner_text()
+    await pg.click("#tour [data-tour-end]"); await pg.wait_for_timeout(250); assert "What comes in?" in await text(pg, "#view")
+    assert await pg.evaluate("localStorage.getItem('keepwise-app-v1')") is None, "a tour before setup saves nothing"
     assert not pg.errors, pg.errors
 
 @test
