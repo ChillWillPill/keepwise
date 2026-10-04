@@ -1612,10 +1612,12 @@ async def help_and_contact_points_to_our_own_accounts(ctx):
     await tab(pg, "plan"); card = pg.locator("[data-help]"); assert await card.count() == 1
     link = card.locator("[data-help-link=X]"); assert await link.get_attribute("href") == "https://x.com/MyKeepWise" and await link.get_attribute("target") == "_blank" and "noopener" in await link.get_attribute("rel")
     txt = await card.inner_text(); assert "Message @MyKeepWise on X" in txt and "never ask for your password" in txt
+    em = card.locator("[data-help-link=email]"); assert await em.get_attribute("href") == "mailto:support@mykeepwise.com" and "Email support@mykeepwise.com" in txt
+    eb = await em.bounding_box(); assert eb["x"] >= 0 and eb["x"] + eb["width"] <= 390
     ig = card.locator("[data-help-link=Instagram]"); assert await ig.get_attribute("href") == "https://www.instagram.com/mykeepwise" and "Message @mykeepwise on Instagram" in txt
     box = await link.bounding_box(); assert box["x"] >= 0 and box["x"] + box["width"] <= 390
     await pg.click("#acct-btn"); await pg.wait_for_timeout(300); assert await pg.locator("[data-help] [data-help-link=X]").count() == 1, "also on the account screen"
-    for page, phrase in (("privacy.html", "exercise your privacy rights"), ("terms.html", "questions about these Terms")):
+    for page, phrase in (("privacy.html", "mailto:privacy@mykeepwise.com"), ("terms.html", "mailto:legal@mykeepwise.com")):
         src = open(os.path.join(os.path.dirname(APP), "legal", page) if os.path.exists(os.path.join(os.path.dirname(APP), "legal", page)) else os.path.join(os.path.dirname(APP), page), encoding="utf8").read()
         assert "https://x.com/MyKeepWise" in src and "https://www.instagram.com/mykeepwise" in src and phrase in src and "github.com/ChillWillPill/keepwise/issues" not in src, page
     assert not pg.errors, pg.errors

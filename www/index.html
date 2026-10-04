@@ -3701,9 +3701,11 @@ const accErrBox = () => `<div data-out="accErr">${OUT.accErr()}</div>`;
 OUT.accErr = () => ACC.err ? `<p class="err" role="alert">${esc(ACC.err)}</p>` : "";
 const legalLinks = `<a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a> and <a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>`;
 // Help and contact. Support runs on KeepWise's own social accounts; add a line here when another account opens.
+const SUPPORT_EMAIL = "support@mykeepwise.com";
 const SOCIAL = [["X", "@MyKeepWise", "https://x.com/MyKeepWise"], ["Instagram", "@mykeepwise", "https://www.instagram.com/mykeepwise"]];
 const helpCard = () => `<section class="card" data-help><h2>Help and contact</h2>
-  <p class="muted small">Questions, a problem, or an idea? Message us and a person will read it.</p>
+  <p class="muted small">Questions, a problem, or an idea? Email or message us and a person will read it.</p>
+  <a class="btn primary" href="mailto:${SUPPORT_EMAIL}" data-help-link="email">Email ${SUPPORT_EMAIL}</a>
   ${SOCIAL.map(([net, handle, url]) => `<a class="btn" href="${url}" target="_blank" rel="noopener" data-help-link="${net}">Message ${esc(handle)} on ${esc(net)}</a>`).join("")}
   <p class="muted small">KeepWise will never ask for your password, your passcode or your bank details in a message. Please keep personal and financial details out of public posts.</p></section>`;
 const accView = () => {
