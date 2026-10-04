@@ -1736,7 +1736,7 @@ async def say_it_and_keepwise_logs_it_in_the_right_place(ctx):
     assert (await say("can I afford 100?")).startswith("Yes")
     assert "subscriptions cost" in await say("how much do my subscriptions cost")
     assert "expected in" in await say("what is my income")
-    assert "no trips yet" in await say("how is my trip going")
+    assert "no trips or events yet" in await say("how is my trip going")
     r = await say("what needs my attention"); assert "to look at" in r or "Nothing needs" in r, r
     assert "next 7 days" in await say("what is coming up this week")
     # a trip paid in euros: bare numbers are euros there, converted into your own currency
@@ -2062,6 +2062,52 @@ async def coming_up_reads_in_date_order_and_a_trip_is_never_logged_as_spending(c
     assert await pg.locator("form[data-form=trip] [name=name]").input_value() == "Lahore"; await pg.click("[data-trip-cancel]"); await pg.wait_for_timeout(120)
     await pg.click("#wise"); await pg.wait_for_timeout(150); await pg.fill("#ask-in", "how is my trip going?"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(300)
     assert await pg.locator("form[data-form=trip]").count() == 0 and "Australia" in await text(pg, "#ask-out")
+    assert not pg.errors, pg.errors
+
+@test
+async def an_event_works_like_a_trip_with_a_place_and_people(ctx):
+    pg = await open_at(ctx, (2026, 10, 8, 9, 0)); await fx_routes(pg)
+    kept = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
+    k0 = await kept()
+    row = await text(pg, "[data-plan-row]"); assert "Plan a trip" in row and "an event" in row
+    await pg.click("[data-event-add]"); await pg.wait_for_timeout(150); f = pg.locator("form[data-form=trip]")
+    types = await f.locator("[name=etype] option").all_inner_texts(); assert types[:5] == ["Wedding", "Birthday party", "Party", "DJ night", "Concert"] and types[-1] == "Other", types
+    assert await f.locator("[name=start]").input_value() == "2026-10-08" == await f.locator("[name=end]").input_value(), "an event starts as one day"
+    await f.locator("[name=etype]").select_option("birthday"); await f.locator("[name=place]").fill("Rooftop Cafe"); await f.locator("[name=people]").fill("12"); await f.locator("[name=budget]").fill("600")
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    ev = (await state(pg))["trips"][0]; assert (ev["kind"], ev["etype"], ev["name"], ev["place"], ev["people"], ev["budget"]) == ("event", "birthday", "Birthday party", "Rooftop Cafe", 12, 600), ev
+    card = await text(pg, "[data-trip]"); assert "Birthday party · Rooftop Cafe · 12 people" in card and "Today" in card and "$50 a person budgeted" in card, card
+    assert "Trips and events" in (await text(pg, "[data-trips] h2")).replace("TRIPS AND EVENTS", "Trips and events") or "TRIPS AND EVENTS" in (await text(pg, "[data-trips]")).upper()
+    # spending said today goes to the event, not the month, and the cost per person follows
+    await pg.click("#wise"); await pg.wait_for_timeout(150); await pg.fill("#ask-in", "cake 60, balloons 24"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(350)
+    assert "to Birthday party. $84 spent of $600." in await text(pg, "#ask-out"); await pg.locator(".ask-panel [data-ask-close]").click(); await pg.wait_for_timeout(120)
+    assert "$7 a person so far" in await text(pg, "[data-trip]") and await kept() == k0
+    await pg.fill("form[data-form=tripAdd] [name=q]", "venue 300"); await pg.click("form[data-form=tripAdd] [type=submit]"); await pg.wait_for_timeout(300)
+    assert "$32 a person so far · $50 a person budgeted" in await text(pg, "[data-trip]")
+    # the day after: the same choice as a trip, worded for an event, in the card and the bell
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 9, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    card = await text(pg, "[data-trip]"); assert "This event is over. What should happen to the $384?" in card
+    await pg.click("#bell"); await pg.wait_for_timeout(150); assert "Birthday party is over" in await text(pg, "#view") and "trip is over" not in await text(pg, "#view"); await pg.click("[data-close-inbox]")
+    await pg.click("[data-trip-settle=separate]"); await pg.wait_for_timeout(200); assert await kept() == k0
+    await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(150)
+    st = await text(pg, "[data-st-trips]"); assert "Events kept apart".upper() in st.upper() and "Birthday party" in st; await pg.click("[data-stmt-back]"); await tab(pg, "month")
+    await pg.click("[data-trip-open]"); await pg.wait_for_timeout(150); assert "This event is kept apart from your months." in await text(pg, "[data-trip]")
+    await pg.click("[data-trip-settle=counted]"); await pg.wait_for_timeout(200); assert abs(money(k0) - money(await kept()) - 384) < 0.01
+    # said out loud: the card opens filled in, and nothing is saved until it is added
+    n = len((await state(pg))["trips"])
+    await pg.click("#wise"); await pg.wait_for_timeout(150); await pg.fill("#ask-in", "plan a wedding for Ali at Pearl Hall for 300 people, budget 20,000"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(500)
+    f = pg.locator("form[data-form=trip]"); assert len((await state(pg))["trips"]) == n and await f.count() == 1
+    got = [await f.locator(f"[name={k}]").input_value() for k in ("etype", "name", "place", "people", "budget")]; assert got == ["wedding", "Wedding for Ali", "Pearl Hall", "300", "20000"], got
+    await f.locator("[name=start]").fill("2026-12-20"); await f.locator("[name=end]").fill("2026-12-22"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    w = [x for x in (await state(pg))["trips"] if x["name"] == "Wedding for Ali"][0]; assert (w["kind"], w["people"], w["budget"], w["place"]) == ("event", 300, 20000, "Pearl Hall")
+    for q, etype, name in (("organise a dj night budget 500", "dj", "DJ night"), ("plan a concert in Lahore", "concert", "Concert")):
+        await pg.click("#wise"); await pg.wait_for_timeout(150); await pg.fill("#ask-in", q); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(450)
+        f = pg.locator("form[data-form=trip]"); assert await f.locator("[name=etype]").input_value() == etype and await f.locator("[name=name]").input_value() == name, q
+        await pg.click("[data-trip-cancel]"); await pg.wait_for_timeout(120)
+    # a trip is still a trip, and an ordinary gift is still spending
+    await pg.click("[data-trip-add]"); await pg.wait_for_timeout(120); assert await pg.locator("form[data-form=trip] [name=etype]").count() == 0; await pg.click("[data-trip-cancel]"); await pg.wait_for_timeout(120)
+    k = len((await state(pg)).get("spends") or []); await pg.click("#wise"); await pg.wait_for_timeout(150); await pg.fill("#ask-in", "add birthday gift 30"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(350)
+    assert len((await state(pg))["spends"]) == k + 1 and await pg.locator("form[data-form=trip]").count() == 0
     assert not pg.errors, pg.errors
 
 @test

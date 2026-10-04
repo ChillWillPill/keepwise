@@ -1574,7 +1574,7 @@ function voiceToggle(){
 function answerMore(t, C){
   const today = todayMid(), list = a => a.join("\n");
   if (/\b(trip|trips|travel|holiday|vacation)\b/.test(t)){ const trips = (S.trips || []).slice().sort((a, b) => (b.start || "").localeCompare(a.start || "")), tr = activeTrip() || trips.find(x => tripState(x) === "ended") || trips[0];
-    if (!tr) return "You have no trips yet. Plan one on the Month tab and its spending stays apart from your month.";
+    if (!tr) return "You have no trips or events yet. Plan one on the Month tab and its spending stays apart from your month.";
     const tot = tripTotal(tr), st = tripState(tr), b = +tr.budget || 0;
     return `${tr.name} (${tripRange(tr)}): ${fmt(tot)} spent${b > 0 ? ` of ${fmt(b)}, ${tot > b ? `${fmt(r2(tot - b))} over` : `${fmt(r2(b - tot))} left`}` : ""}. ${st === "active" ? "It is running now." : st === "upcoming" ? `It starts ${dateWithYear(isoDate(tr.start))}.` : st === "ended" ? "It is over. Choose on Month whether it counts in this month." : st === "counted" ? `It counts in ${keyLabel(tr.countKey)}.` : "It is kept separate from your months."}`; }
   if (/\b(loan|loans|mortgage|credit card|installment|installments|debts?)\b/.test(t) && (S.loans || []).some(l => !loanDone(l))){ const live = S.loans.filter(l => !loanDone(l)), owed = r2(live.reduce((a, l) => a + (+l.total || 0), 0));
@@ -2087,7 +2087,7 @@ function localNotes(){
   S.subs.map(x => ({x, d: nextRenewal(x)})).filter(v => v.d && daysUntil(v.d) <= 7).sort((a, b) => a.d - b.d).forEach(({x, d}) => { const n = daysUntil(d), w = whenLabel(n).toLowerCase();
     if (x.keep === "drop") add(`c:${x.id}:${isoOf(d)}`, `Cancel ${x.name} before it renews`, `You chose to drop it. It renews ${w}, ${fmt(x.price)}.`, "subs", `[data-sub="${x.id}"]`);
     else add(`r:${x.id}:${isoOf(d)}`, `${x.name} renews ${w}`, `${fmt(x.price)} on ${dayMonth(d)}.${surveyDue(x) ? " Still using it?" : ""}`, "subs", `[data-sub="${x.id}"]`, x.id); });
-  (S.trips || []).filter(t => tripState(t) === "ended").forEach(t => add(`t:${t.id}:${t.end}`, `Your ${t.name} trip is over`, `You spent ${fmt(tripTotal(t))}. Choose whether it counts in this month or stays separate.`, "month", `[data-trip="${t.id}"]`));
+  (S.trips || []).filter(t => tripState(t) === "ended").forEach(t => add(`t:${t.id}:${t.end}`, isEvent(t) ? `${t.name} is over` : `Your ${t.name} trip is over`, `You spent ${fmt(tripTotal(t))}. Choose whether it counts in this month or stays separate.`, "month", `[data-trip="${t.id}"]`));
   const C = compute(); if (C.flagged.length) add(`f:${C.planKey}:${C.flagged.length}`, `${C.flagged.length} subscription${C.flagged.length === 1 ? " looks" : "s look"} unused`, `Dropping ${C.flagged.length === 1 ? "it" : "them"} would keep ${fmt(C.flaggedSave)} a month.`, "subs", `[data-sub="${C.flagged[0].id}"]`);
   billsSoon(3).forEach(v => { const n = daysUntil(v.d); add(`bd:${v.e.id}:${isoOf(v.d)}`, `${v.e.name} is due ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `${fmt(v.e.amount)} on ${dayMonth(v.d)}. You pay this one yourself.`, "plan", `[data-exp="${v.e.id}"]`); });
   billsDue().forEach(v => add(`b:${v.e.id}:${isoOf(v.date)}`, `Did you pay ${v.e.name}?`, `${fmt(v.e.amount)} was due ${dayMonth(v.date)}.`, "month", `[data-bill-due="${v.e.id}"]`));
@@ -2196,7 +2196,7 @@ function buildStatement(){
     settled: {count: pays.length, total: r2(pays.reduce((a, x) => a + (+x.amount || 0), 0))},
     spends: {count: spendsIn(k).length, total: spendsTotal(k)},
     trips: (S.trips || []).filter(t => t.settled === "counted" ? t.countKey === k : (inMonth(t.end, k) || inMonth(t.start, k) || (t.items || []).some(x => inMonth(x.date, k))))
-      .map(t => ({n: t.name, r: tripRange(t), a: tripTotal(t), b: r2(+t.budget || 0), m: t.settled === "counted" ? "counted" : t.settled === "separate" ? "separate" : "open"}))};
+      .map(t => ({n: t.name, ...(isEvent(t) ? {e: 1} : {}), r: tripRange(t), a: tripTotal(t), b: r2(+t.budget || 0), m: t.settled === "counted" ? "counted" : t.settled === "separate" ? "separate" : "open"}))};
 }
 function recordStatement(){
   if (UI.welcome != null) return;  // nothing to record while setting up
@@ -2251,7 +2251,7 @@ V.statement = () => {
       ${s.spends && s.spends.count ? row(`Day-to-day spending (${s.spends.count})`, f(s.spends.total)) : ""}
       ${(s.trips || []).filter(t => t.m === "counted").map(t => row(`Trip: ${esc(t.n)} <span class="muted small">${esc(t.r)}</span>`, f(t.a))).join("")}
       ${row("<b>Miscellaneous</b>", `<b>${f(s.misc)}</b>`)}</section>
-    ${(s.trips || []).some(t => t.m !== "counted") ? `<section data-st-trips><h3>Trips kept apart</h3>${s.trips.filter(t => t.m !== "counted").map(t => row(`${esc(t.n)} <span class="muted small">${esc(t.r)}${t.m === "open" ? " · not decided yet" : ""}</span>`, t.b > 0 ? `${f(t.a)} of ${f(t.b)}` : f(t.a))).join("")}<p class="muted small">Not included in Out or Kept above.</p></section>` : ""}
+    ${(s.trips || []).some(t => t.m !== "counted") ? `<section data-st-trips><h3>${s.trips.some(t => t.m !== "counted" && t.e) ? (s.trips.some(t => t.m !== "counted" && !t.e) ? "Trips and events kept apart" : "Events kept apart") : "Trips kept apart"}</h3>${s.trips.filter(t => t.m !== "counted").map(t => row(`${esc(t.n)} <span class="muted small">${esc(t.r)}${t.m === "open" ? " · not decided yet" : ""}</span>`, t.b > 0 ? `${f(t.a)} of ${f(t.b)}` : f(t.a))).join("")}<p class="muted small">Not included in Out or Kept above.</p></section>` : ""}
     ${s.subs.length ? `<section><h3>Subscriptions</h3>${live.map(x => row(esc(x.n), f(x.m) + "/mo")).join("")}${dropped.length ? dropped.map(x => row(`${esc(x.n)} <span class="pill flag">Dropped</span>`, `<s class="muted">${f(x.m)}</s>`)).join("") : ""}</section>` : ""}
     ${s.swaps.length ? `<section><h3>Cheaper swaps in use</h3>${s.swaps.map(x => row(`${esc(x.t)} → ${esc(x.a)}`, `<span class="good">${f(x.s)}/mo kept</span>`)).join("")}</section>` : ""}
     <section><h3>Savings</h3>${row("Set aside this month", f(s.setAside))}${row("Emergency fund balance", f(s.efSaved))}</section>
@@ -2795,6 +2795,11 @@ OUT.payBox = () => {
 // month. When the trip is over you choose: count it in a month, or keep it apart as budget against spent. Either way
 // the monthly statement says which.
 const tripList = () => S.trips || (S.trips = []);
+// An event is a trip by another name: a wedding, a birthday, a concert. Same dates, same budget of its own, same choice
+// when it is over. It adds what an event needs: its type, the place, and how many people, which gives a cost per person.
+const EVENT_TYPES = [["wedding","Wedding"],["birthday","Birthday party"],["party","Party"],["dj","DJ night"],["concert","Concert"],["festival","Festival"],["dinner","Dinner or gathering"],["graduation","Graduation"],["anniversary","Anniversary"],["baby","Baby shower"],["religious","Religious occasion"],["conference","Conference"],["sports","Sports event"],["other","Other"]];
+const eventType = k => (EVENT_TYPES.find(x => x[0] === k) || EVENT_TYPES[EVENT_TYPES.length - 1])[1];
+const isEvent = t => !!t && t.kind === "event", tripNoun = t => isEvent(t) ? "event" : "trip";
 const tripTotal = t => r2((t.items || []).reduce((a, x) => a + (+x.amount || 0), 0));
 const isoDate = iso => { const [y, m, d] = String(iso).split("-").map(Number); return new Date(y, m - 1, d); };
 const tripState = t => { const today = isoOf(todayMid()); return t.settled === "counted" ? "counted" : t.settled === "separate" ? "separate" : today < t.start ? "upcoming" : today > t.end ? "ended" : "active"; };
@@ -2946,7 +2951,25 @@ const SPEND_NOISE = /\b(as\s+an?\s+|as\s+|to\s+(my\s+)?|under\s+|in\s+)?(subscri
 // "plan a trip to Australia, budget $6,000": this starts a trip, never a line of spending. A trip needs its dates, so
 // the trip card opens with the name and budget filled in and nothing is saved until the dates are checked and it is added.
 const TRIP_CMD = /\b(plan|planning|add|create|start|new|make|set up|log)\b[^.?!]*\b(trip|holiday|vacation|tour)\b|\b(trip|holiday|vacation)\b[^.?!]*\bbudget\b/i;
+const EVENT_WORD = "wedding|birthday party|birthday|dj night|concert|festival|graduation|anniversary|baby shower|party|event", EVENT_KEY = {"wedding": "wedding", "birthday party": "birthday", "birthday": "birthday", "dj night": "dj", "concert": "concert", "festival": "festival", "graduation": "graduation", "anniversary": "anniversary", "baby shower": "baby", "party": "party", "event": "other"};
+const EVENT_CMD = new RegExp(`\\b(plan|planning|organi[sz]e|organi[sz]ing|host|hosting|throw|throwing|set up|create|start|new)\\b[^.?!]*\\b(${EVENT_WORD})\\b|\\b(add|log)\\b[^.?!]*\\bevent\\b|\\b(${EVENT_WORD})\\b[^.?!]*\\bbudget\\b`, "i");
+// "plan a wedding for Ali at Pearl Hall for 300 people, budget 2,000,000": the event card opens filled in, nothing is saved.
+async function startEvent(text){
+  const typeWord = (text.match(new RegExp(`\\b(${EVENT_WORD})\\b`, "i")) || [])[1] || "event", etype = EVENT_KEY[typeWord.toLowerCase()] || "other", draft = {kind: "event", etype};
+  const ppl = text.match(/(\d[\d,]*)\s*(people|guests|persons|pax|heads|friends)\b/i); if (ppl) draft.people = +ppl[1].replace(/,/g, "");
+  let rest = ppl ? text.replace(ppl[0], " ") : text; rest = rest.replace(/\bfor\s+(?=\s|$|,)/gi, " ");
+  const stop = "(?=\\s+(?:at|in|for|with|budget|on|from|and)\\b|\\s*[,.]|\\s*\\d|\\s*[$€£¥₹]|\\s*$)";
+  const at = rest.match(new RegExp(`\\b(?:at|in)\\s+((?:(?!\\b(?:for|with|budget|on|from)\\b)[^,.\\d$€£¥₹])+?)${stop}`, "i")); if (at) draft.place = at[1].trim().replace(/^the\s+/i, "").slice(0, 40).replace(/^./, c => c.toUpperCase());
+  const who = rest.match(new RegExp(`\\bfor\\s+((?:(?!\\b(?:at|in|with|budget|on|from)\\b)[^,.\\d$€£¥₹])+?)${stop}`, "i")), whoName = who ? who[1].trim().replace(/^(my|a|an|the)\s+/i, m => /my/i.test(m) ? m : "") : "";
+  draft.name = (whoName && !/^(a|an|the|budget)$/i.test(whoName) ? `${eventType(etype)} for ${whoName}` : etype === "other" ? "" : eventType(etype)).slice(0, 40);
+  const bm = rest.match(/\bbudget\b(.*)$/i), b = parseSpend(bm ? bm[1] : rest.replace(at ? at[0] : "\u0000", " "))[0];
+  if (b){ const paidIn = b.cur && b.cur[0] !== "?" ? b.cur : null; const bad = await convertLines([b]); if (bad) return FX_FAIL(bad); draft.budget = b.amount; if (paidIn) draft.cur = paidIn; }
+  UI.tripDraft = draft; UI.tripAdd = true; UI.tripEdit = null; UI.askOpen = false;
+  setTimeout(() => { goTo("month", 'form[data-form="trip"]'); const i = view.querySelector('form[data-form="trip"] [name=start]'); if (i) i.focus({preventScroll: true}); }, 0);
+  return `Started an event: ${draft.name || "name it on the card"}${draft.place ? `, at ${draft.place}` : ""}${draft.people ? `, ${draft.people} people` : ""}${b ? `, budget ${b.ocur ? `${fmtIn(b.orig, b.ocur)} (${fmt(b.amount)} at today’s rate)` : fmt(b.amount)}` : ""}. Check the date and tap Add event. Nothing was added to this month.`;
+}
 async function startTrip(text){
+  if (EVENT_CMD.test(text) && !/\b(trip|holiday|vacation|tour)\b/i.test(text)) return startEvent(text);
   const m = text.match(/\b(?:trip|holiday|vacation|tour)\b\s*(?:to|for|in|at|of)?\s*([^,.\d$€£¥₹]*)/i);
   let name = (m ? m[1] : "").replace(/\b(with|and|a|an|the|my|budget|of|for|from|is|at|around|about)\b\s*$/gi, "").replace(/\b(with\s+)?(a\s+)?budget.*$/i, "").replace(/\s+/g, " ").trim().slice(0, 40);
   name = name ? name[0].toUpperCase() + name.slice(1) : "";
@@ -2957,7 +2980,7 @@ async function startTrip(text){
   return `Started a trip${name ? ` to ${name}` : ""}${b ? ` with a budget of ${b.ocur ? `${fmtIn(b.orig, b.ocur)} (${fmt(b.amount)} at today’s rate)` : fmt(b.amount)}` : ""}. Set the dates and tap Add trip. Nothing was added to this month.`;
 }
 async function logSpend(text){  // returns what to say back, or null when the text is not a spending line
-  if (TRIP_CMD.test(text) && !activeTrip()) return startTrip(text);
+  if ((TRIP_CMD.test(text) || EVENT_CMD.test(text)) && !activeTrip()) return startTrip(text);
   if (spendKind(text) === "loan") return logLoan(text);
   const kind = spendKind(text), yearly = /\b(yearly|a year|per year|annual|annually)\b/i.test(text), trip = kind ? null : activeTrip();
   const lines = parseSpend(String(text).replace(SPEND_NOISE, " "), trip && trip.cur); if (!lines.length) return null;
@@ -2973,39 +2996,47 @@ async function logSpend(text){  // returns what to say back, or null when the te
 }
 const FX_FAIL = cur => String(cur)[0] === "?" ? (f => `Which ${f}s? Say the code, like “dinner 500 ${CUR_KIN[f].list[0]}” or “dinner 500 ${CUR_KIN[f].list[1]}”, or set your currency on the Plan tab. Nothing was added.`)(String(cur).slice(1)) : `Could not get today’s rate for ${cur}. Check your connection and try again, or type the amount in ${S.cur}.`;
 function tripForm(t, draft){
-  const d = t || {name: "", start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 6)), budget: "", cur: "", ...(draft || {})};
-  return `<form class="inc-form" data-form="trip"><label class="field"><span>Trip</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Miami weekend" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
+  const today = isoOf(todayMid()), ev = isEvent(t) || (!t && draft && draft.kind === "event");
+  const d = t || {name: "", start: today, end: ev ? today : isoOf(dayPlus(todayMid(), 6)), budget: "", cur: "", etype: "wedding", place: "", people: "", ...(draft || {})};
+  return `<form class="inc-form" data-form="trip">${ev ? `<input type="hidden" name="kind" value="event">
+    <div class="grid2"><label class="field"><span>Event</span><select name="etype">${EVENT_TYPES.map(([k, n]) => `<option value="${k}" ${k === (d.etype || "wedding") ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+      <label class="field"><span>Name <small class="muted">optional</small></span><input name="name" value="${esc(d.name)}" placeholder="e.g. Sara’s wedding" enterkeyhint="next" autocomplete="off" maxlength="40"></label></div>
+    <div class="grid2"><label class="field"><span>Place <small class="muted">optional</small></span><input name="place" value="${esc(d.place || "")}" placeholder="e.g. Pearl Hall" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
+      <label class="field"><span>People <small class="muted">optional</small></span><input name="people" inputmode="numeric" enterkeyhint="next" placeholder="0" value="${esc(d.people || "")}" maxlength="6"></label></div>`
+    : `<label class="field"><span>Trip</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Miami weekend" enterkeyhint="next" autocomplete="off" maxlength="40"></label>`}
     <div class="grid2"><label class="field"><span>Starts</span><input name="start" type="date" value="${esc(d.start)}"></label><label class="field"><span>Ends</span><input name="end" type="date" value="${esc(d.end)}"></label></div>
-    <div class="grid2"><label class="field"><span>Budget <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="budget" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.budget || "")}"></span></label>
+    <div class="grid2"><label class="field"><span>${ev ? "Total budget" : "Budget"} <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="budget" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.budget || "")}"></span></label>
       <label class="field"><span>You will pay in</span><select name="cur">${curOptions(d.cur || S.cur)}</select></label></div>
-    ${editBtns(!t, "data-trip-del", "Add trip", "data-trip-cancel")}</form>`;
+    ${editBtns(!t, "data-trip-del", ev ? "Add event" : "Add trip", "data-trip-cancel")}</form>`;
 }
 function tripCard(t){
   if (UI.tripEdit === t.id) return `<div class="inc-row editing" data-trip="${t.id}">${tripForm(t)}</div>`;
   const st = tripState(t), tot = tripTotal(t), b = +t.budget || 0, over = b > 0 && tot > b + 0.005, open = UI.tripOpen === t.id, C = compute();
   const dayNo = Math.round((todayMid() - isoDate(t.start)) / DAY) + 1, toGo = daysUntil(isoDate(t.start));
-  const tag = st === "active" ? `<span class="pill ok">Day ${dayNo} of ${tripDays(t)}</span>` : st === "upcoming" ? `<span class="pill grey">${toGo === 1 ? "Starts tomorrow" : `Starts in ${toGo} days`}</span>`
+  const ev = isEvent(t), noun = tripNoun(t), ppl = Math.round(+t.people || 0), about = ev ? [eventType(t.etype), t.place, ppl > 0 ? `${ppl} ${ppl === 1 ? "person" : "people"}` : ""].filter(Boolean).join(" · ") : "";
+  const tag = st === "active" ? `<span class="pill ok">${tripDays(t) === 1 ? "Today" : `Day ${dayNo} of ${tripDays(t)}`}</span>` : st === "upcoming" ? `<span class="pill grey">${toGo === 1 ? "Starts tomorrow" : `Starts in ${toGo} days`}</span>`
     : st === "ended" ? `<span class="pill gold">Ended</span>` : st === "counted" ? `<span class="pill grey">Counted in ${esc(keyLabel(t.countKey).split(" ")[0])}</span>` : `<span class="pill grey">Kept separate</span>`;
   const days = {}; (t.items || []).forEach(x => (days[x.date] = days[x.date] || []).push(x));
-  return `<div class="inc-row" data-trip="${t.id}"><div class="row-top"><div><div class="name">${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))}${t.cur && t.cur !== S.cur ? ` · paying in ${esc(t.cur)}` : ""}</div></div><div style="text-align:right">${tag}</div></div>
+  return `<div class="inc-row" data-trip="${t.id}"><div class="row-top"><div><div class="name">${esc(t.name)}</div>${about ? `<div class="small" data-event-about>${esc(about)}</div>` : ""}<div class="muted small">${esc(tripRange(t))}${t.cur && t.cur !== S.cur ? ` · paying in ${esc(t.cur)}` : ""}</div></div><div style="text-align:right">${tag}</div></div>
     <div class="row-top"><div class="muted small">${b > 0 ? (over ? `${fmt(r2(tot - b))} over the ${fmt(b)} budget` : `${fmt(r2(b - tot))} left of ${fmt(b)}`) : "No budget set"}</div><div class="name tnum ${over ? "bad" : ""}">${fmt(tot)}<span class="muted small"> spent</span></div></div>
     ${b > 0 ? `<div class="meter"><i class="${over ? "over" : ""}" style="width:${Math.min(100, tot / b * 100)}%"></i></div>` : ""}
-    ${st === "ended" ? `<div class="part-help" style="border-radius:14px"><b>This trip is over. What should happen to the ${fmt(tot)}?</b><p class="muted small">Count it and it comes out of what you keep in ${esc(C.planMonth)}. Keep it separate and your month is untouched. You can change this later.</p>
+    ${ev && ppl > 1 && (tot > 0 || b > 0) ? `<div class="muted small tnum" data-event-each>${tot > 0 ? `${fmt(r2(tot / ppl))} a person so far` : ""}${tot > 0 && b > 0 ? " · " : ""}${b > 0 ? `${fmt(r2(b / ppl))} a person budgeted` : ""}</div>` : ""}
+    ${st === "ended" ? `<div class="part-help" style="border-radius:14px"><b>This ${noun} is over. What should happen to the ${fmt(tot)}?</b><p class="muted small">Count it and it comes out of what you keep in ${esc(C.planMonth)}. Keep it separate and your month is untouched. You can change this later.</p>
       <div class="grid2"><button class="btn small" type="button" data-trip-settle="separate">Keep it separate</button><button class="btn small primary" type="button" data-trip-settle="counted">Count it in ${esc(C.planMonth)}</button></div></div>` : ""}
-    ${st === "counted" || st === "separate" ? "" : `<form class="inline" data-form="tripAdd" style="gap:8px"><input name="q" placeholder="${t.cur && t.cur !== S.cur ? `uber 20, dinner 50 (in ${esc(t.cur)})` : "uber 20, dinner 50"}" aria-label="Add spending to ${esc(t.name)}" enterkeyhint="send" autocomplete="off" autocapitalize="off" style="flex:1 1 150px"><button class="btn small" type="submit">Add</button></form>`}
+    ${st === "counted" || st === "separate" ? "" : `<form class="inline" data-form="tripAdd" style="gap:8px"><input name="q" placeholder="${ev ? "venue 500, flowers 80" : "uber 20, dinner 50"}${t.cur && t.cur !== S.cur ? ` (in ${esc(t.cur)})` : ""}" aria-label="Add spending to ${esc(t.name)}" enterkeyhint="send" autocomplete="off" autocapitalize="off" style="flex:1 1 150px"><button class="btn small" type="submit">Add</button></form>`}
     <div class="inline" style="justify-content:space-between"><button class="link plain small" type="button" data-trip-open aria-expanded="${open}">${open ? "Hide details" : `Details${(t.items || []).length ? ` (${t.items.length})` : ""}`}</button><button class="link plain small" type="button" data-trip-edit aria-label="Edit ${esc(t.name)}">Edit</button></div>
     ${open ? `<div class="inc-pays">${Object.keys(days).sort().reverse().map(d => `<div class="muted small" style="margin-top:6px">${shortDate(d)} · ${fmt(r2(days[d].reduce((a, x) => a + x.amount, 0)))}</div>${days[d].map(x => `<div class="line" data-trip-item="${x.id}"><span>${esc(x.name)}${x.ocur ? ` <span class="muted small">${esc(fmtIn(x.orig, x.ocur))}</span>` : ""}</span><span class="inline"><span class="tnum">${fmt(x.amount)}</span><button class="link danger-link small" type="button" data-trip-item-del aria-label="Remove ${esc(x.name)}">Remove</button></span></div>`).join("")}`).join("") || `<p class="muted small">Nothing logged yet.</p>`}
-      ${st === "counted" ? `<p class="muted small">This trip counts in ${esc(keyLabel(t.countKey))}, under Miscellaneous.</p><button class="link small" type="button" data-trip-settle="separate" style="align-self:flex-start">Keep it separate instead</button>` : st === "separate" ? `<p class="muted small">This trip is kept apart from your months.</p><button class="link small" type="button" data-trip-settle="counted" style="align-self:flex-start">Count it in ${esc(C.planMonth)} instead</button>` : ""}</div>` : ""}</div>`;
+      ${st === "counted" ? `<p class="muted small">This ${noun} counts in ${esc(keyLabel(t.countKey))}, under Miscellaneous.</p><button class="link small" type="button" data-trip-settle="separate" style="align-self:flex-start">Keep it separate instead</button>` : st === "separate" ? `<p class="muted small">This ${noun} is kept apart from your months.</p><button class="link small" type="button" data-trip-settle="counted" style="align-self:flex-start">Count it in ${esc(C.planMonth)} instead</button>` : ""}</div>` : ""}</div>`;
 }
 OUT.trips = () => {
   const list = (S.trips || []).slice().sort((a, b) => (b.start || "").localeCompare(a.start || ""));
-  if (!list.length && !UI.tripAdd) return `<button class="link small inc-add" type="button" data-trip-add>${I.plus}Plan a trip <span class="muted">a budget of its own, apart from your month</span></button>`;
+  if (!list.length && !UI.tripAdd) return `<div class="inc-add small" data-plan-row>${I.plus}<button class="link small" type="button" data-trip-add>Plan a trip</button> <span class="muted">or</span> <button class="link small" type="button" data-event-add>an event</button> <span class="muted">with a budget of its own, apart from your month</span></div>`;
   const order = {active: 0, ended: 1, upcoming: 2, separate: 3, counted: 3}, sorted = list.sort((a, b) => order[tripState(a)] - order[tripState(b)]), done = sorted.filter(t => order[tripState(t)] === 3), live = sorted.filter(t => order[tripState(t)] < 3);
   const shown = UI.tripsAll ? sorted : [...live, ...done.slice(0, 1)];
-  return `<section class="card inc-card" data-trips><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Trips${infoBtn("trips", "About trips")}</h2></div>
-    ${infoTip("trips", "A trip keeps its own budget. Type what you spend, like “uber 20, dinner 50”, and it is logged to the trip for today. If you pay in another currency, pick it on the trip or say it (“dinner 30 euros”) and it is converted at today’s rate. It stays out of your month until the trip is over, when you choose to count it or keep it separate.")}
-    ${shown.map(tripCard).join("")}${sorted.length > shown.length ? `<button class="link small" type="button" data-trips-all style="align-self:center">Show ${sorted.length - shown.length} earlier trip${sorted.length - shown.length === 1 ? "" : "s"}</button>` : ""}
-    ${UI.tripAdd ? `<div class="inc-row editing">${tripForm(null, UI.tripDraft)}</div>` : `<button class="btn" type="button" data-trip-add>${I.plus}Plan a trip</button>`}</section>`;
+  return `<section class="card inc-card" data-trips><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Trips and events${infoBtn("trips", "About trips and events")}</h2></div>
+    ${infoTip("trips", "A trip or an event (a wedding, a birthday, a concert) keeps its own budget. Type what you spend, like “uber 20, dinner 50”, and it is logged to it for today. If you pay in another currency, pick it on the trip or say it (“dinner 30 euros”) and it is converted at today’s rate. It stays out of your month until it is over, when you choose to count it or keep it separate.")}
+    ${shown.map(tripCard).join("")}${sorted.length > shown.length ? `<button class="link small" type="button" data-trips-all style="align-self:center">Show ${sorted.length - shown.length} earlier</button>` : ""}
+    ${UI.tripAdd ? `<div class="inc-row editing">${tripForm(null, UI.tripDraft)}</div>` : `<div class="grid2"><button class="btn" type="button" data-trip-add>${I.plus}Plan a trip</button><button class="btn" type="button" data-event-add>${I.plus}Plan an event</button></div>`}</section>`;
 };
 
 /* ================= did it arrive? (asked from the day after money was due) ================= */
@@ -3990,6 +4021,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-voice-stop")){ voiceFinish(true); return; }
   const spendEl = b.closest("[data-spend]");
   if (spendEl && b.hasAttribute("data-spend-del")){ const u = undoable(), gone = (S.spends || []).find(x => x.id === spendEl.dataset.spend); S.spends = (S.spends || []).filter(x => x !== gone); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; }
+  if (b.hasAttribute("data-event-add")){ UI.tripAdd = true; UI.tripEdit = null; UI.tripDraft = {kind: "event"}; render(true); const i = view.querySelector('form[data-form="trip"] [name=etype]'); if (i) i.focus(); return; }
   if (b.hasAttribute("data-trip-add")){ UI.tripAdd = true; UI.tripEdit = null; UI.tripDraft = null; render(true); const i = view.querySelector('form[data-form="trip"] [name=name]'); if (i) i.focus(); return; }
   if (b.hasAttribute("data-trip-cancel")){ UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; render(true); return; }
   if (b.hasAttribute("data-trips-all")){ UI.tripsAll = true; refreshOuts(); return; }
@@ -4304,18 +4336,19 @@ view.addEventListener("submit", async e => {
     if (!lines.length){ toast("Type what you spent, like “uber 20”."); return; }
     const bad = await convertLines(lines); if (bad){ toast(FX_FAIL(bad)); return; }
     tripAddSpend(t, lines); save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(tripSpendReply(t, lines)); return; }
-  if (kind === "trip"){ const name = String(fd.get("name") || "").trim(), start = String(fd.get("start") || ""), end = String(fd.get("end") || ""), budget = numv(fd.get("budget")), ok = d => /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(isoDate(d).getTime());
+  if (kind === "trip"){ const ev = fd.get("kind") === "event", etype = ev ? String(fd.get("etype") || "other") : "", name = String(fd.get("name") || "").trim().slice(0, 40) || (ev ? eventType(etype) : ""), start = String(fd.get("start") || ""), end = String(fd.get("end") || ""), budget = numv(fd.get("budget")), ok = d => /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(isoDate(d).getTime());
     if (!name){ toast("Give the trip a name."); f.querySelector("[name=name]").focus(); return; }
     if (!ok(start) || !ok(end)){ toast("Pick the start and end dates."); return; }
-    if (end < start){ toast("The trip cannot end before it starts."); return; }
+    if (end < start){ toast(`The ${ev ? "event" : "trip"} cannot end before it starts.`); return; }
+    const more = ev ? {kind: "event", etype, place: String(fd.get("place") || "").trim().slice(0, 40), people: Math.min(999999, Math.max(0, Math.round(numv(fd.get("people")) || 0)))} : {};
     const old = UI.tripEdit && tripList().find(x => x.id === UI.tripEdit);
     const cur = CURRENCIES.some(c => c[0] === fd.get("cur")) && fd.get("cur") !== S.cur ? String(fd.get("cur")) : "";
-    if (old) Object.assign(old, {name, start, end, budget, cur}); else tripList().push({id: uid(), name, start, end, budget, cur, items: [], settled: null});
-    UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `${name} is set. Spending you add on those days goes to the trip.`); return; }
+    if (old) Object.assign(old, {name, start, end, budget, cur}, more); else tripList().push({id: uid(), name, start, end, budget, cur, items: [], settled: null, ...more});
+    UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `${name} is set. Spending you add on ${start === end ? "that day" : "those days"} goes to the ${ev ? "event" : "trip"}.`); return; }
   if (kind === "ask"){ const q = tidySaid($("ask-in").value); if (!q) return;
     if (CHANGE_VERB.test(q) || (REMOVE_VERB.test(q) && !/\?/.test(q) && !/\bshould\b/i.test(q))){ const u = undoable(), before = JSON.stringify(S), said = await logChange(q);
       ASK.last = said; render(true); const o = $("ask-out"); o.hidden = false; o.textContent = said; $("ask-in").value = ""; $("ask-in").blur(); if (JSON.stringify(S) !== before) toast("Done.", u); return; }
-    if (TRIP_CMD.test(q) && !/\?/.test(q) && !/^\s*(how|what|when|is|are|did|do|does)\b/i.test(q) && !activeTrip()){ const said = await startTrip(q); ASK.last = said; const o = $("ask-out"); if (o){ o.hidden = false; o.textContent = said; } $("ask-in").value = ""; $("ask-in").blur(); toast(said); return; }
+    if ((TRIP_CMD.test(q) || EVENT_CMD.test(q)) && !/\?/.test(q) && !/^\s*(how|what|when|is|are|did|do|does)\b/i.test(q) && !activeTrip()){ const said = await startTrip(q); ASK.last = said; const o = $("ask-out"); if (o){ o.hidden = false; o.textContent = said; } $("ask-in").value = ""; $("ask-in").blur(); toast(said); return; }
     const wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), asking = /\?|^\s*(is|are|do|does|should|can)\b|\b(afford|how|what|when|who|which|can i|should i)\b/i.test(q);
     if (/\d/.test(q) && (wantsAdd || !asking)){ const u = undoable(), before = JSON.stringify(S), said = await logSpend(q);
       if (said){ ASK.last = said; refreshOuts(); renderBell(); if (JSON.stringify(S) !== before) toast("Logged.", u); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
