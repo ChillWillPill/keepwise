@@ -1389,6 +1389,7 @@ V.month = () => {
   <div data-out="monthClose">${OUT.monthClose()}</div>
   <div data-out="keepSafe">${OUT.keepSafe()}</div>
   <div data-out="arrived">${OUT.arrived()}</div>
+  <div data-out="billsDue">${OUT.billsDue()}</div>
   <div data-out="comingUp">${OUT.comingUp()}</div>
   <div data-out="reviewCard">${OUT.reviewCard()}</div>
   ${importCard()}
@@ -1797,11 +1798,12 @@ function expForm(e){
   return `<form class="inc-form" data-form="exp"><label class="field"><span>Name</span><input name="name" value="${esc(e ? e.name : "")}" placeholder="e.g. Rent" enterkeyhint="next" autocomplete="off"></label>
     <div class="grid2"><label class="field"><span>Amount a month</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${e ? e.amount : ""}"></span></label>
       <label class="field"><span>Envelope</span><select name="env"><option value="needs" ${!e || e.env === "needs" ? "selected" : ""}>Expenditures</option><option value="misc" ${e && e.env === "misc" ? "selected" : ""}>Misc</option></select></label></div>
+    <label class="field"><span>You pay it yourself on <small class="muted">optional, for a reminder</small></span><select name="due"><option value="">No reminder</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${e && e.due === i + 1 ? "selected" : ""}>The ${ordinal(i + 1)} of each month</option>`).join("")}</select></label>
     ${editBtns(!e, "data-del-exp", "Add line", "data-exp-cancel")}</form>`;
 }
 OUT.expList = () => S.expenses.map(e => UI.expEdit === e.id ? `<div class="inc-row editing" data-exp="${e.id}">${expForm(e)}</div>`
-    : `<div class="inc-row" data-exp="${e.id}"><div class="row-top"><div><div class="name">${esc(e.name)}</div><div class="muted small">${e.env === "misc" ? "Misc" : "Expenditures"}</div></div><div class="name tnum">${fmt(e.amount)}<span class="muted small">/mo</span></div></div>
-      <button class="link plain small" type="button" data-exp-edit aria-label="Edit ${esc(e.name)}" style="align-self:flex-end">Edit</button></div>`).join("")
+    : `<div class="inc-row" data-exp="${e.id}"><div class="row-top"><div><div class="name">${esc(e.name)}</div><div class="muted small">${e.env === "misc" ? "Misc" : "Expenditures"}${e.due ? ` · due on the ${ordinal(e.due)}` : ""}</div></div><div class="name tnum">${fmt(e.amount)}<span class="muted small">/mo</span></div></div>
+      ${billTag(e)}<button class="link plain small" type="button" data-exp-edit aria-label="Edit ${esc(e.name)}" style="align-self:flex-end">Edit</button></div>`).join("")
   + (UI.expAdd ? `<div class="inc-row editing">${expForm(null)}</div>` : `<button class="btn" type="button" data-add-exp>${I.plus}Add a line</button>`);
 V.plan = () => `
   <h1>Plan</h1>
@@ -2087,6 +2089,8 @@ function localNotes(){
     else add(`r:${x.id}:${isoOf(d)}`, `${x.name} renews ${w}`, `${fmt(x.price)} on ${dayMonth(d)}.${surveyDue(x) ? " Still using it?" : ""}`, "subs", `[data-sub="${x.id}"]`, x.id); });
   (S.trips || []).filter(t => tripState(t) === "ended").forEach(t => add(`t:${t.id}:${t.end}`, `Your ${t.name} trip is over`, `You spent ${fmt(tripTotal(t))}. Choose whether it counts in this month or stays separate.`, "month", `[data-trip="${t.id}"]`));
   const C = compute(); if (C.flagged.length) add(`f:${C.planKey}:${C.flagged.length}`, `${C.flagged.length} subscription${C.flagged.length === 1 ? " looks" : "s look"} unused`, `Dropping ${C.flagged.length === 1 ? "it" : "them"} would keep ${fmt(C.flaggedSave)} a month.`, "subs", `[data-sub="${C.flagged[0].id}"]`);
+  billsSoon(3).forEach(v => { const n = daysUntil(v.d); add(`bd:${v.e.id}:${isoOf(v.d)}`, `${v.e.name} is due ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `${fmt(v.e.amount)} on ${dayMonth(v.d)}. You pay this one yourself.`, "plan", `[data-exp="${v.e.id}"]`); });
+  billsDue().forEach(v => add(`b:${v.e.id}:${isoOf(v.date)}`, `Did you pay ${v.e.name}?`, `${fmt(v.e.amount)} was due ${dayMonth(v.date)}.`, "month", `[data-bill-due="${v.e.id}"]`));
   (S.loans || []).filter(loanNeedsDetails).forEach(l => add(`ld:${l.id}`, `Finish the details for ${l.name || loanKind(l.kind)}`, "Add the amount left or the end date, so KeepWise can show when it ends and your statement is complete.", "plan", `[data-loan="${l.id}"]`, null, l.id));
   (S.loans || []).filter(l => l.end && !loanDone(l)).forEach(l => { const f = loanFinish(l), n = f ? daysUntil(f.date) : 99; if (n >= 0 && n <= 30) add(`l:${l.id}:${l.end}`, `${l.name || loanKind(l.kind)} ends ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `After that, ${fmt(loanMonthly(l))} a month stays with you.`, "plan", `[data-loan="${l.id}"]`); });
   return out;
@@ -2288,7 +2292,9 @@ OUT.comingUp = () => {
   const t0 = todayMid(), t7 = new Date(t0); t7.setDate(t7.getDate() + 7);
   const payRows = (payOn() ? paydaysBetween(t0, t7) : []).filter(d => !((S.payGot || "") >= isoOf(d))).map(d => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
         <div class="up-main"><div class="name">Payday</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(+S.pay.amount || 0)}</div></div>`).join("");
-  if (!soon.length && !arriving.length && !payRows) return "";
+  const billRows = billsSoon(7).map(({e, d}) => `<div class="up-row" data-up-bill="${e.id}"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
+        <div class="up-main"><div class="name">${esc(e.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · you pay this yourself</div></div><div class="tnum name">${fmt(e.amount)}</div></div>`).join("");
+  if (!soon.length && !arriving.length && !payRows && !billRows) return "";
   const inRows = arriving.map(({x, d}) => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
         <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(x.amount)}</div></div>`).join("");
   const total = soon.filter(x => x.s.keep !== "drop").reduce((a, x) => a + x.s.price, 0);
@@ -2296,7 +2302,7 @@ OUT.comingUp = () => {
     <div class="up-list">${soon.map(({s, d}) => { const n = daysUntil(d), drop = s.keep === "drop";
       return `<div class="up-row${drop ? " drop" : ""}"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
         <div class="up-main"><div class="name">${esc(s.name)}</div><div class="small ${drop ? "bad" : "muted"}">${drop ? `You chose to drop it. Cancel before ${n === 0 ? "today ends" : "it renews"}.` : whenLabel(n)}</div></div>
-        <div class="tnum name">${fmt(s.price)}</div></div>`; }).join("")}${payRows}${inRows}</div>
+        <div class="tnum name">${fmt(s.price)}</div></div>`; }).join("")}${billRows}${payRows}${inRows}</div>
     ${total ? `<p class="small muted">${fmt(total)} will be charged this week.</p>` : ""}
     ${soon.length ? `<div class="linkrow"><button class="link" type="button" data-go="subs">All subscriptions</button></div>` : ""}</section>`;
 };
@@ -3004,6 +3010,20 @@ function arrivals(all){  // what was due in the last 7 days, from yesterday back
   (S.extras || []).forEach(x => { for (let i = 1; i <= 7; i++){ const d = dayPlus(t, -i); if (incomeDueOn(x, d)){ if (isoOf(d) >= incSince(x) && !incomeLogged(x, isoOf(d))) out.push({key: x.id, name: x.name, amount: +x.amount || 0, date: d, x}); break; } } });
   return out.sort((a, b) => a.date - b.date);
 }
+// Bills you pay yourself (not charged automatically). Give a bill a day of the month and, from the day after, KeepWise
+// asks once whether it was paid. Any answer settles it until the next due date, about a month later; with no answer
+// the question is dropped after a week. A due date from before the day was set is never asked about.
+const billDueIn = (e, d) => d.getDate() === Math.min(e.due, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate());
+function billLastDue(e, back){ const t = todayMid(); for (let i = 1; i <= back; i++){ const d = dayPlus(t, -i); if (billDueIn(e, d)) return d; } return null; }
+function billNextDue(e){ const t = todayMid(); for (let i = 0; i <= 31; i++){ const d = dayPlus(t, i); if (billDueIn(e, d)) return d; } return null; }
+function billsDue(){ return S.expenses.filter(e => e.due).map(e => ({e, date: billLastDue(e, 7)})).filter(v => v.date && isoOf(v.date) >= (v.e.dueSince || isoOf(todayMid())) && !((v.e.ans || "") >= isoOf(v.date))); }
+const billsSoon = days => S.expenses.filter(e => e.due).map(e => ({e, d: billNextDue(e)})).filter(v => v.d && daysUntil(v.d) <= days && !((v.e.ans || "") >= isoOf(v.d))).sort((a, b) => a.d - b.d);
+function billTag(e){ if (!e.due) return ""; const d = billLastDue(e, 27); if (!d || e.ans !== isoOf(d)) return "";
+  return e.ansPaid ? `<span class="pill ok" data-bill-state style="align-self:flex-start">Paid for ${esc(dayMonth(d))}</span>` : `<span class="inline" data-bill-state style="gap:10px"><span class="pill gold">Not paid yet</span><button class="link small" type="button" data-bill-mark>Mark as paid</button></span>`; }
+OUT.billsDue = () => { const list = billsDue(); if (!list.length) return "";
+  return `<section class="card" data-bills-due><h2 style="font-size:1.2rem">Did you pay it?</h2>
+    ${list.map(v => `<div class="inc-row" data-bill-due="${v.e.id}" data-bill-date="${isoOf(v.date)}"><div class="row-top"><div><div class="name">${esc(v.e.name)}</div><div class="muted small">Was due ${dayMonth(v.date)}</div></div><div class="name tnum">${fmt(v.e.amount)}</div></div>
+      <div class="grid2"><button class="btn small" type="button" data-bill-no>Not yet</button><button class="btn small primary" type="button" data-bill-yes>Yes, paid</button></div></div>`).join("")}</section>`; };
 OUT.arrived = () => { const list = arrivals(); if (!list.length) return "";
   return `<section class="card" data-arrived><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 style="font-size:1.2rem">Did it arrive?</h2><button class="link plain small" type="button" data-arrive-later>Ask me tomorrow</button></div>
     ${list.map(a => `<div class="inc-row" data-arrive="${esc(a.key)}" data-arrive-date="${isoOf(a.date)}"><div class="row-top"><div><div class="name">${esc(a.name)}</div><div class="muted small">Expected ${dayMonth(a.date)}</div></div><div class="name tnum">${fmt(a.amount)}</div></div>
@@ -3230,7 +3250,17 @@ function remindPlan(){
 }
 // A subscription that renews outside the days before payday gets its own question, a week before the charge
 // (or 5 days before, if a week has already passed). One answered in the last 20 days is left alone.
-const RENEW_IDS = Array.from({length: 12}, (_, i) => 7200 + i), ARRIVE_IDS = Array.from({length: 10}, (_, i) => 7300 + i);
+const RENEW_IDS = Array.from({length: 12}, (_, i) => 7200 + i), ARRIVE_IDS = Array.from({length: 10}, (_, i) => 7300 + i), BILL_IDS = Array.from({length: 12}, (_, i) => 7400 + i);
+function billPlan(){  // the morning after a bill you pay yourself was due, unless it has been answered by then
+  const R = S.remind || {}; if (!R.on) return [];
+  const now = new Date(), t = todayMid(), out = [], at = d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10, 0);
+  const add = (e, d) => { const when = at(d) > now ? at(d) : at(t); out.push({at: when, key: e.id, date: isoOf(d), title: `Did you pay ${e.name}?`, body: `${fmt(e.amount)} was due ${dayMonth(d)}. Tap to answer.`}); };
+  billsDue().forEach(v => add(v.e, v.date));
+  S.expenses.filter(e => e.due).forEach(e => { const d = billNextDue(e); if (!d || (e.ans || "") >= isoOf(d)) return; add(e, d);
+    const before = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1, 10, 0);   // a heads-up the morning before it is due
+    if (before > now) out.push({at: before, key: e.id, date: isoOf(d), pre: true, title: `${e.name} is due tomorrow`, body: `${fmt(e.amount)} on ${dayMonth(d)}. You pay this one yourself.`}); });
+  return out.sort((a, b) => a.at - b.at).slice(0, BILL_IDS.length).map((x, i) => ({...x, id: BILL_IDS[i]}));
+}
 function renewPlan(){
   const R = S.remind || {}; if (!R.on) return [];
   const now = new Date(), cyc = remindCycles(), recent = isoDaysAgo(20), out = [];
@@ -3261,16 +3291,20 @@ async function remindApply(){
     if (!remindReady){ remindReady = true;
       await P.registerActionTypes({types: [{id: "KW_USE", actions: [{id: "lot", title: "A lot"}, {id: "barely", title: "Barely"}, {id: "none", title: "Not at all"}]}]});
       P.addListener("localNotificationActionPerformed", remindAnswer); }
-    await P.cancel({notifications: [...REMIND_IDS, ...RENEW_IDS, ...ARRIVE_IDS].map(id => ({id}))});
-    const plan = [...remindPlan(), ...renewPlan()], inc = arrivePlan(); if (!plan.length && !inc.length) return;
+    await P.cancel({notifications: [...REMIND_IDS, ...RENEW_IDS, ...ARRIVE_IDS, ...BILL_IDS].map(id => ({id}))});
+    const plan = [...remindPlan(), ...renewPlan()], inc = [...arrivePlan().map(x => ({...x, kind: "income"})), ...billPlan().map(x => ({...x, kind: "bill"}))]; if (!plan.length && !inc.length) return;
     await P.schedule({notifications: [...plan.map(x => ({id: x.id, ...remindText(x), schedule: {at: x.at, allowWhileIdle: true}, actionTypeId: "KW_USE", extra: {subId: x.sub.id, cycle: x.cycle, at: isoOf(x.at)}})),
-      ...inc.map(x => ({id: x.id, title: x.title, body: x.body, schedule: {at: x.at, allowWhileIdle: true}, extra: {kind: "income", key: x.key, date: x.date}}))]});
+      ...inc.map(x => ({id: x.id, title: x.title, body: x.body, schedule: {at: x.at, allowWhileIdle: true}, extra: {kind: x.kind, key: x.key, date: x.date, ...(x.pre ? {pre: true} : {})}}))]});
   } catch(e){}
 }
 // Answering, or opening Subs during the 10 days, ends this month's reminders.
 function remindSeen(){ const R = S.remind, c = R && R.on ? remindCycles()[0] : null; if (c && todayMid() >= c.start) R.seen = c.key; }
 function remindAnswer(e){
   const x = (e && e.notification && e.notification.extra) || {};
+  if (x.kind === "bill"){ const bill = S.expenses.find(v => v.id === x.key), open = bill && billsDue().find(v => v.e === bill && (!x.date || isoOf(v.date) === x.date));
+    if (open) goTo("month", `[data-bill-due="${bill.id}"]`); else if (bill && x.date && !((bill.ans || "") >= x.date)) goTo("plan", `[data-exp="${bill.id}"]`);   // a heads-up, or not due yet: show the bill
+    else if (bill){ goTo("plan", `[data-exp="${bill.id}"]`); toast(`You already answered about ${bill.name}. Thanks.`); } else goTo("plan");
+    return; }
   if (x.kind === "income"){ const still = arrivals(true).find(a => a.key === x.key && (!x.date || isoOf(a.date) === x.date));
     if (still){ S.arriveSnooze = null; goTo("month", `[data-arrive="${still.key}"]`); } else { goTo("month", x.key === "pay" ? '[data-out="payBox"]' : `[data-inc="${x.key}"]`); toast("That one is already logged. Thanks."); }
     return; }
@@ -3286,7 +3320,7 @@ OUT.remindBox = () => {
   if (R.on) return `<div class="pay-line" data-remind><span>${BELL}<span><b>Reminders are on.</b><br><span class="muted small">${c && R.seen === c.key ? `Done for this month. They start again before the next ${payOn() ? "payday" : "month"}.` : c ? `One question a day at most, from ${dayMonth(c.start)}. They stop when you answer or open this tab.` : ""}</span></span></span><button class="link small" type="button" data-remind-off>Turn off</button></div>`;
   if (R.hide) return `<button class="link small inc-add" type="button" data-remind-on data-remind>${BELL.replace('width="18" height="18"', 'width="16" height="16" style="vertical-align:-3px;margin-right:6px"')}Remind me before ${esc(what)}</button>`;
   return `<section class="card remind-card" data-remind><p class="label">Before ${esc(what)}</p><h3>Want a nudge before ${esc(what)}?</h3>
-    <p class="muted">In the 10 days before ${esc(what)}, KeepWise asks about one subscription a day, with one-tap answers. It stops as soon as you answer or open this tab, and eases off if you ignore it. A subscription that renews at another time is asked about a week before its charge, and you get one reminder the morning after pay or other income was due, if it has not been logged.</p>
+    <p class="muted">In the 10 days before ${esc(what)}, KeepWise asks about one subscription a day, with one-tap answers. It stops as soon as you answer or open this tab, and eases off if you ignore it. A subscription that renews at another time is asked about a week before its charge, and you get one reminder the morning after pay or other income was due, if it has not been logged. A bill you pay yourself gets a heads-up the morning before its due day, and one question the morning after.</p>
     <div class="grid2"><button class="btn" type="button" data-remind-hide>Not now</button><button class="btn primary" type="button" data-remind-on>Turn on reminders</button></div>
     <p class="muted small">Reminders are set on this phone. Nothing is sent to us.</p></section>`;
 };
@@ -3897,6 +3931,10 @@ view.addEventListener("click", async e => {
       else { tripX.settled = "separate"; delete tripX.countKey; save(); render(true); toast(`${tripX.name} is kept separate. Your month is unchanged.`, u); }
       return; }
     if (b.hasAttribute("data-trip-item-del")){ const it = b.closest("[data-trip-item]"), u = undoable(), gone = (tripX.items || []).find(x => x.id === it.dataset.tripItem); tripX.items = (tripX.items || []).filter(x => x !== gone); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; } }
+  const billRow = b.closest("[data-bill-due]");
+  if (billRow && (b.hasAttribute("data-bill-yes") || b.hasAttribute("data-bill-no"))){ const e = S.expenses.find(x => x.id === billRow.dataset.billDue); if (!e) return; const u = undoable(), yes = b.hasAttribute("data-bill-yes");
+    e.ans = billRow.dataset.billDate; e.ansPaid = yes; save(); refreshOuts(); toast(yes ? `${e.name} marked as paid. Next question after ${dayMonth(billNextDue(e) || todayMid())}.` : `Noted. ${e.name} shows as not paid on the Plan tab, and we will not ask again this month.`, u); return; }
+  if (b.hasAttribute("data-bill-mark")){ const row = b.closest("[data-exp]"), e = row && S.expenses.find(x => x.id === row.dataset.exp); if (e){ const u = undoable(); e.ansPaid = true; save(); refreshOuts(); toast(`${e.name} marked as paid.`, u); } return; }
   if (b.hasAttribute("data-arrive-later")){ S.arriveSnooze = isoOf(todayMid()); save(); refreshOuts(); toast("We’ll ask again tomorrow."); return; }
   const arr = b.closest("[data-arrive]");
   if (arr && (b.hasAttribute("data-arrive-yes") || b.hasAttribute("data-arrive-no"))){ const iso = arr.dataset.arriveDate, yes = b.hasAttribute("data-arrive-yes"), u = undoable();
@@ -4214,7 +4252,8 @@ view.addEventListener("submit", async e => {
   if (kind === "exp"){ const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), env = fd.get("env") === "misc" ? "misc" : "needs";
     if (!name){ toast("Give the line a name."); f.querySelector("[name=name]").focus(); return; }
     const old = UI.expEdit && S.expenses.find(x => x.id === UI.expEdit);
-    if (old) Object.assign(old, {name, amount, env}); else S.expenses.push({id: uid(), name, amount, env});
+    const due = Math.min(31, Math.max(0, Math.round(+fd.get("due") || 0))), dueBits = due ? {due, dueSince: old && old.due === due && old.dueSince ? old.dueSince : isoDaysAgo(0)} : {due: 0};
+    if (old){ Object.assign(old, {name, amount, env}, dueBits); if (!due){ delete old.dueSince; delete old.ans; delete old.ansPaid; } } else S.expenses.push({id: uid(), name, amount, env, ...dueBits});
     UI.expAdd = false; UI.expEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `Added ${name}.`); return; }
   if (kind === "subEdit"){ const x = S.subs.find(v => v.id === UI.subEdit), name = String(fd.get("name") || "").trim(), price = numv(fd.get("price")); if (!x) return;
     if (!name || !price){ toast("Add a name and a price."); return; }

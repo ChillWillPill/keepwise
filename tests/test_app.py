@@ -1509,6 +1509,60 @@ async def notes_and_notifications_open_the_exact_place(ctx):
     assert await pg.locator(f"[data-review-id='{sid}']").count() == 0 and await pg.locator(f"[data-sub='{sid}'].flash").count() == 1, "it shows the subscription, not the question again"
     assert not pg.errors, pg.errors
 
+@test
+async def asks_once_if_a_bill_you_pay_yourself_was_paid(ctx):
+    # the Android app on 2 October. Electricity is due on the 5th and Water on the 1st, both set up today.
+    pg = await ctx.new_page(); await pg.set_viewport_size({"width": 390, "height": 844}); pg.errors = []
+    pg.on("pageerror", lambda e: pg.errors.append(str(e)))
+    await pg.clock.install(time=datetime.datetime(2026, 10, 2, 9, 0)); await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;" + NOTIF_MOCK)
+    await pg.goto(URL); await pg.wait_for_timeout(300); await tab(pg, "plan")
+    async def bill(name, amount, due):
+        await pg.click("[data-add-exp]"); await pg.wait_for_timeout(100); f = pg.locator("form[data-form=exp]")
+        await f.locator("[name=name]").fill(name); await f.locator("[name=amount]").fill(amount); await f.locator("[name=due]").select_option(due); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    await bill("Electricity", "90", "5"); await bill("Water", "30", "1")
+    exp = lambda st, n: [e for e in st["expenses"] if e["name"] == n][0]
+    assert "due on the 5th" in await pg.locator("[data-exp]", has_text="Electricity").inner_text()
+    await tab(pg, "subs"); await pg.click("[data-remind-on]"); await pg.wait_for_timeout(100); await pg.clock.run_for(2000); await tab(pg, "month")
+    # Water was due yesterday, before its day was set: not asked. The phone reminder is for the morning after each next due day.
+    assert await pg.locator("[data-bills-due]").count() == 0
+    b = await pg.evaluate("window.__n.pending.filter(x => x.id >= 7400).map(x => [x.when, x.title, x.extra.kind])")
+    assert b == [[[10, 4, 10, 0], "Electricity is due tomorrow", "bill"], [[10, 6, 10, 0], "Did you pay Electricity?", "bill"], [[10, 31, 10, 0], "Water is due tomorrow", "bill"], [[11, 2, 10, 0], "Did you pay Water?", "bill"]], b
+    # it is in Coming up as something you pay yourself, and the bell gives a heads-up from three days before
+    up = await text(pg, "[data-up-bill]"); assert "Electricity" in up and "you pay this yourself" in up and "$90" in up
+    await pg.click("#bell"); await pg.wait_for_timeout(150); assert await pg.locator(".note-row", has_text="Electricity is due in 3 days").count() == 1; await pg.click("[data-close-inbox]")
+    pre = "window.__n.listener({actionId: 'tap', notification: {extra: {kind: 'bill', key: %r, date: '2026-10-05', pre: true}}})" % exp(await state(pg), "Electricity")["id"]
+    await pg.evaluate(pre); await pg.wait_for_timeout(200); assert (await state(pg))["tab"] == "plan" and await pg.locator("[data-exp].flash", has_text="Electricity").count() == 1 and "already answered" not in await pg.inner_text("#toast")
+    await tab(pg, "month")
+    # on the due day itself nothing; the day after, one question
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 5, 9, 0)); await tab(pg, "subs"); await tab(pg, "month"); assert await pg.locator("[data-bills-due]").count() == 0
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 6, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    card = await text(pg, "[data-bills-due]"); assert "Did you pay it?" in card.replace("DID YOU PAY IT?", "Did you pay it?") or "DID YOU PAY IT" in card.upper(); assert "Electricity" in card and "Was due Oct 5" in card and "$90" in card and "Water" not in card
+    # the bell has it, and opens the question itself
+    await tab(pg, "codes"); await pg.click("#bell"); await pg.wait_for_timeout(150)
+    await pg.locator(".note-row", has_text="Did you pay Electricity?").locator("[data-note-open]").click(); await pg.wait_for_timeout(200)
+    assert (await state(pg))["tab"] == "month" and await pg.locator("[data-bill-due].flash").count() == 1
+    # "Not yet" is an answer: it is not asked again this month, the bill shows as not paid, and can be marked later
+    await pg.click("[data-bill-due] [data-bill-no]"); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-bills-due]").count() == 0 and exp(await state(pg), "Electricity")["ansPaid"] is False
+    for day in (7, 9, 12, 20, 31):
+        await pg.clock.set_fixed_time(datetime.datetime(2026, 10, day, 9, 0)); await tab(pg, "subs"); await tab(pg, "month"); assert await pg.locator("[data-bills-due]").count() == 0, f"asked again on the {day}th"
+    await tab(pg, "plan"); row = pg.locator("[data-exp]", has_text="Electricity"); assert "Not paid yet" in await row.inner_text()
+    await row.locator("[data-bill-mark]").click(); await pg.wait_for_timeout(200); assert "Paid for Oct 5" in await pg.locator("[data-exp]", has_text="Electricity").inner_text()
+    # next month: Water on 2 November, Electricity on 6 November. "Yes, paid" settles each for its month.
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 11, 2, 9, 0)); await tab(pg, "month")
+    card = await text(pg, "[data-bills-due]"); assert "Water" in card and "Electricity" not in card
+    tap = "window.__n.listener({actionId: 'tap', notification: {extra: {kind: 'bill', key: %r, date: '2026-11-01'}}})" % exp(await state(pg), "Water")["id"]
+    await tab(pg, "codes"); await pg.evaluate(tap); await pg.wait_for_timeout(200); assert (await state(pg))["tab"] == "month" and await pg.locator("[data-bill-due].flash").count() == 1
+    await pg.click("[data-bill-due] [data-bill-yes]"); await pg.wait_for_timeout(200)
+    w = exp(await state(pg), "Water"); assert w["ans"] == "2026-11-01" and w["ansPaid"] is True and await pg.locator("[data-bills-due]").count() == 0
+    await tab(pg, "codes"); await pg.evaluate(tap); await pg.wait_for_timeout(200); assert "You already answered about Water. Thanks." in await pg.inner_text("#toast") and (await state(pg))["tab"] == "plan"
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 11, 6, 9, 0)); await tab(pg, "month"); assert "Electricity" in await text(pg, "[data-bills-due]")
+    # a bill with no due day is never asked about, and removing the day stops the questions
+    await tab(pg, "plan"); await pg.locator("[data-exp]", has_text="Electricity").locator("[data-exp-edit]").click(); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=exp]"); await f.locator("[name=due]").select_option(""); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    await tab(pg, "month"); assert await pg.locator("[data-bills-due]").count() == 0
+    assert not pg.errors, pg.errors
+
 BIO_MOCK = """window.__bio = {made: 0, asked: 0, pass: true};
 window.PublicKeyCredential = {isUserVerifyingPlatformAuthenticatorAvailable: async () => true};
 Object.defineProperty(navigator, 'credentials', {configurable: true, value: {
