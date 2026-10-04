@@ -203,7 +203,7 @@ a.btn{display:block;text-decoration:none}
 .err{color:var(--rust);font-size:.9rem;font-weight:600}
 .empty{color:var(--muted);padding:6px 0}
 .toast-undo{pointer-events:auto;appearance:none;border:0;background:none;color:inherit;font:700 .92rem var(--body);text-decoration:underline;text-underline-offset:3px;margin-left:12px;padding:6px 4px;cursor:pointer}
-.toast{pointer-events:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:.92rem;z-index:30;max-width:calc(100% - 32px);text-align:center}
+.toast{pointer-events:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:.92rem;z-index:60;max-width:calc(100% - 32px);text-align:center}
 details.card:not([open]){gap:0}
 .btn.small.done{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,var(--line));background:var(--green-soft);opacity:1;cursor:default;display:inline-flex;align-items:center;gap:4px}
 .btn.small.done svg{width:14px;height:14px}
@@ -628,7 +628,7 @@ function fmt(v){
 }
 const sym = () => { try { return new Intl.NumberFormat("en-US",{style:"currency",currency:S.cur,maximumFractionDigits:0}).formatToParts(0).find(p=>p.type==="currency").value; } catch(e){ return S.cur || "$"; } };
 function toast(msg, undo){
-  const t = $("toast"); t.textContent = msg;
+  const t = $("toast"); t.textContent = msg; delete t.dataset.full;
   if (undo){ const b = document.createElement("button"); b.type = "button"; b.className = "toast-undo"; b.textContent = "Undo";
     b.addEventListener("click", () => { t.hidden = true; undo(); }); t.append(b); }
   t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, undo ? 10000 : 2600);
@@ -2925,7 +2925,7 @@ async function logChange(text){
   if (remove){ if (it.type === "loan") S.loans = S.loans.filter(x => x !== it.x); else if (it.type === "exp") S.expenses = S.expenses.filter(x => x !== it.x); else S.subs = S.subs.filter(x => x !== it.x); save(); return `Removed ${it.name}, ${fmt(it.amount)}.${keep()}`; }
   const owed = it.type === "loan" && LOAN_LEFT.test(m ? m[1] : body), was = owed ? +it.x.total || 0 : it.amount;
   if (it.type === "loan"){ if (owed) it.x.total = nv.amount; else it.x.pay = nv.amount; } else if (it.type === "exp") it.x.amount = nv.amount; else it.x.price = nv.amount;
-  save(); return `Updated ${it.name}: ${owed ? "left to pay is now" : it.type === "loan" ? "the payment is now" : "it is now"} ${conv(nv)}${was ? `, it was ${fmt(was)}` : ""}.${keep()}`;
+  save(); ASK.go = it.type === "sub" ? {tab: "subs", sel: `[data-sub="${it.x.id}"]`} : {tab: "plan", sel: it.type === "loan" ? `[data-loan="${it.x.id}"]` : `[data-exp="${it.x.id}"]`}; return `Updated ${it.name}: ${owed ? "left to pay is now" : it.type === "loan" ? "the payment is now" : "it is now"} ${conv(nv)}${was ? `, it was ${fmt(was)}` : ""}.${keep()}`;
 }
 // "personal loan 24,500 PKR, remaining total 249,989": the first number is the payment, a number described as remaining,
 // left, balance, total or owed is the amount still to pay, and "12 installments" is how many payments are left. A loan
@@ -2943,7 +2943,7 @@ async function logLoan(text){
   const kind = loanKindOf(text), conv = l => l.ocur ? `${fmtIn(l.orig, l.ocur)} (${fmt(l.amount)} at today’s rate)` : fmt(l.amount);
   let name = pay.name.replace(/\b(amount|payment|payments|installments?|instalments?|emi|my|of|is|a)\b/gi, " ").replace(/\s+/g, " ").trim(); if (!name || name === "Spending") name = loanKind(kind); name = name[0].toUpperCase() + name.slice(1);
   const rec = {id: uid(), kind, name, pay: pay.amount, every: "mo", total: owed ? owed.amount : 0, end: "", left: count ? count.amount : 0}; if (kind === "card"){ rec.card = "Other"; rec.fee = 0; }
-  loanList().push(rec); save();
+  loanList().push(rec); save(); ASK.go = {tab: "plan", sel: `[data-loan="${rec.id}"]`};
   return `Added to Loans and debt: ${name}, ${conv(pay)} a month${owed ? `, with ${conv(owed)} left to pay` : ""}${count ? ` over ${count.amount} installments` : ""}. ${owed ? "" : "Add the amount left on the Plan tab to see when it ends. "}You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
 }
 const loanNeedsDetails = l => !loanDone(l) && !(+l.total > 0) && !l.end;
@@ -2986,12 +2986,12 @@ async function logSpend(text){  // returns what to say back, or null when the te
   const lines = parseSpend(String(text).replace(SPEND_NOISE, " "), trip && trip.cur); if (!lines.length) return null;
   const bad = await convertLines(lines); if (bad) return FX_FAIL(bad);
   const conv = l => l.ocur ? `${fmtIn(l.orig, l.ocur)} (${fmt(l.amount)} at today’s rate)` : fmt(l.amount), each = lines.map(l => `${l.name}, ${conv(l)}`).join("; ");
-  if (trip){ tripAddSpend(trip, lines); save(); return tripSpendReply(trip, lines); }
-  if (kind === "sub"){ lines.forEach(l => S.subs.push({id: uid(), name: l.name, price: l.amount, cycle: yearly ? "yr" : "mo", last: isoDaysAgo(0), group: "", env: "misc", keep: "auto"})); save();
+  if (trip){ tripAddSpend(trip, lines); save(); ASK.go = {tab: "month", sel: `[data-trip="${trip.id}"]`, pre: () => { UI.tripOpen = trip.id; }}; return tripSpendReply(trip, lines); }
+  if (kind === "sub"){ const sid = uid(); ASK.go = {tab: "subs", sel: `[data-sub="${sid}"]`}; lines.forEach((l, i) => S.subs.push({id: i ? uid() : sid, name: l.name, price: l.amount, cycle: yearly ? "yr" : "mo", last: isoDaysAgo(0), group: "", env: "misc", keep: "auto"})); save();
     return `Added to Subs: ${each}${yearly ? " a year" : " a month"}.`; }
-  if (kind === "bill"){ lines.forEach(l => S.expenses.push({id: uid(), name: l.name, amount: l.amount, env: "needs"})); save();
+  if (kind === "bill"){ const bid = uid(); ASK.go = {tab: "plan", sel: `[data-exp="${bid}"]`}; lines.forEach((l, i) => S.expenses.push({id: i ? uid() : bid, name: l.name, amount: l.amount, env: "needs"})); save();
     return `Added to Expenditures as a monthly bill: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`; }
-  const today = isoOf(todayMid()), monthKey = compute().planKey; S.spends = S.spends || []; lines.forEach(l => S.spends.push({id: uid(), date: today, k: monthKey, name: l.name, amount: l.amount, ...(l.ocur ? {orig: l.orig, ocur: l.ocur, rate: l.rate} : {})})); save();
+  const today = isoOf(todayMid()), monthKey = compute().planKey; S.spends = S.spends || []; const spid = uid(); ASK.go = {tab: "month", sel: `[data-spend="${spid}"]`, pre: () => { UI.openEnv = "misc"; }}; lines.forEach((l, i) => S.spends.push({id: i === lines.length - 1 ? spid : uid(), date: today, k: monthKey, name: l.name, amount: l.amount, ...(l.ocur ? {orig: l.orig, ocur: l.ocur, rate: l.rate} : {})})); save();
   return `Added to this month under Miscellaneous, one time: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
 }
 const FX_FAIL = cur => String(cur)[0] === "?" ? (f => `Which ${f}s? Say the code, like “dinner 500 ${CUR_KIN[f].list[0]}” or “dinner 500 ${CUR_KIN[f].list[1]}”, or set your currency on the Plan tab. Nothing was added.`)(String(cur).slice(1)) : `Could not get today’s rate for ${cur}. Check your connection and try again, or type the amount in ${S.cur}.`;
@@ -4125,8 +4125,8 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-hide-note")){ S.hideNote = true; save(); render(true); return; }
   if (b.hasAttribute("data-compare")){ UI.compare = !UI.compare; refreshOuts(); return; }
   if (b.classList.contains("cmp-col")){ const was = b.classList.contains("on"); b.parentElement.querySelectorAll(".cmp-col").forEach(c => c.classList.remove("on")); if (!was) b.classList.add("on"); return; }
-  if (b.hasAttribute("data-plain")){ ASK.last = plainly(); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; return; }
-  if (b.dataset.ask){ const q = b.dataset.ask; $("ask-in").value = q; ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; return; }
+  if (b.hasAttribute("data-plain")){ $("toast").hidden = true; ASK.last = plainly(); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; return; }
+  if (b.dataset.ask){ $("toast").hidden = true; const q = b.dataset.ask; $("ask-in").value = q; ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; return; }
   const subRow = b.closest("[data-sub]");
   if (subRow){ const s = S.subs.find(x => x.id === subRow.dataset.sub); if (!s) return;
     if (b.dataset.keep){ s.keep = b.dataset.keep; save(); render(true); if (s.keep === "drop") toast(`${s.name} marked to drop. Your month updated.`); return; }
@@ -4345,13 +4345,18 @@ view.addEventListener("submit", async e => {
     const cur = CURRENCIES.some(c => c[0] === fd.get("cur")) && fd.get("cur") !== S.cur ? String(fd.get("cur")) : "";
     if (old) Object.assign(old, {name, start, end, budget, cur}, more); else tripList().push({id: uid(), name, start, end, budget, cur, items: [], settled: null, ...more});
     UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `${name} is set. Spending you add on ${start === end ? "that day" : "those days"} goes to the ${ev ? "event" : "trip"}.`); return; }
-  if (kind === "ask"){ const q = tidySaid($("ask-in").value); if (!q) return;
+  if (kind === "ask"){ const q = tidySaid($("ask-in").value); if (!q) return; ASK.go = null;
+    // After a command changes something, go to it: the panel closes, the right tab opens, the item is brought into view
+    // and marked for a moment, and what was done stays on screen with Undo.
+    $("toast").hidden = true;   // a new question or command clears what the last one left on screen
+    const land = (said, u) => { const go = ASK.go; ASK.go = null; if (!go) return false; UI.askOpen = false; if (go.pre) go.pre(); goTo(go.tab, go.sel); toast(said.split(/(?<=[.!])\s+/)[0], u); $("toast").dataset.full = said; return true; };
     if (CHANGE_VERB.test(q) || (REMOVE_VERB.test(q) && !/\?/.test(q) && !/\bshould\b/i.test(q))){ const u = undoable(), before = JSON.stringify(S), said = await logChange(q);
-      ASK.last = said; render(true); const o = $("ask-out"); o.hidden = false; o.textContent = said; $("ask-in").value = ""; $("ask-in").blur(); if (JSON.stringify(S) !== before) toast("Done.", u); return; }
+      ASK.last = said; if (JSON.stringify(S) !== before && land(said, u)) return;
+      render(true); const o = $("ask-out"); o.hidden = false; o.textContent = said; $("ask-in").value = ""; $("ask-in").blur(); if (JSON.stringify(S) !== before) toast("Done.", u); return; }
     if ((TRIP_CMD.test(q) || EVENT_CMD.test(q)) && !/\?/.test(q) && !/^\s*(how|what|when|is|are|did|do|does)\b/i.test(q) && !activeTrip()){ const said = await startTrip(q); ASK.last = said; const o = $("ask-out"); if (o){ o.hidden = false; o.textContent = said; } $("ask-in").value = ""; $("ask-in").blur(); toast(said); return; }
     const wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), asking = /\?|^\s*(is|are|do|does|should|can)\b|\b(afford|how|what|when|who|which|can i|should i)\b/i.test(q);
     if (/\d/.test(q) && (wantsAdd || !asking)){ const u = undoable(), before = JSON.stringify(S), said = await logSpend(q);
-      if (said){ ASK.last = said; refreshOuts(); renderBell(); if (JSON.stringify(S) !== before) toast("Logged.", u); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
+      if (said){ ASK.last = said; if (JSON.stringify(S) !== before && land(said, u)) return; refreshOuts(); renderBell(); if (JSON.stringify(S) !== before) toast("Logged.", u); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
     ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
   if (kind === "lockSet"){ const old = String(fd.get("old") || ""), pin = String(fd.get("pin") || ""), pin2 = String(fd.get("pin2") || "");
     if (UI.lockForm === "change" && !(await lockPinOk(old))){ toast("The current passcode is not right."); return; }
