@@ -2024,6 +2024,47 @@ async def the_owl_button_opens_ask_on_any_tab_and_can_be_moved(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def coming_up_reads_in_date_order_and_a_trip_is_never_logged_as_spending(ctx):
+    pg = await open_at(ctx, (2026, 10, 4, 9, 0)); await fx_routes(pg)
+    # pay on the 5th, and a side income on the 9th
+    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
+    await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=pay]"); await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("1420"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]")
+    await f.locator("[name=name]").fill("Tutoring"); await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=income]"); await f.locator("[name=day]").select_option("9"); await f.locator("[name=amount]").fill("250"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    rows = await pg.evaluate("[...document.querySelectorAll('[data-out=comingUp] .up-row')].map(r => [r.querySelector('.up-date b').textContent, r.querySelector('.up-main .name').textContent])")
+    dated = [int(d) for d, n in rows if d != "Split"]; assert dated == sorted(dated) and len(dated) >= 4, rows
+    names = [n for d, n in rows]; assert names.index("Payday") < names.index("Tutoring") and any(names.index("Payday") < i for i, (d, n) in enumerate(rows) if d not in ("Split", "5")), f"money in sits among the charges by date: {rows}"
+    assert [d for d, n in rows if d == "Split"] == [d for d, n in rows][len(dated):], "what Split says is owed comes last"
+    links = await pg.locator("[data-out=comingUp] .linkrow button").evaluate_all("els => els.map(e => e.getBoundingClientRect()).map(r => [r.left, r.right])")
+    assert len(links) == 2 and links[1][0] - links[0][1] >= 12, f"the two links do not run together: {links}"
+    # Change sits inside the pay box; the schedule and the currency note wait behind their (i)
+    assert await pg.locator(".money-in [data-payday-edit]").count() == 1 and await pg.locator("[data-out=payBox] .pay-line").count() == 0
+    assert "does not convert" not in await text(pg, "#view")
+    await pg.click("[data-info=pay]"); await pg.wait_for_timeout(120); assert "on the 5th" in await text(pg, "[data-out=payBox]") and "next payday" in await text(pg, "[data-out=payBox]")
+    await pg.click("[data-info=cur]"); await pg.wait_for_timeout(120); assert "does not convert the numbers" in await text(pg, "[data-info-tip=cur]")
+    await pg.click(".money-in [data-payday-edit]"); await pg.wait_for_timeout(150); assert await pg.locator("form[data-form=pay]").count() == 1; await pg.click("[data-payday-cancel]"); await pg.wait_for_timeout(120)
+    # "plan a trip": the trip card opens with the name and budget filled in, and nothing goes into the month
+    k = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
+    k0 = await k(); n0 = len((await state(pg)).get("spends") or [])
+    await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150); k0 = await k()
+    await tab(pg, "plan"); await pg.click("#wise"); await pg.wait_for_timeout(200)
+    await pg.fill("#ask-in", "Plan a trip for Australia budget 6,000 euros"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(500)
+    st = await state(pg); assert st["tab"] == "month" and len(st.get("spends") or []) == n0 and len(st.get("trips") or []) == 0, "nothing is saved until the dates are checked"
+    assert await k() == k0 and await pg.locator("[data-ask-sheet]").count() == 0
+    f = pg.locator("form[data-form=trip]"); assert await f.count() == 1 and await f.locator("[name=name]").input_value() == "Australia" and await f.locator("[name=budget]").input_value() == "5160" and await f.locator("[name=cur]").input_value() == "EUR"
+    assert "Started a trip to Australia with a budget of €6,000 (£5,160 at today’s rate)" in (await pg.inner_text("#toast")).replace("\u00a0", " ")
+    await f.locator("[name=start]").fill("2026-11-01"); await f.locator("[name=end]").fill("2026-11-14"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    tr = (await state(pg))["trips"][0]; assert (tr["name"], tr["budget"], tr["cur"], tr["start"]) == ("Australia", 5160, "EUR", "2026-11-01") and await k() == k0
+    # with no number it still starts a trip, and a question about trips is still a question
+    await pg.click("#wise"); await pg.wait_for_timeout(150); await pg.fill("#ask-in", "plan a trip to Lahore"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(400)
+    assert await pg.locator("form[data-form=trip] [name=name]").input_value() == "Lahore"; await pg.click("[data-trip-cancel]"); await pg.wait_for_timeout(120)
+    await pg.click("#wise"); await pg.wait_for_timeout(150); await pg.fill("#ask-in", "how is my trip going?"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(300)
+    assert await pg.locator("form[data-form=trip]").count() == 0 and "Australia" in await text(pg, "#ask-out")
+    assert not pg.errors, pg.errors
+
+@test
 async def paying_part_of_what_you_owe_leaves_the_rest(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
     row = pg.locator("[data-settle]", has_text="Jordan"); assert "You owe Jordan $37.50" in await row.inner_text()
@@ -2975,6 +3016,7 @@ async def pay_schedule_and_extra_paycheck(ctx):
     st = await state(pg); assert st["income"] == 5200 and st["pay"]["when"] == "biweekly"
     head = await text(pg, "[data-out=headline]"); assert "October has 3 paydays, so an extra $2,600 is counted" in head, head
     assert abs(money(await text(pg, "[data-out=headline] .big")) - (1456.99 + 2600)) < 0.01
+    assert await pg.locator("[data-out=payBox] .pay-line").count() == 0, "the schedule stays behind the (i)"; await pg.click("[data-info=pay]"); await pg.wait_for_timeout(120)
     box = await text(pg, "[data-out=payBox]"); assert "every 2 weeks" in box and "next payday" in box and "Oct 16" in box
     how = await text(pg, "[data-out=howto]"); assert "Your next payday is Friday, Oct 16" in how and "each of October’s 3 paychecks" in how
     # the monthly number and the paycheck stay in step
@@ -2994,6 +3036,7 @@ async def month_can_start_on_payday(ctx):
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
     note = await text(pg, "[data-out=planNote]"); assert "19 days left in your month, Sep 25 to Oct 24." in note and "October" not in note, note
     st = await state(pg); assert st["monthStart"] == 25 and "2026-10" in st["statements"] and st["statements"]["2026-10"]["range"] == "Sep 25 to Oct 24"
+    if await pg.locator("[data-out=payBox] .pay-line").count() == 0: await pg.click("[data-info=pay]"); await pg.wait_for_timeout(120)
     up = await text(pg, "[data-out=payBox]"); assert "on the 25th" in up and "Oct 25" in up
     # a payment logged on Sep 26 belongs to this October; one on Sep 20 does not
     await pg.click("[data-inc-add]"); g = pg.locator("form[data-form=income]"); await g.locator("[name=name]").fill("Tutoring"); await g.locator("[name=amount]").fill("300"); await g.locator("button[type=submit]").click(); await pg.wait_for_timeout(150)

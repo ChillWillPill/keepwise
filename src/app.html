@@ -1389,10 +1389,10 @@ V.month = () => {
   <div data-out="comingUp">${OUT.comingUp()}</div>
   ${importCard()}
   <div class="grid2">
-    <label class="field"><span>Currency</span><select data-bind="cur" id="m-cur">${curOptions(S.cur)}</select></label>
-    <label class="field"><span data-out="incomeLabel">${OUT.incomeLabel()}</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month"></span></label>
+    <div class="field"><span class="h-info"><label for="m-cur">Currency</label>${infoBtn("cur", "About changing currency")}</span><select data-bind="cur" id="m-cur">${curOptions(S.cur)}</select></div>
+    <div class="field"><span class="h-info"><label for="m-income" data-out="incomeLabel">${OUT.incomeLabel()}</label>${payOn() ? infoBtn("pay", "About your pay schedule") : ""}</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month">${payOn() && !UI.payEdit ? `<button class="link small" type="button" data-payday-edit style="flex:none">Change</button>` : ""}</span></div>
   </div>
-  <p class="muted small">Changing currency does not convert the numbers. 90 stays 90.</p>
+  ${infoTip("cur", "Changing currency does not convert the numbers. 90 stays 90.")}
   <div data-out="payBox">${OUT.payBox()}</div>
   <div data-out="extraIncome">${OUT.extraIncome()}</div>
   <div data-out="trips">${OUT.trips()}</div>
@@ -2287,28 +2287,31 @@ function setRenewalFrom(s, iso){  // iso date of a charge
   if (s.cycle === "yr") s.renewDate = isoOf(new Date(y + 1, m - 1, d)); else s.renewDay = d;
 }
 OUT.comingUp = () => {
-  const soon = S.subs.map(s => ({s, d: nextRenewal(s)})).filter(x => x.d && daysUntil(x.d) <= 7).sort((a, b) => a.d - b.d);
-  const arriving = (S.extras || []).map(x => ({x, d: nextIncome(x)})).filter(v => v.d && daysUntil(v.d) <= 7 && !incomeLogged(v.x, isoOf(v.d))).sort((a, b) => a.d - b.d);
+  // One list in date order, money out and money in together, so the week reads top to bottom as it will happen.
+  // What Split says is owed has no date, so it comes last.
   const t0 = todayMid(), t7 = new Date(t0); t7.setDate(t7.getDate() + 7);
-  const payRows = (payOn() ? paydaysBetween(t0, t7) : []).filter(d => !((S.payGot || "") >= isoOf(d))).map(d => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
-        <div class="up-main"><div class="name">Payday</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(+S.pay.amount || 0)}</div></div>`).join("");
-  const billRows = billsSoon(7).map(({e, d}) => `<div class="up-row" data-up-bill="${e.id}"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
-        <div class="up-main"><div class="name">${esc(e.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · you pay this yourself</div></div><div class="tnum name">${fmt(e.amount)}</div></div>`).join("");
+  const dateCell = d => `<div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>`, items = [];
+  const soon = S.subs.map(s => ({s, d: nextRenewal(s)})).filter(x => x.d && daysUntil(x.d) <= 7);
+  soon.forEach(({s, d}) => { const n = daysUntil(d), drop = s.keep === "drop";
+    items.push({d, o: 0, html: `<div class="up-row${drop ? " drop" : ""}">${dateCell(d)}
+        <div class="up-main"><div class="name">${esc(s.name)}</div><div class="small ${drop ? "bad" : "muted"}">${drop ? `You chose to drop it. Cancel before ${n === 0 ? "today ends" : "it renews"}.` : whenLabel(n)}</div></div>
+        <div class="tnum name">${fmt(s.price)}</div></div>`}); });
+  billsSoon(7).forEach(({e, d}) => items.push({d, o: 1, html: `<div class="up-row" data-up-bill="${e.id}">${dateCell(d)}
+        <div class="up-main"><div class="name">${esc(e.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · you pay this yourself</div></div><div class="tnum name">${fmt(e.amount)}</div></div>`}));
+  (payOn() ? paydaysBetween(t0, t7) : []).filter(d => !((S.payGot || "") >= isoOf(d))).forEach(d => items.push({d, o: 2, html: `<div class="up-row in">${dateCell(d)}
+        <div class="up-main"><div class="name">Payday</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(+S.pay.amount || 0)}</div></div>`}));
+  (S.extras || []).map(x => ({x, d: nextIncome(x)})).filter(v => v.d && daysUntil(v.d) <= 7 && !incomeLogged(v.x, isoOf(v.d))).forEach(({x, d}) => items.push({d, o: 3, html: `<div class="up-row in">${dateCell(d)}
+        <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(x.amount)}</div></div>`}));
+  items.sort((a, b) => a.d - b.d || a.o - b.o);
   let bal = []; try { bal = myBalances(); } catch(e){}
-  // What Split says is owed, either way. It is shown here as expected money only: it changes what you keep when it is paid.
   const splitRows = bal.slice(0, 4).map(x => `<div class="up-row${x.net > 0 ? " in" : ""}" data-up-split="${esc(x.p.id)}"><div class="up-date"><b style="font-size:.8rem">Split</b><span>open</span></div>
         <div class="up-main"><div class="name">${x.net > 0 ? `${esc(x.p.name)} owes you` : `You owe ${esc(x.p.name)}`}</div><div class="small ${x.net > 0 ? "good" : "muted"}">Not counted until it is paid</div></div><div class="tnum name ${x.net > 0 ? "good" : ""}">${x.net > 0 ? "+" : ""}${fmt(Math.abs(x.net))}</div></div>`).join("") + (bal.length > 4 ? `<p class="small muted" data-up-split-more>And ${bal.length - 4} more in Split.</p>` : "");
-  if (!soon.length && !arriving.length && !payRows && !billRows && !splitRows) return "";
-  const inRows = arriving.map(({x, d}) => `<div class="up-row in"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
-        <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(x.amount)}</div></div>`).join("");
+  if (!items.length && !splitRows) return "";
   const total = soon.filter(x => x.s.keep !== "drop").reduce((a, x) => a + x.s.price, 0);
   return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Coming up</h2><span class="muted small">Next 7 days</span></div>
-    <div class="up-list">${soon.map(({s, d}) => { const n = daysUntil(d), drop = s.keep === "drop";
-      return `<div class="up-row${drop ? " drop" : ""}"><div class="up-date"><b>${d.getDate()}</b><span>${d.toLocaleString("en-US", {month:"short"})}</span></div>
-        <div class="up-main"><div class="name">${esc(s.name)}</div><div class="small ${drop ? "bad" : "muted"}">${drop ? `You chose to drop it. Cancel before ${n === 0 ? "today ends" : "it renews"}.` : whenLabel(n)}</div></div>
-        <div class="tnum name">${fmt(s.price)}</div></div>`; }).join("")}${billRows}${payRows}${inRows}${splitRows}</div>
+    <div class="up-list">${items.map(x => x.html).join("")}${splitRows}</div>
     ${total ? `<p class="small muted">${fmt(total)} will be charged this week.</p>` : ""}
-    ${soon.length || splitRows ? `<div class="linkrow">${soon.length ? `<button class="link" type="button" data-go="subs">All subscriptions</button>` : ""}${splitRows ? `<button class="link" type="button" data-go="split">Open Split</button>` : ""}</div>` : ""}</section>`;
+    ${soon.length || splitRows ? `<div class="linkrow inline" style="justify-content:space-between;gap:16px">${soon.length ? `<button class="link" type="button" data-go="subs">All subscriptions</button>` : "<span></span>"}${splitRows ? `<button class="link" type="button" data-go="split">Open Split</button>` : ""}</div>` : ""}</section>`;
 };
 
 /* ================= how to cancel (official help pages, checked by hand) ================= */
@@ -2783,7 +2786,8 @@ OUT.payBox = () => {
       ${payOn() ? `<button class="link plain small" type="button" data-payday-clear style="align-self:center">Remove my pay schedule</button>` : ""}</form>`; }
   if (!payOn()) return `<button class="link small inc-add" type="button" data-payday-edit>${I.month.replace("<svg ", '<svg width="16" height="16" style="vertical-align:-3px;margin-right:6px" ')}How are you paid? <span class="muted">optional</span></button>`;
   const n = nextPayday(), ms = monthStartDay(), P = periodOf(new Date());
-  return `<div class="pay-line"><span>${I.month.replace("<svg ", '<svg width="18" height="18" ')}<span><b>${fmt(+S.pay.amount || 0)}</b> ${esc(payWhenText())}${n ? ` · next payday <b>${daysUntil(n) === 0 ? "today" : daysUntil(n) === 1 ? "tomorrow" : n.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})}</b>` : S.pay.when === "biweekly" ? " · add your next payday" : ""}${ms !== 1 ? `<br><span class="muted small">Your ${esc(P.name)} runs ${rangeText(P)}.</span>` : ""}</span></span><button class="link small" type="button" data-payday-edit>Change</button></div>`;
+  if (UI.info !== "pay") return "";   // the schedule sits behind the (i) beside Regular pay; Change is in the pay box itself
+  return `<div class="pay-line" data-info-tip="pay" role="note"><span>${I.month.replace("<svg ", '<svg width="18" height="18" ')}<span><b>${fmt(+S.pay.amount || 0)}</b> ${esc(payWhenText())}${n ? ` · next payday <b>${daysUntil(n) === 0 ? "today" : daysUntil(n) === 1 ? "tomorrow" : n.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})}</b>` : S.pay.when === "biweekly" ? " · add your next payday" : ""}${ms !== 1 ? `<br><span class="muted small">Your ${esc(P.name)} runs ${rangeText(P)}.</span>` : ""}</span></span></div>`;
 };
 
 /* ================= trips (a pot of its own, apart from the month until you decide) ================= */
@@ -2939,7 +2943,21 @@ async function logLoan(text){
 }
 const loanNeedsDetails = l => !loanDone(l) && !(+l.total > 0) && !l.end;
 const SPEND_NOISE = /\b(as\s+an?\s+|as\s+|to\s+(my\s+)?|under\s+|in\s+)?(subscription|subscriptions|sub|bill|bills|expenditure|expenditures|misc|miscellaneous|one[- ]?off|one time|every month|each month|monthly|yearly|a year|per year|annual|annually)\b/gi;
+// "plan a trip to Australia, budget $6,000": this starts a trip, never a line of spending. A trip needs its dates, so
+// the trip card opens with the name and budget filled in and nothing is saved until the dates are checked and it is added.
+const TRIP_CMD = /\b(plan|planning|add|create|start|new|make|set up|log)\b[^.?!]*\b(trip|holiday|vacation|tour)\b|\b(trip|holiday|vacation)\b[^.?!]*\bbudget\b/i;
+async function startTrip(text){
+  const m = text.match(/\b(?:trip|holiday|vacation|tour)\b\s*(?:to|for|in|at|of)?\s*([^,.\d$€£¥₹]*)/i);
+  let name = (m ? m[1] : "").replace(/\b(with|and|a|an|the|my|budget|of|for|from|is|at|around|about)\b\s*$/gi, "").replace(/\b(with\s+)?(a\s+)?budget.*$/i, "").replace(/\s+/g, " ").trim().slice(0, 40);
+  name = name ? name[0].toUpperCase() + name.slice(1) : "";
+  const b = parseSpend(text)[0], draft = {name};
+  if (b){ const paidIn = b.cur && b.cur[0] !== "?" ? b.cur : null; const bad = await convertLines([b]); if (bad) return FX_FAIL(bad); draft.budget = b.amount; if (paidIn) draft.cur = paidIn; }
+  UI.tripDraft = draft; UI.tripAdd = true; UI.tripEdit = null; UI.askOpen = false;
+  setTimeout(() => { goTo("month", 'form[data-form="trip"]'); const i = view.querySelector('form[data-form="trip"] [name=start]'); if (i) i.focus({preventScroll: true}); }, 0);
+  return `Started a trip${name ? ` to ${name}` : ""}${b ? ` with a budget of ${b.ocur ? `${fmtIn(b.orig, b.ocur)} (${fmt(b.amount)} at today’s rate)` : fmt(b.amount)}` : ""}. Set the dates and tap Add trip. Nothing was added to this month.`;
+}
 async function logSpend(text){  // returns what to say back, or null when the text is not a spending line
+  if (TRIP_CMD.test(text) && !activeTrip()) return startTrip(text);
   if (spendKind(text) === "loan") return logLoan(text);
   const kind = spendKind(text), yearly = /\b(yearly|a year|per year|annual|annually)\b/i.test(text), trip = kind ? null : activeTrip();
   const lines = parseSpend(String(text).replace(SPEND_NOISE, " "), trip && trip.cur); if (!lines.length) return null;
@@ -2954,8 +2972,8 @@ async function logSpend(text){  // returns what to say back, or null when the te
   return `Added to this month under Miscellaneous, one time: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
 }
 const FX_FAIL = cur => String(cur)[0] === "?" ? (f => `Which ${f}s? Say the code, like “dinner 500 ${CUR_KIN[f].list[0]}” or “dinner 500 ${CUR_KIN[f].list[1]}”, or set your currency on the Plan tab. Nothing was added.`)(String(cur).slice(1)) : `Could not get today’s rate for ${cur}. Check your connection and try again, or type the amount in ${S.cur}.`;
-function tripForm(t){
-  const d = t || {name: "", start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 6)), budget: "", cur: ""};
+function tripForm(t, draft){
+  const d = t || {name: "", start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 6)), budget: "", cur: "", ...(draft || {})};
   return `<form class="inc-form" data-form="trip"><label class="field"><span>Trip</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Miami weekend" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
     <div class="grid2"><label class="field"><span>Starts</span><input name="start" type="date" value="${esc(d.start)}"></label><label class="field"><span>Ends</span><input name="end" type="date" value="${esc(d.end)}"></label></div>
     <div class="grid2"><label class="field"><span>Budget <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="budget" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.budget || "")}"></span></label>
@@ -2987,7 +3005,7 @@ OUT.trips = () => {
   return `<section class="card inc-card" data-trips><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Trips${infoBtn("trips", "About trips")}</h2></div>
     ${infoTip("trips", "A trip keeps its own budget. Type what you spend, like “uber 20, dinner 50”, and it is logged to the trip for today. If you pay in another currency, pick it on the trip or say it (“dinner 30 euros”) and it is converted at today’s rate. It stays out of your month until the trip is over, when you choose to count it or keep it separate.")}
     ${shown.map(tripCard).join("")}${sorted.length > shown.length ? `<button class="link small" type="button" data-trips-all style="align-self:center">Show ${sorted.length - shown.length} earlier trip${sorted.length - shown.length === 1 ? "" : "s"}</button>` : ""}
-    ${UI.tripAdd ? `<div class="inc-row editing">${tripForm(null)}</div>` : `<button class="btn" type="button" data-trip-add>${I.plus}Plan a trip</button>`}</section>`;
+    ${UI.tripAdd ? `<div class="inc-row editing">${tripForm(null, UI.tripDraft)}</div>` : `<button class="btn" type="button" data-trip-add>${I.plus}Plan a trip</button>`}</section>`;
 };
 
 /* ================= did it arrive? (asked from the day after money was due) ================= */
@@ -3972,8 +3990,8 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-voice-stop")){ voiceFinish(true); return; }
   const spendEl = b.closest("[data-spend]");
   if (spendEl && b.hasAttribute("data-spend-del")){ const u = undoable(), gone = (S.spends || []).find(x => x.id === spendEl.dataset.spend); S.spends = (S.spends || []).filter(x => x !== gone); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; }
-  if (b.hasAttribute("data-trip-add")){ UI.tripAdd = true; UI.tripEdit = null; render(true); const i = view.querySelector('form[data-form="trip"] [name=name]'); if (i) i.focus(); return; }
-  if (b.hasAttribute("data-trip-cancel")){ UI.tripAdd = false; UI.tripEdit = null; render(true); return; }
+  if (b.hasAttribute("data-trip-add")){ UI.tripAdd = true; UI.tripEdit = null; UI.tripDraft = null; render(true); const i = view.querySelector('form[data-form="trip"] [name=name]'); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-trip-cancel")){ UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; render(true); return; }
   if (b.hasAttribute("data-trips-all")){ UI.tripsAll = true; refreshOuts(); return; }
   const tripEl = b.closest("[data-trip]"), tripX = tripEl && tripList().find(x => x.id === tripEl.dataset.trip);
   if (tripX){
@@ -4293,10 +4311,11 @@ view.addEventListener("submit", async e => {
     const old = UI.tripEdit && tripList().find(x => x.id === UI.tripEdit);
     const cur = CURRENCIES.some(c => c[0] === fd.get("cur")) && fd.get("cur") !== S.cur ? String(fd.get("cur")) : "";
     if (old) Object.assign(old, {name, start, end, budget, cur}); else tripList().push({id: uid(), name, start, end, budget, cur, items: [], settled: null});
-    UI.tripAdd = false; UI.tripEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `${name} is set. Spending you add on those days goes to the trip.`); return; }
+    UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `${name} is set. Spending you add on those days goes to the trip.`); return; }
   if (kind === "ask"){ const q = tidySaid($("ask-in").value); if (!q) return;
     if (CHANGE_VERB.test(q) || (REMOVE_VERB.test(q) && !/\?/.test(q) && !/\bshould\b/i.test(q))){ const u = undoable(), before = JSON.stringify(S), said = await logChange(q);
       ASK.last = said; render(true); const o = $("ask-out"); o.hidden = false; o.textContent = said; $("ask-in").value = ""; $("ask-in").blur(); if (JSON.stringify(S) !== before) toast("Done.", u); return; }
+    if (TRIP_CMD.test(q) && !/\?/.test(q) && !/^\s*(how|what|when|is|are|did|do|does)\b/i.test(q) && !activeTrip()){ const said = await startTrip(q); ASK.last = said; const o = $("ask-out"); if (o){ o.hidden = false; o.textContent = said; } $("ask-in").value = ""; $("ask-in").blur(); toast(said); return; }
     const wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), asking = /\?|^\s*(is|are|do|does|should|can)\b|\b(afford|how|what|when|who|which|can i|should i)\b/i.test(q);
     if (/\d/.test(q) && (wantsAdd || !asking)){ const u = undoable(), before = JSON.stringify(S), said = await logSpend(q);
       if (said){ ASK.last = said; refreshOuts(); renderBell(); if (JSON.stringify(S) !== before) toast("Logged.", u); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
