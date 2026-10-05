@@ -2963,6 +2963,51 @@ async def names_are_read_past_the_banks_codes(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def loans_and_giving_from_a_statement_go_to_their_own_places(ctx):
+    L = ["Date,Description,Amount"]
+    for m in ("05", "06", "07"):
+        L += [f"{m}/01/2026,PAYROLL ACME,4000.00", f"{m}/02/2026,RENT - OAKVIEW APARTMENTS,-900.00", f"{m}/03/2026,TOYOTA FINANCIAL AUTO LOAN PMT,-310.00", f"{m}/05/2026,ROCKET MORTGAGE PAYMENT,-1200.00",
+              f"{m}/07/2026,CHASE CREDIT CARD PAYMENT,-{150 + int(m) * 10}.00", f"{m}/09/2026,NELNET STUDENT LOAN,-140.00", f"{m}/11/2026,DONATION RED CROSS,-25.00", f"{m}/12/2026,CON ED ELECTRIC,-80.00",
+              f"{m}/15/2026,VANGUARD INVESTMENT,-200.00", f"{m}/18/2026,TRADER JOE'S #552,-60.00"]
+    L += ["06/20/2026,AFFIRM PAY SOFA,-75.00", "07/02/2026,PERSONAL LOAN EMI 3 OF 12,-90.00", "07/03/2026,QUICKCASH LOAN DISBURSEMENT,1000.00", "07/22/2026,FIRST CURRENT CAFE,-9.00"]
+    pg, al = await read_csv(ctx, "loans.csv", "\n".join(L) + "\n")
+    ln = await stx(pg, "[data-st=loans]"); bl = await stx(pg, "[data-st=bills]"); gv = await stx(pg, "[data-st=giving]"); sp = await stx(pg, "[data-st=spending]")
+    # every kind of loan payment is under Loans and debt, with its kind, whether it repeats or was paid once
+    for name, kind, amt in (("Toyota Financial Auto", "Car loan", "$310/mo"), ("Rocket Mortgage", "Mortgage", "$1,200/mo"), ("Chase", "Credit card", "$220/mo"), ("Nelnet Student Loan", "Student debt", "$140/mo"), ("Affirm Sofa", "Other debt", "$75/mo"), ("Personal Loan Emi", "Personal loan", "$90/mo")):
+        row = [x for x in (await pg.locator("[data-st=loans] .st-item").all_inner_texts()) if name in x]; assert row and kind in row[0] and amt in row[0].replace(" ", " "), (name, ln)
+    assert "(6)" in ln and "3 payments" in ln and "1 payment " in ln + " "
+    # and none of them is a bill, spending or a subscription
+    for w in ("Toyota", "Mortgage", "Chase", "Nelnet", "Affirm", "Emi"): assert w not in bl and w not in sp and w not in await stx(pg, "[data-st=subs]"), w
+    assert "Rent Oakview" in bl and "Con Ed" in bl, bl
+    # a loan paid out to you is money in that is not counted as pay
+    assert "Quickcash" not in (await pg.locator("[data-st=income] .st-item").first.inner_text()) and any("QUICKCASH LOAN DISBURSEMENT" in x and "Other money in" in x for x in al)
+    # giving has its own place, and investing is set apart from spending
+    assert "Red Cross" in gv and "Emergency relief" in gv and "$25/mo" in gv, gv
+    assert "Savings and investments" in sp and "Not spending" in sp and not await pg.locator("[data-st-pick='spend:Savings']").is_checked(), sp
+    assert "Eating out" in sp and "First Current Cafe" in sp, "FIRST and CURRENT inside a cafe's name mean nothing"
+    hero = await stx(pg, ".import-body .hero")     # 4000 in; 900 + 80 bills, 2035 loans, 25 giving, 60 groceries, 3 cafe out
+    assert "$4,000 comes in" in hero and "$3,103 goes out" in hero, hero
+    await pg.locator("[data-st-pick='loan:AFFIRM SOFA']").uncheck(); await pg.wait_for_timeout(150)
+    await use_as_plan(pg); await pg.wait_for_timeout(300)
+    assert "5 loans" in await pg.inner_text("#toast")
+    st = await state(pg); loans = {l["name"]: l for l in st["loans"]}
+    assert set(loans) == {"Toyota Financial Auto", "Rocket Mortgage", "Chase", "Nelnet Student Loan", "Personal Loan Emi"}, list(loans)
+    assert loans["Rocket Mortgage"]["kind"] == "home" and loans["Rocket Mortgage"]["pay"] == 1200 and loans["Rocket Mortgage"]["every"] == "mo" and loans["Chase"]["kind"] == "card" and loans["Chase"]["pay"] == 220
+    assert loans["Toyota Financial Auto"]["kind"] == "car" and loans["Nelnet Student Loan"]["kind"] == "student" and loans["Personal Loan Emi"]["kind"] == "personal"
+    ex = [e["name"] for e in st["expenses"]]; assert not any(w in " ".join(ex) for w in ("Toyota", "Mortgage", "Chase", "Nelnet", "Loan", "Red Cross", "Savings")) and "Rent Oakview Apartments" in ex, ex
+    assert [(g["name"], g["cause"], g["amount"], g["every"]) for g in st["giving"]] == [("Donation Red Cross", "relief", 25, "mo")] or [(g["name"]) for g in st["giving"]] == ["Red Cross"], st["giving"]
+    # they show where a loan typed by hand would show, and are counted once
+    await tab(pg, "plan"); pl = await stx(pg, "[data-out=loans]"); assert "Rocket Mortgage" in pl and "Mortgage" in pl and "Chase" in pl, pl
+    assert "Red Cross" in await stx(pg, "[data-out=giving]")
+    await tab(pg, "month"); leg = await stx(pg, ".legend"); needs, misc, sav = [money(x) for x in re.findall(r"\$[\d,.]+", leg)]
+    assert abs(needs - (900 + 80 + 60 + 310 + 1200 + 220 + 140 + 90)) < 0.5 and abs(misc - (25 + 3)) < 0.5, leg
+    # importing the same statement again updates the loans instead of doubling them
+    await pg.set_input_files("#stmt", os.path.join(TMP, "loans.csv")); await pg.wait_for_timeout(500)
+    await pg.click("[data-import-apply=merge]"); await pg.wait_for_timeout(300)
+    st = await state(pg); assert len(st["loans"]) == 6 and len(st["giving"]) == 1, [l["name"] for l in st["loans"]]
+    assert not pg.errors, pg.errors
+
+@test
 async def subscriptions_are_found_properly_in_a_statement(ctx):
     L = ["Date,Description,Amount"]
     for m in ("04", "05", "06", "07"):

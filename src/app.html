@@ -1028,16 +1028,18 @@ const KEEP_FIRST = /^(APPLE|GOOGLE|PAYPAL|AMAZON)$/;
 const CAT_RULES = [
   ["Salary",/PAYROLL|SALARY|WAGES|DIRECT DEP|PAYCHECK|BGC|NET PAY/],
   ["Tax",/\bTAX\b|IRS|HMRC|FBR|REVENUE SERVICE|COUNCIL TAX|INCOME TAX|WITHHOLDING/],
-  ["Housing",/RENT|MORTGAGE|APARTMENT|PROPERTY|LETTING|LANDLORD|HOA/],
+  ["Giving",/DONATION|DONATE|CHARITY|CHARITABLE|ZAKAT|SADAQA|SADQA|TITHE|CHURCH|MOSQUE|MASJID|TEMPLE|SYNAGOGUE|EDHI|SHAUKAT KHANUM|UNICEF|RED CROSS|RED CRESCENT|GOFUNDME|SAVE THE CHILDREN|OXFAM|ALKHIDMAT|SAYLANI|CHHIPA|FOUNDATION|WELFARE/],
+  ["Loans",/LOAN|MORTGAGE|\bMTG\b|CREDIT CARD PAYMENT|CREDIT CARD PMT|CARD PAYMENT|\bCC PAYMENT|\bCC PMT|\bEMI\b|INSTALLMENT|INSTALMENT|\bQIST|FINANCING|FINANCE|IJARAH|MURABAHA|NELNET|NAVIENT|SALLIE MAE|MOHELA|AIDVANTAGE|AFFIRM|KLARNA|AFTERPAY|CLEARPAY|\bZIP PAY|LENDING|\bKARZ/],
+  ["Housing",/RENT|APARTMENT|PROPERTY|LETTING|LANDLORD|HOA/],
   ["Utilities",/ELECTRIC|ENERGY|WATER|GAS BILL|COMCAST|XFINITY|VERIZON|AT&T|T MOBILE|TMOBILE|INTERNET|BROADBAND|CON ED|BRITISH GAS|OCTOPUS|VODAFONE|EE LIMITED|JAZZ|ZONG|TELENOR|PTCL|K ELECTRIC|SUI GAS/],
   ["Insurance",/GEICO|INSURANCE|STATE FARM|PROGRESSIVE|ALLSTATE|AVIVA|DIRECT LINE|ADMIRAL|JUBILEE/],
-  ["Loans",/LOAN|CREDIT CARD PAYMENT|STUDENT|FINANCE|AFFIRM|KLARNA/],
   ["Subscriptions",/NETFLIX|SPOTIFY|HULU|DISNEY|ICLOUD|APPLE COM BILL|APPLE COM|ADOBE|AUDIBLE|PRIME|YOUTUBE|PARAMOUNT|PEACOCK|\bMAX\b|HBO|FITNESS|GYM|PELOTON|DROPBOX|MICROSOFT|OFFICE 365|OPENAI|CHATGPT|CLAUDE|ANTHROPIC|NOTION|DUOLINGO|PATREON|NOW TV|BRITBOX|CRUNCHYROLL|XBOX|PLAYSTATION|NINTENDO|CANVA|GRAMMARLY|LINKEDIN|TINDER|BUMBLE|HEADSPACE|CALM|NYTIMES|WSJ/],
   ["Groceries",/TRADER JOE|KROGER|WHOLE FOODS|ALDI|TESCO|SAINSBURY|SAFEWAY|LIDL|WALMART|GROCERY|ASDA|COSTCO|CARREFOUR|IMTIAZ|METRO CASH|MORRISONS|WAITROSE/],
   ["Dining",/STARBUCKS|CHIPOTLE|MCDONALD|DOORDASH|UBER EATS|GRUBHUB|RESTAURANT|CAFE|COFFEE|PIZZA|DELIVEROO|JUST EAT|GREGGS|FOOD ?PANDA|KFC|SUBWAY|BURGER|DOMINO/],
   ["Transport",/UBER|LYFT|CAREEM|SHELL|EXXON|CHEVRON|\bBP\b|PSO|METRO|TRANSIT|PARKING|TFL|TRAINLINE|FUEL|PETROL/],
   ["Health",/CVS|WALGREENS|PHARMA|CHEMIST|BOOTS|CLINIC|DENTAL|HOSPITAL/],
   ["Shopping",/AMAZON|TARGET|BEST BUY|ETSY|EBAY|ARGOS|DARAZ|IKEA|ZARA|H&M|NIKE|APPLE STORE/],
+  ["Savings",/VANGUARD|FIDELITY|ROBINHOOD|SCHWAB|ETRADE|E TRADE|COINBASE|BINANCE|KRAKEN|WEALTHFRONT|BETTERMENT|ACORNS|MUTUAL FUND|INVESTMENT|BROKERAGE|\bSIP\b|\bIRA\b|401K|PENSION CONTRIB|NATIONAL SAVINGS/],
   ["Bank",/CHARGES|\bCHGS?\b|\bFEES?\b|EXCISE DUTY|SERVICE CHARGE|SMS ALERT|\bFED\b|OVERDRAFT|MARKUP/],
   ["Transfers",/TRANSFER|\bTRF\b|\bTFR\b|\bIBFT\b|RAAST|1 ?LINK|\bFT\b|\bP2P\b|ZELLE|VENMO|CASH APP|\bWISE\b|REMIT|WESTERN UNION|MONEYGRAM|XOOM|PAYONEER|\bSWIFT\b|INWARD|OUTWARD|ATM|WITHDRAWAL|\bCASH\b|\bCWD\b|EASYPAISA|JAZZCASH|SADAPAY|NAYAPAY|\bUPI\b|\bIMPS\b|\bNEFT\b|\bRTGS\b|FASTER PAYMENT|SEND MONEY|MONEY SENT|MONEY RECEIVED/]
 ];
@@ -1087,8 +1089,8 @@ function holderName(text){
 const sameName = (key, holder) => { if (!key || holder.length < 2) return false; const k = key.split(" "); return k.filter(w => holder.includes(w)).length >= Math.min(2, k.length) && k.length >= 2; };
 const catOfDesc = d => { const u = " " + d.toUpperCase().replace(/[^A-Z0-9& ]/g, " ") + " "; for (const [c, re] of CAT_RULES) if (re.test(u)) return c; return "Other"; };
 const NEEDS_CATS = new Set(["Housing","Utilities","Insurance","Loans","Groceries","Transport","Health","Tax","Bank"]);
-const BILL_CAT = new Set(["Housing","Utilities","Insurance","Loans"]);
-const CAT_LABEL = {Groceries:"Groceries", Dining:"Eating out", Transport:"Getting around", Health:"Health", Shopping:"Shopping", Other:"Everything else", Transfers:"Transfers and cash", Tax:"Tax payments", Bank:"Bank charges"};
+const BILL_CAT = new Set(["Housing","Utilities","Insurance"]);
+const CAT_LABEL = {Groceries:"Groceries", Dining:"Eating out", Transport:"Getting around", Health:"Health", Shopping:"Shopping", Other:"Everything else", Transfers:"Transfers and cash", Tax:"Tax payments", Bank:"Bank charges", Savings:"Savings and investments", Housing:"Housing", Utilities:"Utilities", Insurance:"Insurance"};
 
 const MERCH_STOP = new Set([...[...STOP_WORDS].filter(w => !/^(APPLE|GOOGLE|PAYPAL)$/.test(w)), ..."PKR USD EUR GBP AED INR SAR CAD AUD AMT TRANSACTION RATE ENDING FED PVT PRIVATE LIMITED CHECKCARD DEBITCARD PURCHASES INTL".split(" ")]);
 const CARD_LINE = /CARD|\bPOS\b|PURCHASE/, STORE_FRONT = /^(APPLE|GOOGLE|PAYPAL)$/;
@@ -1317,6 +1319,10 @@ function txFromRows(rows){
 // wrote them. Nothing is counted until the person ticks it on the review screen.
 const OWN_RE = /\bOWN ACC|\bSELF\b|\bSAVINGS?\b|\bCHECKING\b|CHEQUING|INTERNAL TRANSFER|BETWEEN (MY|OWN|YOUR) ACC|\bMY ACCOUNT\b|\bSAV\b|\bCHK\b/;
 const isOwnMove = desc => OWN_RE.test(" " + String(desc).toUpperCase().replace(/[^A-Z0-9 ]/g, " ") + " ");
+function stLoanKind(desc){ const u = " " + String(desc).toUpperCase().replace(/[^A-Z0-9 ]/g, " ") + " ";
+  return /CREDIT CARD| CC | CARD PAYMENT/.test(u) ? "card" : /MORTGAGE| MTG |HOME (LOAN|FINANC)|HOUSE (LOAN|FINANC)/.test(u) ? "home" : /STUDENT|NELNET|NAVIENT|SALLIE|MOHELA|AIDVANTAGE/.test(u) ? "student" : / (CAR|AUTO|VEHICLE|MOTOR) |IJARAH/.test(u) ? "car" : /PERSONAL/.test(u) ? "personal" : /AFFIRM|KLARNA|AFTERPAY|CLEARPAY|ZIP PAY|INSTAL/.test(u) ? "other" : "bank"; }
+function stCause(desc){ const u = String(desc).toUpperCase();
+  return /ZAKAT|SADAQA|SADQA|TITHE|CHURCH|MOSQUE|MASJID|TEMPLE|SYNAGOGUE/.test(u) ? "faith" : /UNICEF|SAVE THE CHILDREN|CHILD/.test(u) ? "children" : /ORPHAN/.test(u) ? "orphans" : /RED CROSS|RED CRESCENT|EDHI|RELIEF|CHHIPA|ALKHIDMAT|SAYLANI/.test(u) ? "relief" : /KHANUM|HOSPITAL|CANCER|HEALTH/.test(u) ? "health" : /SCHOOL|EDUCATION|SCHOLAR/.test(u) ? "education" : "other"; }
 function analyzeStatement(tx, fileName, holder, me){
   holder = holder || []; me = me || new Set();
   tx = tx.slice().sort((a, b) => a.date - b.date);
@@ -1362,7 +1368,7 @@ function analyzeStatement(tx, fileName, holder, me){
   for (const [k, list] of Object.entries(cg)){
     const cad = cadenceOf(list), isPay = list.some(t => catOfDesc(t.desc) === "Salary");
     const total = list.reduce((a, t) => a + t.amt, 0);
-    if (isPay || cad){
+    if (isPay || (cad && catOfDesc(list[0].desc) !== "Loans")){   // a loan paid out to you is not pay
       const avg = total / list.length, days = list.map(t => t.date.getDate());
       const payday = days.slice().sort((a, b) => days.filter(v => v === b).length - days.filter(v => v === a).length)[0];
       income.push({id: "in:" + k, name: titleCase(k), monthly: r2(cad ? perMonth(avg, cad) : total / months), total: r2(total), cadence: cad || "irregular", payday, count: list.length, tx: tag(list, "Pay"), on: true});
@@ -1371,7 +1377,8 @@ function analyzeStatement(tx, fileName, holder, me){
   income.sort((a, b) => b.monthly - a.monthly);
   const otherCredits = lump("in:other", other.sort((a, b) => a.date - b.date), "Other money in", false);
   // money out
-  const debits = tx.filter(t => t.amt < 0), dg = group(debits), subs = [], bills = [], taxTx = [], taxes = [], spend = {};
+  const debits = tx.filter(t => t.amt < 0), dg = group(debits), subs = [], bills = [], loans = [], giving = [], taxTx = [], taxes = [], spend = {};
+  const everyOf = cad => cad === "weekly" ? "wk" : cad === "yearly" ? "yr" : "mo";
   const addSub = (k, list, name, known) => { const amts = list.map(t => -t.amt), cad = cadenceOf(list), lastAmt = amts[amts.length - 1], total = amts.reduce((a, b) => a + b, 0), often = cad === "weekly" || cad === "biweekly";
     subs.push({id: "sub:" + k, name, price: r2(often ? perMonth(lastAmt, cad) : lastAmt), cycle: cad === "yearly" ? "yr" : "mo", monthly: r2(perMonth(lastAmt, cad || "monthly")), since: isoOf(list[0].date), lastCharge: isoOf(list[list.length - 1].date),
       charges: list.length, paid: r2(total), cadence: cad || "monthly", known, tx: tag(list, "Subscription"), on: true}); };
@@ -1379,6 +1386,11 @@ function analyzeStatement(tx, fileName, holder, me){
     const cat = catOfDesc(list[0].desc), cad = cadenceOf(list), amts = list.map(t => -t.amt), total = amts.reduce((a, b) => a + b, 0);
     const lastAmt = amts[amts.length - 1], name = titleCase(k);
     if (cat === "Tax"){ taxes.push({name, total: r2(total), monthly: r2(total / months)}); taxTx.push(...tag(list, "Tax")); continue; }
+    // any payment on a loan, a mortgage, a card or an installment plan belongs with Loans and debt, never with bills
+    if (cat === "Loans"){ const kind = stLoanKind(list[0].desc), ev = cad === "biweekly" ? "2wk" : everyOf(cad);
+      loans.push({id: "loan:" + k, name, kind, pay: r2(lastAmt), every: ev, monthly: r2(perMonth(lastAmt, cad || "monthly")), total: r2(total), count: list.length, tx: tag(list, "Loan"), on: true}); continue; }
+    if (cat === "Giving"){ const ev = everyOf(cad), often = cad === "biweekly";
+      giving.push({id: "give:" + k, name, cause: stCause(list[0].desc), amount: r2(cad ? (often ? perMonth(lastAmt, cad) : lastAmt) : total / months), every: ev, monthly: r2(cad ? perMonth(lastAmt, cad) : total / months), total: r2(total), count: list.length, tx: tag(list, "Giving"), on: true}); continue; }
     if (cad && BILL_CAT.has(cat)){ bills.push({id: "bill:" + k, name, cat, monthly: r2(perMonth(lastAmt, cad)), total: r2(total), cadence: cad, count: list.length, tx: tag(list, "Bill"), on: true}); continue; }
     if (cat === "Subscriptions"){
       // one merchant can bill for two things at once (an app store, a streaming bundle): amounts that repeat side by side are separate subscriptions
@@ -1389,26 +1401,26 @@ function analyzeStatement(tx, fileName, holder, me){
         rep.forEach(([a, l]) => addSub(`${k} ${a}`, l, `${name} ${a}`, true)); continue; }
       addSub(k, list, name, true); continue;
     }
-    if (cad && !["Groceries", "Transfers", "Transport", "Dining", "Health", "Bank"].includes(cat) && lastAmt < 250){ addSub(k, list, name, false); continue; }
+    if (cad && !["Groceries", "Transfers", "Transport", "Dining", "Health", "Bank", "Savings"].includes(cat) && lastAmt < 250){ addSub(k, list, name, false); continue; }
     (spend[cat] = spend[cat] || []).push([name, total, list]);
   }
-  subs.sort((a, b) => b.monthly - a.monthly); bills.sort((a, b) => b.monthly - a.monthly);
+  subs.sort((a, b) => b.monthly - a.monthly); bills.sort((a, b) => b.monthly - a.monthly); loans.sort((a, b) => b.monthly - a.monthly); giving.sort((a, b) => b.monthly - a.monthly);
   const spending = Object.entries(spend).map(([cat, parts]) => { const total = parts.reduce((a, p) => a + p[1], 0), label = CAT_LABEL[cat] || cat, list = parts.flatMap(p => p[2]).sort((a, b) => a.date - b.date);
-    return {id: "spend:" + cat, cat, name: label, total: r2(total), monthly: r2(total / months), env: NEEDS_CATS.has(cat) ? "needs" : "misc", top: parts.slice().sort((a, b) => b[1] - a[1]).slice(0, 4).map(x => x[0]), count: list.length, tx: tag(list, label), on: true}; })
+    return {id: "spend:" + cat, cat, name: label, total: r2(total), monthly: r2(total / months), env: NEEDS_CATS.has(cat) ? "needs" : "misc", top: parts.slice().sort((a, b) => b[1] - a[1]).slice(0, 4).map(x => x[0]), count: list.length, tx: tag(list, label), on: cat !== "Savings"}; })
     .filter(x => x.total > 0).sort((a, b) => b.monthly - a.monthly);
   const taxMonthly = r2(taxes.reduce((a, t) => a + t.monthly, 0));
   const tax = taxes.length ? {id: "tax:all", total: r2(taxes.reduce((a, t) => a + t.total, 0)), monthly: taxMonthly, count: taxTx.length, tx: taxTx.sort((a, b) => a.date - b.date), on: true} : null;
-  const R = {fileName, count: all.length, all, totalIn, totalOut, moves, first: isoOf(first), last: isoOf(last), months, income, otherCredits, otherIn: otherCredits.monthly, subs, bills, taxes, tax, taxMonthly, spending};
+  const R = {fileName, count: all.length, all, totalIn, totalOut, moves, first: isoOf(first), last: isoOf(last), months, income, otherCredits, otherIn: otherCredits.monthly, subs, bills, loans, giving, taxes, tax, taxMonthly, spending};
   stPicks(R); return R;
 }
 // The ticks the person has changed are kept apart from the analysis, so they survive when it runs again.
-const stLists = R => [R.income, R.subs, R.bills, R.spending, R.moves.sent, R.moves.received, [R.moves.cashOut], R.tax ? [R.tax] : []];
+const stLists = R => [R.income, R.subs, R.bills, R.loans, R.giving, R.spending, R.moves.sent, R.moves.received, [R.moves.cashOut], R.tax ? [R.tax] : []];
 function stPicks(R){ const P = STMT.pick || {}; stLists(R).forEach(l => l.forEach(x => { if (x.id in P) x.on = P[x.id]; })); stTotals(R); return R; }
 function stTotals(R){
   const sum = l => r2(l.filter(x => x.on).reduce((a, x) => a + x.monthly, 0)), M = R.moves;
   R.monthlyIncome = sum(R.income); R.moveIn = sum(M.received); R.moveOut = r2(sum(M.sent) + (M.cashOut.on ? M.cashOut.monthly : 0));
   R.taxOn = R.tax && R.tax.on ? R.tax.monthly : 0;
-  R.monthlyOut = r2(sum(R.bills) + sum(R.subs) + sum(R.spending) + R.taxOn);
+  R.monthlyOut = r2(sum(R.bills) + sum(R.subs) + sum(R.loans) + sum(R.giving) + sum(R.spending) + R.taxOn);
   const lists = stLists(R).flat().filter(x => x.count !== 0 && x.tx.length);
   R.picked = lists.filter(x => x.on).length; R.pickable = lists.length;
   return R;
@@ -1430,6 +1442,13 @@ function applyStatement(R, mode){
   const subs = on(R.subs).map(s => ({id: uid(), name: s.name, price: s.price, cycle: s.cycle, last: null, group: "", env: "misc", keep: "auto", since: s.since, charges: s.charges, paid: s.paid, lastCharge: s.lastCharge, source: "statement"}));
   subs.forEach(s => setRenewalFrom(s, s.lastCharge));
   const pay = on(R.income);
+  // loans go to Loans and debt, and giving to Giving: the same places they would be typed by hand
+  const loans = on(R.loans).map(l => { const rec = {kind: l.kind, name: l.name, pay: l.pay, every: l.every, source: "statement"}; if (l.kind === "card"){ rec.card = "Other"; rec.fee = 0; } return rec; });
+  const gifts = on(R.giving).map(g => ({name: g.name, cause: g.cause, amount: g.amount, every: g.every, source: "statement"}));
+  if (mode === "replace"){ const keep = x => !S.example && x.source !== "statement"; S.loans = loanList().filter(keep); S.giving = (S.giving || []).filter(keep); }
+  const same = (list, n) => list.find(x => String(x.name || "").toLowerCase() === n.toLowerCase());
+  loans.forEach(l => { const old = same(loanList(), l.name); if (old) Object.assign(old, {pay: l.pay, every: l.every}); else loanList().push({id: uid(), total: 0, end: "", left: 0, ...l}); });
+  gifts.forEach(g => { S.giving = S.giving || []; const old = same(S.giving, g.name); if (old) Object.assign(old, {amount: g.amount, every: g.every}); else S.giving.push({id: uid(), ...g}); });
   if (mode === "replace"){
     if (R.monthlyIncome) S.income = R.monthlyIncome;
     S.expenses = expenses; S.subs = subs;
@@ -1446,7 +1465,7 @@ function applyStatement(R, mode){
   S.imported = {file: R.fileName, when: isoDaysAgo(0), from: R.first, to: R.last};
   S.hideNote = true;
   save();
-  return {subs: subs.length, lines: expenses.length};
+  return {subs: subs.length, lines: expenses.length, loans: loans.length};
 }
 
 async function readStatementFile(file, password){
@@ -1474,7 +1493,7 @@ function detectCurrency(text){
 const curName = c => (CURRENCIES.find(x => x[0] === c) || [c, c])[1];
 function fxScaled(R){  // the statement's numbers in the plan's currency
   const fx = STMT.fx, k = fx && fx.mode === "convert" ? numv(fx.rate) : 1; if (!k || k === 1) return R;
-  const KEYS = new Set(["monthly","price","paid","total","amt","bal","monthlyIncome","otherIn","taxMonthly","monthlyOut","moveIn","moveOut","taxOn","totalIn","totalOut"]), seen = new Map();
+  const KEYS = new Set(["monthly","price","paid","total","amt","bal","monthlyIncome","otherIn","taxMonthly","monthlyOut","moveIn","moveOut","taxOn","totalIn","totalOut","pay","amount"]), seen = new Map();
   const walk = v => { if (!v || typeof v !== "object" || v instanceof Date) return v; if (seen.has(v)) return seen.get(v);
     if (Array.isArray(v)){ const a = []; seen.set(v, a); v.forEach(x => a.push(walk(x))); return a; }
     const o = {}; seen.set(v, o); for (const key in v) o[key] = KEYS.has(key) && typeof v[key] === "number" ? r2(v[key] * k) : walk(v[key]); return o; };
@@ -1570,7 +1589,11 @@ OUT.importBody = () => {
     ${R.subs.length ? `<p class="small" data-keep><b>${fmt(R.subs.filter(s => s.on).reduce((a, s) => a + s.monthly, 0))}</b> a month, <b>${fmt(R.subs.filter(s => s.on).reduce((a, s) => a + s.paid, 0))}</b> paid in this statement.</p>` : ""}</section>
   <section class="card" data-st="bills">${stHead("Bills", "bills", R.bills)}${R.bills.length ? R.bills.map(b => stItem(b, b.name, `${b.cat} · ${b.count} payment${b.count === 1 ? "" : "s"}`, `${fmt(b.monthly)}/mo`)).join("") : `<p class="muted">No regular bills found.</p>`}
     ${R.tax ? stItem(R.tax, "Tax payments", `Tax · ${fmt(R.tax.total)} in this statement`, `${fmt(R.tax.monthly)}/mo`) : ""}</section>
-  <section class="card" data-st="spending">${stHead("Everyday spending", "spending", R.spending)}${R.spending.length ? R.spending.map(s => stItem(s, s.name, `${s.env === "needs" ? "Expenditures" : "Miscellaneous"} · ${s.count} payment${s.count === 1 ? "" : "s"}${s.top && s.top.length ? ` · mostly ${s.top.join(", ")}` : ""}`, `${fmt(s.monthly)}/mo`, {exact: false})).join("") : `<p class="muted">Nothing else found.</p>`}</section>
+  ${R.loans.length ? `<section class="card" data-st="loans">${stHead("Loans and debt", "loans", R.loans, "stLoans", "Payments on a loan, a mortgage, a credit card or an installment plan. Ticked ones are added to Loans and debt on the Plan tab, not to your bills. You can add the amount left and the end date there.")}
+    ${R.loans.map(l => stItem(l, l.name, `${loanKind(l.kind)} · ${l.count} payment${l.count === 1 ? "" : "s"} · ${fmt(l.total)} in this statement`, `${fmt(l.pay)}${l.every === "mo" ? "/mo" : l.every === "yr" ? "/yr" : l.every === "wk" ? "/wk" : " every 2 wks"}`)).join("")}</section>` : ""}
+  ${R.giving.length ? `<section class="card" data-st="giving">${stHead("Giving", "giving", R.giving, "stGiving", "Donations and money given to charity or a place of worship. Ticked ones are added to Giving on the Plan tab.")}
+    ${R.giving.map(g => stItem(g, g.name, `${giveCause(g.cause)} · ${g.count} time${g.count === 1 ? "" : "s"} · ${fmt(g.total)} in this statement`, `${fmt(g.monthly)}/mo`)).join("")}</section>` : ""}
+  <section class="card" data-st="spending">${stHead("Everyday spending", "spending", R.spending)}${R.spending.length ? R.spending.map(s => stItem(s, s.name, `${s.cat === "Savings" ? "Not spending, left out unless you tick it" : s.env === "needs" ? "Expenditures" : "Miscellaneous"} · ${s.count} payment${s.count === 1 ? "" : "s"}${s.top && s.top.length ? ` · mostly ${s.top.join(", ")}` : ""}`, `${fmt(s.monthly)}/mo`, {exact: false})).join("") : `<p class="muted">Nothing else found.</p>`}</section>
   ${movesCards(M)}
   <section class="card" data-st="all"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Every line</h2><button class="link plain small" type="button" data-st-open="all" aria-expanded="${allOpen}">${allOpen ? "Hide" : `Show all ${R.count}`}</button></div>
     <p class="muted small" data-keep>Each transaction as your bank wrote it, and where KeepWise put it.</p>${allOpen ? stTx(R.all, true) : ""}</section>
@@ -4608,7 +4631,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-import-open")){ $("stmt").click(); return; }
   if (b.hasAttribute("data-import-cancel")){ STMT.result = null; STMT.fx = null; STMT.tx = null; render(false); return; }
   if (b.dataset.stOpen && STMT.result){ const k = b.dataset.stOpen; if (STMT.open.has(k)) STMT.open.delete(k); else STMT.open.add(k); refreshOuts(); return; }
-  if (b.dataset.stAll && STMT.result){ const R = STMT.result, list = {income: R.income, subs: R.subs, bills: R.bills, spending: R.spending, sent: R.moves.sent, received: R.moves.received}[b.dataset.stAll] || [], to = !list.some(x => x.on);
+  if (b.dataset.stAll && STMT.result){ const R = STMT.result, list = {income: R.income, subs: R.subs, bills: R.bills, loans: R.loans, giving: R.giving, spending: R.spending, sent: R.moves.sent, received: R.moves.received}[b.dataset.stAll] || [], to = !list.some(x => x.on);
     list.forEach(x => { STMT.pick[x.id] = to; }); stPicks(R); STMT.confirm = false; refreshOuts(); return; }
   if (b.dataset.stMe && STMT.result){ STMT.me.delete("!" + b.dataset.stMe); STMT.me.add(b.dataset.stMe); reanalyze(); refreshOuts(); toast("Shown as your own account, and not counted."); return; }
   if (b.dataset.stNotme && STMT.result){ STMT.me.delete(b.dataset.stNotme); STMT.me.add("!" + b.dataset.stNotme); reanalyze(); refreshOuts(); return; }
@@ -4620,7 +4643,7 @@ view.addEventListener("click", async e => {
     const fx = STMT.fx, R = fxScaled(STMT.result);
     if (fx && fx.mode === "switch") S.cur = fx.from;
     const done = applyStatement(R, b.dataset.importApply); if (fx && fx.mode !== "same") Object.assign(S.imported, {cur: fx.from, rate: fx.mode === "convert" ? numv(fx.rate) : undefined});
-    STMT.result = null; STMT.fx = null; STMT.tx = null; STMT.confirm = false; S.tab = "month"; save(); render(false); toast(`Plan updated from ${R.fileName}: ${done.subs} subscription${done.subs === 1 ? "" : "s"}, ${fmt(R.monthlyIncome)} coming in.`); return; }
+    STMT.result = null; STMT.fx = null; STMT.tx = null; STMT.confirm = false; S.tab = "month"; save(); render(false); toast(`Plan updated from ${R.fileName}: ${done.subs} subscription${done.subs === 1 ? "" : "s"}${done.loans ? `, ${done.loans} loan${done.loans === 1 ? "" : "s"}` : ""}, ${fmt(R.monthlyIncome)} coming in.`); return; }
   if (b.dataset.review){ handleReview(b.dataset.review, b.closest("[data-review-id]").dataset.reviewId); return; }
   if (b.hasAttribute("data-hide-note")){ S.hideNote = true; save(); render(true); return; }
   if (b.hasAttribute("data-compare")){ UI.compare = !UI.compare; refreshOuts(); return; }
