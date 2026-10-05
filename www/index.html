@@ -158,7 +158,9 @@ input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:va
 /* iPhone Safari draws date boxes natively and ignores width; make them behave like the other fields */
 input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;height:48px;line-height:1.5;text-align:left}
 input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
-input[type=date]::-webkit-calendar-picker-indicator{margin:0;opacity:.6}
+input[type=date]{position:relative;padding-right:42px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23808a82' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='5' width='16' height='15' rx='2'/%3E%3Cpath d='M4 10h16M9 3v4M15 3v4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;background-size:18px}
+input[type=date]::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer}  /* a tap anywhere in the field opens the calendar */
+label.field[hidden]{display:none}
 .grid2 > *{min-width:0}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-offset:1px;border-color:transparent}
 /* currency label and number share one box, so any length of symbol fits ($, £, PKR, AED) */
@@ -244,7 +246,7 @@ details.card:not([open]){gap:0}
 details summary{cursor:pointer;font-weight:600;color:var(--green);list-style:none}
 details summary::-webkit-details-marker{display:none}
 .cmp-wrap{display:flex;flex-direction:column;gap:8px}
-.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;height:200px;border-bottom:1px solid var(--line)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;height:104px;border-bottom:1px solid var(--line)}
 .cmp-col{appearance:none;border:0;background:transparent;border-radius:14px 14px 0 0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;padding:0;cursor:pointer;position:relative;font:inherit;color:var(--ink)}
 .cmp-col:hover,.cmp-col.on,.cmp-col:focus-visible{background:var(--chip);outline:none}
 .cmp-val{font-weight:600;font-size:.95rem;color:var(--muted)}
@@ -576,6 +578,47 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
   .stmt{box-shadow:none;border:0;padding:0}
   .st-sum>div{border:1px solid #ddd}
 }
+
+/* ---- four tabs, side menu, hidden hints, compact phones ---- */
+.tabbar{grid-template-columns:repeat(4,1fr)}
+.seg.sub-seg{display:grid;grid-template-columns:repeat(3,1fr);width:100%;background:var(--chip);border:0;border-radius:14px;padding:4px;gap:4px;overflow:visible}
+.seg.sub-seg button{border-radius:11px;min-height:42px;font-size:.92rem}
+.seg.sub-seg button+button{border-left:0}
+.seg.sub-seg button[aria-pressed="true"]{background:var(--card);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+#sidenav{position:fixed;inset:0;z-index:55}
+.sn-back{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;background:rgba(0,0,0,.5);cursor:pointer}
+.sn{position:absolute;top:0;right:0;bottom:0;width:min(304px,86vw);box-sizing:border-box;background:var(--card);border-left:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;overflow:auto;box-shadow:-8px 0 24px rgba(0,0,0,.25);animation:snIn .2s ease}
+@keyframes snIn{from{transform:translateX(100%)}to{transform:none}}
+.sn-head{display:flex;align-items:center;gap:12px}
+.sn-head img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none}
+.sn-id{flex:1;min-width:0;display:flex;flex-direction:column}
+.sn-id b,.sn-id span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sn-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--chip);border-radius:14px;padding:4px}
+.sn-seg button{appearance:none;border:0;background:none;border-radius:11px;min-height:42px;font:500 .92rem var(--body);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.sn-seg button[aria-pressed="true"]{background:var(--card);color:var(--green);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.sn-plus{appearance:none;display:flex;align-items:center;gap:10px;text-align:left;border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line));background:var(--gold-soft);border-radius:14px;padding:12px 14px;cursor:pointer;color:var(--ink);font:inherit}
+.sn-plus b{flex:1;color:var(--gold)}.sn-plus svg{width:16px;height:16px;color:var(--gold);flex:none}
+.sn-list{display:flex;flex-direction:column}
+.sn-row{appearance:none;border:0;background:none;display:flex;align-items:center;gap:12px;min-height:48px;padding:0;text-align:left;color:var(--ink);font:500 1rem var(--body);cursor:pointer}
+.sn-row+.sn-row{border-top:1px solid var(--line)}
+.sn-row svg{width:20px;height:20px;color:var(--muted);flex:none}
+.sn-row span{flex:1}.sn-row small{color:var(--muted);font-size:.78rem}
+.link.quiet-del{align-self:center;color:var(--muted);font-weight:500;font-size:.82rem;text-decoration:underline}
+.card>.linkrow:first-child{border-top:0;padding-top:0;margin-top:0}
+.has-hint:not(.hint-open) p.hint-p{display:none}
+.hero{position:relative}.hero-warn{color:var(--rust);font-weight:600;margin:0}.info-btn.hero-i{position:absolute;top:6px;right:6px;margin:0}
+.hint-btn svg{width:18px;height:18px}
+h2.hint-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+@media (max-width:430px){
+  body{font-size:15px}
+  .view{padding:14px 12px 28px;gap:12px}
+  .card{padding:14px;gap:10px;border-radius:18px}
+  h1{font-size:1.6rem}h2{font-size:1.2rem}
+  .hero{padding:16px 14px;border-radius:20px}
+  .big,.hero .big{font-size:2.5rem}
+  .btn.primary{padding:12px}
+  .grid2 .field>span{font-size:.86rem}
+}
 </style>
 
 <div class="app" id="app">
@@ -593,6 +636,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
   <button class="wise-fab" id="wise" type="button" aria-label="Ask KeepWise, or log spending. Hold to move this button." hidden></button>
 </div>
 <div id="asksheet" hidden></div>
+<div id="sidenav" hidden></div>
 <div class="tour" id="tour" role="dialog" aria-label="Tour of KeepWise" hidden></div>
 <div class="lockscreen" id="lockscreen" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
@@ -782,6 +826,7 @@ function subFlags(){
   });
   return out;
 }
+const ownSwap = w => !w.idea && !/^w\d+$/.test(String(w.id));   // written by the person, not one of the built-in ideas or the example month
 function swapFor(type, id){ return S.swaps.find(w => w.on && w.link === `${type}:${id}`); }
 function compute(){
   const flags = subFlags();
@@ -793,7 +838,7 @@ function compute(){
   const giving = givingMonthly(); misc += giving;  // what you give regularly counts under Miscellaneous
   const loans = loansMonthly(); needs += loans;  // debt payments are part of what must go out; Month shows them on their own row
   const bonus = payBonus(planPeriodNow());
-  const income = (+S.income || 0) + extraExpected() + bonus.extra;
+  const income = (+S.income || 0) + extraExpected() + bonus.extra + insTotal(planPeriodNow().key);  // one-off money in counts in the month it arrived
   const savings = income - needs - misc;
   const flagged = liveSubs.filter(s => flags[s.id].length && s.keep !== "keep");
   const flaggedSave = flagged.reduce((a, s) => { const w = swapFor("sub", s.id); return a + (w ? +w.altCost : subMonthly(s)); }, 0);
@@ -914,6 +959,12 @@ const SPLIT_ICONS = [["", "Match the tag"], ["food", "Food"], ["travel", "Travel
 const showSplitCard = id => { if (!id) return; const el = document.querySelector(`[data-split="${id}"]`); if (el) el.scrollIntoView({block: "nearest"}); };
 const splitIcon = x => (x.icon && I[x.icon]) || tagIcon(x.tag);
 const tagIcon = t => ({Dinner:I.food, Lunch:I.food, Family:I.bag, Borrow:I.cash, Movie:I.film, Work:I.work})[t] || I.receipt;
+// Date limits. A date that can only be ahead (a next charge, an end date) starts at today; one that can only be behind
+// (last used, a payment received) ends at today. A saved date that is already past keeps its field open, so old entries still save.
+const dFrom = v => !v || v >= isoDaysAgo(0) ? ` min="${isoDaysAgo(0)}"` : "", dUpTo = () => ` max="${isoDaysAgo(0)}"`;
+const dayOptions = sel => `<option value="">Pick a day</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${sel === i + 1 ? "selected" : ""}>${ordinal(i + 1)} of each month</option>`).join("")}`;
+const SUB_TABS = ["subs","cheaper","codes"];
+const subSeg = () => `<div class="seg sub-seg" role="group" aria-label="Subscriptions, cheaper options and codes">${[["subs","Yours"],["cheaper","Cheaper"],["codes","Codes"]].map(([k,n]) => `<button type="button" data-go="${k}" aria-pressed="${S.tab === k}">${n}</button>`).join("")}</div>`;
 const TABS = [["month","Month"],["subs","Subs"],["cheaper","Cheaper"],["codes","Codes"],["plan","Plan"],["split","Split"]];
 
 /* ================= views ================= */
@@ -1402,6 +1453,7 @@ function bizPreview(){
 function askCard(sheet){ return `<section class="card${sheet ? " ask-panel" : ""}" aria-labelledby="askh"${sheet ? ' role="dialog" aria-modal="true"' : ""}>
     <div class="inline" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><h2 id="askh" class="h-info">Ask KeepWise${infoBtn("ask", "About Ask KeepWise")}</h2>${sheet ? `<button class="icon-btn" type="button" data-ask-close aria-label="Close Ask KeepWise"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>` : ""}</div>
     ${infoTip("ask", "Ask about your plan, or type or say what you spent and it is logged for you. Answers use the same numbers you see on this page.")}
+    ${UI.info === "ask" ? `<div class="ask-howto"><p class="label">How to use it</p><div data-out="howto">${OUT.howto()}</div></div>` : ""}
     <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 160px">${voiceCan() ? `<button class="icon-btn" type="button" id="ask-mic" data-ask-mic aria-label="Speak instead of typing" aria-pressed="false">${MIC}</button>` : ""}<button class="btn" type="submit">Ask</button></form>
     <div id="ask-out" class="ask-out" ${ASK.last ? "" : "hidden"}>${esc(ASK.last)}</div>
     <div class="chips ask-chips" data-scroll-x><button class="chip" type="button" data-plain style="font-weight:700">Say it plainly</button>${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
@@ -1427,10 +1479,9 @@ V.month = () => {
   <div data-out="extraIncome">${OUT.extraIncome()}</div>
   <div data-out="trips">${OUT.trips()}</div>
   <div data-out="stack">${OUT.stack()}</div>
-  <div data-out="dropCard">${OUT.dropCard()}</div>
   <div data-out="envelopes">${OUT.envelopes()}</div>
   <div data-out="historyCard">${OUT.historyCard()}</div>
-  <section class="card"><h2>How to use it</h2><div data-out="howto">${OUT.howto()}</div></section>
+  <div data-out="dropCard">${OUT.dropCard()}</div>
   ${UI.askOpen ? "" : askCard(false)}`;
 };
 OUT.planNote = () => esc(compute().planNote);
@@ -1440,7 +1491,8 @@ OUT.headline = () => {
   const tail = S.priority === "ef" ? "if you follow emergency fund first and add nothing else" : S.priority === "goal" ? `if ${esc(S.goalName || "your goal")} comes first and you add nothing else` : "if you split it between goal and emergency fund";
   return `<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"}</h1>
   <div class="big ${C.savings < 0 ? "neg" : ""}" style="margin-top:8px;${fitSize(fmt(Math.abs(C.savings)), 3, 88)}">${fmt(Math.abs(C.savings))}</div>
-  <p class="muted" style="margin-top:10px">${C.savings >= 0 ? `${C.planMonth} ends with ${fmt(C.endSaved)} saved ${tail}.` : `${C.planMonth} spends more than comes in. Drop a flagged subscription or use a cheaper swap to close it.`}${over > 0.005 ? ` Needs are ${fmt(over)} over the envelope.` : ""}${C.payBonus.extra > 0 ? ` ${C.planMonth} has ${C.payBonus.count} paydays, so an extra ${fmt(C.payBonus.extra)} is counted.` : ""}</p>`;
+  ${C.savings < 0 || over > 0.005 ? `<p class="small hero-warn" data-hero-warn style="margin-top:8px">${C.savings < 0 ? `${C.planMonth} spends more than comes in. Drop a flagged subscription or use a cheaper swap to close it.` : ""}${over > 0.005 ? ` Needs are ${fmt(over)} over the envelope.` : ""}</p>` : ""}
+  ${C.savings >= 0 || C.payBonus.extra > 0 ? `<p class="muted" style="margin-top:10px">${C.savings >= 0 ? `${C.planMonth} ends with ${fmt(C.endSaved)} saved ${tail}.` : ""}${C.payBonus.extra > 0 ? ` ${C.planMonth} has ${C.payBonus.count} paydays, so an extra ${fmt(C.payBonus.extra)} is counted.` : ""}</p>` : ""}`;
 };
 OUT.stack = () => {
   const C = compute(), tot = Math.max(C.income, C.needs + C.misc, 1);
@@ -1450,7 +1502,7 @@ OUT.stack = () => {
 };
 const UI = {compare:false};
 function compareChart(now, after, afterLabel){
-  const max = Math.max(now, after, 1), h = v => Math.max(4, Math.max(0, v) / max * 140);
+  const max = Math.max(now, after, 1), h = v => Math.max(4, Math.max(0, v) / max * 64);
   const col = (cls, label, v, tipExtra) => `<button type="button" class="cmp-col" aria-label="${esc(label)}: ${fmt(v)}${tipExtra ? ", " + tipExtra : ""}">
       <span class="cmp-tip" aria-hidden="true"><b>${esc(label)}</b><span class="tnum">${fmt(v)}</span>${tipExtra ? `<small>${esc(tipExtra)}</small>` : ""}</span>
       <span class="cmp-val tnum">${fmt(v)}</span><span class="cmp-bar ${cls}" style="height:${h(v)}px"></span></button>`;
@@ -1463,17 +1515,16 @@ function compareChart(now, after, afterLabel){
 const shareRow = () => shareFacts() ? `<div class="linkrow"><button class="link" type="button" data-share-open>${I.share.replace('aria-hidden="true"', 'aria-hidden="true" width="18" height="18" style="vertical-align:-3px;margin-right:6px"')}Share what you found</button></div>` : "";
 OUT.dropCard = () => {
   const C = compute(), now = C.endSaved;
-  const toggle = `<div class="linkrow"><button class="link plain" data-compare type="button" aria-expanded="${UI.compare}">${UI.compare ? "Hide the comparison" : "Compare the close"}</button></div>`;
+  const toggle = `<p class="label" data-compare-head>Compare the close</p>`;
   if (!C.flagged.length){
     const swapSave = C.inactiveSwaps.reduce((a, x) => a + x.save, 0);
-    return `<section class="card"><p class="label">Your rules</p><p>${C.liveSubs.length ? `Nothing is flagged right now. Every subscription was used in the last ${S.ruleDays} days and none overlap.` : "No subscriptions yet. Add them on the Subs tab or import a bank statement, and your rules will flag the ones you do not use."}</p>
-      ${toggle}${UI.compare ? compareChart(now, now + swapSave, "With swaps") + `<button class="link" data-go="cheaper" type="button">See the swaps</button>` : ""}${shareRow()}</section>`;
+    return `<section class="card">
+      ${toggle}${true ? compareChart(now, now + swapSave, "With swaps") + `<button class="link" data-go="cheaper" type="button">See the swaps</button>` : ""}${shareRow()}</section>`;
   }
   return `<section class="card"><p class="muted">If you drop what your rules flag, ${esc(C.planMonth)} ends with</p>
     <div style="font:600 1.875rem/1.1 var(--display);letter-spacing:-.025em;${fitSize(fmt(now + C.flaggedSave), 1.875, 110)}" class="tnum bigsoft">${fmt(now + C.flaggedSave)}</div>
-    <p>Savings finishes ${fmt(C.flaggedSave)} higher. The unused list is ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year.</p>
     <div class="linkrow"><button class="link" data-go="subs" type="button">Review subscriptions</button></div>
-    ${toggle}${shareRow()}${UI.compare ? compareChart(now, now + C.flaggedSave, "After cuts") : ""}</section>`;
+    ${toggle}${compareChart(now, now + C.flaggedSave, "After cuts")}${shareRow()}</section>`;
 };
 // What is typed in "Add a line" is kept here until it is added, so redrawing the list (after tapping away or closing the keyboard) never wipes it.
 const LINE_DRAFT = {};
@@ -1523,7 +1574,7 @@ function envDetail(k, C){
   const subs = C.liveSubs.filter(s => s.env === k);
   return `<div class="env-body">
     ${k === "misc" ? spendsIn(C.planKey).slice().sort((a, b) => (b.date || "").localeCompare(a.date || "") || S.spends.indexOf(b) - S.spends.indexOf(a)).map(x => `<div class="line" data-spend="${x.id}"><div><div>${esc(x.name)}${x.ocur ? ` <span class="muted small">${esc(fmtIn(x.orig, x.ocur))}</span>` : ""}</div><div class="muted small">${shortDate(x.date)} · ${x.amount < 0 ? "money back" : "one time"}</div></div><div class="inline"><span class="tnum ${x.amount < 0 ? "good" : ""}">${x.amount < 0 ? "+" + fmt(-x.amount) : fmt(x.amount)}</span><button class="link danger-link" type="button" data-spend-del>Remove</button></div></div>`).join("") : ""}
-    ${k === "misc" ? (S.giving || []).map(g => `<div class="line" data-give-line="${g.id}"><div><div>${esc(g.name || giveCause(g.cause))}</div><div class="muted small">Giving · ${esc(giveEvery(g.every)[1])}</div></div><div class="inline"><span class="tnum">${fmt(giveMonthly(g))}</span><button class="link plain" type="button" data-go="plan">Edit</button></div></div>`).join("") : ""}
+    ${k === "misc" && GIVING_ON ? (S.giving || []).map(g => `<div class="line" data-give-line="${g.id}"><div><div>${esc(g.name || giveCause(g.cause))}</div><div class="muted small">Giving · ${esc(giveEvery(g.every)[1])}</div></div><div class="inline"><span class="tnum">${fmt(giveMonthly(g))}</span><button class="link plain" type="button" data-go="plan">Edit</button></div></div>`).join("") : ""}
     ${exp.map(e => { const w = swapFor("expense", e.id); return `<div class="line" data-exp="${e.id}"><div><div>${esc(e.name)}</div><div class="muted small">${w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
     ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Subscription · ${fmt(sb.price)}/yr` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subMonthly(sb))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
     ${k === "misc" ? (S.trips || []).filter(t => t.settled === "counted" && t.countKey === C.planKey).map(t => `<div class="line"><div><div>Trip: ${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))} · counted this month only</div></div><span class="tnum">${fmt(tripTotal(t))}</span></div>`).join("") : ""}
@@ -1543,7 +1594,7 @@ OUT.howto = () => {
   return `<ol class="steps">
     <li><div><h3>Where ${C.planMonth} ends</h3><p class="muted">Money coming in is ${fmt(C.income)}. Needs take ${fmt(C.needs)} and misc ${fmt(C.misc)}, so ${fmt(C.savings)} is left.${C.savings > 0 ? (S.priority === "ef" ? ` It goes to your emergency fund first: ${fmt(S.efSaved)} of ${fmt(C.efTarget)} so far.` : S.priority === "goal" ? ` It goes to ${esc(S.goalName || "your goal")} first.` : " Half goes to your emergency fund, half to your goal.") : ""}${C.misc < C.envMisc && C.savings > 0 ? ` Miscellaneous still has ${fmt(C.envMisc - C.misc)} of room if you choose to use it. That comes out of savings.` : ""}</p></div></li>
     <li><div><h3>Drop what you don’t use</h3><p class="muted">${names.length ? `${esc(list)}. Rule: unused after ${S.ruleDays} days, or a duplicate of something you used more recently. Dropping them keeps ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year. After the drop, savings can finish at ${fmt(C.endSaved + C.flaggedSave)}.` : (C.liveSubs.length ? `Nothing flagged. The rule is unused after ${S.ruleDays} days, or a duplicate of something you used more recently.` : "No subscriptions yet. Once you add some, anything unused goes here.")}</p></div></li>
-    <li><div><h3>The cheapest real swap</h3><p class="muted">${best ? `${esc(best.w.title)} → ${esc(best.w.alt)} keeps about ${fmt(best.save)} a month.` : (S.swaps.length ? "You’re already using every swap on the Cheaper tab." : "No swaps yet. Add a cheaper option for something you pay for on the Cheaper tab.")}</p></div></li>
+    <li><div><h3>${best && ownSwap(best.w) ? "Your own swap" : "The cheapest real swap"}</h3><p class="muted">${best ? `${esc(best.w.title)} → ${esc(best.w.alt)} keeps about ${fmt(best.save)} a month.` : (S.swaps.length ? "You’re already using every swap on the Cheaper tab." : "No swaps yet. Add a cheaper option for something you pay for on the Cheaper tab.")}</p></div></li>
     <li><div><h3>On payday</h3><p class="muted">${C.savings > 0 ? `${paydayLine(C)} Do not borrow it back.${S.priority !== "goal" && C.efGap > 0 ? ` Target: ${S.efMonths} months of needs (${fmt(C.efTarget)})${C.efMonthsLeft ? `, reached in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}` : ""}.` : ""} You have ${fmt(S.efSaved)} now; this month lands at ${fmt(C.endSaved)}.` : (C.savings < 0 ? "Fix the shortfall first: nothing is left to move this month." : "Nothing is left over yet. Add the money coming in and your costs, and this shows what to move.")}</p></div></li>
   </ol>`;
 };
@@ -1560,7 +1611,7 @@ function plainly(){
   if (C.savings > 0) lines.push(`Move it to savings on payday. That takes you from ${fmt(S.efSaved)} to ${fmt(now)}.`);
   if (C.needs > C.envNeeds) lines.push(`Bills and food are ${fmt(C.needs - C.envNeeds)} over what you planned for them.`);
   if (C.flagged.length) lines.push(`You pay ${fmt(C.flaggedSave)} a month for ${C.flagged.length} thing${C.flagged.length > 1 ? "s" : ""} you barely use. Dropping them gets you to ${fmt(now + C.flaggedSave)}.`);
-  if (best) lines.push(`The biggest easy win: ${best.w.title.toLowerCase()} → ${best.w.alt.toLowerCase()}, about ${fmt(best.save)} a month.`);
+  if (best) lines.push(`${ownSwap(best.w) ? "Your own swap" : "The biggest easy win"}: ${best.w.title.toLowerCase()} → ${best.w.alt.toLowerCase()}, about ${fmt(best.save)} a month.`);
   if (Math.abs(net) >= 0.01) lines.push(net > 0 ? `Friends and family owe you ${fmt(net)} overall.` : `You owe friends and family ${fmt(-net)} overall.`);
   return lines.join("\n");
 }
@@ -1655,6 +1706,7 @@ function answer(q){
 
 // ---- Subs ----
 V.subs = () => `
+  ${subSeg()}
   <h1>Subscriptions</h1>
   <div data-out="reviewCard">${OUT.reviewCard()}</div>
   <div data-out="subsSummary">${OUT.subsSummary()}</div>
@@ -1667,8 +1719,9 @@ V.subs = () => `
       <label class="field"><span>Name</span><input name="name" required placeholder="e.g. YouTube Premium"></label>
       <div class="grid2"><label class="field"><span>Price</span><input name="price" required inputmode="decimal" placeholder="13.99"></label>
       <label class="field"><span>Billed</span><select name="cycle"><option value="mo">Monthly</option><option value="yr">Yearly</option></select></label></div>
-      <div class="grid2"><label class="field"><span>Last used</span><input name="last" type="date" value="${isoDaysAgo(0)}"></label>
-      <label class="field"><span>Next charge <span class="muted small">(optional)</span></span><input name="renew" type="date"></label></div>
+      <div class="grid2"><label class="field"><span>Last used</span><input name="last" type="date"${dUpTo()} value="${isoDaysAgo(0)}"></label>
+      <label class="field" data-renew-mo><span>Renews on <span class="muted small">(optional)</span></span><select name="renewDay">${dayOptions(0)}</select></label>
+      <label class="field" data-renew-yr hidden><span>Next charge <span class="muted small">(optional)</span></span><input name="renew" type="date"${dFrom("")}></label></div>
       <label class="field"><span>Kind</span><input name="group" placeholder="Video, Music, Fitness…" list="groups"></label>
       <datalist id="groups">${[...new Set(S.subs.map(s => s.group).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("")}</datalist>
       <button class="btn primary" type="submit">Add subscription</button>
@@ -1689,7 +1742,7 @@ OUT.subsList = () => {
     const f = C.flags[s.id], d = daysSince(s.last), k = s.keep;
     const nr = nextRenewal(s), nd = nr ? daysUntil(nr) : null;
     const editing = UI.renewEdit === s.id;
-    const renewEditor = !editing ? "" : `<div class="renew-set"><span class="small muted">Renews on</span>${s.cycle === "yr" ? `<input type="date" data-renew-date value="${esc(s.renewDate || "")}" aria-label="Next renewal date for ${esc(s.name)}">` : `<select data-renew-day aria-label="Renewal day for ${esc(s.name)}"><option value="">Pick a day</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${s.renewDay === i + 1 ? "selected" : ""}>${ordinal(i + 1)} of each month</option>`).join("")}</select>`}<button class="link plain small" type="button" data-renew-cancel>Done</button></div>`;
+    const renewEditor = !editing ? "" : `<div class="renew-set"><span class="small muted">Renews on</span>${s.cycle === "yr" ? `<input type="date" data-renew-date${dFrom(s.renewDate)} value="${esc(s.renewDate || "")}" aria-label="Next renewal date for ${esc(s.name)}">` : `<select data-renew-day aria-label="Renewal day for ${esc(s.name)}">${dayOptions(s.renewDay)}</select>`}<button class="link plain small" type="button" data-renew-cancel>Done</button></div>`;
     const renew = editing ? "" : nr ? `<button class="link plain small renew-btn" type="button" data-renew-open aria-label="Change renewal date for ${esc(s.name)}">Renews ${nd === 0 ? "today" : nd === 1 ? "tomorrow" : dateWithYear(nr, s.cycle === "yr")}</button>`
       : `<button class="link plain small renew-btn add" type="button" data-renew-open aria-label="Add renewal date for ${esc(s.name)}">+ Renewal date</button>`;
     if (UI.subEdit === s.id) return `<div class="row" data-sub="${s.id}"><form class="inc-form" data-form="subEdit">
@@ -1712,6 +1765,7 @@ OUT.subsList = () => {
 
 // ---- Cheaper ----
 V.cheaper = () => `
+  ${subSeg()}
   <h1 class="h-info">Cheaper${infoBtn("cheaper", "About Cheaper")}</h1>
   ${infoTip("cheaper", "Lower-cost alternatives to what you already pay for. Turn one on and your month updates. Prices are estimates, so check before you switch.")}
   <div data-out="cheapSummary">${OUT.cheapSummary()}</div>
@@ -1783,6 +1837,7 @@ OUT.cheapList = () => {
 // ---- Codes ----
 let codeQ = "";
 V.codes = () => `
+  ${subSeg()}
   <h1 class="h-info">Codes${infoBtn("codes", "About Codes")}</h1>
   ${infoTip("codes", "Tap a code to copy it. “Likely” means it worked for someone in the past week. Afterwards, mark whether it worked for you.")}
   ${S.codes.some(c => !c.mine) ? `<div class="note small">These are example codes, shown so you can see how this tab works. Codes you add are real and stay on this device.</div>` : ""}
@@ -1846,7 +1901,6 @@ V.plan = () => `
     <div data-out="expTotal">${OUT.expTotal()}</div>
     <div data-out="expList" style="display:flex;flex-direction:column;gap:10px">${OUT.expList()}</div></section>
   <div data-out="loans">${OUT.loans()}</div>
-  <div data-out="giving">${OUT.giving()}</div>
   <section class="card"><h2>Savings</h2>
     <div class="grid2"><label class="field"><span>Emergency fund so far</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="efSaved" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.efSaved}"></span></label>
     <label class="field"><span>Target, months of needs</span><input data-bind="efMonths" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.efMonths}"></label></div>
@@ -1854,19 +1908,16 @@ V.plan = () => `
     <label class="field"><span>Goal amount</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="goalAmt" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.goalAmt}"></span></label></div>
     <label class="field"><span>Leftover money goes to</span><select data-bind="priority"><option value="ef" ${S.priority==="ef"?"selected":""}>Emergency fund first</option><option value="goal" ${S.priority==="goal"?"selected":""}>My goal first</option><option value="split" ${S.priority==="split"?"selected":""}>Half and half</option></select></label>
     <div data-out="saveSplit">${OUT.saveSplit()}</div></section>
+  <div data-out="giving">${OUT.giving()}</div>
   <button class="w-choice plus-entry" type="button" data-plus-open><span class="pill gold">Plus</span><span><b>KeepWise Plus</b><span class="muted small">Live splits with friends, every device, and more.</span></span>${I.chev}</button>
   <section class="card"><h2>Your data</h2><p class="muted small">Your money data stays on this device and is never uploaded. KeepWise gives estimates, not financial advice.</p>
-    <div data-out="backupBox">${OUT.backupBox()}</div>
-    <div data-out="lockBox">${OUT.lockBox()}</div>
-    <button class="link small" type="button" data-tour-start style="align-self:center">Replay the tour</button>
-    <div data-out="installBtn">${OUT.installBtn()}</div>
     <button class="btn" type="button" data-history>Monthly statements</button>
-    <button class="btn" type="button" data-import-open>Import a bank statement (CSV or PDF)</button>
+    <button class="btn primary" type="button" data-import-open>Import a bank statement (CSV or PDF)</button>
     ${S.example ? `<button class="btn primary" type="button" data-w-start>Set up my month</button>` : ""}
-    <div class="inline"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank">Start empty</button></div>
+    <div class="inline" style="justify-content:space-between"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank" style="margin-left:auto">Start empty</button></div>
     <div id="reset-confirm"></div>
     <p class="small legal-links"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>
-  ${helpCard()}`;
+  `;
 // The three shares always total 100: Expenditures and Miscellaneous are chosen, Savings is what is left. If the two
 // chosen ones would pass 100, the one not being edited gives way.
 function envFix(edited){
@@ -1874,7 +1925,7 @@ function envFix(edited){
   if (e.needs + e.misc > 100){ if (edited === "misc") e.needs = 100 - e.misc; else e.misc = 100 - e.needs; }
   e.save = 100 - e.needs - e.misc;
 }
-OUT.envCheck = () => `<p class="muted small">${S.env.save > 0 ? `Savings is what is left: ${S.env.save}% of your income, ${fmt(compute().envSave)} a month.` : "Nothing is left for Savings. Lower Expenditures or Misc to set some aside."}</p>`;
+OUT.envCheck = () => S.env.save > 0 ? `<p class="muted small">Savings is what is left: ${S.env.save}% of your income, ${fmt(compute().envSave)} a month.</p>` : `<p class="err small">Nothing is left for Savings. Lower Expenditures or Misc to set some aside.</p>`;
 OUT.expTotal = () => { const C = compute(); return `<p class="small tnum">Expenditures ${fmt(r2(C.needs - C.loans))} · Misc ${fmt(C.misc)} (with subscriptions and swaps)${C.loans > 0 ? ` · Loans & debts ${fmt(C.loans)}` : ""}</p>`; };
 OUT.saveSplit = () => { const C = compute(); return C.savings > 0 ? `<p class="small tnum">This month: ${fmt(C.toEF)} to emergency fund, ${fmt(C.toGoal)} to ${esc(S.goalName || "your goal")}.${C.efTarget ? ` Fund target ${fmt(C.efTarget)}.` : ""}</p>` : `<p class="err">Nothing is left to save this month.</p>`; };
 
@@ -2003,7 +2054,7 @@ function historySection(c){
     if (UI.editPay === x.id) return `<div class="row" data-pay="${esc(x.id)}">
       <div class="name">${text}</div>
       <div class="grid2"><label class="field"><span>Amount</span><span class="money-in"><em>${esc(sym())}</em><input data-pay-amt type="text" inputmode="decimal" enterkeyhint="done" value="${x.amount}"></span></label>
-      <label class="field"><span>Date</span><input data-pay-date type="date" value="${esc(x.date)}"></label></div>
+      <label class="field"><span>Date</span><input data-pay-date type="date"${dUpTo()} value="${esc(x.date)}"></label></div>
       <p class="muted small">Only part was paid? Lower the amount and the rest goes back in the list.</p>
       <div class="inline"><button class="btn small" type="button" data-pay-save>Save</button><button class="btn small" type="button" data-pay-cancel>Cancel</button><button class="btn small danger" type="button" data-pay-del>Not paid, put it back</button></div></div>`;
     return `<div class="row" data-pay="${esc(x.id)}"><div class="row-top"><div><div class="${x.to === me ? "good" : ""}">${text}</div><div class="muted small">${shortDate(x.date)}${by}</div></div>
@@ -2102,7 +2153,7 @@ const surveyDue = x => x.keep !== "drop" && !isOurs(x) && !(x.reviewedAt && x.re
 // Take someone to the exact card a note or a notification is about, and mark it for a moment so the eye finds it.
 function goTo(tabName, sel){
   if (sel && tabName === "month") UI.needKind = /data-arrive/.test(sel) ? "arrived" : /data-bill-due/.test(sel) ? "bills" : UI.needKind;   // bring the right question to the front
-  UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = tabName; save(); render(false);
+  UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; S.tab = tabName; save(); render(false);
   const el = sel && view.querySelector(sel), m = $("main"); if (!el) return false;
   m.scrollTop += el.getBoundingClientRect().top - m.getBoundingClientRect().top - 16;
   UI.flashSel = sel; clearTimeout(UI.flashSelT); UI.flashSelT = setTimeout(() => { UI.flashSel = null; }, 1500);
@@ -2337,7 +2388,10 @@ OUT.comingUp = () => {
   let bal = []; try { bal = myBalances(); } catch(e){}
   const splitRows = bal.slice(0, 4).map(x => `<div class="up-row${x.net > 0 ? " in" : ""}" data-up-split="${esc(x.p.id)}"><div class="up-date"><b style="font-size:.8rem">Split</b><span>open</span></div>
         <div class="up-main"><div class="name">${x.net > 0 ? `${esc(x.p.name)} owes you` : `You owe ${esc(x.p.name)}`}</div><div class="small ${x.net > 0 ? "good" : "muted"}">Not counted until it is paid</div></div><div class="tnum name ${x.net > 0 ? "good" : ""}">${x.net > 0 ? "+" : ""}${fmt(Math.abs(x.net))}</div></div>`).join("") + (bal.length > 4 ? `<p class="small muted" data-up-split-more>And ${bal.length - 4} more in Split.</p>` : "");
-  if (!items.length && !splitRows) return "";
+  if (!items.length && !splitRows){   // the card never disappears: a quiet week says so, and says why a subscription may be missing
+    const undated = S.subs.filter(x => x.keep !== "drop" && !x.renewDay && !x.renewDate).length;
+    return `<section class="card" data-up-empty><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Coming up</h2><span class="muted small">Next 7 days</span></div>
+      <p class="small" data-keep>Nothing is due in the next 7 days.</p>${undated ? `<p class="small muted" data-keep>${undated === 1 ? "1 subscription has no renewal day yet, so it cannot show here." : `${undated} subscriptions have no renewal day yet, so they cannot show here.`}</p><div class="linkrow"><button class="link" data-go="subs" type="button">Add renewal days</button></div>` : ""}</section>`; }
   const total = soon.filter(x => x.s.keep !== "drop").reduce((a, x) => a + x.s.price, 0);
   return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Coming up</h2><span class="muted small">Next 7 days</span></div>
     <div class="up-list">${items.map(x => x.html).join("")}${splitRows}</div>
@@ -2491,7 +2545,7 @@ async function drawShareCard(F){
   for (const w of words){ const t = ln ? ln + " " + w : w; if (g.measureText(t).width > W - 260){ g.fillText(ln, 130, y); ln = w; y += 54; } else ln = t; } if (ln) g.fillText(ln, 130, y);
   g.fillStyle = "#1b6843"; g.font = `600 40px ${sans}`; g.fillText(`That’s ${new Intl.NumberFormat("en-US", {style: "currency", currency: S.cur, maximumFractionDigits: 0}).format(Math.round(F.amount * 12))} a year.`, 130, y + 76);
   g.fillStyle = "#e0d5c5"; g.fillRect(130, H - 220, W - 260, 3);
-  { const foot = "Free and private. It stays on your phone."; let fs = 36; g.font = `500 ${fs}px ${sans}`; while (g.measureText(foot).width > W - 260 && fs > 22){ fs -= 2; g.font = `500 ${fs}px ${sans}`; } g.fillStyle = "#4d564e"; g.fillText(foot, 130, H - 150); }
+  { const foot = "Free and private. It stays on your phone."; let fs = 36; g.font = `500 ${fs}px ${sans}`; while (g.measureText(foot).width > W - 260 && fs > 22){ fs -= 2; g.font = `500 ${fs}px ${sans}`; } g.fillStyle = "#4d564e"; g.fillText(foot, 130, H - 158); g.fillStyle = "#1b6843"; g.font = `600 ${fs}px ${sans}`; g.fillText("mykeepwise.com", 130, H - 104); }
   return new Promise(ok => c.toBlob(b => ok(b), "image/png"));
 }
 const SHARE = {blob: null, url: "", facts: null};
@@ -2609,7 +2663,9 @@ async function syncContacts(){
       toast(`Added ${n} contact${n === 1 ? "" : "s"} to search.`); return;
     } catch(e){ if (e && e.name === "AbortError") return; }
   }
-  UI.contactsHelp = true; refreshAfterContacts();  // iPhone and computers: a contacts file
+  UI.contactsHelp = true; refreshAfterContacts(); // iPhone and computers: a contacts file. Once the keyboard and tab bar have settled, the help is brought fully into view.
+  setTimeout(() => { const h = document.querySelector("form [data-contacts-help]") || document.querySelector("[data-contacts-help], .contacts-card"), m = $("main"); if (!h || !m) return;
+    const r = h.getBoundingClientRect(), mr = m.getBoundingClientRect(); if (r.bottom > mr.bottom - 8) m.scrollTop += r.bottom - mr.bottom + 12; else if (r.top < mr.top) m.scrollTop -= mr.top - r.top + 12; }, 80);
 }
 function refreshAfterContacts(){ if (splitDraft) { UI.partOpen = true; render(true); } else render(true); }
 function forgetContacts(){ S.contacts = []; S.contactsAt = null; S.contactsFrom = null; save(); render(true); toast("Contacts removed from this device."); }
@@ -2697,7 +2753,7 @@ function incomeForm(x){
     <div class="grid2"><label class="field"><span>When it arrives</span><select name="when" data-inc-when>${INCOME_WHEN.map(([k, n]) => `<option value="${k}" ${d.when === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
     ${d.when === "monthly" ? `<label class="field"><span>Day of the month</span><select name="day">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+d.day === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label>`
       : d.when === "weekly" ? `<label class="field"><span>Day of the week</span><select name="wd">${WEEKDAYS.map((n, i) => `<option value="${i}" ${+d.wd === i ? "selected" : ""}>${n}</option>`).join("")}</select></label>`
-      : d.when === "biweekly" ? `<label class="field"><span>Next payment</span><input name="next" type="date" value="${esc(d.next || isoDaysAgo(0))}"></label>` : `<div></div>`}</div>
+      : d.when === "biweekly" ? `<label class="field"><span>Next payment</span><input name="next" type="date"${dFrom(d.next)} value="${esc(d.next || isoDaysAgo(0))}"></label>` : `<div></div>`}</div>
     <label class="field"><span>${d.when === "any" ? "Expected in a typical month" : "Each payment"}</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.amount)}"></span><small class="muted small">${d.when === "any" ? "Payments can land on any day. Log each one when it arrives." : "Use a careful number."} This is what your plan counts on.</small></label>
     ${d.kind === "trading" ? `<p class="note small">Count only money you have actually taken out, not gains on paper. Trading income can fall to zero, so keep this number low.</p>` : ""}
     <div class="grid2">${x ? `<button class="btn danger" type="button" data-inc-del>Remove</button>` : `<button class="btn" type="button" data-inc-cancel>Cancel</button>`}<button class="btn primary" type="submit" style="padding:10px">${x ? "Save" : "Add income"}</button></div>
@@ -2807,7 +2863,7 @@ OUT.payBox = () => {
       <div class="grid2"><label class="field"><span>How often</span><select name="when" data-pay-when>${PAY_WHEN.map(([k, n]) => `<option value="${k}" ${d.when === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
       ${d.when === "monthly" ? `<label class="field"><span>Payday</span><select name="day">${dayOpts(d.day, true)}</select></label>`
         : d.when === "weekly" ? `<label class="field"><span>Payday</span><select name="wd">${WEEKDAYS.map((n, i) => `<option value="${i}" ${+d.wd === i ? "selected" : ""}>${n}</option>`).join("")}</select></label>`
-        : d.when === "biweekly" ? `<label class="field"><span>Next payday</span><input name="next" type="date" value="${esc(d.next || isoDaysAgo(0))}"></label>` : `<label class="field"><span>First payday</span><select name="day">${dayOpts(d.day)}</select></label>`}</div>
+        : d.when === "biweekly" ? `<label class="field"><span>Next payday</span><input name="next" type="date"${dFrom(d.next)} value="${esc(d.next || isoDaysAgo(0))}"></label>` : `<label class="field"><span>First payday</span><select name="day">${dayOpts(d.day)}</select></label>`}</div>
       ${d.when === "twice" ? `<label class="field"><span>Second payday</span><select name="day2">${dayOpts(d.day2, true)}</select></label>` : ""}
       <label class="field"><span>Each paycheck, after tax</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.amount)}"></span>
         ${d.when === "biweekly" || d.when === "weekly" ? `<small class="muted small">Your plan counts ${PAY_BASE[d.when]} paychecks a month. A month with one more shows it as extra you can save.</small>` : ""}</label>
@@ -3010,6 +3066,47 @@ async function startTrip(text){
   setTimeout(() => { goTo("month", 'form[data-form="trip"]'); const i = view.querySelector('form[data-form="trip"] [name=start]'); if (i) i.focus({preventScroll: true}); }, 0);
   return `Started a trip${name ? ` to ${name}` : ""}${b ? ` with a budget of ${b.ocur ? `${fmtIn(b.orig, b.ocur)} (${fmt(b.amount)} at today’s rate)` : fmt(b.amount)}` : ""}. Set the dates and tap Add trip. Nothing was added to this month.`;
 }
+// ---- money coming in, said to Ask ----
+// One-off money lands as "money in" for this month and raises what you keep; a pay change updates regular pay; someone
+// paying you back settles the split; a refund comes off this month's spending. Nothing here is ever logged as spending.
+const PAY_SET = /\b(salary|paycheck|pay ?check|wages?|take[- ]home( pay)?|monthly income|my pay|my income)\b[^.?!]*\b(is now|is|are now|now|changed to|went up to|went down to|raised to|increased to|dropped to)\b/i;
+const REFUND_WORD = /\b(refund|refunds|refunded|cash ?back|reimbursed?|reimbursement|money back)\b/i;
+const INCOME_CMD = /\b(got paid|get paid|was paid|been paid|paid me|pays me|received|recieved|earned|bonus|sold|gave me|sent me|payout|dividends?|commission|side income|freelance income|won)\b/i;
+const INCOME_ANY = t => PAY_SET.test(t) || REFUND_WORD.test(t) || INCOME_CMD.test(t);
+const insOf = k => (S.ins || []).filter(x => x.k === k);
+const insTotal = k => r2(insOf(k).reduce((a, x) => a + (+x.amount || 0), 0));
+const inName = n => { let v = String(n || "").replace(/\b(i|i['’]?ve|just|have|got paid|get paid|was paid|been paid|paid me|pays me|received|recieved|earned|got|refund(ed|s)?|reimbursed?|reimbursement|cash ?back|money back)\b/gi, " ").replace(/\s+/g, " ").trim();
+  for (;;){ const t = v.replace(/^(a|an|my|the|for|from|of|as|in)\s+/i, ""); if (t === v) break; v = t; }
+  v = v.replace(/\s+(for|from|of|a|an)$/i, "").trim(); return v ? v[0].toUpperCase() + v.slice(1) : ""; };
+async function logIncome(text){
+  if (/\b(received|recieved)\b/i.test(text) && /\b(bill|invoice|charge|fine|ticket)\b/i.test(text) && !REFUND_WORD.test(text)) return "Was that money coming in or going out? Say “got paid 50” or “spent 50”.";
+  const lines = parseSpend(String(text), null).filter(l => l.amount > 0); if (!lines.length) return null;
+  const bad = await convertLines(lines); if (bad) return FX_FAIL(bad);
+  const C0 = compute(), k = C0.planKey, today = isoOf(todayMid()), keepNow = () => { const C = compute(); return ` You now keep ${fmt(C.savings)} in ${C.planMonth}.`; };
+  if (PAY_SET.test(text) && lines.length === 1){ const n = lines[0].amount, was = +S.income || 0;
+    if (payOn() && S.pay.when !== "monthly") return `Your pay is set per paycheck (${fmt(+S.pay.amount || 0)} each). Tap Change in the pay box on Month to enter the new paycheck amount.`;
+    if (payOn()) S.pay.amount = n; S.income = n; save(); ASK.go = {tab: "month", sel: "#m-income"};
+    return `Regular pay is now ${fmt(n)} a month. It was ${fmt(was)}.` + keepNow(); }
+  if (REFUND_WORD.test(text)){ S.spends = S.spends || []; const first = uid();
+    lines.forEach((l, i) => S.spends.push({id: i ? uid() : first, date: today, k, name: "Refund" + (inName(l.name) ? ": " + inName(l.name) : ""), amount: -l.amount}));
+    save(); ASK.go = {tab: "month", sel: `[data-spend="${first}"]`, pre: () => { UI.openEnv = "misc"; }};
+    return `Took ${fmt(lines.reduce((a, l) => a + l.amount, 0))} off this month’s spending as a refund.` + keepNow(); }
+  const who = (String(text).match(/\bfrom\s+([A-Za-z][\w'’-]*)/) || String(text).match(/^\s*([A-Za-z][\w'’-]*)\s+(paid me|pays me|gave me|sent me)\b/i) || [])[1];
+  if (who && lines.length === 1 && !shared()){ const bal = myBalances().find(b => b.net > 0 && !b.p.archived && b.p.name.split(/\s+/)[0].toLowerCase() === who.toLowerCase());
+    if (bal){ const amt = lines[0].amount, part = r2(Math.min(amt, bal.net)), rest = r2(amt - part), left = r2(bal.net - part);
+      S.settlements.push({id: uid(), from: bal.p.id, to: "me", amount: part, date: isoDaysAgo(0)});
+      if (rest > 0.005) (S.ins = S.ins || []).push({id: uid(), date: today, k, name: `From ${bal.p.name}`, amount: rest});
+      save(); ASK.go = {tab: "split", sel: null};
+      return `Recorded ${fmt(part)} from ${bal.p.name} against what they owed. ${left > 0.005 ? `${fmt(left)} is still owed.` : "You are square."}` + (rest > 0.005 ? ` ${bal.p.name} only owed ${fmt(bal.net)}, so the other ${fmt(rest)} counts as money in this month.` + keepNow() : ""); } }
+  const first = uid(); S.ins = S.ins || [];
+  lines.forEach((l, i) => S.ins.push({id: i ? uid() : first, date: today, k, name: inName(l.name) || "Money in", amount: l.amount}));
+  save(); ASK.go = {tab: "month", sel: `[data-in="${first}"]`};
+  return `Added as money in this month: ${lines.map(l => `${inName(l.name) || "Money in"}, ${fmt(l.amount)}`).join("; ")}.` + keepNow();
+}
+{ const base = OUT.extraIncome; OUT.extraIncome = () => { const list = insOf(compute().planKey);
+  return base() + (list.length ? `<section class="card" data-ins><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Money in this month</h2><span class="tnum good">+${fmt(insTotal(compute().planKey))}</span></div>
+    <div class="rows">${list.map(x => `<div class="row" data-in="${x.id}"><div class="row-top"><div><div class="name">${esc(x.name)}</div><div class="muted small">One time · ${shortDate(x.date)}</div></div><div class="inline"><span class="tnum name good">+${fmt(x.amount)}</span><button class="btn small" type="button" data-in-del="${x.id}">Remove</button></div></div></div>`).join("")}</div></section>` : ""); }; }
+document.addEventListener("click", e => { const b = e.target.closest("[data-in-del]"); if (!b) return; const u = undoable(); S.ins = (S.ins || []).filter(x => x.id !== b.dataset.inDel); save(); render(true); toast("Removed.", u); });
 async function logSpend(text){  // returns what to say back, or null when the text is not a spending line
   if ((TRIP_CMD.test(text) || EVENT_CMD.test(text)) && !activeTrip()) return startTrip(text);
   if (spendKind(text) === "loan") return logLoan(text);
@@ -3035,7 +3132,7 @@ function tripForm(t, draft){
     <div class="grid2"><label class="field"><span>Place <small class="muted">optional</small></span><input name="place" value="${esc(d.place || "")}" placeholder="e.g. Pearl Hall" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
       <label class="field"><span>People <small class="muted">optional</small></span><input name="people" inputmode="numeric" enterkeyhint="next" placeholder="0" value="${esc(d.people || "")}" maxlength="6"></label></div>`
     : `<label class="field"><span>Trip</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Miami weekend" enterkeyhint="next" autocomplete="off" maxlength="40"></label>`}
-    <div class="grid2"><label class="field"><span>Starts</span><input name="start" type="date" value="${esc(d.start)}"></label><label class="field"><span>Ends</span><input name="end" type="date" value="${esc(d.end)}"></label></div>
+    <div class="grid2"><label class="field"><span>Starts</span><input name="start" type="date" value="${esc(d.start)}"></label><label class="field"><span>Ends</span><input name="end" type="date" min="${esc(d.start || "")}" value="${esc(d.end)}"></label></div>
     <div class="grid2"><label class="field"><span>${ev ? "Total budget" : "Budget"} <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="budget" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.budget || "")}"></span></label>
       <label class="field"><span>You will pay in</span><select name="cur">${curOptions(d.cur || S.cur)}</select></label></div>
     ${editBtns(!t, "data-trip-del", ev ? "Add event" : "Add trip", "data-trip-cancel")}</form>`;
@@ -3057,7 +3154,7 @@ function tripCard(t){
     ${st === "counted" || st === "separate" ? "" : `<form class="inline" data-form="tripAdd" style="gap:8px"><input name="q" placeholder="${ev ? "venue 500, flowers 80" : "uber 20, dinner 50"}${t.cur && t.cur !== S.cur ? ` (in ${esc(t.cur)})` : ""}" aria-label="Add spending to ${esc(t.name)}" enterkeyhint="send" autocomplete="off" autocapitalize="off" style="flex:1 1 150px"><button class="btn small" type="submit">Add</button></form>`}
     <div class="inline" style="justify-content:space-between"><button class="link plain small" type="button" data-trip-open aria-expanded="${open}">${open ? "Hide details" : `Details${(t.items || []).length ? ` (${t.items.length})` : ""}`}</button><button class="link plain small" type="button" data-trip-edit aria-label="Edit ${esc(t.name)}">Edit</button></div>
     ${open ? `<div class="inc-pays">${Object.keys(days).sort().reverse().map(d => `<div class="muted small" style="margin-top:6px">${shortDate(d)} · ${fmt(r2(days[d].reduce((a, x) => a + x.amount, 0)))}</div>${days[d].map(x => `<div class="line" data-trip-item="${x.id}"><span>${esc(x.name)}${x.ocur ? ` <span class="muted small">${esc(fmtIn(x.orig, x.ocur))}</span>` : ""}</span><span class="inline"><span class="tnum">${fmt(x.amount)}</span><button class="link danger-link small" type="button" data-trip-item-del aria-label="Remove ${esc(x.name)}">Remove</button></span></div>`).join("")}`).join("") || `<p class="muted small">Nothing logged yet.</p>`}
-      ${st === "counted" ? `<p class="muted small">This ${noun} counts in ${esc(keyLabel(t.countKey))}, under Miscellaneous.</p><button class="link small" type="button" data-trip-settle="separate" style="align-self:flex-start">Keep it separate instead</button>` : st === "separate" ? `<p class="muted small">This ${noun} is kept apart from your months.</p><button class="link small" type="button" data-trip-settle="counted" style="align-self:flex-start">Count it in ${esc(C.planMonth)} instead</button>` : ""}</div>` : ""}</div>`;
+      ${st === "counted" ? `<p class="muted small">This ${noun} counts in ${esc(keyLabel(t.countKey))}, under Miscellaneous.</p><button class="link small" type="button" data-trip-settle="separate" style="align-self:flex-start">Keep it separate instead</button>` : st === "separate" ? `<p class="muted small" data-keep>This ${noun} is kept apart from your months.</p><button class="link small" type="button" data-trip-settle="counted" style="align-self:flex-start">Count it in ${esc(C.planMonth)} instead</button>` : ""}</div>` : ""}</div>`;
 }
 OUT.trips = () => {
   const list = (S.trips || []).slice().sort((a, b) => (b.start || "").localeCompare(a.start || ""));
@@ -3190,7 +3287,8 @@ const GIVE_CAUSES = [["children","Children"],["orphans","Orphans"],["veterans","
 const GIVE_EVERY = [["mo","Every month"],["wk","Every week"],["2x","Twice a month"],["yr","Every year"]];
 const giveCause = k => (GIVE_CAUSES.find(x => x[0] === k) || GIVE_CAUSES[9])[1], giveEvery = k => GIVE_EVERY.find(x => x[0] === k) || GIVE_EVERY[0];
 const giveMonthly = g => { const a = +g.amount || 0; return r2(g.every === "wk" ? a * 52 / 12 : g.every === "2x" ? a * 2 : g.every === "yr" ? a / 12 : a); };
-const givingMonthly = () => r2((S.giving || []).reduce((a, g) => a + giveMonthly(g), 0));
+const GIVING_ON = true;
+const givingMonthly = () => GIVING_ON ? r2((S.giving || []).reduce((a, g) => a + giveMonthly(g), 0)) : 0;
 function giveForm(g){
   const d = g || {name: "", cause: "children", amount: "", every: "mo"}, opt = (list, v) => list.map(([k, n]) => `<option value="${k}" ${k === v ? "selected" : ""}>${n}</option>`).join("");
   return `<form class="inc-form" data-form="give"><label class="field"><span>Who it goes to</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Local food bank" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
@@ -3198,7 +3296,7 @@ function giveForm(g){
     <label class="field"><span>Amount each time</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.amount)}"></span></label>
     ${editBtns(!g, "data-give-del", "Add giving", "data-give-cancel")}</form>`;
 }
-OUT.giving = () => { const list = S.giving || [], tot = givingMonthly();
+OUT.giving = () => { if (!GIVING_ON) return ""; const list = S.giving || [], tot = givingMonthly();
   return `<section class="card inc-card" data-giving><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Giving${infoBtn("giving", "About Giving")}</h2>${list.length ? `<span class="muted small tnum">${fmt(tot)}/mo</span>` : ""}</div>
     ${infoTip("giving", "Money you give regularly, to anyone you choose. It counts under Miscellaneous at its monthly cost. KeepWise does not collect or send donations.")}
     ${list.map(g => UI.giveEdit === g.id ? `<div class="inc-row editing" data-give="${g.id}">${giveForm(g)}</div>` : `<div class="inc-row" data-give="${g.id}"><div class="row-top"><div><div class="name">${esc(g.name || giveCause(g.cause))}</div><div class="muted small">${esc(giveCause(g.cause))} · ${esc(giveEvery(g.every)[1].toLowerCase())}</div></div><div style="text-align:right"><div class="name tnum">${fmt(g.amount)}</div>${g.every === "mo" ? "" : `<div class="muted small tnum">${fmt(giveMonthly(g))}/mo</div>`}</div></div>
@@ -3253,7 +3351,7 @@ function loanForm(l){
       <label class="field"><span>How often</span>${sel("every", LOAN_EVERY, d.every)}</label></div>
     <div class="grid2"><label class="field"><span>Left to pay <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="total" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.total)}"></span></label>
       <label class="field"><span>Installments left <small class="muted">optional</small></span><input name="left" inputmode="numeric" enterkeyhint="next" placeholder="e.g. 24" value="${esc(d.left || "")}"></label></div>
-    <div class="grid2"><label class="field"><span>End date <small class="muted">optional</small></span><input name="end" type="date" value="${esc(d.end || "")}"></label>
+    <div class="grid2"><label class="field"><span>End date <small class="muted">optional</small></span><input name="end" type="date"${dFrom(d.end)} value="${esc(d.end || "")}"></label>
       <label class="field"><span>Interest</span><input name="rate" readonly tabindex="-1" class="calc" placeholder="Worked out for you" value="${esc(loanRateText(d))}" aria-label="Interest, worked out from your numbers"></label></div>
     <p class="muted small" data-loan-ratenote>${loanRateNote(d)}</p>
     <div class="grid2">${l ? `<button class="btn danger" type="button" data-loan-del>Remove</button>` : `<button class="btn" type="button" data-loan-cancel>Cancel</button>`}<button class="btn primary" type="submit" style="padding:10px">${l ? "Save" : "Add loan"}</button></div>
@@ -3443,13 +3541,14 @@ const TOUR_KEY = "keepwise-tour-done";
 const TOUR = {on: false, i: 0, saved: null, welcome: null, tab: null};
 const TOUR_STEPS = [
   ["month", ".hero", "What you keep", "This is the number KeepWise is built around: what you will have left at the end of the month if the plan holds."],
-  ["month", 'form[data-form="ask"]', "Just say it", "Type or say what you spent, like “dinner 30 euros” or “add rent 1200 as a bill”. KeepWise puts it in the right place and converts the currency at today’s rate. It is free, and it is read on your phone."],
+  ["month", 'form[data-form="ask"]', "Just say it", "Type or say what you spent or were paid, like “dinner 30 euros”, “add rent 1200 as a bill” or “got a 300 bonus”. KeepWise puts it in the right place and converts the currency at today’s rate. It is free, and it is read on your phone."],
   ["month", '[data-out="comingUp"]', "Coming up", "Charges and money due in the next 7 days, so nothing arrives as a surprise."],
   ["month", '[data-out="envelopes"]', "Where it goes", "Savings, Expenditures and Miscellaneous, each against its share of your income. Tap Details on any of them to see what is inside."],
   ["subs", '[data-out="subsList"]', "Subscriptions", "Everything you pay for on repeat. Mark what you use, and KeepWise flags what looks forgotten so you can keep it or drop it."],
-  ["cheaper", "#view", "Cheaper", "Ways to pay less for things already on your list, with what each one would keep per month and per year."],
-  ["codes", "#view", "Codes", "Promo codes you find, kept in one place and ready at checkout."],
-  ["plan", "#view", "Plan", "Your pay, monthly lines, loans and savings goals live here, along with backups and the app lock."],
+  ["cheaper", "#view", "Cheaper", "Inside Subs. Ways to pay less for things already on your list, with what each one would keep per month and per year."],
+  ["codes", "#view", "Codes", "Also inside Subs. Promo codes you find, kept in one place and ready at checkout."],
+  ["plan", "#view", "Plan", "Your pay, monthly lines, loans, savings goals and giving live here."],
+  ["month", "#acct-btn", "Menu", "Your profile, settings, the app lock, backups and support are behind this button."],
   ["split", "#view", "Split", "Split a bill with friends or family. KeepWise works out who owes what and writes the message for you to send."],
   ["month", "#bell", "Notifications", "The bell collects what needs a look: money to confirm, charges this week and subscriptions that look unused."],
 ];
@@ -3471,7 +3570,7 @@ function tourShow(){
   if (S.tab !== tabName || TOUR.i === 0){ S.tab = tabName; render(false); }
   const target = document.querySelector(sel), m = $("main");
   if (target && !target.offsetParent && target.closest("details")) target.closest("details").open = true;
-  if (target){ if (sel !== "#view" && sel !== "#bell"){ target.classList.add("tour-focus"); m.scrollTop += target.getBoundingClientRect().top - m.getBoundingClientRect().top - 14; } else { m.scrollTop = 0; if (sel === "#bell") target.classList.add("tour-focus"); } }
+  if (target){ if (sel !== "#view" && sel !== "#bell" && sel !== "#acct-btn"){ target.classList.add("tour-focus"); m.scrollTop += target.getBoundingClientRect().top - m.getBoundingClientRect().top - 14; } else { m.scrollTop = 0; if (sel === "#bell" || sel === "#acct-btn") target.classList.add("tour-focus"); } }
   el.innerHTML = `<div class="tour-top"><span class="tour-who"><img alt="" src="${(document.querySelector(".logo") || {}).src || ""}"><span class="muted small" data-tour-count>${TOUR.i + 1} of ${n}</span></span><button class="link plain small" type="button" data-tour-skip>Skip tour</button></div>
     <h3>${title}</h3><p class="muted">${text}</p>
     <div class="tour-nav">${TOUR.i ? `<button class="btn small" type="button" data-tour-back>Back</button>` : ""}<button class="btn small primary" type="button" data-tour-next>${TOUR.i === n - 1 ? "Finish" : "Next"}</button></div>`;
@@ -3522,8 +3621,15 @@ function lockDraw(){
   el.hidden = !LOCK.on; appEl.classList.toggle("locked", LOCK.on); if (LOCK.on) appEl.setAttribute("inert", ""); else appEl.removeAttribute("inert");
   if (!LOCK.on || !c) return;
   const wait = Math.max(0, Math.ceil((LOCK.until - Date.now()) / 1000));
-  if (LOCK.forgot){ el.innerHTML = `<h1 style="font-size:1.6rem">Forgot your passcode?</h1>
-    <p class="muted" style="max-width:340px">A passcode cannot be recovered, because it never leaves this phone. You can erase KeepWise on this phone and start again. If you saved a backup file, you can restore it afterwards.</p>
+  if (LOCK.forgot){ const a = S.acct && S.acct.uid ? S.acct : null, google = a && a.prov === "google.com", mask = a ? String(a.email).replace(/^(.).*(@.*)$/, "$1•••$2") : "";
+    el.innerHTML = `<h1 style="font-size:1.6rem">Forgot your passcode?</h1>
+    ${a ? `<div data-lock-reset style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px">
+      <p class="muted" style="margin:0">Sign in to your KeepWise account${mask ? ` (${esc(mask)})` : ""} to set a new passcode. Your money stays on this phone.</p>
+      ${google ? (IN_APP ? `<p class="small" style="margin:0">This account signs in with Google, which cannot open inside the app. Erase and restore from a backup instead.</p>` : `<button class="btn primary" type="button" data-lock-google ${LOCK.busy ? "disabled" : ""}>Continue with Google</button>`)
+        : `<form data-lock-recover style="display:flex;flex-direction:column;gap:10px"><input name="pw" type="password" autocomplete="current-password" placeholder="Account password" aria-label="Your KeepWise account password" required><button class="btn primary" type="submit" ${LOCK.busy ? "disabled" : ""}>${LOCK.busy ? "Checking…" : "Reset passcode"}</button></form>`}
+      <p class="small err" data-lock-rmsg role="status" style="min-height:1.3em;margin:0">${esc(LOCK.rmsg || "")}</p></div>
+      <p class="muted small" style="max-width:340px">Or erase KeepWise on this phone and start again. If you saved a backup file, you can restore it afterwards.</p>`
+    : `<p class="muted" style="max-width:340px">A passcode cannot be recovered, because it never leaves this phone. You can erase KeepWise on this phone and start again. If you saved a backup file, you can restore it afterwards.</p>`}
     <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px"><button class="btn danger" type="button" data-lock-erase>${LOCK.forgot === 2 ? "Tap again to erase everything" : "Erase KeepWise on this phone"}</button><button class="btn" type="button" data-lock-back>Back</button></div>`; return; }
   el.innerHTML = `<img src="${document.querySelector(".logo").src}" alt="" width="64" height="64" style="border-radius:50%">
     <h1 style="font-size:1.6rem" id="lock-h">Enter your passcode</h1>
@@ -3551,12 +3657,33 @@ $("lockscreen").addEventListener("click", e => { const b = e.target.closest("but
   if (b.dataset.lockKey) lockKey(b.dataset.lockKey);
   else if (b.hasAttribute("data-lock-del")) lockKey("del");
   else if (b.hasAttribute("data-lock-bio")) lockBio();
-  else if (b.hasAttribute("data-lock-forgot")){ LOCK.forgot = 1; lockDraw(); }
-  else if (b.hasAttribute("data-lock-back")){ LOCK.forgot = false; lockDraw(); }
+  else if (b.hasAttribute("data-lock-forgot")){ LOCK.forgot = 1; LOCK.rmsg = ""; lockDraw(); }
+  else if (b.hasAttribute("data-lock-back")){ LOCK.forgot = false; LOCK.rmsg = ""; lockDraw(); }
+  else if (b.hasAttribute("data-lock-google")) lockRecover("", true);
   else if (b.hasAttribute("data-lock-erase")){ if (LOCK.forgot !== 2){ LOCK.forgot = 2; lockDraw(); return; }
     try { Object.keys(localStorage).filter(k => k.startsWith("keepwise")).forEach(k => localStorage.removeItem(k)); } catch(err){}
     window.__kwErasing = true; location.reload(); } });
-document.addEventListener("keydown", e => { if (!LOCK.on) return; if (/^\d$/.test(e.key)) lockKey(e.key); else if (e.key === "Backspace") lockKey("del"); });
+// A forgotten passcode can be reset by proving who you are: the account already signed in on this phone signs in again.
+// Only that account is accepted, nothing is uploaded, and without an account the passcode still cannot be recovered.
+async function lockRecover(pw, viaGoogle){
+  const a = S.acct; if (!a || !a.uid || LOCK.busy || !LOCK.on) return;
+  LOCK.busy = true; LOCK.rmsg = ""; lockDraw(); let res = "ok";
+  try {
+    await accInit(); if (ACC.state !== "ready" || !ACC.auth) res = "offline";
+    else { const u = ACC.auth.currentUser, same = u && u.uid === a.uid;
+      if (viaGoogle){ const prov = new firebase.auth.GoogleAuthProvider();
+        if (same && u.reauthenticateWithPopup) await u.reauthenticateWithPopup(prov);
+        else { const r = await ACC.auth.signInWithPopup(prov); if (!r || !r.user || r.user.uid !== a.uid){ await ACC.auth.signOut(); res = "mismatch"; } } }
+      else if (same && u.reauthenticateWithCredential && firebase.auth.EmailAuthProvider) await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(a.email, pw));
+      else { const r = await ACC.auth.signInWithEmailAndPassword(a.email, pw); if (!r || !r.user || r.user.uid !== a.uid){ await ACC.auth.signOut(); res = "mismatch"; } } }
+  } catch(e){ res = (e && e.code) || "error"; }
+  LOCK.busy = false; if (!LOCK.on) return;
+  if (res === "ok"){ lockStore(null); LOCK.rmsg = ""; lockOpen(); UI.inbox = false; UI.account = false; UI.plus = false; UI.settings = "security"; UI.lockForm = "set"; render(false); toast("Signed in. Set a new passcode."); return; }
+  LOCK.rmsg = /wrong-password|invalid-credential|invalid-login/.test(res) ? "That password is not right." : /too-many/.test(res) ? "Too many tries. Wait a few minutes and try again." : res === "offline" || /network/.test(res) ? "Connect to the internet to sign in." : res === "mismatch" || /user-mismatch/.test(res) ? "That is not the account used on this phone." : /popup-closed|cancelled-popup/.test(res) ? "" : "Could not sign in. Try again.";
+  lockDraw();
+}
+$("lockscreen").addEventListener("submit", e => { const f = e.target.closest("[data-lock-recover]"); if (!f) return; e.preventDefault(); const pw = String(new FormData(f).get("pw") || ""); if (pw) lockRecover(pw, false); });
+document.addEventListener("keydown", e => { if (!LOCK.on || LOCK.forgot || isField(e.target)) return; if (/^\d$/.test(e.key)) lockKey(e.key); else if (e.key === "Backspace") lockKey("del"); });
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") LOCK.hiddenAt = Date.now(); else if (LOCK.cfg && LOCK.hiddenAt && Date.now() - LOCK.hiddenAt >= LOCK_AWAY) lockNow(); });
 // ---- the setting, on Plan ----
 OUT.lockBox = () => {
@@ -3567,6 +3694,7 @@ OUT.lockBox = () => {
   if (m === "set" || m === "change") return `<section class="card" data-lock-card>${head}<form class="inc-form" data-form="lockSet">
       ${m === "change" ? pin("old", "Current passcode", "current-password") : ""}<div class="grid2">${pin("pin", "New passcode", "new-password")}${pin("pin2", "Repeat it", "new-password")}</div>
       <p class="muted small">4 to 8 digits.</p>
+      <p class="muted small" data-lock-note>${S.acct && S.acct.uid ? "If you forget it, you can reset it by signing in to your KeepWise account." : "If you forget it, the only way back is to erase this phone, so save a backup first. With a KeepWise account you could reset it by signing in."}</p>
       <div class="grid2"><button class="btn" type="button" data-lock-cancel>Cancel</button><button class="btn primary" type="submit" style="padding:10px">Save passcode</button></div></form></section>`;
   if (m === "off") return `<section class="card" data-lock-card>${head}<form class="inc-form" data-form="lockOff">${pin("old", "Enter your passcode to turn the lock off", "current-password")}
       <div class="grid2"><button class="btn" type="button" data-lock-cancel>Cancel</button><button class="btn danger" type="submit">Turn off</button></div></form></section>`;
@@ -3578,17 +3706,19 @@ OUT.lockBox = () => {
 
 /* ================= render ================= */
 function renderTabs(){
-  $("tabbar").innerHTML = TABS.map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k?'aria-current="page"':""}><span class="ti">${I[k]}</span><span>${n}</span></button>`).join("");
+  $("tabbar").innerHTML = TABS.filter(([k]) => !SUB_TABS.includes(k) || k === "subs").map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k || (k === "subs" && SUB_TABS.includes(S.tab))?'aria-current="page"':""}><span class="ti">${I[k]}</span><span>${n}</span></button>`).join("");
 }
 function render(keepScroll){
   const main = $("main"), top = main.scrollTop;
-  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : V[S.tab]();
+  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : UI.settings ? V.settings() : V[S.tab]();
   const askOk = !STMT.result && !UI.pdfLock && !UI.account && UI.welcome == null && !UI.biz; if (!askOk) UI.askOpen = false;
   const sheet = $("asksheet"); if (sheet){ sheet.innerHTML = UI.askOpen ? askSheet() : ""; sheet.hidden = !UI.askOpen; }
   const fab = $("wise"); if (fab) fab.hidden = !askOk || !!UI.askOpen;
   appEl.classList.toggle("welcoming", UI.welcome != null && !UI.account && !STMT.result);
   if (!keepScroll){ v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   renderTabs(); renderBell();
+  { const sn = $("sidenav"); if (sn){ sn.innerHTML = UI.menu ? sideNav() : ""; sn.hidden = !UI.menu; } }
+  tidyHints();
   main.scrollTop = keepScroll ? top : 0;
   if (VOICE.rec) voicePaint();  // a redraw while listening keeps the Stop button and the words heard so far
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
@@ -3602,7 +3732,7 @@ function refreshOuts(){
     const f = OUT[el.dataset.out]; if (f) el.innerHTML = f();
   });
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
-  flashKeep(); renderBell();
+  flashKeep(); renderBell(); tidyHints();
 }
 const numv = v => { const n = parseFloat(String(v).replace(/[^0-9.]/g,"")); return isNaN(n) || !isFinite(n) ? 0 : n; };  // amounts are never negative
 
@@ -3651,7 +3781,8 @@ function accInit(){
           ACC.user = u; ACC.profile = null; ACC.draft = {}; ACC.del = false;
           if (u) ACC.err = "";  // signed in: an earlier "sign-in was closed" message no longer applies
           if (u) await accLoadProfile();
-          S.acctOn = !!u; save(); ACC.state = "ready"; renderAcctBtn();
+          S.acctOn = !!u; if (u && (!LOCK.on || !S.acct)) S.acct = {uid: u.uid, email: u.email || "", prov: (u.providerData && u.providerData[0] && u.providerData[0].providerId) || "password"};
+          save(); ACC.state = "ready"; renderAcctBtn();
           if (UI.account) render(true);
           if (first){ first = false; done(); }
         });
@@ -3716,7 +3847,69 @@ const accView = () => {
   if (!ACC.user) return accSignIn();
   return accComplete() ? accProfile() : accFinish();
 };
-V.account = () => accView() + helpCard();
+V.account = () => accView();
+const setHead = t => `<div class="inline" style="justify-content:space-between"><h1>${t}</h1><button class="btn small" type="button" data-settings-close>Done</button></div>`;
+V.settings = () => UI.settings === "security" ? `${setHead("Security")}
+  <div data-out="lockBox">${OUT.lockBox()}</div>`
+  : UI.settings === "support" ? `${setHead("Support")}
+  ${helpCard()}`
+  : `${setHead("Account settings")}
+  <section class="card" data-set-backup><h2>Backups</h2><div data-out="backupBox">${OUT.backupBox()}</div></section>
+  <section class="card" data-set-app><h2>App</h2>
+    <button class="btn" type="button" data-menu-theme>Appearance: ${S.theme === "light" ? "Light" : S.theme === "dark" ? "Dark" : "Auto"}</button>
+    <button class="btn" type="button" data-tour-start>Replay the tour</button>
+    <div data-out="installBtn">${OUT.installBtn()}</div></section>
+  ${UI.delOpen ? `<div class="note" data-del-box><p><b>Delete account and data?</b> Erasing this phone clears your budget here for good. Deleting your account erases your profile.</p><div class="inline" style="margin-top:10px;flex-wrap:wrap"><button class="btn danger" type="button" data-reset="blank">Erase this phone</button>${ACC.user && ACC.profile ? `<button class="btn danger" type="button" data-del-acct>Delete my account</button>` : ""}<button class="btn" type="button" data-del-toggle>Keep everything</button></div><div id="reset-confirm"></div></div>`
+    : `<button class="link small quiet-del" type="button" data-del-toggle>Delete account and data</button>`}`;
+const SN_IC = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+function sideNav(){
+  const on = ACC.user && ACC.profile, nm = on ? accName() : "", ph = on ? accPhoto() : "", em = on ? (ACC.user.email || "") : "";
+  const row = (k, d, label, sum) => `<button class="sn-row" type="button" data-menu="${k}">${SN_IC(d)}<span>${label}</span>${sum ? `<small>${sum}</small>` : ""}</button>`;
+  const th = S.theme === "light" ? "Light" : S.theme === "dark" ? "Dark" : "Auto";
+  return `<button class="sn-back" type="button" data-menu="close" aria-label="Close menu"></button><aside class="sn" role="dialog" aria-label="Menu">
+    <div class="sn-head">${ph ? `<img src="${esc(ph)}" alt="" referrerpolicy="no-referrer">` : `<span class="avatar" style="--h:${avatarHue(nm || "KeepWise")}" aria-hidden="true">${on ? esc(initials(nm)) : "K"}</span>`}
+      <div class="sn-id"><b>${on ? esc(nm) : "Your account"}</b><span class="muted small">${on ? esc(em) : "Not signed in"}</span></div>
+      <button class="icon-btn" type="button" data-menu="close" aria-label="Close menu">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
+    <div class="sn-seg" role="group" aria-label="Personal or Business"><button type="button" data-menu="personal" aria-pressed="${!UI.biz}">Personal</button><button type="button" data-menu="biz" aria-pressed="${!!UI.biz}">Business <span class="pill gold">Plus</span></button></div>
+    <button class="sn-plus" type="button" data-menu="plus"><b>KeepWise Plus</b><span class="muted small">Coming soon</span>${I.chev}</button>
+    <div class="sn-list">
+      ${row("profile", "M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM4 21c0-4 3.6-6 8-6s8 2 8 6", on ? "Edit profile" : "Sign in or create account")}
+      ${row("settings", "M4 7h10M18 7h2M4 17h2M10 17h10M16 5v4M8 15v4", "Account settings")}
+      ${row("security", "M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z", "Security")}
+      ${row("theme", "M12 4v2M12 18v2M4 12h2M18 12h2M6.5 6.5l1.4 1.4M16.1 16.1l1.4 1.4M6.5 17.5l1.4-1.4M16.1 7.9l1.4-1.4M15.5 12a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z", "Appearance", th)}
+      ${row("backup", "M12 4v11M8 11l4 4 4-4M5 19h14", "Backups")}
+      ${row("tour", "M4 12a8 8 0 1 0 3-6.2M4 4v4h4", "Replay the tour")}
+      ${row("support", "M5 5h14v10H10l-5 4zM9 10h6", "Support")}
+    </div><div style="flex:1"></div>
+    <p class="small legal-links" style="text-align:center"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></aside>`;
+}
+// Explanations inside a card wait behind its (i), so a small screen shows the numbers first. An empty card keeps its one line of guidance.
+function tidyHints(){
+  const H = UI.hints || (UI.hints = new Set());
+  if (UI.plus || UI.account || UI.welcome != null || STMT.result || UI.inbox || TOUR.on) return;
+  const hero = view.querySelector("section.hero");
+  if (hero && hero.querySelector("[data-out=headline]")){
+    const ps = [...hero.querySelectorAll("p.muted")].filter(p => p.textContent.trim().length > 30);
+    if (ps.length){ ps.forEach(p => p.classList.add("hint-p")); hero.classList.add("has-hint"); hero.classList.toggle("hint-open", H.has("hero"));
+      let b = hero.querySelector("[data-hint]");
+      if (!b){ b = document.createElement("button"); b.className = "info-btn hint-btn hero-i"; b.type = "button"; b.dataset.hint = "hero"; b.setAttribute("aria-label", "About this number"); b.innerHTML = INFO_ICON; hero.appendChild(b); }
+      b.setAttribute("aria-expanded", H.has("hero")); }
+  }
+  view.querySelectorAll("section.card").forEach(card => {
+    if (card.matches(".plus-price,.plus-card,.acc-head") || card.parentElement.closest("section.card")) return;
+    const h = card.querySelector("h2"); if (!h) return;
+    if (!card.querySelector(".row,.line,.rows,input,select,.big,.tnum,canvas")) return;
+    const ps = [...card.querySelectorAll("p.muted")].filter(p => !p.hasAttribute("data-keep") && !p.closest("form,.row,.line,label,.note,.info-tip,.field") && !p.querySelector("button,a,input,select") && p.textContent.trim().length > 30 && !/\d/.test(p.textContent));   // a line with a figure in it is information, not explanation: it stays
+    if (!ps.length) return;
+    const own = h.querySelector("[data-info]"), key = h.textContent.trim();
+    ps.forEach(p => p.classList.add("hint-p")); card.classList.add("has-hint");
+    if (own){ card.classList.toggle("hint-open", UI.info === own.dataset.info); return; }
+    card.classList.toggle("hint-open", H.has(key));
+    let b = h.querySelector("[data-hint]");
+    if (!b){ b = document.createElement("button"); b.className = "info-btn hint-btn"; b.type = "button"; b.dataset.hint = key; b.setAttribute("aria-label", "About " + key); b.innerHTML = INFO_ICON; h.appendChild(b); h.classList.add("hint-h"); }
+    b.setAttribute("aria-expanded", H.has(key));
+  });
+}
 function accSignIn(){
   const m = ACC.mode;
   return `${accHeader()}
@@ -3785,7 +3978,7 @@ function accProfile(){
     <p class="muted small">Your budget and statements stay on this phone. They are not part of your account.</p>
     <button class="btn" type="button" data-acc-signout>Sign out</button>
     ${ACC.del ? `<div class="note"><p><b>Delete your account?</b> Your profile is erased for good. What’s saved on this phone stays until you clear it on the Plan tab.</p><div class="inline" style="margin-top:10px"><button class="btn danger" type="button" data-acc-delete-yes>Delete my account</button><button class="btn" type="button" data-acc-delete-no>Keep it</button></div></div>`
-             : `<button class="btn danger" type="button" data-acc-delete>Delete account</button>`}
+             : `<button class="link small quiet-del" type="button" data-acc-delete>Delete account</button>`}
     <p class="small legal-links">${legalLinks.replace(" and ", " · ")}</p>
   </section>`;
 }
@@ -3812,7 +4005,36 @@ function setAccErr(msg){ ACC.err = msg; refreshOuts(); }
 function accBusy(on){ ACC.busy = on; document.querySelectorAll("#view .acc-form [type=submit]").forEach(b => b.disabled = on); }
 
 // ---- events ----
-$("acct-btn").addEventListener("click", () => { UI.account = !UI.account; UI.inbox = false; ACC.err = ""; if (UI.account) accInit(); render(false); });
+$("acct-btn").addEventListener("click", () => { UI.menu = !UI.menu; UI.askOpen = false; render(true); });
+$("sidenav").addEventListener("click", e => {
+  const b = e.target.closest("[data-menu]"); if (!b) return; const k = b.dataset.menu;
+  if (k === "theme"){ $("theme-btn").click(); render(true); return; }
+  UI.menu = false; if (k === "close"){ render(true); return; }
+  UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.stmt = null; UI.share = false; UI.settings = false; UI.delOpen = false;
+  if (k === "profile"){ UI.account = true; ACC.err = ""; accInit(); render(false); return; }
+  if (k === "plus"){ UI.plus = true; render(false); return; }
+  if (k === "biz" || k === "personal"){ UI.biz = k === "biz"; S.tab = "month"; save(); render(false); return; }
+  if (k === "tour"){ render(false); tourStart(); return; }
+  UI.settings = k === "security" || k === "support" ? k : "settings"; render(false);
+  const sel = {backup: "[data-set-backup]"}[k], el = sel && view.querySelector(sel), m = $("main");
+  if (el) m.scrollTop += el.getBoundingClientRect().top - m.getBoundingClientRect().top - 12;
+});
+document.addEventListener("click", e => { const d = e.target; if (d && d.matches && d.matches("input[type=date]") && !d.disabled && d.showPicker){ try { d.showPicker(); } catch(err){} } });
+document.addEventListener("change", e => { const t = e.target; if (!t || !t.matches) return;
+  if (t.matches("input[type=date]") && t.value){
+    if (t.min && t.value < t.min){ t.value = t.min; toast(t.min === isoDaysAgo(0) ? "That date has passed, so today is used." : "The end cannot come before the start."); }
+    else if (t.max && t.value > t.max){ t.value = t.max; toast("That date has not happened yet, so today is used."); } }
+  if (t.matches('form[data-form="addSub"] [name=cycle]')){ const f = t.form, yr = t.value === "yr"; f.querySelector("[data-renew-mo]").hidden = yr; f.querySelector("[data-renew-yr]").hidden = !yr; }
+  if (t.matches('form[data-form="trip"] [name=start]')){ const en = t.form.querySelector("[name=end]"); if (en){ en.min = t.value; if (en.value && t.value && en.value < t.value) en.value = t.value; } }
+}, true);
+document.addEventListener("click", e => {
+  const h = e.target.closest("[data-hint]");
+  if (h){ const H = UI.hints || (UI.hints = new Set()), k = h.dataset.hint; H.has(k) ? H.delete(k) : H.add(k); tidyHints(); return; }
+  if (e.target.closest("[data-settings-close]")){ UI.settings = false; UI.delOpen = false; render(false); return; }
+  if (e.target.closest("[data-menu-theme]")){ $("theme-btn").click(); render(true); return; }
+  if (e.target.closest("[data-del-toggle]")){ UI.delOpen = !UI.delOpen; render(true); if (UI.delOpen){ const m = $("main"); m.scrollTop = m.scrollHeight; } return; }
+  if (e.target.closest("[data-del-acct]")){ UI.settings = false; UI.delOpen = false; UI.account = true; ACC.del = true; accInit(); render(false); return; }
+});
 // The Ask panel sits outside the page, fixed to the screen, so it opens where you are however far you have scrolled.
 // Everything the page listens for is listened for there too, so its box, chips and microphone behave exactly the same.
 (() => { const v = $("view"), sh = $("asksheet"), add = v.addEventListener.bind(v); if (!sh) return;
@@ -3835,7 +4057,7 @@ $("view").addEventListener("click", async e => {
     catch(err){ setAccErr(accErrText(err)); }
     return;
   }
-  if (has("data-acc-signout")){ await ACC.auth.signOut(); toast("Signed out."); return; }
+  if (has("data-acc-signout")){ S.acct = null; save(); await ACC.auth.signOut(); toast("Signed out."); return; }
   if (has("data-acc-resend")){ try { await ACC.user.sendEmailVerification(); toast("Verification link sent. Check your inbox."); } catch(err){ toast(accErrText(err)); } return; }
   if (has("data-acc-verified")){
     try { await ACC.user.reload(); ACC.user = ACC.auth.currentUser; } catch(err){}
@@ -3870,7 +4092,7 @@ $("view").addEventListener("click", async e => {
   if (has("data-acc-delete-no")){ ACC.del = false; render(true); return; }
   if (has("data-acc-delete-yes")){
     const keep = ACC.profile;
-    try { await accDoc().delete(); await ACC.user.delete(); S.acctOn = false; save(); toast("Your account was deleted."); }
+    try { await accDoc().delete(); await ACC.user.delete(); S.acctOn = false; S.acct = null; save(); toast("Your account was deleted."); }
     catch(err){
       if (keep) try { await accDoc().set(keep); } catch(x){}
       ACC.del = false; ACC.err = accErrText(err); render(true);
@@ -3930,7 +4152,7 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 // The owl button: tap to ask or log from any tab. Hold it for a moment and it lifts, then it can be dragged anywhere on
 // the screen; where it is left is remembered on this device.
@@ -4037,7 +4259,7 @@ view.addEventListener("keydown", e => {  // Enter in "Add a line" adds it, like 
 view.addEventListener("click", async e => {
   const t = e.target, b = t.closest("button, a");
   if (!b) return;
-  if (b.dataset.go){ S.tab = b.dataset.go; UI.history = false; UI.stmt = null; save(); render(false); return; }
+  if (b.dataset.go){ UI.settings = false; S.tab = b.dataset.go; UI.history = false; UI.stmt = null; save(); render(false); return; }
   // ---- first-run setup
   if (b.hasAttribute("data-w-start")){ DRAFT.cur = S.cur; DRAFT.income = ""; DRAFT.home = ""; DRAFT.pay = "monthly"; UI.welcome = 1; render(false); return; }
   if (b.hasAttribute("data-tour-start")){ tourStart(); return; }
@@ -4210,7 +4432,7 @@ view.addEventListener("click", async e => {
     $("reset-confirm").innerHTML = `<div class="note" style="margin-top:10px"><p>${kind === "blank" ? "Clear everything and start empty?" : "Replace your numbers with the example?"} This can’t be undone.</p><div class="inline" style="margin-top:10px"><button class="btn" type="button" data-reset-no>Keep my data</button><button class="btn danger" type="button" data-reset-yes="${kind}">${kind === "blank" ? "Clear it" : "Load example"}</button></div></div>`; return; }
   if (b.hasAttribute("data-reset-no")){ $("reset-confirm").innerHTML = ""; return; }
   if (b.dataset.resetYes){ const ex = example();
-    if (b.dataset.resetYes === "blank"){ Object.assign(ex, {income:0, efSaved:0, expenses:[], loans:[], giving:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0, example:false, statements:{}, extras:[]}); }
+    if (b.dataset.resetYes === "blank"){ Object.assign(ex, {income:0, efSaved:0, expenses:[], loans:[], giving:[], ins:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0, example:false, statements:{}, extras:[]}); }
     welcomeDone(); ex.lastBackup = S.lastBackup; ex.a2hsHide = S.a2hsHide; ex.started = S.started;
     ex.tab = "plan"; S = ex; save(); render(false); toast(b.dataset.resetYes === "blank" ? "Started empty." : "Example loaded."); return; }
   if (b.dataset.filter){ S.filter = b.dataset.filter; save(); render(true); return; }
@@ -4394,6 +4616,8 @@ view.addEventListener("submit", async e => {
       ASK.last = said; if (JSON.stringify(S) !== before && land(said, u)) return;
       render(true); const o = $("ask-out"); o.hidden = false; o.textContent = said; $("ask-in").value = ""; $("ask-in").blur(); if (JSON.stringify(S) !== before) toast("Done.", u); return; }
     if ((TRIP_CMD.test(q) || EVENT_CMD.test(q)) && !/\?/.test(q) && !/^\s*(how|what|when|is|are|did|do|does)\b/i.test(q) && !activeTrip()){ const said = await startTrip(q); ASK.last = said; const o = $("ask-out"); if (o){ o.hidden = false; o.textContent = said; } $("ask-in").value = ""; $("ask-in").blur(); toast(said); return; }
+    if (/\d/.test(q) && INCOME_ANY(q) && !/\?/.test(q) && !/^\s*(how|what|when|who|which|is|are|do|does|did|should|can)\b/i.test(q)){ const u = undoable(), before = JSON.stringify(S), said = await logIncome(q);
+      if (said){ ASK.last = said; if (JSON.stringify(S) !== before && land(said, u)) return; refreshOuts(); renderBell(); if (JSON.stringify(S) !== before) toast("Logged.", u); const o = $("ask-out"); if (o){ o.hidden = false; o.textContent = ASK.last; } $("ask-in").value = ""; $("ask-in").blur(); return; } }
     const wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), asking = /\?|^\s*(is|are|do|does|should|can)\b|\b(afford|how|what|when|who|which|can i|should i)\b/i.test(q);
     if (/\d/.test(q) && (wantsAdd || !asking)){ const u = undoable(), before = JSON.stringify(S), said = await logSpend(q);
       if (said){ ASK.last = said; if (JSON.stringify(S) !== before && land(said, u)) return; refreshOuts(); renderBell(); if (JSON.stringify(S) !== before) toast("Logged.", u); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
@@ -4426,7 +4650,7 @@ view.addEventListener("submit", async e => {
     Object.assign(x, {store, code, offer: String(fd.get("offer") || "").trim()}); UI.codeEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Updated the ${store} code.`); return; }
   if (kind === "addSub"){ const name = String(fd.get("name")).trim(), price = numv(fd.get("price")); if (!name || !price){ toast("Add a name and a price."); return; }
     const ns = {id:uid(), name, price, cycle:fd.get("cycle"), last:fd.get("last") || isoDaysAgo(0), group:String(fd.get("group")||"").trim(), env:"misc", keep:"auto"};
-    const rn = String(fd.get("renew") || ""); if (rn){ if (ns.cycle === "yr") ns.renewDate = rn; else ns.renewDay = +rn.slice(8, 10); }
+    const rn = String(fd.get("renew") || ""), rd = +fd.get("renewDay") || 0; if (ns.cycle === "yr"){ if (rn) ns.renewDate = rn; } else if (rd >= 1 && rd <= 31) ns.renewDay = rd;
     S.subs.push(ns); save(); render(true); toast(`Added ${name}.`); return; }
   if (kind === "addSwap"){ const link = fd.get("link"), alt = String(fd.get("alt")).trim(); if (!link || !alt){ toast("Pick what you pay for and name the cheaper option."); return; }
     const [type,id] = link.split(":"), src = type === "expense" ? S.expenses.find(x=>x.id===id) : S.subs.find(x=>x.id===id);

@@ -16,6 +16,8 @@
       providerData: [{providerId: rec.provider}],
       sendEmailVerification: async () => { window.__mockMail.push({to: rec.email, type: "verify"}); },
       reload: async () => {},
+      reauthenticateWithCredential: async c => { if (!c || c.email !== rec.email) throw err("auth/user-mismatch"); if (window.__mockOffline) throw err("auth/network-request-failed"); if (c.pw !== rec.pw) throw err("auth/wrong-password"); },
+      reauthenticateWithPopup: async () => { const e = window.__mockGoogleEmail || "gina@example.com"; if (e !== rec.email) throw err("auth/user-mismatch"); },
       delete: async () => { delete users[rec.email]; saveUsers(); setUser(null); }
     };
   }
@@ -59,6 +61,6 @@
       async delete(){ if (!current || current.uid !== id) throw err("permission-denied"); delete store[key]; saveStore(); }
     }; } }; }
   };
-  const authFn = () => auth; authFn.GoogleAuthProvider = function(){};
+  const authFn = () => auth; authFn.GoogleAuthProvider = function(){}; authFn.EmailAuthProvider = {credential: (email, pw) => ({email, pw})};
   window.firebase = { apps: [], initializeApp(c){ this.apps.push(c); return {}; }, app(){ return {}; }, auth: authFn, firestore: () => fs };
 })();
