@@ -3449,11 +3449,11 @@ async def saying_money_in_out_loud_works_like_typing(ctx):
 @test
 async def the_new_screens_fit_small_phones_in_both_themes(ctx):
     for scheme in ("light", "dark"):
-        for w, h in [(320, 568), (360, 740), (390, 844)]:
+        for w, h in [(280, 653), (320, 568), (360, 740), (390, 844), (740, 360)]:   # a folded phone, small and usual phones, and a phone held sideways
             pg = await open_app(ctx, w=w, h=h, scheme=scheme)
-            for step in ("menu", "settings", "security", "support", "subs", "cheaper", "codes", "plan", "split", "money"):
+            for step in ("menu", "settings", "security", "support", "plus", "subs", "cheaper", "codes", "plan", "split", "money"):
                 if step == "menu": await pg.click("#acct-btn"); await pg.wait_for_timeout(280)
-                elif step in ("settings", "security", "support"): await _menu(pg, step)
+                elif step in ("settings", "security", "support", "plus"): await _menu(pg, step)
                 elif step in ("cheaper", "codes"): await tab(pg, "subs"); await pg.click(f"#view [data-go={step}]"); await pg.wait_for_timeout(150)
                 elif step == "money": await _ask(pg, "got a 300 bonus")
                 else: await tab(pg, step)
