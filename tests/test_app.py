@@ -1432,7 +1432,7 @@ async def asks_if_money_arrived_from_the_day_after(ctx):
     x = (await state(pg))["extras"][0]; assert x["got"][-1]["date"] == "2026-10-09" and x["got"][-1]["amount"] == 250
     assert await pg.locator("[data-arrived]").count() == 0 and "Logged $250 from Tutoring" in await pg.inner_text("#toast")
     # a once-a-month income that is logged shows a green Logged tag in place of the button; removing the payment brings the button back
-    row = pg.locator("[data-inc]", has_text="Tutoring"); assert (await row.locator("[data-inc-logged]").inner_text()).strip() == "Logged" and await row.locator("[data-inc-log]").count() == 0
+    row = pg.locator("[data-inc]", has_text="Tutoring"); assert (await row.locator("[data-inc-logged]").inner_text()).strip() == "Logged" and await row.locator("[data-inc-log]").count() == 1, "logged, and another payment can still be added"
     await row.locator("[data-inc-pay-del]").click(); await pg.wait_for_timeout(150)
     row = pg.locator("[data-inc]", has_text="Tutoring"); assert await row.locator("[data-inc-log]").count() == 1 and await row.locator("[data-inc-logged]").count() == 0
     await pg.click("#toast .toast-undo") if await pg.locator("#toast .toast-undo").count() else await pg.locator("[data-arrived] [data-arrive-yes]").click()
@@ -3638,6 +3638,85 @@ async def coming_up_keeps_its_rules_and_never_disappears(ctx):
     d = await pg.evaluate("(() => { const d = new Date(); d.setDate(d.getDate() + 2); return d.getDate(); })()")
     await pg.click(f"[data-sub='{sid}'] [data-renew-open]"); await pg.select_option(f"[data-sub='{sid}'] [data-renew-day]", str(d)); await pg.wait_for_timeout(250); await tab(pg, "month")
     t = await pg.inner_text("[data-out=comingUp]"); assert "Claude Pro" in t and "In 2 days" in t and "$20" in t and await pg.locator("[data-up-empty]").count() == 0, t
+    assert not pg.errors, pg.errors
+
+@test
+async def messages_stay_above_the_keyboard(ctx):
+    pg = await open_app(ctx, w=390, h=844)
+    box = lambda: pg.evaluate("(() => { const r = document.getElementById('toast').getBoundingClientRect(); return {top: r.top, bottom: r.bottom, left: r.left, right: r.right}; })()")
+    # no keyboard: the message sits just above the tab bar, on screen
+    await ask_type(pg, "coffee 4"); await pg.wait_for_timeout(500); b = await box(); tb = await pg.evaluate("document.getElementById('tabbar').getBoundingClientRect().top")
+    assert 0 < b["top"] and b["bottom"] <= tb + 1 and b["left"] >= 0 and b["right"] <= 390, (b, tb)
+    # the keyboard opens: the visible screen shrinks to 430px, and the message moves up with it
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]"); n = len((await state(pg)).get("extras") or [])
+    await f.locator("[name=amount]").click(); await pg.set_viewport_size({"width": 390, "height": 430}); await pg.wait_for_timeout(250)
+    await f.locator("[name=amount]").press("Enter"); await pg.wait_for_timeout(250)
+    assert "Say where the money comes from." in await pg.inner_text("#toast") and len((await state(pg)).get("extras") or []) == n
+    b = await box(); assert b["bottom"] <= 430 and b["top"] > 0, f"the message is above the keyboard: {b}"
+    assert not pg.errors, pg.errors
+
+@test
+async def other_income_needs_no_amount_and_takes_any_number_of_payments(ctx):
+    pg = await open_at(ctx, (2026, 10, 5, 10, 0)); k0 = await _keep(pg)
+    async def add(name, when, amount="", **sel):
+        await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]"); await f.locator("[name=name]").fill(name)
+        await f.locator("[name=when]").select_option(when); await pg.wait_for_timeout(120); f = pg.locator("form[data-form=income]")
+        for key, v in sel.items(): await f.locator(f"[name={key}]").select_option(str(v)) if key != "next" else await f.locator("[name=next]").fill(v)
+        if amount != "": await f.locator("[name=amount]").fill(amount)
+        await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(300)
+    assert [o for o in await pg.evaluate("document.querySelector('[data-inc-add]') ? [] : []")] == []
+    # the amount is optional on every schedule, and the field says so
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]")
+    opts = await f.locator("[name=when] option").all_inner_texts(); assert opts == ["No fixed day", "Every month", "Twice a month", "Every week", "Every 2 weeks"], opts
+    assert await f.locator("[name=amount]").get_attribute("placeholder") == "No fixed amount" and "(optional)" in await f.inner_text()
+    await pg.click("[data-inc-cancel]")
+    await add("Promotional posts", "any"); await add("Tips", "weekly", wd=1); await add("Tutoring", "twice", day=1, day2=15); await add("Blank zero", "monthly", "0", day=20)
+    ex = (await state(pg))["extras"]; assert [x["name"] for x in ex] == ["Promotional posts", "Tips", "Tutoring", "Blank zero"] and all(x["amount"] == 0 for x in ex), ex
+    assert "counts each time you log a payment" in await pg.inner_text("#toast")
+    assert abs(await _keep(pg) - k0) < 0.01, "income with no fixed amount promises nothing"
+    card = await text(pg, "[data-out=extraIncome]"); assert card.count("No fixed amount") == 4 and "on the 1st and 15th" in card and "Income with no fixed amount counts as you log it." in card, card
+    # any number of payments can be logged against one income, and each one raises the month
+    row = pg.locator("[data-inc]", has_text="Promotional posts")
+    for i, amt in enumerate((120, 80, 45)):
+        await row.locator("[data-inc-log]").click(); await pg.fill("form[data-form=incomeLog] [name=amount]", str(amt)); await pg.click("form[data-form=incomeLog] [type=submit]"); await pg.wait_for_timeout(300)
+        assert f"{i + 1} logged" in await row.inner_text() or (i == 0 and "1 logged" in await row.inner_text()), await row.inner_text()
+    assert abs(await _keep(pg) - (k0 + 245)) < 0.01, "what was logged now counts"
+    mrow = pg.locator("[data-inc]", has_text="Blank zero"); await mrow.locator("[data-inc-log]").click(); await pg.fill("form[data-form=incomeLog] [name=amount]", "10"); await pg.click("form[data-form=incomeLog] [type=submit]"); await pg.wait_for_timeout(300)
+    assert await mrow.locator("[data-inc-log]").count() == 1, "a monthly income can still take another payment"
+    await mrow.locator("[data-inc-log]").click(); await pg.fill("form[data-form=incomeLog] [name=amount]", "5"); await pg.click("form[data-form=incomeLog] [type=submit]"); await pg.wait_for_timeout(300)
+    assert "2 logged" in await mrow.inner_text() and abs(await _keep(pg) - (k0 + 260)) < 0.01
+    # a negative or empty payment is refused
+    await row.locator("[data-inc-log]").click(); await pg.fill("form[data-form=incomeLog] [name=amount]", ""); await pg.click("form[data-form=incomeLog] [type=submit]"); await pg.wait_for_timeout(200)
+    assert "Enter the amount you received." in await pg.inner_text("#toast"); await pg.click("[data-inc-log-cancel]")
+    # Coming up shows a scheduled income with no amount as varying, on its day
+    up = await text(pg, "[data-out=comingUp]"); assert "Tips" in up and "amount varies" in up and "+$0" not in up, up
+    # twice a month must be two different days
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]"); await f.locator("[name=name]").fill("Same day"); await f.locator("[name=when]").select_option("twice"); await pg.wait_for_timeout(120)
+    f = pg.locator("form[data-form=income]"); await f.locator("[name=day]").select_option("10"); await f.locator("[name=day2]").select_option("10"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    assert "two different days" in await pg.inner_text("#toast") and len((await state(pg))["extras"]) == 4; await pg.click("[data-inc-cancel]")
+    # a fixed amount still counts in full: twice a month is two payments, every 2 weeks is 26 a year
+    k1 = await _keep(pg); await add("Rent share", "twice", "300", day=5, day2=20); assert abs(await _keep(pg) - (k1 + 600)) < 0.01
+    k1 = await _keep(pg); await add("Shift pay", "biweekly", "300", next="2026-10-09"); assert abs(await _keep(pg) - (k1 + 650)) < 0.01, "300 x 26 / 12"
+    assert not pg.errors, pg.errors
+
+@test
+async def an_income_with_no_amount_asks_how_much_arrived(ctx):
+    pg = await open_at(ctx, (2026, 10, 5, 10, 0))
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]"); await f.locator("[name=name]").fill("Tutoring"); await f.locator("[name=when]").select_option("twice"); await pg.wait_for_timeout(120)
+    f = pg.locator("form[data-form=income]"); await f.locator("[name=day]").select_option("6"); await f.locator("[name=day2]").select_option("21"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(300)
+    up = await text(pg, "[data-out=comingUp]"); assert "Tutoring" in up and "Tomorrow" in up and "amount varies" in up, up
+    import datetime
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 7, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    q = pg.locator("[data-arrive]", has_text="Tutoring"); assert await q.count() == 1 and "amount varies" in await q.inner_text(), "the day after it was due, it asks"
+    n = len((await state(pg))["extras"][-1].get("got") or [])
+    await q.locator("[data-arrive-yes]").click(); await pg.wait_for_timeout(350)
+    assert len((await state(pg))["extras"][-1].get("got") or []) == n and "Enter how much arrived." in await pg.inner_text("#toast"), "nothing is logged at $0"
+    form = pg.locator("[data-inc] form[data-form=incomeLog]"); assert await form.count() == 1
+    await form.locator("[name=amount]").fill("140"); await form.locator("[type=submit]").click(); await pg.wait_for_timeout(350)
+    got = (await state(pg))["extras"][-1]["got"]; assert got[-1]["amount"] == 140 and await pg.locator("[data-arrive]", has_text="Tutoring").count() == 0, "logging it settles the question"
+    # the second date of the month comes up next
+    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 20, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
+    up = await text(pg, "[data-out=comingUp]"); assert "Tutoring" in up and "Tomorrow" in up, up
     assert not pg.errors, pg.errors
 
 async def main():

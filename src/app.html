@@ -204,8 +204,10 @@ a.btn{display:block;text-decoration:none}
 .note>.link,.note>button{white-space:nowrap;flex:none}  /* "Got it" and "Hide" stay on one line */
 .err{color:var(--rust);font-size:.9rem;font-weight:600}
 .empty{color:var(--muted);padding:6px 0}
+.app.typing ~ .toast{top:calc(var(--vv-top,0px) + var(--vv-h,100vh) - 12px)}
 .toast-undo{pointer-events:auto;appearance:none;border:0;background:none;color:inherit;font:700 .92rem var(--body);text-decoration:underline;text-underline-offset:3px;margin-left:12px;padding:6px 4px;cursor:pointer}
-.toast{pointer-events:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:.92rem;z-index:60;max-width:calc(100% - 32px);text-align:center}
+/* Messages sit at the foot of the visible screen, so an open keyboard never covers them. */
+.toast{pointer-events:none;position:fixed;left:50%;transform:translate(-50%,-100%);top:calc(var(--vv-top,0px) + var(--vv-h,100vh) - 84px - env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:.92rem;z-index:60;max-width:calc(100% - 32px);text-align:center}
 details.card:not([open]){gap:0}
 .btn.small.done{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,var(--line));background:var(--green-soft);opacity:1;cursor:default;display:inline-flex;align-items:center;gap:4px}
 .btn.small.done svg{width:14px;height:14px}
@@ -2135,7 +2137,7 @@ function flashKeep(){ if (!UI.flashSel) return; const el = view.querySelector(UI
 function openSurvey(id){ UI.survey = id; return goTo("subs", "[data-review-id]"); }
 function localNotes(){
   const out = [], t = todayMid(), add = (key, text, detail, go, sel, sub, loan) => out.push({key: "L:" + key, text, detail, go, sel, sub, loan, local: true});
-  arrivals(true).forEach(v => add(`a:${v.key}:${isoOf(v.date)}`, v.key === "pay" ? "Did your pay arrive?" : `Did ${v.name} arrive?`, `${fmt(v.amount)} was expected ${dayMonth(v.date)}.`, "month", `[data-arrive="${v.key}"]`));
+  arrivals(true).forEach(v => add(`a:${v.key}:${isoOf(v.date)}`, v.key === "pay" ? "Did your pay arrive?" : `Did ${v.name} arrive?`, v.amount > 0 ? `${fmt(v.amount)} was expected ${dayMonth(v.date)}.` : `It was expected ${dayMonth(v.date)}.`, "month", `[data-arrive="${v.key}"]`));
   (payOn() ? paydaysBetween(t, dayPlus(t, 1)) : []).forEach(d => add(`pd:${isoOf(d)}`, `Payday ${whenLabel(daysUntil(d)).toLowerCase()}`, `${fmt(+S.pay.amount || 0)} expected.`, "month", '[data-out="comingUp"]'));
   S.subs.map(x => ({x, d: nextRenewal(x)})).filter(v => v.d && daysUntil(v.d) <= 7).sort((a, b) => a.d - b.d).forEach(({x, d}) => { const n = daysUntil(d), w = whenLabel(n).toLowerCase();
     if (x.keep === "drop") add(`c:${x.id}:${isoOf(d)}`, `Cancel ${x.name} before it renews`, `You chose to drop it. It renews ${w}, ${fmt(x.price)}.`, "subs", `[data-sub="${x.id}"]`);
@@ -2242,7 +2244,7 @@ function buildStatement(){
   const swaps = S.swaps.filter(w => w.on && linkedItem(w)).map(w => ({t: w.title || linkedItem(w).name, a: w.alt, s: r2(swapSaving(w))}));
   const splits = S.splits.filter(x => inMonth(x.date, k)), pays = (S.settlements || []).filter(x => inMonth(x.date, k));
   const old = (S.statements || {})[k] || {};
-  const inc = (S.extras || []).length || C.payBonus.extra > 0 ? [{n: "Regular pay", a: r2(+S.income || 0)}, ...(C.payBonus.extra > 0 ? [{n: "Extra paycheck", a: r2(C.payBonus.extra)}] : []), ...(S.extras || []).map(x => ({n: x.name, a: r2(extraMonthly(x)), got: r2(gotIn(x, k))}))] : undefined;
+  const inc = (S.extras || []).length || C.payBonus.extra > 0 ? [{n: "Regular pay", a: r2(+S.income || 0)}, ...(C.payBonus.extra > 0 ? [{n: "Extra paycheck", a: r2(C.payBonus.extra)}] : []), ...(S.extras || []).map(x => ({n: x.name, a: r2(extraFixed(x) ? extraMonthly(x) : gotIn(x, k)), got: r2(gotIn(x, k))}))] : undefined;
   return {key: k, updated: isoDaysAgo(0), income: r2(C.income), incomeLines: inc, confirmed: old.confirmed, actual: old.actual, needs: r2(C.needs), misc: r2(C.misc), kept: r2(C.savings),
     setAside: r2(C.setAside), efSaved: r2(S.efSaved), cur: S.cur, range: monthStartDay() !== 1 ? rangeText(C.planPeriod) : undefined, lines, subs: live, swaps,
     splits: {count: splits.length, total: r2(splits.reduce((a, x) => a + (+x.amount || 0), 0))},
@@ -2354,7 +2356,7 @@ OUT.comingUp = () => {
   (payOn() ? paydaysBetween(t0, t7) : []).filter(d => !((S.payGot || "") >= isoOf(d))).forEach(d => items.push({d, o: 2, html: `<div class="up-row in">${dateCell(d)}
         <div class="up-main"><div class="name">Payday</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(+S.pay.amount || 0)}</div></div>`}));
   (S.extras || []).map(x => ({x, d: nextIncome(x)})).filter(v => v.d && daysUntil(v.d) <= 7 && !incomeLogged(v.x, isoOf(v.d))).forEach(({x, d}) => items.push({d, o: 3, html: `<div class="up-row in">${dateCell(d)}
-        <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(x.amount)}</div></div>`}));
+        <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">${extraFixed(x) ? "+" + fmt(x.amount) : `<span class="small">amount varies</span>`}</div></div>`}));
   items.sort((a, b) => a.d - b.d || a.o - b.o);
   let bal = []; try { bal = myBalances(); } catch(e){}
   const splitRows = bal.slice(0, 4).map(x => `<div class="up-row${x.net > 0 ? " in" : ""}" data-up-split="${esc(x.p.id)}"><div class="up-date"><b style="font-size:.8rem">Split</b><span>open</span></div>
@@ -2696,20 +2698,27 @@ function contactsCard(){
 const INCOME_KINDS = [["side","Side job"],["creator","Creator income"],["trading","Trading"],["rental","Rental"],["services","Services"],["other","Other"]];
 const kindLabel = k => (INCOME_KINDS.find(x => x[0] === k) || INCOME_KINDS[5])[1];
 const extras = () => S.extras || (S.extras = []);
-const INCOME_WHEN = [["any","No fixed day"],["monthly","Every month"],["weekly","Every week"],["biweekly","Every 2 weeks"]];
+const INCOME_WHEN = [["any","No fixed day"],["monthly","Every month"],["twice","Twice a month"],["weekly","Every week"],["biweekly","Every 2 weeks"]];
 const WEEKDAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 // amount is per payment for scheduled income, and per month when it has no fixed day
-const extraMonthly = x => { const a = +x.amount || 0; return x.when === "weekly" ? a * 52 / 12 : x.when === "biweekly" ? a * 26 / 12 : a; };
-const extraExpected = () => r2((S.extras || []).reduce((a, x) => a + extraMonthly(x), 0));
+// Twice a month is 24 payments a year on two fixed dates; every 2 weeks is 26 and the dates drift. They are counted differently on purpose.
+const extraMonthly = x => { const a = +x.amount || 0; return x.when === "weekly" ? a * 52 / 12 : x.when === "biweekly" ? a * 26 / 12 : x.when === "twice" ? a * 2 : a; };
+// Income with no fixed amount promises nothing: the plan counts only what has been logged for the month it covers.
+const extraFixed = x => (+x.amount || 0) > 0;
+const extraCounted = x => extraFixed(x) ? extraMonthly(x) : gotIn(x, planPeriodNow().key);
+const extraExpected = () => r2((S.extras || []).reduce((a, x) => a + extraCounted(x), 0));
+const twiceDays = x => [Math.min(31, Math.max(1, +x.day || 1)), Math.min(31, Math.max(1, +x.day2 || 15))].sort((a, b) => a - b);
 function nextIncome(x){
   const t = todayMid();
   if (x.when === "monthly" && x.day){ let r = new Date(t.getFullYear(), t.getMonth(), Math.min(x.day, daysInMonth(t.getFullYear(), t.getMonth())));
     if (r < t) r = new Date(t.getFullYear(), t.getMonth() + 1, Math.min(x.day, daysInMonth(t.getFullYear(), t.getMonth() + 1))); return r; }
+  if (x.when === "twice"){ const c = []; for (let m = 0; m < 2; m++){ const y = t.getFullYear(), mo = t.getMonth() + m, dim = daysInMonth(new Date(y, mo, 1).getFullYear(), new Date(y, mo, 1).getMonth()); twiceDays(x).forEach(d => c.push(new Date(y, mo, Math.min(d, dim)))); }
+    return c.filter(d => d >= t).sort((a, b) => a - b)[0] || null; }
   if (x.when === "weekly" && x.wd != null){ const r = new Date(t); r.setDate(r.getDate() + ((+x.wd - r.getDay() + 7) % 7)); return r; }
   if (x.when === "biweekly" && x.next){ const [y, m, d] = x.next.split("-").map(Number); const r = new Date(y, m - 1, d); while (r < t) r.setDate(r.getDate() + 14); return r; }
   return null;
 }
-const whenText = x => x.when === "monthly" && x.day ? `on the ${ordinal(x.day)}` : x.when === "weekly" && x.wd != null ? `every ${WEEKDAYS[x.wd]}` : x.when === "biweekly" ? "every 2 weeks" : "no fixed day";
+const whenText = x => x.when === "twice" ? `on the ${twiceDays(x).map(ordinal).join(" and ")}` : x.when === "monthly" && x.day ? `on the ${ordinal(x.day)}` : x.when === "weekly" && x.wd != null ? `every ${WEEKDAYS[x.wd]}` : x.when === "biweekly" ? "every 2 weeks" : "no fixed day";
 const gotIn = (x, k) => (x.got || []).filter(p => inMonth(p.date, k)).reduce((a, p) => a + (+p.amount || 0), 0);
 const todayKey = () => periodOf(new Date()).key;
 function extraAverage(x){  // the last three finished months that have payments
@@ -2722,10 +2731,11 @@ function incomeForm(x){
   return `<form class="inc-form" data-form="income"><div class="grid2"><label class="field"><span>Where it comes from</span><input name="name" value="${esc(d.name)}" placeholder="e.g. YouTube, weekend shifts" enterkeyhint="next" autocomplete="off"></label>
     <label class="field"><span>Kind</span><select name="kind" data-inc-kind>${INCOME_KINDS.map(([k, n]) => `<option value="${k}" ${d.kind === k ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
     <div class="grid2"><label class="field"><span>When it arrives</span><select name="when" data-inc-when>${INCOME_WHEN.map(([k, n]) => `<option value="${k}" ${d.when === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
-    ${d.when === "monthly" ? `<label class="field"><span>Day of the month</span><select name="day">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+d.day === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label>`
+    ${d.when === "monthly" || d.when === "twice" ? `<label class="field"><span>${d.when === "twice" ? "First day" : "Day of the month"}</span><select name="day">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+d.day === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label>`
       : d.when === "weekly" ? `<label class="field"><span>Day of the week</span><select name="wd">${WEEKDAYS.map((n, i) => `<option value="${i}" ${+d.wd === i ? "selected" : ""}>${n}</option>`).join("")}</select></label>`
       : d.when === "biweekly" ? `<label class="field"><span>Next payment</span><input name="next" type="date"${dFrom(d.next)} value="${esc(d.next || isoDaysAgo(0))}"></label>` : `<div></div>`}</div>
-    <label class="field"><span>${d.when === "any" ? "Expected in a typical month" : "Each payment"}</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.amount)}"></span><small class="muted small">${d.when === "any" ? "Payments can land on any day. Log each one when it arrives." : "Use a careful number."} This is what your plan counts on.</small></label>
+    ${d.when === "twice" ? `<div class="grid2"><label class="field"><span>Second day</span><select name="day2">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+(d.day2 || 15) === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label><div></div></div>` : ""}
+    <label class="field"><span>${d.when === "any" ? "Expected in a typical month" : "Each payment"} <span class="muted small">(optional)</span></span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="No fixed amount" value="${esc(+d.amount ? d.amount : "")}"></span><small class="muted small">${d.when === "any" ? "Payments can land on any day. Log each one when it arrives." : "Use a careful number."} Leave it empty if it varies: your plan then counts only what you log.</small></label>
     ${d.kind === "trading" ? `<p class="note small">Count only money you have actually taken out, not gains on paper. Trading income can fall to zero, so keep this number low.</p>` : ""}
     <div class="grid2">${x ? `<button class="btn danger" type="button" data-inc-del>Remove</button>` : `<button class="btn" type="button" data-inc-cancel>Cancel</button>`}<button class="btn primary" type="submit" style="padding:10px">${x ? "Save" : "Add income"}</button></div>
     ${x ? `<button class="link plain small" type="button" data-inc-cancel style="align-self:center">Cancel</button>` : ""}</form>`;
@@ -2737,18 +2747,17 @@ OUT.extraIncome = () => {
     if (UI.incEdit === x.id) return `<div class="inc-row editing" data-inc="${x.id}">${incomeForm(x)}</div>`;
     const got = gotIn(x, k), exp = extraMonthly(x), pct = exp > 0 ? Math.min(100, got / exp * 100) : (got ? 100 : 0), av = extraAverage(x);
     const pays = (x.got || []).filter(p => inMonth(p.date, k)).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-    return `<div class="inc-row" data-inc="${x.id}"><div class="row-top"><div><div class="name">${esc(x.name)}</div><div class="muted small">${fmt(extraMonthly(x))}/mo · ${esc(whenText(x))}</div></div>
+    return `<div class="inc-row" data-inc="${x.id}"><div class="row-top"><div><div class="name">${esc(x.name)}</div><div class="muted small">${extraFixed(x) ? `${fmt(extraMonthly(x))}/mo` : "No fixed amount"} · ${esc(whenText(x))}</div></div>
         <div style="text-align:right"><div class="name tnum ${got >= exp && got > 0 ? "good" : ""}">${fmt(got)}</div><div class="muted small">${monthStartDay() !== 1 ? `received since ${dayMonth(periodOf(new Date()).start)}` : `received in ${mName}`}</div></div></div>
       <div class="meter"><i style="width:${pct}%"></i></div>
-      ${UI.incLog === x.id ? `<form class="inc-log" data-form="incomeLog"><span class="money-in" style="flex:1 1 110px"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="Amount" value="${x.when && x.when !== "any" ? esc(x.amount) : ""}" aria-label="Amount received"></span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}" aria-label="Date received" style="flex:1 1 130px"><button class="btn small primary" type="submit">Save</button><button class="link plain small" type="button" data-inc-log-cancel>Cancel</button></form>`
-        : `<div class="inline" style="justify-content:space-between">${x.when === "monthly" && pays.length ? `<span class="pill ok" data-inc-logged>${I.check}Logged</span>`
-          : `<span class="inline" style="gap:8px"><button class="btn small" type="button" data-inc-log>${I.plus}Log a payment</button>${pays.length ? `<span class="pill ok" data-inc-logged>${pays.length} logged</span>` : ""}</span>`}<button class="link plain small" type="button" data-inc-edit aria-label="Edit ${esc(x.name)}">Edit</button></div>`}
+      ${UI.incLog === x.id ? `<form class="inc-log" data-form="incomeLog"><span class="money-in" style="flex:1 1 110px"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="Amount" value="${x.when && x.when !== "any" && extraFixed(x) ? esc(x.amount) : ""}" aria-label="Amount received"></span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}" aria-label="Date received" style="flex:1 1 130px"><button class="btn small primary" type="submit">Save</button><button class="link plain small" type="button" data-inc-log-cancel>Cancel</button></form>`
+        : `<div class="inline" style="justify-content:space-between"><span class="inline" style="gap:8px"><button class="btn small" type="button" data-inc-log>${I.plus}Log a payment</button>${pays.length ? `<span class="pill ok" data-inc-logged>${x.when === "monthly" && pays.length === 1 ? `${I.check}Logged` : `${pays.length} logged`}</span>` : ""}</span><button class="link plain small" type="button" data-inc-edit aria-label="Edit ${esc(x.name)}">Edit</button></div>`}
       ${pays.length ? `<div class="inc-pays">${pays.map(p => `<div class="line" data-pay-in="${p.id}"><span class="muted small">${shortDate(p.date)}</span><span class="inline"><span class="tnum good">+${fmt(p.amount)}</span><button class="link danger-link small" type="button" data-inc-pay-del aria-label="Remove this payment">Remove</button></span></div>`).join("")}</div>` : ""}
       ${av && (!x.when || x.when === "any") && Math.abs(av.avg - x.amount) > Math.max(1, x.amount * 0.05) ? `<div class="inc-avg small"><span>Your average over the last ${av.n} months is <b>${fmt(av.avg)}</b>.</span><button class="link small" type="button" data-inc-use-avg="${av.avg}">Use ${fmt(av.avg)}</button></div>` : ""}</div>`; }).join("");
   const total = extraExpected(), gotAll = list.reduce((a, x) => a + gotIn(x, k), 0);
   return `<section class="card inc-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Other income</h2>${list.length ? `<span class="muted small tnum">${fmt(gotAll)} of ${fmt(total)}</span>` : ""}</div>
     ${rows}${UI.incAdd ? `<div class="inc-row editing">${incomeForm(null)}</div>` : `<button class="btn" type="button" data-inc-add>${I.plus}Add other income</button>`}
-    ${list.length ? `<p class="muted small">Your plan counts ${fmt((+S.income || 0) + total)} coming in: ${fmt(+S.income || 0)} regular pay plus ${fmt(total)} expected here.</p>` : ""}</section>`;
+    ${list.length ? `<p class="muted small">Your plan counts ${fmt((+S.income || 0) + total)} coming in: ${fmt(+S.income || 0)} regular pay plus ${fmt(total)} ${list.every(extraFixed) ? "expected here" : "from here"}.${list.some(x => !extraFixed(x)) ? " Income with no fixed amount counts as you log it." : ""}</p>` : ""}</section>`;
 };
 OUT.incomeLabel = () => (S.extras || []).length ? "Regular pay" : "Money coming in";
 
@@ -3144,6 +3153,7 @@ OUT.trips = () => {
 const dayPlus = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 function incomeDueOn(x, d){
   if (x.when === "monthly" && x.day) return d.getDate() === Math.min(+x.day, daysInMonth(d.getFullYear(), d.getMonth()));
+  if (x.when === "twice"){ const dim = daysInMonth(d.getFullYear(), d.getMonth()); return twiceDays(x).some(v => d.getDate() === Math.min(v, dim)); }
   if (x.when === "weekly" && x.wd != null) return d.getDay() === +x.wd;
   if (x.when === "biweekly" && x.next){ const [y, m, dd] = x.next.split("-").map(Number), n = Math.round((d - new Date(y, m - 1, dd)) / DAY); return n % 14 === 0; }
   return false;
@@ -3178,7 +3188,7 @@ OUT.billsDue = () => { const list = billsDue(); if (!list.length) return "";
       <div class="grid2"><button class="btn small" type="button" data-bill-no>Not yet</button><button class="btn small primary" type="button" data-bill-yes>Yes, paid</button></div></div>`).join("")}</section>`; };
 OUT.arrived = () => { const list = arrivals(); if (!list.length) return "";
   return `<section class="card" data-arrived><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 style="font-size:1.2rem">Did it arrive?</h2><button class="link plain small" type="button" data-arrive-later>Ask me tomorrow</button></div>
-    ${list.map(a => `<div class="inc-row" data-arrive="${esc(a.key)}" data-arrive-date="${isoOf(a.date)}"><div class="row-top"><div><div class="name">${esc(a.name)}</div><div class="muted small">Expected ${dayMonth(a.date)}</div></div><div class="name tnum">${fmt(a.amount)}</div></div>
+    ${list.map(a => `<div class="inc-row" data-arrive="${esc(a.key)}" data-arrive-date="${isoOf(a.date)}"><div class="row-top"><div><div class="name">${esc(a.name)}</div><div class="muted small">Expected ${dayMonth(a.date)}</div></div><div class="name tnum">${a.amount > 0 ? fmt(a.amount) : `<span class="muted small">amount varies</span>`}</div></div>
       <div class="grid2"><button class="btn small" type="button" data-arrive-no>${a.x ? "It won’t come" : "Not yet"}</button><button class="btn small primary" type="button" data-arrive-yes>${a.x ? "Yes, log it" : "Yes, it arrived"}</button></div></div>`).join("")}</section>`; };
 
 /* ================= tell them (messages you send yourself; KeepWise sends nothing) ================= */
@@ -4247,7 +4257,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-payday-cancel")){ UI.payEdit = false; refreshOuts(); return; }
   if (b.hasAttribute("data-payday-clear")){ S.pay = null; S.monthStart = 1; UI.payEdit = false; save(); render(true); toast("Pay schedule removed. Your month runs from the 1st again."); return; }
   // ---- other income
-  const blankInc = () => ({name: "", kind: "side", when: "any", day: 1, wd: 5, next: isoDaysAgo(0), amount: ""});
+  const blankInc = () => ({name: "", kind: "side", when: "any", day: 1, day2: 15, wd: 5, next: isoDaysAgo(0), amount: ""});
   if (b.hasAttribute("data-need-next")){ const g = needGroups(), i = Math.max(0, g.findIndex(x => x[0] === UI.needKind)); UI.needKind = g.length ? g[(i + 1) % g.length][0] : null; refreshOuts(); return; }
   if (b.hasAttribute("data-ask-close")){ if (VOICE.rec) voiceFinish(false); UI.askOpen = false; render(true); return; }
   if (b.hasAttribute("data-ask-mic")){ voiceToggle(); return; }
@@ -4277,6 +4287,7 @@ view.addEventListener("click", async e => {
   if (arr && (b.hasAttribute("data-arrive-yes") || b.hasAttribute("data-arrive-no"))){ const iso = arr.dataset.arriveDate, yes = b.hasAttribute("data-arrive-yes"), u = undoable();
     if (arr.dataset.arrive === "pay"){ if (yes){ S.payGot = iso; save(); refreshOuts(); toast("Good. Your pay is marked as arrived.", u); } else { S.arriveSnooze = isoOf(todayMid()); save(); refreshOuts(); toast("We’ll ask again tomorrow."); } return; }
     const x = extras().find(v => v.id === arr.dataset.arrive); if (!x) return;
+    if (yes && !extraFixed(x)){ UI.incLog = x.id; UI.incEdit = null; UI.incAdd = false; refreshOuts(); const i = view.querySelector(`[data-inc="${x.id}"] form[data-form="incomeLog"] [name=amount]`); if (i){ i.scrollIntoView({block: "center"}); i.focus(); } toast("Enter how much arrived."); return; }   // no fixed amount: ask, never assume
     if (yes){ (x.got = x.got || []).push({id: uid(), date: iso, amount: +x.amount || 0}); save(); refreshOuts(); toast(`Logged ${fmt(x.amount)} from ${x.name}.`, u); }
     else { x.skip = iso; save(); refreshOuts(); toast(`Okay. ${x.name} is skipped this time.`, u); }
     return; }
@@ -4543,11 +4554,12 @@ view.addEventListener("submit", async e => {
   if (kind === "income"){
     const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), when = fd.get("when") || "any";
     if (!name){ toast("Say where the money comes from."); f.querySelector("[name=name]").focus(); return; }
-    if (!amount){ toast("Enter an amount above zero."); f.querySelector("[name=amount]").focus(); return; }
-    const rec = {name, kind: fd.get("kind") || "other", when, amount, day: when === "monthly" ? +fd.get("day") || 1 : undefined, wd: when === "weekly" ? +fd.get("wd") : undefined, next: when === "biweekly" ? String(fd.get("next") || isoDaysAgo(0)) : undefined};
+    // The amount is optional on every schedule. With none, the plan promises nothing and counts each payment as it is logged.
+    if (when === "twice" && +fd.get("day") === +fd.get("day2")){ toast("Pick two different days of the month."); return; }
+    const rec = {name, kind: fd.get("kind") || "other", when, amount, day: when === "monthly" || when === "twice" ? +fd.get("day") || 1 : undefined, day2: when === "twice" ? +fd.get("day2") || 15 : undefined, wd: when === "weekly" ? +fd.get("wd") : undefined, next: when === "biweekly" ? String(fd.get("next") || isoDaysAgo(0)) : undefined};
     const old = UI.incEdit && extras().find(x => x.id === UI.incEdit);
-    if (old){ if (old.when !== rec.when || old.day !== rec.day || old.wd !== rec.wd || old.next !== rec.next) rec.added = isoDaysAgo(0); Object.assign(old, rec); } else extras().push({id: uid(), got: [], added: isoDaysAgo(0), ...rec});
-    UI.incAdd = false; UI.incEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(old ? `${name} updated.` : `Added ${name}. Your plan now counts it.`); return; }
+    if (old){ if (old.when !== rec.when || old.day !== rec.day || old.day2 !== rec.day2 || old.wd !== rec.wd || old.next !== rec.next) rec.added = isoDaysAgo(0); Object.assign(old, rec); } else extras().push({id: uid(), got: [], added: isoDaysAgo(0), ...rec});
+    UI.incAdd = false; UI.incEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(old ? `${name} updated.` : amount ? `Added ${name}. Your plan now counts it.` : `Added ${name}. It counts each time you log a payment.`); return; }
   if (kind === "incomeLog"){ const x = extras().find(v => v.id === f.closest("[data-inc]").dataset.inc), a = numv(fd.get("amount")); if (!x) return;
     if (!a){ toast("Enter the amount you received."); return; }
     (x.got = x.got || []).push({id: uid(), date: String(fd.get("date") || isoDaysAgo(0)), amount: a}); UI.incLog = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Logged ${fmt(a)} from ${x.name}.`); return; }
