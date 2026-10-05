@@ -16,7 +16,7 @@ Your data stays on your phone. Nothing is sent to a server.
 - `src/app.html` is the whole app (one file, no framework).
 - `scripts/build.py` turns it into the installable web app in `www/` (manifest, icons, offline support).
 - `android/` and `ios/` are the native shells (Capacitor) that load `www/`.
-- `tests/test_app.py` runs 28 end-to-end tests in a real browser.
+- `tests/test_app.py` runs 152 end-to-end tests in a real browser.
 - Every push to `main` runs the tests, builds the Android APK, and publishes the web app (`.github/workflows/build.yml`).
 
 Run locally:

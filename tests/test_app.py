@@ -659,6 +659,11 @@ async def shared_my_writes_go_to_db(ctx):
 # ---------------- bank statement import ----------------
 FIX = os.path.join(HERE, "fixtures")
 
+async def use_as_plan(pg):
+    # "Use this as my plan": a plan the person built themselves is only replaced after they say yes
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(150)
+    if await pg.locator("[data-import-apply][data-sure]").count(): await pg.click("[data-import-apply][data-sure]")
+
 async def check_statement_review(pg):
     v = await text(pg, "#view")
     assert "Your statement" in v, v[:200]
@@ -671,7 +676,7 @@ async def check_statement_review(pg):
         assert bill.lower() in v.lower(), f"bill {bill} missing"
     assert "$700 in this statement" in v, "tax payments"
     assert "Groceries" in v and "Eating out" in v and "Getting around" in v, "spending categories"
-    assert "Zelle" not in v, "transfers must not count as income"
+    assert "Sam" in await text(pg, "[data-moves=in]") and "Sam" not in await text(pg, "[data-st=income]"), "transfers must not count as income"
     return v
 
 @test
@@ -679,7 +684,7 @@ async def import_csv_statement_and_apply(ctx):
     pg = await open_app(ctx)
     await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
     await check_statement_review(pg)
-    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(300)
+    await use_as_plan(pg); await pg.wait_for_timeout(300)
     st = await state(pg)
     assert st["income"] == 4200 and st["payday"] == 25, (st["income"], st.get("payday"))
     names = [s["name"] for s in st["subs"]]
@@ -2528,7 +2533,7 @@ async def statement_dates_follow_the_file_not_the_currency(ctx):
     us = os.path.join(TMP, "us.csv")
     open(us, "w").write("Date,Description,Amount\n04/01/2026,PAYROLL ACME,3000\n04/14/2026,ADOBE CREATIVE CLOUD,-59.99\n05/01/2026,PAYROLL ACME,3000\n05/14/2026,ADOBE CREATIVE CLOUD,-59.99\n06/14/2026,ADOBE CREATIVE CLOUD,-59.99\n")
     await pg.set_input_files("#stmt", us); await pg.wait_for_timeout(500)
-    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(250)
+    await use_as_plan(pg); await pg.wait_for_timeout(250)
     a = [x for x in (await state(pg))["subs"] if x["name"].lower().startswith("adobe")][0]
     assert a["since"] == "2026-04-14" and a["lastCharge"] == "2026-06-14" and a["renewDay"] == 14, a
     # a day-first file under USD: 14/04 can only be 14 April
@@ -2536,7 +2541,7 @@ async def statement_dates_follow_the_file_not_the_currency(ctx):
     uk = os.path.join(TMP, "dayfirst.csv")
     open(uk, "w").write("Date,Description,Amount\n01/04/2026,PAYROLL ACME,3000\n14/04/2026,HULU,-9.99\n01/05/2026,PAYROLL ACME,3000\n14/05/2026,HULU,-9.99\n14/06/2026,HULU,-9.99\n")
     await pg.set_input_files("#stmt", uk); await pg.wait_for_timeout(500)
-    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(250)
+    await use_as_plan(pg); await pg.wait_for_timeout(250)
     h = [x for x in (await state(pg))["subs"] if x["name"].lower().startswith("hulu")][0]
     assert h["since"] == "2026-04-14" and h["lastCharge"] == "2026-06-14", h
     # no date anywhere may land in a month that does not exist or in the future
@@ -2558,7 +2563,7 @@ async def data_moves_from_browser_to_home_screen_app(ctx):
     csv = os.path.join(TMP, "move.csv")
     open(csv, "w").write("Date,Description,Amount\n2026-07-01,PAYROLL ACME,4321\n2026-07-04,NETFLIX.COM,-15.49\n2026-08-01,PAYROLL ACME,4321\n2026-08-04,NETFLIX.COM,-15.49\n2026-09-01,PAYROLL ACME,4321\n2026-09-04,NETFLIX.COM,-15.49\n")
     await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(500)
-    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(300)
+    await use_as_plan(pg); await pg.wait_for_timeout(300)
     assert (await state(pg))["example"] is False and (await state(pg))["income"] == 4321
     note = await text(pg, "[data-a2hs]")
     assert "it starts empty" in note and "Copy my data" in note and "Paste my data" in note, note
@@ -2624,7 +2629,7 @@ async def cheaper_suggests_ideas_from_your_own_list(ctx):
         rows += [f"2026-{m}-01,PAYROLL ACME,3000", f"2026-{m}-04,NETFLIX.COM,-17.99", f"2026-{m}-06,SPOTIFY USA,-11.99", f"2026-{m}-09,AUDIBLE,-14.95", f"2026-{m}-12,NOTION LABS,-20.00", f"2026-{m}-15,ICLOUD STORAGE,-2.99"]
     open(csv, "w").write("\n".join(rows) + "\n")
     await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(500)
-    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(300)
+    await use_as_plan(pg); await pg.wait_for_timeout(300)
     await tab(pg, "cheaper")
     box = await text(pg, "[data-out=cheapIdeas]")
     assert "Ideas for you" in box and await pg.locator("[data-idea]").count() == 3, "three ideas at most, until you ask for more"
@@ -2698,41 +2703,294 @@ async def plus_screen_gives_reasons_and_prices(ctx):
 
 @test
 async def statement_separates_transfers_from_spending(ctx):
-    # Transfers are not spending by default: own-account moves and back-and-forth are left out, sent and received are
-    # shown apart, remittances are income, and only ticked lines reach the plan.
+    # Transfers are not spending by default. What you sent and what you received are shown apart, money moved between
+    # your own accounts is shown apart from both with every transaction listed, and only ticked lines reach the plan.
     pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
-    rows = ["Account Title: ALI RAZA KHAN", "Account No: 0000-0000", "Date,Description,Debit,Credit"]
-    for m in ("07", "08", "09"):
-        rows += [f"01/{m}/2026,SALARY ACME PVT LTD,,200000", f"02/{m}/2026,IBFT TO ALI RAZA KHAN MEEZAN BANK,500000,", f"03/{m}/2026,IBFT FROM ALI RAZA KHAN UBL,,300000",
-                 f"05/{m}/2026,RAAST P2P TO AHMED NAWAZ,50000,", f"09/{m}/2026,ATM CASH WITHDRAWAL 1LINK,30000,", f"14/{m}/2026,NETFLIX.COM,1100,", f"18/{m}/2026,POS IMTIAZ SUPER MARKET,24000,"]
-    rows += ["20/07/2026,FT TO BILAL TRADERS,20000,", "21/07/2026,IBFT FROM SARA NOOR,,10000", "25/08/2026,RAAST TO SARA NOOR,5000,",
-             "22/08/2026,INWARD REMITTANCE WESTERN UNION JOHN SMITH,,150000", "22/09/2026,INWARD REMITTANCE WESTERN UNION JOHN SMITH,,150000"]
-    csv = os.path.join(TMP, "pk.csv"); open(csv, "w").write("\n".join(rows) + "\n")
+    csv = os.path.join(TMP, "pk.csv"); open(csv, "w").write("\n".join(PK_ROWS()) + "\n")
     await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(600)
-    async def tx(pg, sel): return (await text(pg, sel)).replace("\u00a0", " ")
-    v = await tx(pg, "#view")
+    v = await stx(pg, "#view")
     assert "Transfers and cash" not in v, "transfers are no longer lumped into everyday spending"
-    spend = await tx(pg, "section.card:has(> h2:text-is('Everyday spending'))"); assert "Groceries" in spend and "500,000" not in spend and "Ahmed" not in spend, spend
-    out = await tx(pg, "[data-moves=out]"); inn = await tx(pg, "[data-moves=in]"); own = await tx(pg, "[data-moves=own]")
-    assert "Ahmed Nawaz" in out and "PKR 50,000/mo" in out and "every month" in out and "Bilal Traders" in out and "Cash withdrawals" in out and "PKR 30,000/mo" in out, out
-    assert "John Smith" in inn and "From abroad" in inn and "PKR 100,000/mo" in inn, inn
-    assert "Ali Raza Khan" in own and "Sent PKR 500,000/mo" in own and "received PKR 300,000/mo" in own and "Sara Noor" in own and "back and forth" in own.lower(), own
-    assert "Ali Raza" not in out and "Ali Raza" not in inn and "Sara" not in out and "Sara" not in inn, "left-out names appear in one place only"
-    ticks = await pg.evaluate("Object.fromEntries([...document.querySelectorAll('[data-move-pick]')].map(c => [c.closest('label').innerText.split('\\n')[0], c.checked]))")
-    assert ticks == {"Ahmed Nawaz": True, "Bilal Traders": False, "Cash withdrawals": True, "John Smith": True}, ticks
+    spend = await stx(pg, "[data-st=spending]"); assert "Groceries" in spend and "500,000" not in spend and "Ahmed" not in spend, spend
+    out = await stx(pg, "[data-moves=out]"); inn = await stx(pg, "[data-moves=in]"); oo = await stx(pg, "[data-moves=own-out]"); oi = await stx(pg, "[data-moves=own-in]")
+    assert "Money you sent" in out and "Ahmed Nawaz" in out and "PKR 50,000/mo" in out and "every month" in out and "Bilal Traders" in out and "PKR 20,000" in out and "Cash withdrawals" in out and "PKR 30,000/mo" in out, out
+    assert "Money you received" in inn and "John Smith" in inn and "From abroad" in inn and "PKR 100,000/mo" in inn, inn
+    # someone you both paid and were paid by appears on each side, with only that side's money
+    assert "Sara Noor" in out and "PKR 5,000" in out and "Sara Noor" in inn and "PKR 10,000" in inn
+    # your own accounts: every transaction, under your name, exactly as written, never counted
+    assert "Money you sent to yourself" in oo and oo.count("IBFT TO ALI RAZA KHAN MEEZAN BANK") == 3 and "PKR 1,500,000" in oo and "not counted" in oo.lower() and "ALI RAZA KHAN" in oo.upper(), oo
+    assert "Money you received from yourself" in oi and oi.count("IBFT FROM ALI RAZA KHAN UBL") == 3 and "PKR 900,000" in oi, oi
+    assert "Ali Raza" not in out and "Ali Raza" not in inn, "your own name is never listed as someone else"
+    assert await pg.locator("[data-moves=own-out] input[type=checkbox], [data-moves=own-in] input[type=checkbox]").count() == 0, "own transfers cannot be counted"
+    ticks = await pg.evaluate("Object.fromEntries([...document.querySelectorAll('[data-moves] [data-st-pick]')].map(c => [c.dataset.stPick, c.checked]))")
+    assert ticks == {"sent:AHMED NAWAZ": True, "sent:BILAL TRADERS": False, "sent:SARA NOOR": False, "cash:out": True, "received:JOHN SMITH": True, "received:SARA NOOR": False}, ticks
     # typical month: 200,000 salary + 100,000 remittance in; 1,100 + 24,000 + 50,000 + 30,000 out
-    hero = await tx(pg, ".import-body .hero"); assert "PKR 300,000 comes in" in hero and "PKR 105,100 goes out" in hero and "PKR 194,900" in hero, hero
+    hero = await stx(pg, ".import-body .hero"); assert "PKR 300,000 comes in" in hero and "PKR 105,100 goes out" in hero and "PKR 194,900" in hero, hero
     # unticking cash changes the number at once
-    await pg.locator("[data-move-pick='cash:0']").uncheck(); await pg.wait_for_timeout(150)
-    assert "PKR 75,100 goes out" in await tx(pg, ".import-body .hero")
-    await pg.locator("[data-move-pick='cash:0']").check(); await pg.locator("[data-move-pick='sent:1']").check(); await pg.wait_for_timeout(150)
-    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(300)
+    await pg.locator("[data-st-pick='cash:out']").uncheck(); await pg.wait_for_timeout(150)
+    assert "PKR 75,100 goes out" in await stx(pg, ".import-body .hero")
+    await pg.locator("[data-st-pick='cash:out']").check(); await pg.locator("[data-st-pick='sent:BILAL TRADERS']").check(); await pg.wait_for_timeout(150)
+    await use_as_plan(pg); await pg.wait_for_timeout(300)
     st = await state(pg); names = {e["name"]: e["amount"] for e in st["expenses"]}
     assert names.get("Sent to Ahmed Nawaz") == 50000 and names.get("Cash withdrawals") == 30000 and abs(names.get("Sent to Bilal Traders") - 6666.67) < 0.01, names
     assert not any("Ali Raza" in n or "Sara" in n or "Transfers" in n for n in names), names
     ex = {e["name"]: e["amount"] for e in st["extras"]}; assert ex == {"From abroad: John Smith": 100000}, ex
     assert st["income"] == 200000 and [s["name"] for s in st["subs"]] == ["Netflix"]
     assert not pg.errors, pg.errors
+
+def PK_ROWS():
+    rows = ["Account Title: ALI RAZA KHAN", "Account No: 0000-0000", "Date,Description,Debit,Credit"]
+    for m in ("07", "08", "09"):
+        rows += [f"01/{m}/2026,SALARY ACME PVT LTD,,200000", f"02/{m}/2026,IBFT TO ALI RAZA KHAN MEEZAN BANK,500000,", f"03/{m}/2026,IBFT FROM ALI RAZA KHAN UBL,,300000",
+                 f"05/{m}/2026,RAAST P2P TO AHMED NAWAZ,50000,", f"09/{m}/2026,ATM CASH WITHDRAWAL 1LINK,30000,", f"14/{m}/2026,NETFLIX.COM,1100,", f"18/{m}/2026,POS IMTIAZ SUPER MARKET,24000,"]
+    return rows + ["20/07/2026,FT TO BILAL TRADERS,20000,", "21/07/2026,IBFT FROM SARA NOOR,,10000", "25/08/2026,RAAST TO SARA NOOR,5000,",
+                   "22/08/2026,INWARD REMITTANCE WESTERN UNION JOHN SMITH,,150000", "22/09/2026,INWARD REMITTANCE WESTERN UNION JOHN SMITH,,150000"]
+async def stx(pg, sel): return (await text(pg, sel)).replace(" ", " ")
+
+@test
+async def nothing_from_a_statement_is_added_until_it_is_ticked(ctx):
+    pg = await open_app(ctx)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
+    before = await state(pg); assert len(before["subs"]) == 10 and before["income"] == 5200, "reading a statement changes nothing by itself"
+    c = await stx(pg, "[data-st-count]"); m = re.search(r"(\d+) of (\d+) lines are ticked", c); assert m and "Nothing is added until you choose below" in c, c
+    picked, total = int(m.group(1)), int(m.group(2)); assert 0 < picked <= total
+    # every subscription, bill, spending group and pay line has its own tick
+    for sec in ("income", "subs", "bills", "spending"): assert await pg.locator(f"[data-st={sec}] [data-st-pick]").count() >= 1, sec
+    # untick one subscription: the count and the typical month change at once
+    hero = await stx(pg, ".import-body .hero")
+    await pg.locator("[data-st-pick='sub:NETFLIX']").uncheck(); await pg.wait_for_timeout(150)
+    assert f"{picked - 1} of {total}" in await stx(pg, "[data-st-count]") and await stx(pg, ".import-body .hero") != hero
+    # untick every bill with one tap, then tick them all again
+    await pg.click("[data-st-all=bills]"); await pg.wait_for_timeout(150)
+    assert not any(await pg.evaluate("[...document.querySelectorAll('[data-st=bills] [data-st-pick^=\"bill:\"]')].map(c => c.checked)"))
+    assert "Tick all" in await stx(pg, "[data-st=bills]")
+    await pg.click("[data-st-all=bills]"); await pg.wait_for_timeout(150)
+    assert all(await pg.evaluate("[...document.querySelectorAll('[data-st=bills] [data-st-pick^=\"bill:\"]')].map(c => c.checked)"))
+    await pg.locator("[data-st-pick='spend:Dining']").uncheck(); await pg.wait_for_timeout(120)
+    await use_as_plan(pg); await pg.wait_for_timeout(300)
+    st = await state(pg); names = [x["name"] for x in st["subs"]]
+    assert "Netflix" not in names and "Spotify" in names and len(names) == 5, names
+    assert not any(e["name"] == "Eating out" for e in st["expenses"]) and any(e["name"] == "Groceries" for e in st["expenses"])
+    assert "5 subscriptions" in await pg.inner_text("#toast")
+    # with nothing ticked there is nothing to add
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
+    await pg.evaluate("(() => { let q, n = 0; while ((q = document.querySelector('[data-st-pick]:checked')) && n++ < 200) q.click(); })()")
+    await pg.wait_for_timeout(150)
+    assert "0 of" in await stx(pg, "[data-st-count]") and await pg.locator("[data-import-apply=merge]").is_disabled() and await pg.locator("[data-import-apply=replace]").is_disabled()
+    assert not pg.errors, pg.errors
+
+@test
+async def a_plan_you_built_is_only_replaced_after_you_say_yes(ctx):
+    pg = await open_app(ctx)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(300)        # the example month is replaced without a question
+    st = await state(pg); assert st["income"] == 4200 and "Your statement" not in await text(pg, "#view")
+    await pg.evaluate("window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.subs.push({id:'mine', name:'My own club', price:9, cycle:'mo', last:null, group:'', env:'misc', keep:'auto'}); localStorage.setItem('keepwise-app-v1', JSON.stringify(s))")
+    await pg.reload(); await pg.wait_for_timeout(500)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(200)
+    box = await stx(pg, ".st-confirm"); assert "Replace your plan?" in box and "removed" in box and "Splits, codes and savings stay" in box, box
+    assert any(x["name"] == "My own club" for x in (await state(pg))["subs"]), "nothing changed yet"
+    await pg.click("[data-st-confirm=no]"); await pg.wait_for_timeout(150)
+    assert await pg.locator(".st-confirm").count() == 0 and "Your statement" in await text(pg, "#view")
+    await pg.click("[data-import-apply=merge]"); await pg.wait_for_timeout(300)             # adding never asks, and keeps what is there
+    assert any(x["name"] == "My own club" for x in (await state(pg))["subs"])
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
+    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(200); await pg.click("[data-import-apply][data-sure]"); await pg.wait_for_timeout(300)
+    assert not any(x["name"] == "My own club" for x in (await state(pg))["subs"])
+    assert not pg.errors, pg.errors
+
+@test
+async def every_statement_line_is_shown_exactly_as_the_bank_wrote_it(ctx):
+    pg = await open_app(ctx)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
+    rows = [l.split(",") for l in open(os.path.join(FIX, "sample-bank-statement.csv")).read().strip().split("\n")[1:]]
+    tin = sum(float(r[2]) for r in rows if float(r[2]) > 0); tout = -sum(float(r[2]) for r in rows if float(r[2]) < 0)
+    chk = await stx(pg, ".st-check"); assert f"Money in ${tin:,.2f}".replace(".00", "") in chk.replace(".00", "") and f"money out ${tout:,.2f}" in chk, (chk, tin, tout)
+    # the bank's own wording sits under the tidy name
+    nf = await stx(pg, "[data-st-item='sub:NETFLIX']"); assert "Netflix" in nf and "NETFLIX.COM" in nf and "$17.99/mo" in nf, nf
+    assert await pg.locator("[data-st-item='sub:NETFLIX'] .st-t").count() == 0
+    await pg.click("[data-st-open='sub:NETFLIX']"); await pg.wait_for_timeout(150)
+    lines = await pg.locator("[data-st-item='sub:NETFLIX'] .st-t").all_inner_texts(); assert len(lines) == 6, lines
+    assert "Apr 5, 2026" in lines[0] and "NETFLIX.COM" in lines[0] and "$17.99" in lines[0], lines[0]
+    assert "Hide" in await stx(pg, "[data-st-item='sub:NETFLIX']")
+    await pg.click("[data-st-open='sub:NETFLIX']"); await pg.wait_for_timeout(120); assert await pg.locator("[data-st-item='sub:NETFLIX'] .st-t").count() == 0
+    # a spending group opens to the payments inside it
+    await pg.click("[data-st-open='spend:Groceries']"); await pg.wait_for_timeout(150)
+    g = await pg.locator("[data-st-item='spend:Groceries'] .st-t").all_inner_texts(); want = [r for r in rows if "TRADER JOE" in r[1]]
+    assert len(g) == len(want) and all("TRADER JOE'S #552" in x for x in g), (len(g), len(want))
+    # every line of the file, with where it went
+    assert f"Show all {len(rows)}" in await stx(pg, "[data-st=all]")
+    await pg.click("[data-st-open=all]"); await pg.wait_for_timeout(200)
+    al = await pg.locator("[data-st=all] .st-t").all_inner_texts(); assert len(al) == len(rows), (len(al), len(rows))
+    joined = "\n".join(al).replace(" ", " ")
+    for r in rows: assert r[1] in joined, r[1]
+    assert "ZELLE FROM SAM" in joined and "+$40" in joined and "Received from Sam" in joined and "Subscription" in joined and "Pay" in joined and "Bill" in joined
+    await pg.set_viewport_size({"width": 320, "height": 700}); await pg.wait_for_timeout(200)
+    assert await pg.evaluate("document.getElementById('main').scrollWidth <= document.getElementById('main').clientWidth + 1"), "long bank wording wraps on a small phone"
+    assert not pg.errors, pg.errors
+
+@test
+async def you_can_say_which_names_on_a_statement_are_you(ctx):
+    pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
+    rows = [r for r in PK_ROWS() if not r.startswith("Account")]           # this bank does not print the account holder's name
+    csv = os.path.join(TMP, "pk-noname.csv"); open(csv, "w").write("\n".join(rows) + "\n")
+    await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(600)
+    assert await pg.locator("[data-moves=own-out]").count() == 0 and "Ali Raza Khan" in await stx(pg, "[data-moves=out]"), "without a name, nothing is guessed to be yours"
+    assert await pg.input_value("[data-stmt-holder]") == ""
+    # typing the name moves both directions out of spending and income
+    await pg.fill("[data-stmt-holder]", "Ali Raza Khan"); await pg.locator("[data-stmt-holder]").blur(); await pg.wait_for_timeout(250)
+    assert "Ali Raza" not in await stx(pg, "[data-moves=out]") and (await stx(pg, "[data-moves=own-out]")).count("IBFT TO ALI RAZA KHAN MEEZAN BANK") == 3
+    assert (await stx(pg, "[data-moves=own-in]")).count("IBFT FROM ALI RAZA KHAN UBL") == 3
+    # "This is me" on any other name does the same for that name
+    await pg.click("[data-st-me='SARA NOOR']"); await pg.wait_for_timeout(250)
+    assert "Sara" not in await stx(pg, "[data-moves=out]") and "Sara" not in await stx(pg, "[data-moves=in]")
+    assert "RAAST TO SARA NOOR" in await stx(pg, "[data-moves=own-out]") and "IBFT FROM SARA NOOR" in await stx(pg, "[data-moves=own-in]")
+    me = await stx(pg, "[data-moves=me]"); assert "counted as you" in me.lower() and "Sara Noor" in me and "Ali Raza Khan" in me, me
+    # and it can be undone
+    await pg.click("[data-st-notme='SARA NOOR']"); await pg.wait_for_timeout(250)
+    assert "Sara Noor" in await stx(pg, "[data-moves=out]") and "Sara Noor" in await stx(pg, "[data-moves=in]") and "SARA NOOR" not in await stx(pg, "[data-moves=own-out]")
+    assert "not you" in (await stx(pg, "[data-moves=me]")).lower()
+    await pg.click("[data-st-isme='SARA NOOR']"); await pg.wait_for_timeout(200); assert "not you" not in (await stx(pg, "[data-moves=me]")).lower()
+    # a tick made earlier survives all of this
+    await pg.locator("[data-st-pick='sent:BILAL TRADERS']").check(); await pg.wait_for_timeout(120)
+    await pg.fill("[data-stmt-holder]", "Ali Raza"); await pg.locator("[data-stmt-holder]").blur(); await pg.wait_for_timeout(250)
+    assert await pg.locator("[data-st-pick='sent:BILAL TRADERS']").is_checked()
+    await use_as_plan(pg); await pg.wait_for_timeout(300)
+    st = await state(pg); names = [e["name"] for e in st["expenses"]]; assert not any("Ali" in n for n in names) and "Sent to Bilal Traders" in names, names
+    # a bank that only says "savings" or "own account" is understood without a name
+    pg2 = await open_app(ctx); await pg2.select_option("#m-cur", "USD"); await pg2.wait_for_timeout(120); us = os.path.join(TMP, "own.csv")
+    open(us, "w").write("Date,Description,Amount\n07/01/2026,PAYROLL ACME,3000\n07/03/2026,ONLINE TRANSFER TO SAVINGS 4471,-400\n08/01/2026,PAYROLL ACME,3000\n08/03/2026,ONLINE TRANSFER TO SAVINGS 4471,-400\n08/20/2026,ONLINE TRANSFER FROM SAVINGS 4471,150\n08/22/2026,ZELLE TO DANA REED,-60\n")
+    await pg2.set_input_files("#stmt", us); await pg2.wait_for_timeout(500)
+    oo = await stx(pg2, "[data-moves=own-out]"); assert oo.count("ONLINE TRANSFER TO SAVINGS 4471") == 2 and "$800" in oo, oo
+    assert "ONLINE TRANSFER FROM SAVINGS 4471" in await stx(pg2, "[data-moves=own-in]") and "Dana Reed" in await stx(pg2, "[data-moves=out]") and "Savings" not in await stx(pg2, "[data-moves=out]")
+    assert not pg.errors and not pg2.errors, (pg.errors, pg2.errors)
+
+async def read_csv(ctx, name, body, cur="USD"):
+    pg = await open_app(ctx)
+    await pg.select_option("#m-cur", cur); await pg.wait_for_timeout(120)
+    f = os.path.join(TMP, name); open(f, "w", encoding="utf-8").write(body)
+    await pg.set_input_files("#stmt", f); await pg.wait_for_timeout(600)
+    await pg.click("[data-st-open=all]"); await pg.wait_for_timeout(200)
+    return pg, [x.replace(" ", " ").replace("\n", " | ") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()]
+
+@test
+async def statement_columns_are_matched_by_what_they_hold(ctx):
+    # "Transaction Date" is not the description, "Value Date" is not the amount, and a balance column is never the amount
+    body = "Sample Bank\nAccount Title: ALI RAZA KHAN\n\nTransaction Date,Value Date,Cheque No,Narration,Withdrawal (Dr),Deposit (Cr),Balance\n"
+    body += "01-Jul-2026,01-Jul-2026,,SALARY ACME PVT LTD,,\"200,000.00\",\"300,000.00\"\n02-Jul-2026,02-Jul-2026,,RAAST P2P TO AHMED NAWAZ,\"50,000.00\",,\"250,000.00\"\n14-Jul-2026,15-Jul-2026,,NETFLIX.COM,\"1,100.00\",,\"248,900.00\"\n"
+    pg, al = await read_csv(ctx, "cols.csv", body, "PKR")
+    assert len(al) == 3 and "Jul 1, 2026" in al[0] and "SALARY ACME PVT LTD" in al[0] and "+PKR 200,000" in al[0], al
+    assert "RAAST P2P TO AHMED NAWAZ" in al[1] and "PKR 50,000" in al[1] and "+" not in al[1] and "NETFLIX.COM" in al[2] and "PKR 1,100" in al[2], al
+    assert "money out PKR 51,100" in await stx(pg, ".st-check")
+    # one amount column with no sign, newest first: the running balance decides the direction of every line
+    body = "Date,Details,Amount,Balance\n2026-07-20,CARD REFUND SHOE SHOP,35.00,2019.01\n2026-07-14,NETFLIX.COM,17.99,1984.01\n2026-07-05,ACME LTD,2000.00,2002.00\n2026-07-02,COFFEE HOUSE,8.00,2.00\n"
+    pg, al = await read_csv(ctx, "bal.csv", body)
+    line = lambda w: [x for x in al if w in x][0]
+    assert len(al) == 4 and line("ACME LTD").endswith("+$2,000") and line("SHOE SHOP").endswith("+$35") and line("NETFLIX").endswith("| $17.99"), al
+    assert line("COFFEE HOUSE").endswith("| $8"), "the oldest line has no earlier balance, so its wording decides"
+    # a type column that says which way, tabs between columns, and a continental amount
+    body = "Booking date\tText\tDebit/Credit\tAmount\n01.07.2026\tGEHALT ACME\tCredit\t2.500,00\n03.07.2026\tSUPERMARKT\tDebit\t1.234,56\n"
+    pg, al = await read_csv(ctx, "tabs.tsv", body, "EUR")
+    assert len(al) == 2 and "GEHALT ACME" in al[0] and "+€2,500" in al[0] and "SUPERMARKT" in al[1] and "€1,234.56" in al[1] and "+" not in al[1], al
+    # semicolons, and money in brackets for money out
+    body = "Date;Description;Amount\n07/01/2026;PAYROLL ACME;3000.00\n07/03/2026;HARDWARE STORE;(45.10)\n"
+    pg, al = await read_csv(ctx, "semi.csv", body)
+    assert len(al) == 2 and al[0].endswith("+$3,000") and "HARDWARE STORE" in al[1] and al[1].endswith("| $45.10"), al
+    # a spreadsheet file is turned away with what to do instead
+    pg = await open_app(ctx); x = os.path.join(TMP, "s.xlsx"); open(x, "wb").write(b"PK\x03\x04junk")
+    await pg.set_input_files("#stmt", x); await pg.wait_for_timeout(300)
+    assert "save it as CSV" in await pg.inner_text("#toast") and "Your statement" not in await text(pg, "#view")
+
+@test
+async def a_pdf_statement_with_wrapped_lines_and_columns_is_read_whole(ctx):
+    pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "wrapped-statement.pdf")); await pg.wait_for_timeout(3000)
+    v = await stx(pg, "#view"); assert "Your statement" in v and "22 transactions" in v, v[:300]
+    # totals match the statement: 100,000 opening, 429,700 closing
+    chk = await stx(pg, ".st-check"); assert "Money in PKR 825,000" in chk and "money out PKR 495,300" in chk, chk
+    # the second line of a description belongs to the transaction above it, so names are found
+    assert "Ahmed Nawaz" in await stx(pg, "[data-moves=out]") and "John Smith" in await stx(pg, "[data-moves=in]")
+    oo = await stx(pg, "[data-moves=own-out]"); assert oo.count("IBFT TO ALI RAZA KHAN MEEZAN BANK") == 3 and "PKR 180,000" in oo, oo
+    oi = await stx(pg, "[data-moves=own-in]"); assert oi.count("IBFT FROM ALI RAZA KHAN UBL") == 3 and "PKR 75,000" in oi, oi
+    assert await pg.input_value("[data-stmt-holder]") == "Ali Raza Khan"
+    # debit and credit columns decide the direction, the value date is not part of the wording, and the footer is not a transaction
+    await pg.click("[data-st-open=all]"); await pg.wait_for_timeout(200)
+    al = [x.replace(" ", " ").replace("\n", " | ") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()]
+    assert len(al) == 22 and "Jul 1, 2026 | SALARY ACME PVT LTD | Pay | +PKR 200,000" in al[0], al[0]
+    j = " || ".join(al); assert "NETFLIX.COM 866-579-7172 CARD ENDING 1234" in j and "POS IMTIAZ SUPER MARKET KARACHI PK" in j and "computer generated" not in j.lower() and "Page" not in j and "01-07-2026" not in j, j[:600]
+    sub = await stx(pg, "[data-st=subs]"); assert "Netflix" in sub and "PKR 1,100/mo" in sub and "3 charges" in sub, sub
+    assert not pg.errors, pg.errors
+
+@test
+async def subscriptions_are_found_properly_in_a_statement(ctx):
+    L = ["Date,Description,Amount"]
+    for m in ("04", "05", "06", "07"):
+        L += [f"{m}/01/2026,PAYROLL ACME,3000.00", f"{m}/03/2026,APPLE.COM/BILL,-2.99", f"{m}/09/2026,APPLE.COM/BILL,-10.99", f"{m}/12/2026,QUIET BOOKS CLUB,-12.00",
+              f"{m}/15/2026,HULU,-{'7.99' if m < '06' else '9.99'}", f"{m}/02/2026,CORNER COFFEE BAR,-4.50", f"{m}/09/2026,CORNER COFFEE BAR,-4.50", f"{m}/16/2026,CORNER COFFEE BAR,-4.50", f"{m}/23/2026,CORNER COFFEE BAR,-4.50",
+              f"{m}/20/2026,ZELLE TO DANA REED,-50.00", f"{m}/21/2026,CITY PHARMACY,-20.00"]
+    L += ["07/25/2026,GRAMMARLY,-144.00", "07/26/2026,GADGET WORLD,-89.00"]
+    pg, al = await read_csv(ctx, "subs.csv", "\n".join(L) + "\n")
+    items = await pg.evaluate("[...document.querySelectorAll('[data-st=subs] .st-item')].map(e => [e.dataset.stItem, e.innerText.replace(/\\u00a0/g, ' ')])")
+    by = dict(items)
+    # two things billed by the same store, month after month, are two subscriptions
+    assert "sub:APPLE COM 2.99" in by and "sub:APPLE COM 10.99" in by and "4 charges" in by["sub:APPLE COM 2.99"] and "$10.99/mo" in by["sub:APPLE COM 10.99"], list(by)
+    # a price that went up is still one subscription, at the new price
+    assert "$9.99/mo" in by["sub:HULU"] and "4 charges" in by["sub:HULU"], by.get("sub:HULU")
+    # an unknown name charged the same amount every month is one too, and says why
+    assert "charged monthly" in by["sub:QUIET BOOKS"] and "charged monthly" not in by["sub:HULU"], by.get("sub:QUIET BOOKS")
+    # a well-known service counts even when it was charged once
+    assert "1 charge " in by["sub:GRAMMARLY"] + " ", by.get("sub:GRAMMARLY")
+    # coffee every week, a pharmacy, a friend and a one-off shop are not subscriptions
+    assert len(by) == 5 and not any(k in " ".join(by) for k in ("COFFEE", "PHARMACY", "DANA", "GADGET")), list(by)
+    sub = await stx(pg, "[data-st=subs]"); assert "APPLE.COM/BILL" in sub and "(5)" in sub, sub
+    await use_as_plan(pg); await pg.wait_for_timeout(300)
+    st = await state(pg); assert sorted(s["name"] for s in st["subs"]) == ["Apple Com 10.99", "Apple Com 2.99", "Grammarly", "Hulu", "Quiet Books"], [s["name"] for s in st["subs"]]
+    assert not pg.errors, pg.errors
+
+@test
+async def bigger_screens_use_their_width(ctx):
+    # A computer gets the sections down the left side, cards in two columns and lists side by side. A tablet keeps the phone
+    # layout with more room. Nothing ever runs off the side, at any size.
+    pg = await open_app(ctx, w=1440, h=900)
+    box = lambda sel: pg.evaluate("s => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }", sel)
+    fits = "(() => { const m = document.getElementById('main'); return m.scrollWidth <= m.clientWidth + 1 && document.documentElement.scrollWidth <= innerWidth + 1 && [...document.querySelectorAll('#view button:not(.chip), #view input, #view select, #view .card')].every(e => { const r = e.getBoundingClientRect(); return r.width === 0 || (r.left >= -1 && r.right <= innerWidth + 1); }); })()"
+    tb = await box("#tabbar"); assert tb[0] == 0 and tb[2] < 300 and tb[3] > 600, f"the sections run down the left side: {tb}"
+    mn = await box("#main"); assert mn[0] >= tb[2] - 1 and mn[2] > 1100, mn
+    assert await pg.evaluate("document.getElementById('view').classList.contains('wide')")
+    cols = await pg.evaluate("[...document.querySelectorAll('#view > .cols > .col')].map(c => { const r = c.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.width), c.children.length]; })")
+    assert len(cols) == 2 and cols[1][0] > cols[0][0] + cols[0][1] and min(c[1] for c in cols) > 400 and min(c[2] for c in cols) >= 2, cols
+    assert await pg.evaluate("!!document.querySelector('#view > .cols > .col:nth-child(2) [data-out=comingUp]') && !!document.querySelector('#view > section.hero')"), "Coming up sits beside the month, under the number"
+    for t in ("month", "subs", "cheaper", "codes", "plan", "split"):
+        await tab(pg, t); await pg.wait_for_timeout(200); assert await pg.evaluate(fits), f"{t} fits at 1440"
+    # lists run side by side
+    await tab(pg, "subs"); tops = await pg.evaluate("[...document.querySelectorAll('[data-out=subsList] .rows > *')].slice(0, 4).map(e => Math.round(e.getBoundingClientRect().top))")
+    assert tops[0] == tops[1] and tops[2] > tops[0], tops
+    # the side menu works like the tab bar, and a card keeps working inside a column
+    await pg.click("#tabbar [data-tab=month]"); await pg.wait_for_timeout(200)
+    assert await pg.locator("#tabbar [data-tab=month]").get_attribute("aria-current") == "page"
+    await pg.locator("[data-out=needs] [data-review=barely]").click(); await pg.wait_for_timeout(200)
+    assert await pg.evaluate("document.querySelectorAll('#view > .cols').length") == 1, "the columns are rebuilt once, not stacked"
+    # a focused screen (a statement to check) stays one readable column
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
+    assert not await pg.evaluate("document.getElementById('view').classList.contains('wide')") and (await box("#view"))[2] <= 800 and await pg.evaluate(fits)
+    await pg.click("[data-import-cancel]"); await pg.wait_for_timeout(200)
+    # shrink the window to a phone and the phone layout is back; widen it and the columns return
+    await pg.set_viewport_size({"width": 390, "height": 844}); await pg.wait_for_timeout(350)
+    tb = await box("#tabbar"); assert tb[1] > 700 and tb[2] == 390 and await pg.evaluate("document.querySelectorAll('#view .cols').length") == 0 and await pg.evaluate(fits), tb
+    await pg.set_viewport_size({"width": 1440, "height": 900}); await pg.wait_for_timeout(350)
+    assert await pg.evaluate("document.querySelectorAll('#view > .cols > .col').length") == 2
+    # every size in between and beyond: tablets upright and sideways, small laptops, a big monitor
+    for w, h in ((600, 960), (768, 1024), (820, 1180), (1024, 768), (1180, 820), (1280, 720), (1366, 768), (1536, 864), (1920, 1080), (2560, 1440)):
+        await pg.set_viewport_size({"width": w, "height": h}); await pg.wait_for_timeout(300)
+        for t in ("month", "subs", "plan", "split"):
+            await tab(pg, t); await pg.wait_for_timeout(150); assert await pg.evaluate(fits), f"{t} fits at {w}x{h}"
+        side = (await box("#tabbar"))[0] == 0 and (await box("#tabbar"))[2] < 300
+        assert side == (w >= 1024), f"side menu at {w}"
+        vw = (await box("#view"))[2]; assert vw <= 1400 and vw >= min(w, 560) - 2, f"content width {vw} at {w}"
+    # the welcome on a computer has no empty side strip
+    pg2 = await open_app(ctx, w=1440, h=900, welcome=True); await pg2.evaluate("window.__kwErasing = true; localStorage.clear()"); await pg2.reload(); await pg2.wait_for_timeout(500)
+    assert await pg2.evaluate("getComputedStyle(document.getElementById('tabbar')).display") == "none" and await pg2.evaluate("document.getElementById('main').getBoundingClientRect().left") == 0
+    assert not pg.errors and not pg2.errors, (pg.errors, pg2.errors)
 
 FILL_FORMS = """() => { const out = {};
   document.querySelectorAll('#view form, #view [data-pay] , #view details[open]').forEach((f, fi) => {
@@ -2906,7 +3164,7 @@ async def import_sets_renewal_dates(ctx):
     csv = os.path.join(TMP, "renew.csv")
     open(csv, "w").write("Date,Description,Amount\n2026-07-04,NETFLIX.COM,-15.49\n2026-08-04,NETFLIX.COM,-15.49\n2026-09-04,NETFLIX.COM,-15.49\n2026-09-01,PAYROLL ACME,3000\n")
     await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(400)
-    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(200)
+    await use_as_plan(pg); await pg.wait_for_timeout(200)
     n = [x for x in (await state(pg))["subs"] if x["name"].lower().startswith("netflix")][0]
     assert n["renewDay"] == 4 and (await state(pg))["example"] is False
 
@@ -3077,13 +3335,13 @@ async def statement_in_another_currency(ctx):
     await pg.locator(".fx-opt input[value=switch]").check(); await pg.wait_for_timeout(150)
     body = await text(pg, "[data-out=importBody]"); assert "£10/mo" in body and "$" not in body, "previewed in the statement's own currency"
     await pg.locator(".fx-opt input[value=convert]").check(); await pg.wait_for_timeout(120)
-    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(250)
+    await use_as_plan(pg); await pg.wait_for_timeout(250)
     st = await state(pg); n = [x for x in st["subs"] if x["name"].lower().startswith("netflix")][0]
     assert n["price"] == 12.5 and st["income"] == 2500 and st["cur"] == "USD" and st["imported"]["cur"] == "GBP" and st["imported"]["rate"] == 1.25
     # switching the plan instead
     await pg.set_input_files("#stmt", gbp); await pg.wait_for_timeout(400)
     await pg.locator(".fx-opt input[value=switch]").check(); await pg.wait_for_timeout(120)
-    await pg.click("[data-import-apply=replace]"); await pg.wait_for_timeout(250)
+    await use_as_plan(pg); await pg.wait_for_timeout(250)
     st = await state(pg); assert st["cur"] == "GBP" and [x for x in st["subs"] if x["name"].lower().startswith("netflix")][0]["price"] == 10
     # no symbols in the file: nothing is assumed, but the question is one tap away
     plain = os.path.join(TMP, "plain.csv"); open(plain, "w").write("Date,Description,Amount\n2026-09-04,NETFLIX.COM,-10.00\n2026-09-01,PAYROLL ACME,2000.00\n")
