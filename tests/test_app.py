@@ -2922,6 +2922,47 @@ async def a_pdf_statement_with_wrapped_lines_and_columns_is_read_whole(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def names_are_read_past_the_banks_codes(ctx):
+    # Banks wrap the name in references, account numbers and card numbers. The person or the shop is what is shown, never the code.
+    L = ["Account Title: ALI RAZA KHAN", "Date,Description,Debit,Credit"]
+    for m in ("07", "08", "09"):
+        L += [f"01/{m}/2026,SALARY ACME PVT LTD,,200000",
+              f"03/{m}/2026,Funds Transfer SM2120013{m}A8B0A6 FR ALI RAZA KHAN IBAN XXXX-1723 Thru Raast XYZ38358780{m}de143d6891f,,5000",
+              f"04/{m}/2026,Funds Transfer 23189419170909{m} TO HBL 22797901820499 8864141709{m} Thru Digital Banking PK54HABB0022797901820499 SARA NOOR,1500,",
+              f"05/{m}/2026,Funds Transfer SM2016325608{m}CCB TO ALI RAZA KHAN IBAN XXXX-4458 Thru Raast MBMB201132568172274{m},6000,",
+              f"06/{m}/2026,Funds Transfer SM2016303887{m}C45 TO MARYAM ZEHRA HASSAN IBAN XXXX-3020 Thru Raast MBMB201130387661727{m},1000,",
+              f"07/{m}/2026,Debit Card/POS 4687122002{m} 5366190+++++6162 07/{m} 6264153222{m} PKR 1641.69 200235 21{m} 5366190 FOOD PANDA KARACHI,1641.69,",
+              f"09/{m}/2026,Debit Card/POS 2495290043{m} 5366190+++++6162 09/{m} 0920000056{m} PKR 3216.00 004316 20{m} 5366190 FAZAL DIN'S PHARMA P LAHORE,3216,",
+              f"10/{m}/2026,Debit Card/POS 0898030012{m} Google G1SK006M London TRANSACTION AMT PKR 49.00 USD AMT .18 /USD Rate 277.95,50.03,",
+              f"10/{m}/2026,Card Trxn Chgs 0898030012{m} 6263220898{m} RATE 4.00% + FED,2.32,",
+              f"10/{m}/2026,With-Holding Tax 0898030012{m} 6263220898{m} 5.00% PUNJAB SALES TAX ON IT SERVICES,2.50,",
+              f"11/{m}/2026,Trxn Charges HAWlowBalChAug26 Transaction charges,50,"]
+    L += ["12/09/2026,Funds Transfer SM99887766AB12 FR OMAR FIRST CURRENT TRADERS IBAN XXXX-9911 Thru Raast XYZ12ab34,,700"]
+    pg, al = await read_csv(ctx, "codes.csv", "\n".join(L) + "\n", "PKR")
+    v = await stx(pg, "#view"); assert "Your statement" in v
+    # people: the name after TO or FR, or the name at the very end, in full
+    out = await stx(pg, "[data-moves=out]"); inn = await stx(pg, "[data-moves=in]")
+    assert "Sara Noor" in out and "Maryam Zehra Hassan" in out, out
+    assert "Omar First Current Traders" in inn, inn
+    titles = await pg.evaluate("[...document.querySelectorAll('.st-item .move-txt > span')].map(e => e.textContent.trim())")
+    assert not any(re.match(r"(Sm|Xyz|Mbmb|Pk|Hbl|Funds|Debit|Pkr)\b", t) for t in titles), titles
+    # your own name, in both directions, every transaction
+    oo = await stx(pg, "[data-moves=own-out]"); oi = await stx(pg, "[data-moves=own-in]")
+    assert oo.count("TO ALI RAZA KHAN IBAN XXXX-4458") == 3 and "PKR 18,000" in oo and oi.count("FR ALI RAZA KHAN IBAN XXXX-1723") == 3 and "PKR 15,000" in oi, (oo, oi)
+    assert "Ali Raza" not in out and "Ali Raza" not in inn
+    # shops: the name after the card numbers, without the town
+    sp = await stx(pg, "[data-st=spending]")
+    assert "Eating out" in sp and "mostly Food Panda" in sp and "Karachi" not in sp, sp
+    assert "Health" in sp and "Fazal Din's Pharma" in sp and "Lahore" not in sp, sp
+    sb = await stx(pg, "[data-st=subs]"); assert "Google" in sb and "charged monthly" in sb and "London" not in v.replace("G1SK006M London", "") and "Pkr Food" not in v, sb   # the same charge every month is a subscription
+    # the bank's own charges and the tax it holds back are named for what they are
+    assert "Bank charges" in sp and "Tax payments" in await stx(pg, "[data-st=bills]"), sp
+    j = " || ".join(al); assert "Sent to Sara Noor" in j and "Sent to Maryam Zehra Hassan" in j and "Sent to yourself" in j and "Received from yourself" in j and "Bank charges" in j, j[:500]
+    # a word inside another word decides nothing: FIRST is not the tax office, CURRENT is not rent
+    assert "Omar First Current Traders" not in await stx(pg, "[data-st=bills]") and "Housing" not in v
+    assert not pg.errors, pg.errors
+
+@test
 async def subscriptions_are_found_properly_in_a_statement(ctx):
     L = ["Date,Description,Amount"]
     for m in ("04", "05", "06", "07"):
@@ -2933,18 +2974,18 @@ async def subscriptions_are_found_properly_in_a_statement(ctx):
     items = await pg.evaluate("[...document.querySelectorAll('[data-st=subs] .st-item')].map(e => [e.dataset.stItem, e.innerText.replace(/\\u00a0/g, ' ')])")
     by = dict(items)
     # two things billed by the same store, month after month, are two subscriptions
-    assert "sub:APPLE COM 2.99" in by and "sub:APPLE COM 10.99" in by and "4 charges" in by["sub:APPLE COM 2.99"] and "$10.99/mo" in by["sub:APPLE COM 10.99"], list(by)
+    assert "sub:APPLE 2.99" in by and "sub:APPLE 10.99" in by and "4 charges" in by["sub:APPLE 2.99"] and "$10.99/mo" in by["sub:APPLE 10.99"], list(by)
     # a price that went up is still one subscription, at the new price
     assert "$9.99/mo" in by["sub:HULU"] and "4 charges" in by["sub:HULU"], by.get("sub:HULU")
     # an unknown name charged the same amount every month is one too, and says why
-    assert "charged monthly" in by["sub:QUIET BOOKS"] and "charged monthly" not in by["sub:HULU"], by.get("sub:QUIET BOOKS")
+    assert "charged monthly" in by["sub:QUIET BOOKS CLUB"] and "charged monthly" not in by["sub:HULU"], by.get("sub:QUIET BOOKS CLUB")
     # a well-known service counts even when it was charged once
     assert "1 charge " in by["sub:GRAMMARLY"] + " ", by.get("sub:GRAMMARLY")
     # coffee every week, a pharmacy, a friend and a one-off shop are not subscriptions
     assert len(by) == 5 and not any(k in " ".join(by) for k in ("COFFEE", "PHARMACY", "DANA", "GADGET")), list(by)
     sub = await stx(pg, "[data-st=subs]"); assert "APPLE.COM/BILL" in sub and "(5)" in sub, sub
     await use_as_plan(pg); await pg.wait_for_timeout(300)
-    st = await state(pg); assert sorted(s["name"] for s in st["subs"]) == ["Apple Com 10.99", "Apple Com 2.99", "Grammarly", "Hulu", "Quiet Books"], [s["name"] for s in st["subs"]]
+    st = await state(pg); assert sorted(s["name"] for s in st["subs"]) == ["Apple 10.99", "Apple 2.99", "Grammarly", "Hulu", "Quiet Books Club"], [s["name"] for s in st["subs"]]
     assert not pg.errors, pg.errors
 
 @test

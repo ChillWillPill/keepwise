@@ -1062,14 +1062,17 @@ const CAT_RULES = [
   ["Utilities",/ELECTRIC|ENERGY|WATER|GAS BILL|COMCAST|XFINITY|VERIZON|AT&T|T MOBILE|TMOBILE|INTERNET|BROADBAND|CON ED|BRITISH GAS|OCTOPUS|VODAFONE|EE LIMITED|JAZZ|ZONG|TELENOR|PTCL|K ELECTRIC|SUI GAS/],
   ["Insurance",/GEICO|INSURANCE|STATE FARM|PROGRESSIVE|ALLSTATE|AVIVA|DIRECT LINE|ADMIRAL|JUBILEE/],
   ["Loans",/LOAN|CREDIT CARD PAYMENT|STUDENT|FINANCE|AFFIRM|KLARNA/],
-  ["Subscriptions",/NETFLIX|SPOTIFY|HULU|DISNEY|ICLOUD|APPLE COM BILL|APPLE COM|ADOBE|AUDIBLE|PRIME|YOUTUBE|PARAMOUNT|PEACOCK|MAX\b|HBO|FITNESS|GYM|PELOTON|DROPBOX|MICROSOFT|OFFICE 365|OPENAI|CHATGPT|CLAUDE|ANTHROPIC|NOTION|DUOLINGO|PATREON|NOW TV|BRITBOX|CRUNCHYROLL|XBOX|PLAYSTATION|NINTENDO|CANVA|GRAMMARLY|LINKEDIN|TINDER|BUMBLE|HEADSPACE|CALM|NYTIMES|WSJ/],
+  ["Subscriptions",/NETFLIX|SPOTIFY|HULU|DISNEY|ICLOUD|APPLE COM BILL|APPLE COM|ADOBE|AUDIBLE|PRIME|YOUTUBE|PARAMOUNT|PEACOCK|\bMAX\b|HBO|FITNESS|GYM|PELOTON|DROPBOX|MICROSOFT|OFFICE 365|OPENAI|CHATGPT|CLAUDE|ANTHROPIC|NOTION|DUOLINGO|PATREON|NOW TV|BRITBOX|CRUNCHYROLL|XBOX|PLAYSTATION|NINTENDO|CANVA|GRAMMARLY|LINKEDIN|TINDER|BUMBLE|HEADSPACE|CALM|NYTIMES|WSJ/],
   ["Groceries",/TRADER JOE|KROGER|WHOLE FOODS|ALDI|TESCO|SAINSBURY|SAFEWAY|LIDL|WALMART|GROCERY|ASDA|COSTCO|CARREFOUR|IMTIAZ|METRO CASH|MORRISONS|WAITROSE/],
-  ["Dining",/STARBUCKS|CHIPOTLE|MCDONALD|DOORDASH|UBER EATS|GRUBHUB|RESTAURANT|CAFE|COFFEE|PIZZA|DELIVEROO|JUST EAT|GREGGS|FOODPANDA|KFC|SUBWAY|BURGER|DOMINO/],
+  ["Dining",/STARBUCKS|CHIPOTLE|MCDONALD|DOORDASH|UBER EATS|GRUBHUB|RESTAURANT|CAFE|COFFEE|PIZZA|DELIVEROO|JUST EAT|GREGGS|FOOD ?PANDA|KFC|SUBWAY|BURGER|DOMINO/],
   ["Transport",/UBER|LYFT|CAREEM|SHELL|EXXON|CHEVRON|\bBP\b|PSO|METRO|TRANSIT|PARKING|TFL|TRAINLINE|FUEL|PETROL/],
-  ["Health",/CVS|WALGREENS|PHARMACY|BOOTS|CLINIC|DENTAL|HOSPITAL/],
+  ["Health",/CVS|WALGREENS|PHARMA|CHEMIST|BOOTS|CLINIC|DENTAL|HOSPITAL/],
   ["Shopping",/AMAZON|TARGET|BEST BUY|ETSY|EBAY|ARGOS|DARAZ|IKEA|ZARA|H&M|NIKE|APPLE STORE/],
+  ["Bank",/CHARGES|\bCHGS?\b|\bFEES?\b|EXCISE DUTY|SERVICE CHARGE|SMS ALERT|\bFED\b|OVERDRAFT|MARKUP/],
   ["Transfers",/TRANSFER|\bTRF\b|\bTFR\b|\bIBFT\b|RAAST|1 ?LINK|\bFT\b|\bP2P\b|ZELLE|VENMO|CASH APP|\bWISE\b|REMIT|WESTERN UNION|MONEYGRAM|XOOM|PAYONEER|\bSWIFT\b|INWARD|OUTWARD|ATM|WITHDRAWAL|\bCASH\b|\bCWD\b|EASYPAISA|JAZZCASH|SADAPAY|NAYAPAY|\bUPI\b|\bIMPS\b|\bNEFT\b|\bRTGS\b|FASTER PAYMENT|SEND MONEY|MONEY SENT|MONEY RECEIVED/]
 ];
+// A rule matches whole words: IRS must not fire on FIRST, nor RENT on CURRENT. Short names must match exactly; longer ones may carry an ending.
+CAT_RULES.forEach(r => { r[1] = new RegExp(r[1].source.split("|").map(a => a.includes("\\b") ? a : "\\b" + a + (a.replace(/[^A-Z]/g, "").length <= 4 ? "S?\\b" : "")).join("|")); });
 // ---- money that moves between people and accounts (not shopping, not bills) ----
 // A transfer is not automatically spending: it may be rent, money to family, or your own savings account.
 // So transfers are pulled out, grouped by the other person's name, and shown apart for you to decide.
@@ -1077,7 +1080,29 @@ const CASH_RE = /\bATM\b|CASH WITHDRAWAL|CASH WDL|\bCWD\b|WITHDRAWAL|CASH DEPOSI
 const REMIT_RE = /REMIT|WESTERN UNION|MONEYGRAM|XOOM|\bRIA\b|\bWISE\b|PAYONEER|\bSWIFT\b|INWARD|FOREIGN|\bPRI\b|WORLDREMIT|\bTT\b/;
 const MOVE_STOP = new Set("TRANSFER TRANSFERS TRF TFR IBFT RAAST LINK FUNDS FUND FT P2P TO FROM FR VIA MB IB INTERNET MOBILE BANKING BANK ACCOUNT AC ACC ACCT NO REF TXN TRANSACTION PAYMENT SENT RECEIVED RECEIVE INWARD OUTWARD IN OUT ZELLE VENMO CASH APP WISE EASYPAISA JAZZCASH SADAPAY NAYAPAY UPI IMPS NEFT RTGS ID CR DR ONLINE INSTANT OF THE MR MRS MS MONEY SEND FASTER REMITTANCE REMIT HOME FOREIGN WESTERN UNION MONEYGRAM ATM WITHDRAWAL DEPOSIT HBL UBL MCB MEEZAN ALFALAH ALLIED ASKARI FAYSAL HABIB STANDARD CHARTERED NBP JS SONERI LIMITED LTD PVT".split(" "));
 const upperWords = d => String(d).toUpperCase().replace(/[^A-Z ]/g, " ").split(/\s+/).filter(w => w.length > 1);
-function partyKey(desc){ const w = upperWords(desc).filter(x => !MOVE_STOP.has(x)); return w.slice(0, 3).join(" "); }
+// A description is cut into words and codes. Anything with a digit in it (a reference, an account number, a masked IBAN)
+// is a code, never part of a name, so "SM21200134A8B0A6 FR ALI RAZA IBAN XXXX-1723" reads as the person and not the reference.
+function nameTokens(desc){
+  return String(desc).toUpperCase().split(/\s+/).filter(Boolean).map(t => /\d/.test(t) || /^X{2,}[-X]*$/.test(t) ? null : t.replace(/[^A-Z&' ]+/g, " ").split(/\s+/).map(w => w.replace(/^'+|'+$/g, "")).filter(Boolean));
+}
+const DIR_WORDS = new Set(["TO", "FR", "FROM", "FAVOURING", "BENEFICIARY", "PAYEE", "SENDER"]);
+const PARTY_STOP = new Set([...MOVE_STOP, ..."THRU THROUGH DIGITAL IBAN BIC PK GB US AE IN BY ORDER CONF CONFIRMATION WEB PURPOSE TRXN TXNS AMT RATE CHARGES CHGS FEE TAX PKR USD EUR GBP AED INR SAR CAD AUD BANKISLAMI BAHL HMB SCB SUMMIT SILK DUBAI ISLAMIC BOP SINDH KHYBER BARAKA SAMBA CITI CITIBANK CHASE WELLS FARGO BOA BOFA HSBC BARCLAYS LLOYDS NATWEST SANTANDER MONZO REVOLUT STARLING ICICI HDFC SBI AXIS KOTAK PAYTM GPAY PHONEPE PAYPAL MOBILINK MICROFINANCE TELENOR KONNECT DEBIT CREDIT CARD POS".split(" ")]);
+// The other person's name: the words that follow TO or FROM, or failing that the last run of words in the line
+// (many banks print the name at the very end, after the account number).
+function partyKey(desc){
+  const runs = []; let cur = null, pending = false;
+  for (const tok of nameTokens(desc)){
+    if (!tok){ cur = null; continue; }
+    for (const w of tok){
+      if (DIR_WORDS.has(w)){ cur = null; pending = true; continue; }
+      if (PARTY_STOP.has(w)){ cur = null; continue; }
+      if (!cur){ cur = {w: [], dir: pending}; pending = false; runs.push(cur); }
+      cur.w.push(w);
+    }
+  }
+  const good = runs.filter(r => r.w.some(x => x.length > 1)); if (!good.length) return "";
+  return (good.find(r => r.dir) || good[good.length - 1]).w.slice(0, 4).join(" ");
+}
 function moveKind(desc, amt){
   const u = " " + String(desc).toUpperCase().replace(/[^A-Z0-9 ]/g, " ") + " ";
   if (CASH_RE.test(u)) return "cash";
@@ -1091,16 +1116,27 @@ function holderName(text){
 }
 const sameName = (key, holder) => { if (!key || holder.length < 2) return false; const k = key.split(" "); return k.filter(w => holder.includes(w)).length >= Math.min(2, k.length) && k.length >= 2; };
 const catOfDesc = d => { const u = " " + d.toUpperCase().replace(/[^A-Z0-9& ]/g, " ") + " "; for (const [c, re] of CAT_RULES) if (re.test(u)) return c; return "Other"; };
-const NEEDS_CATS = new Set(["Housing","Utilities","Insurance","Loans","Groceries","Transport","Health","Tax"]);
+const NEEDS_CATS = new Set(["Housing","Utilities","Insurance","Loans","Groceries","Transport","Health","Tax","Bank"]);
 const BILL_CAT = new Set(["Housing","Utilities","Insurance","Loans"]);
-const CAT_LABEL = {Groceries:"Groceries", Dining:"Eating out", Transport:"Getting around", Health:"Health", Shopping:"Shopping", Other:"Everything else", Transfers:"Transfers and cash", Tax:"Tax payments"};
+const CAT_LABEL = {Groceries:"Groceries", Dining:"Eating out", Transport:"Getting around", Health:"Health", Shopping:"Shopping", Other:"Everything else", Transfers:"Transfers and cash", Tax:"Tax payments", Bank:"Bank charges"};
 
+const MERCH_STOP = new Set([...[...STOP_WORDS].filter(w => !/^(APPLE|GOOGLE|PAYPAL)$/.test(w)), ..."PKR USD EUR GBP AED INR SAR CAD AUD AMT TRANSACTION RATE ENDING FED PVT PRIVATE LIMITED CHECKCARD DEBITCARD PURCHASES INTL".split(" ")]);
+const CARD_LINE = /CARD|\bPOS\b|PURCHASE/, STORE_FRONT = /^(APPLE|GOOGLE|PAYPAL)$/;
+// The shop's name: the first run of real words, with the bank's codes, card numbers and currency left out. On a card
+// line the last word is usually the town, so it is dropped when the name is long enough without it.
 function merchantKey(desc){
-  const words = desc.toUpperCase().replace(/[^A-Z& ]/g, " ").split(/\s+/).filter(w => w.length > 1);
+  const up = String(desc).toUpperCase(), runs = []; let cur = null;
+  for (const tok of nameTokens(desc)){ if (!tok){ cur = null; continue; } for (const w of tok){ if (MERCH_STOP.has(w)) continue; if (!cur){ cur = []; runs.push(cur); } cur.push(w); } }
+  let r = runs.find(x => x.some(w => w.length > 1));
+  if (r){ r = r.slice();
+    if (CARD_LINE.test(up)){ if (r.length >= 3 && r[r.length - 1].length === 2) r.pop(); if (r.length >= 3) r.pop(); }
+    if (r.length > 1 && STORE_FRONT.test(r[0])) r.shift();
+    r = r.filter(w => w.length > 1).slice(0, 3); if (r.length) return r.join(" "); }
+  const words = up.replace(/[^A-Z& ]/g, " ").split(/\s+/).filter(w => w.length > 1);
   const kept = words.filter((w, i) => !STOP_WORDS.has(w) || (i === 0 && KEEP_FIRST.test(w) && words.length === 1));
-  return (kept.slice(0, 2).join(" ") || words.slice(0, 2).join(" ") || desc.toUpperCase()).trim();
+  return (kept.slice(0, 2).join(" ") || words.slice(0, 2).join(" ") || up).trim();
 }
-const titleCase = k => k.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase()).replace(/\bIcloud\b/, "iCloud").replace(/\bAt&t\b/i, "AT&T");
+const titleCase = k => k.toLowerCase().replace(/(^|[\s-])[a-z]/g, c => c.toUpperCase()).replace(/\bIcloud\b/, "iCloud").replace(/\bAt&t\b/i, "AT&T");
 
 // ---- dates and amounts ----
 const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -1383,7 +1419,7 @@ function analyzeStatement(tx, fileName, holder, me){
         rep.forEach(([a, l]) => addSub(`${k} ${a}`, l, `${name} ${a}`, true)); continue; }
       addSub(k, list, name, true); continue;
     }
-    if (cad && !["Groceries", "Transfers", "Transport", "Dining", "Health"].includes(cat) && lastAmt < 250){ addSub(k, list, name, false); continue; }
+    if (cad && !["Groceries", "Transfers", "Transport", "Dining", "Health", "Bank"].includes(cat) && lastAmt < 250){ addSub(k, list, name, false); continue; }
     (spend[cat] = spend[cat] || []).push([name, total, list]);
   }
   subs.sort((a, b) => b.monthly - a.monthly); bills.sort((a, b) => b.monthly - a.monthly);
