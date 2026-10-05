@@ -3477,7 +3477,7 @@ async def date_fields_open_on_a_tap_and_keep_to_sensible_limits(ctx):
         el = pg.locator(sel).first; before = await pg.evaluate("window.__picks")
         st = await el.evaluate("e => [getComputedStyle(e).backgroundImage.slice(0, 4), getComputedStyle(e).position]")
         assert st == ["url(", "relative"], f"{sel}: the field carries its own calendar mark: {st}"
-        b = await el.bounding_box(); await pg.mouse.click(b["x"] + 14, b["y"] + b["height"] / 2); await pg.wait_for_timeout(80)   # a tap at the far left, away from any icon; assert await pg.evaluate("window.__picks") == before + 1, f"{sel}: a tap opens the calendar"
+        await el.evaluate("e => e.dispatchEvent(new MouseEvent('click', {bubbles: true}))"); await pg.wait_for_timeout(80)   # a tap on the field itself; sent as an event so no real calendar window opens over the test; assert await pg.evaluate("window.__picks") == before + 1, f"{sel}: a tap opens the calendar"
     # --- adding a subscription: a monthly one renews on a day, a yearly one on a date ahead
     await tab(pg, "subs"); await pg.click("text=Add a subscription"); f = "form[data-form=addSub] "
     assert await pg.locator(f + "[data-renew-mo]").is_visible() and not await pg.locator(f + "[data-renew-yr]").is_visible()
