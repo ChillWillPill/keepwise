@@ -3424,6 +3424,12 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     # More: income, statements, trips and the rest
     await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(250)
     assert await has(".import-card") == 1 and await has("#m-income") == 1 and await has("[data-out=trips]") == 1 and await has("[data-out=historyCard]") == 1 and await has(".space-switch") == 1
+    tip = pg.locator(".import-card [data-info-tip=import]"); assert await tip.count() == 0 and "clear photo" not in await pg.inner_text(".import-card"), "the how-to waits behind the (i)"
+    await pg.click(".import-card [data-info=import]"); await pg.wait_for_timeout(150); assert "clear photo of a paper statement" in await tip.inner_text()
+    await pg.click(".import-card [data-info=import]"); await pg.wait_for_timeout(150); assert await tip.count() == 0
+    await pg.set_input_files("#stmt", {"name": "holiday.txt", "mimeType": "text/plain", "buffer": b"not a statement at all"}); await pg.wait_for_timeout(900)
+    assert await tip.count() == 1 and "CSV or PDF" in await tip.inner_text(), "a file that cannot be read brings the how-to up by itself"
+    await pg.evaluate("document.getElementById('toast').hidden = true")
     assert await has("[data-out=envelopes]") == 0
     # a jump by name finds its part: the owl logs spending and lands on its row in Budget
     await ask_type(pg, "coffee 4"); await pg.wait_for_timeout(600)

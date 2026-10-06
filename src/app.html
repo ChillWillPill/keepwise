@@ -1103,7 +1103,7 @@ const V = {};
 const OUT = {};
 // Big numbers keep their full size, and shrink only when a long amount (PKR 121,256.99) would not fit the screen.
 function importCard(){
-  return `<section class="card import-card"><div><h3>Import a bank statement</h3><p class="muted small">${S.imported ? `Last import: ${esc(S.imported.file)}, ${monthsLabel(S.imported.from)} to ${monthsLabel(S.imported.to)}.` : "CSV or PDF from your bank, or a clear photo of a paper statement. KeepWise finds your pay, bills and every subscription. Read on this phone only."}</p></div>
+  return `<section class="card import-card"><div><h3 class="h-info">Import a bank statement${infoBtn("import", "About importing a statement")}</h3>${UI.info === "import" || UI.importFail ? `<p class="info-tip" role="note" data-info-tip="import">CSV or PDF from your bank, or a clear photo of a paper statement. KeepWise finds your pay, bills and every subscription. Read on this phone only.</p>` : ""}${S.imported ? `<p class="muted small">Last import: ${esc(S.imported.file)}, ${monthsLabel(S.imported.from)} to ${monthsLabel(S.imported.to)}.</p>` : ""}</div>
     <button class="btn primary" type="button" data-import-open>${S.imported ? "Import another statement" : "Choose a statement"}</button></section>`;
 }
 const avatarHue = name => { let h = 0; for (const ch of String(name)) h = (h * 33 + ch.charCodeAt(0)) % 360; return h; };
@@ -5541,10 +5541,11 @@ $("stmt").addEventListener("change", e => { const file = e.target.files[0]; e.ta
 // neither the password nor the file.
 async function openStatement(file, password){
   toast("Reading your statement…");
-  try { STMT.result = await readStatementFile(file, password); UI.pdfLock = null; const rc = STMT.result.cur;
+  try { STMT.result = await readStatementFile(file, password); UI.pdfLock = null; UI.importFail = false; const rc = STMT.result.cur;
     STMT.fx = rc && rc !== S.cur && !(CUR_FAMILY[rc] && CUR_FAMILY[rc] === CUR_FAMILY[S.cur]) ? {from: rc, mode: "convert", rate: ""} : null; UI.inbox = false; $("toast").hidden = true; render(false); }
   catch(err){
     if (err && err.locked){ UI.pdfLock = {file, wrong: !!err.wrong}; UI.inbox = false; UI.account = false; $("toast").hidden = true; render(false); const i = view.querySelector("[data-form=pdfLock] input"); if (i) i.focus(); return; }
+    UI.importFail = true; render(true);   // the file could not be read: say what works, right on the card
     toast(err && err.message ? err.message : "Couldn't read that file."); }
 }
 V.pdfLock = () => `<div class="inline" style="justify-content:space-between"><h1>Locked statement</h1><button class="btn small" type="button" data-pdf-cancel>Cancel</button></div>
