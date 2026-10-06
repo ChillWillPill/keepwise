@@ -14,11 +14,11 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27;
-  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; color-scheme:dark}}
+  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}}
 :root[data-theme="light"]{color-scheme:light}
 :root[data-theme="dark"]{
   --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27;
-  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; color-scheme:dark}
+  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}
 
 *{box-sizing:border-box}
 .brand b,h1,h2,.big,.summary3 b,.bigsoft{font-optical-sizing:auto;font-weight:600;letter-spacing:-.025em}
@@ -84,8 +84,11 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .wise-fab.moving{transform:scale(1.12);box-shadow:0 10px 26px rgba(0,0,0,.28);cursor:grabbing}
 .app.typing .wise-fab,.app.welcoming .wise-fab,.app.touring .wise-fab{display:none}
 .ask-sheet{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;padding:calc(76px + env(safe-area-inset-top,0px)) 12px 12px}
-.ask-back{position:absolute;inset:0;border:0;padding:0;background:rgba(20,26,22,.38);cursor:default}
+.ask-back{position:absolute;inset:0;border:0;padding:0;background:var(--scrim,rgba(20,26,22,.38));cursor:default}
 .ask-panel{position:relative;width:100%;max-width:520px;max-height:100%;overflow-y:auto;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+/* In the dark the panel shared the page's colour and sank into it: it gets a green-tinted surface of its own, a lit edge and a deeper shade behind. */
+.card.ask-panel{background:var(--sheet,var(--card));border-color:var(--sheet-line,var(--line));box-shadow:var(--sheet-lift,0 18px 50px rgba(0,0,0,.3))}
+.ask-panel .ask-out,.ask-panel input{background:var(--sheet-in,var(--bg))}
 @media (prefers-reduced-motion:no-preference){.ask-panel{animation:viewin .18s ease-out both}}
 @media print{.wise-fab,.ask-sheet{display:none!important}}
 .tab{appearance:none;border:0;background:none;color:var(--muted);font:500 clamp(.6rem,2.9vw,.78rem)/1.2 var(--body);display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 8px;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
@@ -263,7 +266,13 @@ details summary::-webkit-details-marker{display:none}
 .line.paid>.tick+div,.line.paid .tnum{color:var(--muted)}
 .paid-sum{margin:0;padding:10px 0 12px;border-top:1px solid var(--line)}
 .spend-g{border-top:1px solid var(--line)}.spend-g>.line{border-top:0}
-.spend-open{appearance:none;border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;flex:1 1 0;min-width:0;cursor:pointer}
+.spend-open{appearance:none;border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;flex:1 1 0;min-width:0;cursor:pointer;display:flex;align-items:center;gap:11px}
+.sp-ic{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--green-soft);color:var(--green)}.sp-ic svg{width:20px;height:20px}
+.sp-txt{min-width:0;flex:1}
+.sp-pick{display:flex;flex-direction:column;gap:6px;padding:10px 0 8px}
+.sp-icons{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px}.sp-icons::-webkit-scrollbar{display:none}
+.sp-icons .icon-opt{flex:none;width:40px;height:40px;min-height:40px;aspect-ratio:auto}
+.spend-log .sp-pick+.line,.spend-log .sp-pick+form{border-top:1px solid var(--line)}
 .spend-open:focus-visible{outline:2px solid var(--green);outline-offset:4px;border-radius:8px}
 .spend-log{margin:0 0 10px;padding:2px 12px;border-radius:12px;background:var(--bg)}
 .spend-log .line{padding:9px 0;font-size:.92rem}.spend-log .line:first-child{border-top:0}
@@ -1021,6 +1030,21 @@ I.home = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-widt
 I.car = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-3l2-5h12l2 5v3z"/><path d="M4 13h16"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/></svg>';
 I.heart = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
 I.cake = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M4 15.5c2 1.3 4 1.3 6 0s4-1.3 6 0 3 .7 4 0"/><path d="M12 7.5V11"/><path d="M12 3.5c1 1.2 1 2.3 0 3-1-.7-1-1.8 0-3z"/></svg>';
+I.coffee = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5v2.5M12 3.5v2.5"/></svg>';
+I.fuel = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V6a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v14"/><path d="M4 20h11"/><path d="M7.5 8h4v3.5h-4z"/><path d="M14 11h1.5a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 0 3 0V9l-2.5-2.5"/></svg>';
+I.health = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>';
+I.phone = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 17.5h2"/></svg>';
+I.smoke = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="14" width="14" height="4" rx="1"/><path d="M13 14v4"/><path d="M20 14v4"/><path d="M17 6c2 1 3 2.2 3 4.5"/><path d="M13.500 6.500c1.500.5 2.500 1.700 2.500 3.500"/></svg>';
+I.fun = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8h10a4 4 0 0 1 4 4.500L20.500 16a2.500 2.500 0 0 1-4.500 1l-1-2H9l-1 2a2.500 2.500 0 0 1-4.500-1L3 12.500A4 4 0 0 1 7 8z"/><path d="M8 11v3M6.500 12.500h3"/><path d="M16 11.500h.01M18 13.500h.01"/></svg>';
+I.family = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.500" cy="8" r="3"/><circle cx="17" cy="9.500" r="2.300"/><path d="M3 19c0-3 2.500-5 5.500-5s5.500 2 5.500 5"/><path d="M15.500 14.200c3 0 5.500 1.600 5.500 4.800"/></svg>';
+// One-off spending wears a small icon so a glance says what it was. KeepWise picks one from the name; the person can
+// choose another, and that choice is remembered for the name.
+const SPEND_ICONS = [["food", "Food"], ["coffee", "Coffee or tea"], ["bag", "Shopping"], ["fuel", "Fuel"], ["car", "Car and rides"], ["travel", "Travel"], ["home", "Home"], ["health", "Health"], ["phone", "Phone and internet"], ["fun", "Fun"], ["film", "Movies and shows"], ["gift", "Gift"], ["family", "Family and friends"], ["smoke", "Smoking"], ["work", "Work"], ["cash", "Cash and money"], ["receipt", "Something else"]];
+const SPEND_GUESS = [["fuel", /petrol|fuel|diesel|\bcng\b|\bgas\b/], ["car", /\bcar\b|uber|careem|taxi|\bcab\b|ride|parking|toll|mechanic|tyre|tire|bike|rickshaw/], ["coffee", /coffee|chai|\btea\b|cafe|latte|starbucks/],
+  ["smoke", /cigar|smok|vape|tobacco/], ["food", /food|lunch|dinner|breakfast|dine|dining|eat|restaurant|pizza|burger|deliver|snack|biryani|meal|grocer|bakery/], ["health", /pharm|medic|doctor|clinic|hospital|dentist|\bgym\b/],
+  ["phone", /phone|mobile|\bsim\b|internet|wifi|recharge|top.?up|\bdata\b/], ["film", /movie|cinema|netflix|show\b/], ["fun", /game|concert|party|club|bowling|arcade/], ["gift", /gift|present|birthday/], ["travel", /flight|hotel|trip|\bbus\b|train|ticket|visa/],
+  ["home", /\brent\b|house|home|repair|plumb|furniture|electric/], ["family", /family|kids?\b|school|mom|dad|brother|sister|wife|husband/], ["bag", /shop|cloth|shoe|amazon|mall|market|store/], ["cash", /cash|\batm\b|\(split\)|paid you back|refund/], ["work", /work|office|client/]];
+const spendIconKey = name => { const k = String(name || "").trim().toLowerCase(), own = S.spendIcons && S.spendIcons[k]; if (own && I[own]) return own; const g = SPEND_GUESS.find(([, re]) => re.test(k)); return g ? g[0] : "receipt"; };
 const SPLIT_ICONS = [["", "Match the tag"], ["food", "Food"], ["travel", "Travel"], ["home", "Home"], ["car", "Car"], ["gift", "Gift"], ["cake", "Birthday"], ["heart", "Wedding or love"], ["film", "Movie"], ["bag", "Shopping"], ["work", "Work"], ["cash", "Money"], ["receipt", "Bill"]];
 // After closing an edit form, bring the card back into view: the form was taller than the card, so the list moved up under it.
 const showSplitCard = id => { if (!id) return; const el = document.querySelector(`[data-split="${id}"]`); if (el) el.scrollIntoView({block: "nearest"}); };
@@ -1912,7 +1936,7 @@ function askCard(sheet){ return `<section class="card${sheet ? " ask-panel" : ""
     ${UI.info === "ask" ? `<div class="ask-howto"><p class="label">How to use it</p><div data-out="howto">${OUT.howto()}</div></div>` : ""}
     <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 160px">${voiceCan() ? `<button class="icon-btn" type="button" id="ask-mic" data-ask-mic aria-label="Speak instead of typing" aria-pressed="false">${MIC}</button>` : ""}<button class="btn" type="submit">Ask</button></form>
     <div id="ask-out" class="ask-out" ${ASK.last ? "" : "hidden"}>${esc(ASK.last)}</div>
-    <div class="chips ask-chips" data-scroll-x><button class="chip" type="button" data-plain style="font-weight:700">Say it plainly</button>${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+    <div class="chips ask-chips" data-scroll-x><button class="chip" type="button" data-plain style="font-weight:700">Say it plainly</button>${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"What do I spend most on?","Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
   </section>`; }
 const askSheet = () => `<div class="ask-sheet" data-ask-sheet><button class="ask-back" type="button" data-ask-close aria-label="Close Ask KeepWise"></button>${askCard(true)}</div>`;
 V.month = () => {
@@ -2072,9 +2096,9 @@ function spendRow(g){
     ? `<form data-form="spendEdit" data-spend="${x.id}"><input name="amount" inputmode="decimal" enterkeyhint="done" value="${Math.abs(x.amount)}" aria-label="Amount"><input name="date" type="date" value="${esc(x.date || "")}" max="${isoDaysAgo(0)}" aria-label="Date"><button class="btn small primary" type="submit">Save</button><button class="btn small" type="button" data-spend-cancel>Cancel</button></form>`
     : `<div class="line" data-spend="${x.id}"><div class="muted">${esc(spendWhen(x))}${x.ocur ? ` · ${esc(fmtIn(x.orig, x.ocur))}` : ""}</div><div class="inline"><span class="tnum ${back ? "good" : ""}">${back ? "+" + fmt(-x.amount) : fmt(x.amount)}</span><button class="link plain" type="button" data-spend-edit>Edit</button><button class="link danger-link" type="button" data-spend-del>Remove</button></div></div>`;
   return `<div class="spend-g${open ? " open" : ""}" data-spend-g="${esc(g.key)}"><div class="line" data-spend="${last.id}">
-      <button class="spend-open" type="button" data-spend-open aria-expanded="${open}" aria-label="${esc(last.name)}, ${n === 1 ? "logged once" : "logged " + n + " times"}. ${open ? "Hide" : "Show"} the details"><div>${esc(last.name)}${n === 1 && last.ocur ? ` <span class="muted small">${esc(fmtIn(last.orig, last.ocur))}</span>` : ""}</div><div class="muted small">${n === 1 ? `${shortDate(last.date)} · ${back ? "money back" : "one time"}` : `${n} times this month · last ${shortDate(last.date)}`}</div></button>
+      <button class="spend-open" type="button" data-spend-open aria-expanded="${open}" aria-label="${esc(last.name)}, ${n === 1 ? "logged once" : "logged " + n + " times"}. ${open ? "Hide" : "Show"} the details"><span class="sp-ic" data-sp-ic="${spendIconKey(last.name)}" aria-hidden="true">${I[spendIconKey(last.name)]}</span><span class="sp-txt"><div>${esc(last.name)}${n === 1 && last.ocur ? ` <span class="muted small">${esc(fmtIn(last.orig, last.ocur))}</span>` : ""}</div><div class="muted small">${n === 1 ? `${shortDate(last.date)} · ${back ? "money back" : "one time"}` : `${n} times this month · last ${shortDate(last.date)}`}</div></span></button>
       <div class="inline"><span class="tnum ${back ? "good" : ""}">${back ? "+" + fmt(-total) : fmt(total)}</span>${again ? `<button class="btn small" type="button" data-spend-again aria-label="Log ${esc(last.name)} again, ${fmt(last.amount)}">Again</button>` : ""}</div></div>
-    ${open ? `<div class="spend-log">${g.items.map(entry).join("")}</div>` : ""}</div>`;
+    ${open ? `<div class="spend-log"><div class="sp-pick" role="group" aria-label="Icon for ${esc(last.name)}"><span class="muted small">Icon</span><div class="sp-icons">${SPEND_ICONS.map(([k, label]) => `<button type="button" class="icon-opt" data-spend-icon="${k}" aria-pressed="${spendIconKey(last.name) === k}" aria-label="${label}" title="${label}">${I[k]}</button>`).join("")}</div></div>${g.items.map(entry).join("")}</div>` : ""}</div>`;
 }
 function envDetail(k, C){
   if (k === "save"){
@@ -2167,9 +2191,38 @@ function voiceToggle(){
   VOICE.text = ""; VOICE.done = false;
   try { rec.start(); VOICE.rec = rec; VOICE.max = setTimeout(() => voiceFinish(true), 20000); voicePaint(); } catch(e){ VOICE.rec = null; toast("Could not start listening. Type instead."); }
 }
+// One-off spending by what it was. Each logged line has a kind (the icon on its row), so the owl can add a kind up,
+// say what a habit comes to, and rank the kinds. It reports what was logged and leaves the judging to the person.
+const SPEND_ASK = [["food", /\b(food|eating|eat|meals?|dining|restaurants?|lunch|dinner|breakfast|takeaway|takeout)\b/], ["coffee", /\b(coffee|tea|chai|cafes?)\b/], ["bag", /\b(shopping|shops?|clothes|clothing)\b/], ["fuel", /\b(fuel|petrol|gas|diesel)\b/],
+  ["car", /\b(car|rides?|taxi|taxis|uber|parking)\b/], ["travel", /\b(travel|flights?|hotels?)\b/], ["home", /\b(home|house|repairs?)\b/], ["health", /\b(health|medicine|pharmacy|doctor|gym)\b/], ["phone", /\b(phone|mobile|internet|recharge)\b/],
+  ["fun", /\b(fun|games?|gaming|going out|entertainment)\b/], ["film", /\b(movies?|cinema|shows?)\b/], ["gift", /\b(gifts?|presents?)\b/], ["family", /\b(family|friends|kids)\b/], ["smoke", /\b(smoking|cigarettes?|smokes?|vape|vaping|tobacco)\b/], ["work", /\b(work|office)\b/]];
+const spendKindLabel = k => k === "receipt" ? "Everything else" : (SPEND_ICONS.find(x => x[0] === k) || [k, k])[1];
+function spendAnswer(t, C, evenIfNone){
+  const all = spendsIn(C.planKey).filter(x => x.amount > 0 && !x.sid), sum = l => r2(l.reduce((a, x) => a + x.amount, 0)), mon = C.planMonth;
+  const year = v => `A year at this pace is about ${fmt(r2(v * 12))}.`, times = n => n === 1 ? "once" : `${n} times`;
+  const byName = l => { const m = new Map(); l.forEach(x => { const k = spendKey(x); if (!m.has(k)) m.set(k, {name: x.name, n: 0, v: 0}); const g = m.get(k); g.n++; g.v = r2(g.v + x.amount); }); return [...m.values()].sort((a, b) => b.v - a.v); };
+  // "what do I spend the most on"
+  if (/(spend|spent|spending).*\b(most|biggest|top)\b|\b(most|biggest|top)\b.*(spend|spent|spending|expense)|where (does|did|is) (my|the) money go/.test(t)){
+    if (!all.length) return evenIfNone ? `Nothing is logged as one-off spending in ${mon} yet. Tell me what you spend, like “coffee 4”, and I can add it up by kind.` : null;
+    const kinds = new Map(); all.forEach(x => { const k = spendIconKey(x.name); kinds.set(k, r2((kinds.get(k) || 0) + x.amount)); });
+    const top = [...kinds.entries()].sort((a, b) => b[1] - a[1]);
+    return `From what you’ve logged in ${mon}, most goes on ${spendKindLabel(top[0][0]).toLowerCase()}: ${top.slice(0, 4).map(([k, v]) => `${spendKindLabel(k)} ${fmt(v)}`).join(", ")}. One-off spending is ${fmt(sum(all))} in all.`;
+  }
+  if (!/how much|how many|spen[dt]|total|cost/.test(t)) return null;
+  // one thing by its own name: "how much on coffee"
+  const named = byName(all).filter(g => g.name.trim().length >= 3 && new RegExp("\\b" + g.name.trim().toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b").test(t)).sort((a, b) => b.name.length - a.name.length)[0];
+  if (named) return `${named.name}: ${times(named.n)} in ${mon}, ${fmt(named.v)}, from what you’ve logged.${named.n >= 2 ? " " + year(named.v) : ""}`;
+  // a whole kind: "how much on food"
+  const kind = (SPEND_ASK.find(([, re]) => re.test(t)) || [])[0]; if (!kind) return null;
+  const mine = all.filter(x => spendIconKey(x.name) === kind), label = spendKindLabel(kind);
+  if (!mine.length) return evenIfNone ? `Nothing is logged under ${label.toLowerCase()} in ${mon} yet.` : null;
+  const parts = byName(mine);
+  return `${label} in ${mon}, from what you’ve logged: ${fmt(sum(mine))} across ${mine.length} payment${mine.length === 1 ? "" : "s"}.${parts.length > 1 ? " " + parts.slice(0, 4).map(g => `${g.name} ${fmt(g.v)}`).join(", ") + "." : ""}${mine.length >= 2 ? " " + year(sum(mine)) : ""}`;
+}
 // Ask reads everything KeepWise holds on this phone: trips, loans, paydays, other income, charges coming up and the bell.
 function answerMore(t, C){
   const today = todayMid(), list = a => a.join("\n");
+  const sp = spendAnswer(t, C, false); if (sp) return sp;
   if (/\b(trip|trips|travel|holiday|vacation)\b/.test(t)){ const trips = (S.trips || []).slice().sort((a, b) => (b.start || "").localeCompare(a.start || "")), tr = activeTrip() || trips.find(x => tripState(x) === "ended") || trips[0];
     if (!tr) return "You have no trips or events yet. Plan one on the Month tab and its spending stays apart from your month.";
     const tot = tripTotal(tr), st = tripState(tr), b = +tr.budget || 0;
@@ -2187,6 +2240,7 @@ function answerMore(t, C){
   if (/\b(goal|saving for|target)\b/.test(t) && S.goalName){ return `${S.goalName}: ${fmt(C.toGoal)} goes to it this month${+S.goalAmt > 0 && C.toGoal > 0 ? `, so ${fmt(S.goalAmt)} takes about ${Math.ceil(S.goalAmt / C.toGoal)} months` : ""}.`; }
   if (/\b(codes?|promo)\b/.test(t)) return S.codes.length ? `You have ${S.codes.length} code${S.codes.length === 1 ? "" : "s"} saved: ${S.codes.slice(0, 5).map(c => c.store).join(", ")}.` : "You have no codes saved yet.";
   if (/last month|previous month|statement/.test(t)){ const keys = statementKeys().filter(k => k !== C.planKey); return keys.length ? `${keyLabel(keys[0])}: ${fmt(keptOf(S.statements[keys[0]]))} kept. See every month under Monthly statements.` : "Your first monthly statement is still in progress."; }
+  const sp0 = spendAnswer(t, C, true); if (sp0) return sp0;
   if (/\b(spend|spending|going out|goes out|expenses|bills|outgoings)\b/.test(t) && !/\d/.test(t)) return `${C.planMonth}: ${fmt(C.needs + C.misc)} goes out. Bills and living ${fmt(r2(C.needs - C.loans))}${C.loans > 0 ? `, loans and debts ${fmt(C.loans)}` : ""}, everything else ${fmt(C.misc)}.`;
   return null;
 }
@@ -4838,6 +4892,7 @@ view.addEventListener("click", async e => {
     const last = g.items[0], u = undoable(), id = uid(); S.spends.push({id, date: isoDaysAgo(0), at: Date.now(), k: compute().planKey, name: last.name, amount: Math.abs(last.amount)}); save(); render(true);
     const row = view.querySelector(`[data-spend="${id}"]`); if (row){ row.classList.remove("flash"); void row.offsetWidth; row.classList.add("flash"); }
     toast(`Logged ${fmt(Math.abs(last.amount))} for ${last.name}.`, u); return; }
+  if (b.dataset.spendIcon){ const key = b.closest("[data-spend-g]").dataset.spendG.replace(/\|back$/, ""); S.spendIcons = S.spendIcons || {}; S.spendIcons[key] = b.dataset.spendIcon; save(); render(true); return; }
   if (b.hasAttribute("data-spend-cancel")){ UI.spendEdit = null; render(true); return; }
   const spendEl = b.closest("[data-spend]");
   if (spendEl && b.hasAttribute("data-spend-edit")){ UI.spendEdit = spendEl.dataset.spend; render(true); const i = view.querySelector('form[data-form="spendEdit"] [name=amount]'); if (i){ i.focus(); i.select(); } return; }

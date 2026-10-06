@@ -3300,6 +3300,71 @@ async def with_no_name_on_the_statement_the_names_are_offered(ctx):
     assert await pg.locator("[data-st=ask]").count() == 0
     assert not pg.errors, pg.errors
 
+@test
+async def one_off_spending_wears_an_icon_you_can_change(ctx):
+    pg = await open_app(ctx)
+    for q in ("car petrol 30", "cigarettes 9", "savour 12"):
+        await ask_type(pg, q); await pg.wait_for_timeout(500)
+    ic = lambda k: pg.locator(f"[data-spend-g='{k}'] > .line [data-sp-ic]")
+    assert await ic("car petrol").get_attribute("data-sp-ic") == "fuel" and await ic("cigarettes").get_attribute("data-sp-ic") == "smoke", "picked from the name"
+    assert await ic("savour").get_attribute("data-sp-ic") == "receipt" and await ic("savour").locator("svg").count() == 1, "a name KeepWise does not know gets the plain one"
+    await pg.evaluate("document.getElementById('toast').hidden = true")
+    await pg.locator("[data-spend-g='savour'] [data-spend-open]").click(); await pg.wait_for_timeout(200)
+    pick = pg.locator("[data-spend-g='savour'] .sp-pick"); assert await pick.locator("[data-spend-icon]").count() >= 12
+    assert await pick.locator("[data-spend-icon=receipt]").get_attribute("aria-pressed") == "true" and "Food" in await pick.locator("[data-spend-icon=food]").get_attribute("aria-label")
+    await pick.locator("[data-spend-icon=food]").click(); await pg.wait_for_timeout(200)
+    assert await ic("savour").get_attribute("data-sp-ic") == "food" and (await state(pg))["spendIcons"]["savour"] == "food"
+    # the choice belongs to the name, so the next one logged wears it too
+    await pg.locator("[data-spend-g='savour'] [data-spend-again]").click(); await pg.wait_for_timeout(250)
+    await pg.reload(); await pg.wait_for_timeout(400); await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(200)
+    assert await ic("savour").get_attribute("data-sp-ic") == "food" and "2 times this month" in await pg.locator("[data-spend-g='savour']").inner_text()
+    assert not pg.errors, pg.errors
+
+@test
+async def the_owl_panel_stands_out_in_the_dark(ctx):
+    # in dark mode the panel had the page's own colour and disappeared into it
+    def lum(c):
+        r, g, b = [int(x) for x in re.findall(r"\d+", c)[:3]]; return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    for scheme in ("dark", "light"):
+        pg = await open_app(ctx, scheme=scheme); await pg.click("[data-tab=plan]"); await pg.wait_for_timeout(150)
+        await pg.click("#wise"); await pg.wait_for_timeout(300)
+        v = await pg.evaluate("""() => { const p = document.querySelector('.ask-panel'), c = getComputedStyle(p), card = getComputedStyle(document.querySelector('#view .card')), back = getComputedStyle(document.querySelector('.ask-back'));
+          return {panel: c.backgroundColor, edge: c.borderTopColor, card: card.backgroundColor, cardEdge: card.borderTopColor, back: back.backgroundColor, ink: c.color}; }""")
+        if scheme == "dark":
+            assert v["panel"] != v["card"] and lum(v["panel"]) > lum(v["card"]) + 8, v
+            assert lum(v["edge"]) > lum(v["cardEdge"]) + 30, v
+            r, g, b = [int(x) for x in re.findall(r"\d+", v["panel"])[:3]]; assert g > r and g > b, ("a green cast", v)
+            assert lum(v["ink"]) - lum(v["panel"]) > 150, ("the words stay easy to read", v)
+        else:
+            assert v["panel"] == v["card"], ("light mode is as it was", v)
+        a = float(re.findall(r"[\d.]+", v["back"])[3]); assert a >= (0.6 if scheme == "dark" else 0.3), v
+        assert not pg.errors, pg.errors
+        await pg.close()
+
+@test
+async def the_owl_adds_up_spending_by_kind(ctx):
+    # each logged line has a kind (its icon), so the owl can total a kind, say what a habit comes to, and rank them
+    pg = await open_app(ctx)
+    async def ask(q):
+        await ask_type(pg, q); await pg.wait_for_timeout(450)
+        return (await pg.inner_text("#ask-out")).replace("\u00a0", " ") if await pg.locator("#ask-out").count() else ""
+    assert "Nothing is logged under food" in await ask("how much on food this month?")
+    assert "Nothing is logged as one-off spending" in await ask("what do I spend the most on?")
+    for q in ("car petrol 60", "cigarettes 9", "cigarettes 9", "dine out 40", "savour 12", "coffee 4", "coffee 4", "coffee 4"): await ask(q)
+    a = await ask("how much on food this month?"); assert "Food in" in a and "$40 across 1 payment" in a and "from what you’ve logged" in a and "A year" not in a, a
+    a = await ask("how much did I spend on coffee"); assert "Coffee: 3 times in" in a and "$12" in a and "A year at this pace is about $144" in a, a
+    a = await ask("how much on smoking?"); assert "Smoking in" in a and "$18 across 2 payments" in a and "about $216" in a, a
+    a = await ask("what do I spend the most on?"); assert "most goes on fuel" in a and "Fuel $60" in a and "Food $40" in a and "One-off spending is $142 in all" in a, a
+    # a name KeepWise does not know counts once it is given a kind
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.spendIcons = {savour: 'food'}; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(400)
+    a = await ask("how much on food?"); assert "$52 across 2 payments" in a and "Dine out $40, Savour $12" in a, a
+    # the questions the owl already answered still get their own answers
+    a = await ask("how much do my subscriptions cost"); assert "subscriptions cost" in a, a
+    a = await ask("how much will I save?"); assert " in, " in a and " out, " in a, a
+    assert "What do I spend most on?" in await pg.locator(".ask-chips").inner_text()
+    assert not pg.errors, pg.errors
+
 SPILL_CHECK = r"""() => { const out = [], vw = innerWidth, box = e => e.getBoundingClientRect(), vis = e => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility !== 'hidden' && !e.closest('[hidden]') && !e.closest('.sr') && box(e).width > 0; };
   const tag = e => (e.className && typeof e.className === 'string' ? '.' + e.className.split(' ').join('.') : e.tagName) + ' "' + (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40) + '"', scrolls = e => { let p = e.parentElement; while (p && p.id !== 'main'){ const o = getComputedStyle(p).overflowX; if (o === 'auto' || o === 'scroll') return true; p = p.parentElement; } return false; };
   if (document.documentElement.scrollWidth > vw + 1) out.push('SIDE-SCROLL ' + document.documentElement.scrollWidth);
@@ -3324,12 +3389,19 @@ async def nothing_spills_or_is_cut_off_at_any_size(ctx):
             pg = await open_app(ctx, w=w, h=800, scheme="dark")
             await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
               s.cur = 'PKR'; s.income = 1765000.75; s.expenses.forEach((e, i) => { e.amount = 150000 + i * 5000.25; }); (s.subs || []).forEach((x, i) => { x.price = 14999.99 + i * 1000; });
-              s.expenses[0].name = 'Car Petrol & Maintenance and everything else'; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+              s.expenses[0].name = 'Car Petrol & Maintenance and everything else';
+              const d = new Date(), iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+              s.spends = [{id: 'x1', date: iso, name: 'Brother in law car fix and new tyres', amount: 134000.5}, {id: 'x2', date: iso, name: 'Coffee', amount: 400}, {id: 'x3', date: iso, name: 'Coffee', amount: 400}]; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
             await pg.reload(); await pg.wait_for_timeout(400)
             if zoom != 1: await pg.evaluate(f"document.documentElement.style.fontSize = '{int(zoom * 100)}%'"); await pg.wait_for_timeout(150)
             for name in ("month", "subs", "plan", "split"):
                 await pg.click(f"[data-tab={name}]"); await pg.wait_for_timeout(200)
                 bad = await pg.evaluate(SPILL_CHECK); assert not bad, (w, zoom, name, bad[:6])
+                if name == "month":   # the lists inside the envelopes: ticks, icons, Again, and an opened row
+                    for env in ("needs", "misc"):
+                        await pg.click(f"[data-env-open={env}]"); await pg.wait_for_timeout(200)
+                        if env == "misc": await pg.locator("[data-spend-g='coffee'] [data-spend-open]").click(); await pg.wait_for_timeout(150)
+                        bad = await pg.evaluate(SPILL_CHECK); assert not bad, (w, zoom, env, bad[:6])
             await pg.click("[data-tab=month]"); await pg.wait_for_timeout(150); await pg.click("[data-history]"); await pg.wait_for_timeout(200)
             bad = await pg.evaluate(SPILL_CHECK); assert not bad, (w, zoom, "history", bad[:6])
             assert not pg.errors, pg.errors
