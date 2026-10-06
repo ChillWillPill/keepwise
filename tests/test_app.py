@@ -3160,6 +3160,65 @@ async def a_card_purchase_is_not_a_loan_payment(ctx):
     assert "University Of Lakeview" in await stx(pg, "#view")
     assert not pg.errors, pg.errors
 
+SPILL_CHECK = r"""() => { const out = [], vw = innerWidth, box = e => e.getBoundingClientRect(), vis = e => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility !== 'hidden' && !e.closest('[hidden]') && !e.closest('.sr') && box(e).width > 0; };
+  const tag = e => (e.className && typeof e.className === 'string' ? '.' + e.className.split(' ').join('.') : e.tagName) + ' "' + (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40) + '"', scrolls = e => { let p = e.parentElement; while (p && p.id !== 'main'){ const o = getComputedStyle(p).overflowX; if (o === 'auto' || o === 'scroll') return true; p = p.parentElement; } return false; };
+  if (document.documentElement.scrollWidth > vw + 1) out.push('SIDE-SCROLL ' + document.documentElement.scrollWidth);
+  document.querySelectorAll('#view section.card, #view section.hero, #view .note').forEach(card => { if (!vis(card) || card.parentElement.closest('section.card')) return; const cb = box(card);
+    card.querySelectorAll('*').forEach(e => { if (!vis(e) || !e.textContent.trim() || e.children.length) return; if (e.closest('.cmp-tip,.info-tip[hidden],svg') || scrolls(e)) return; const b = box(e);
+      if (b.right > cb.right + 1 || b.left < cb.left - 1) out.push('SPILL-X ' + tag(e) + ' in ' + tag(card).slice(0, 40));
+      else if (b.bottom > cb.bottom + 1) out.push('SPILL-Y ' + tag(e) + ' in ' + tag(card).slice(0, 40));
+      if (b.right > vw + 1) out.push('OFFSCREEN ' + tag(e)); }); });
+  document.querySelectorAll('#view *, #tabbar *, header *').forEach(e => { if (!vis(e) || e.children.length || !e.textContent.trim()) return; const c = getComputedStyle(e);
+    if (e.scrollWidth > e.clientWidth + 1 && c.overflowX !== 'visible'){ const num = /\d/.test(e.textContent) && (e.classList.contains('tnum') || /PKR/.test(e.textContent)); if (num || c.textOverflow !== 'ellipsis') out.push((num ? 'CUT-NUMBER ' : 'CUT-TEXT ') + tag(e)); } });
+  // amounts whose box is cut by an ancestor that hides overflow
+  document.querySelectorAll('#view .tnum, #view b').forEach(e => { if (!vis(e) || !/\d/.test(e.textContent)) return; let p = e.parentElement; const b = box(e);
+    while (p && p.id !== 'main'){ const c = getComputedStyle(p); if (c.overflowX !== 'visible' || c.overflowY !== 'visible'){ const pb = box(p); if (b.right > pb.right + 1 || b.left < pb.left - 1){ out.push('CLIPPED ' + tag(e)); break; } } p = p.parentElement; } });
+  return [...new Set(out)]; }"""
+
+@test
+async def nothing_spills_or_is_cut_off_at_any_size(ctx):
+    # every tab, from the smallest phone to a laptop, at normal and larger text, with long rupee amounts and a long name:
+    # nothing runs out of its card, no amount is cut short, and the page never scrolls sideways
+    for w in (320, 360, 393, 430, 768, 1024):
+        for zoom in (1, 1.2):
+            pg = await open_app(ctx, w=w, h=800, scheme="dark")
+            await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+              s.cur = 'PKR'; s.income = 1765000.75; s.expenses.forEach((e, i) => { e.amount = 150000 + i * 5000.25; }); (s.subs || []).forEach((x, i) => { x.price = 14999.99 + i * 1000; });
+              s.expenses[0].name = 'Car Petrol & Maintenance and everything else'; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+            await pg.reload(); await pg.wait_for_timeout(400)
+            if zoom != 1: await pg.evaluate(f"document.documentElement.style.fontSize = '{int(zoom * 100)}%'"); await pg.wait_for_timeout(150)
+            for name in ("month", "subs", "plan", "split"):
+                await pg.click(f"[data-tab={name}]"); await pg.wait_for_timeout(200)
+                bad = await pg.evaluate(SPILL_CHECK); assert not bad, (w, zoom, name, bad[:6])
+            await pg.click("[data-tab=month]"); await pg.wait_for_timeout(150); await pg.click("[data-history]"); await pg.wait_for_timeout(200)
+            bad = await pg.evaluate(SPILL_CHECK); assert not bad, (w, zoom, "history", bad[:6])
+            assert not pg.errors, pg.errors
+            await pg.close()
+
+@test
+async def big_numbers_fit_on_a_small_phone(ctx):
+    # rupee-sized amounts on narrow screens: the chart's list stays inside its card, the (i) on the hero sits clear of
+    # the words, and a long amount is never cut off at the edge
+    for w in (320, 375, 393):
+        pg = await open_app(ctx, w=w, h=780, scheme="dark")
+        await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+          s.cur = 'PKR'; s.income = 765000.75; s.expenses.forEach((e, i) => { e.amount = 50000 + i * 5000.25; }); s.statements = {}; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+        await pg.reload(); await pg.wait_for_timeout(500)
+        r = await pg.evaluate("""() => { const q = s => document.querySelector(s), box = e => e.getBoundingClientRect(), out = {};
+          const card = q('[data-donut]'), last = card.querySelector('.dn-list li:last-child'), ring = card.querySelector('.dn-ring'), list = card.querySelector('.dn-list');
+          out.listIn = box(last).bottom <= box(card).bottom - 8; out.ringSquare = Math.abs(box(ring).width - box(ring).height) < 1 && box(ring).width >= 150;
+          out.gap = box(list).top - box(ring).bottom; out.amtIn = [...card.querySelectorAll('.dn-amt,.dn-p')].every(e => box(e).right <= box(card).right - 8);
+          const nxt = card.parentElement.nextElementSibling; out.clear = !nxt || box(nxt).top >= box(card).bottom;
+          const hero = q('section.hero'), i = hero.querySelector('.hero-i'); out.hasI = !!i;
+          if (i){ const b = box(i), rg = document.createRange(); rg.selectNodeContents(hero.firstElementChild); out.iClear = [...rg.getClientRects()].every(t => t.right <= b.left + 6 || t.left >= b.right || t.bottom <= b.top || t.top >= b.bottom); }
+          const one = q('.st-one'); if (one){ const b = one.querySelector('b'); out.keptIn = box(b).right <= box(one).right - 6 && box(b).left >= box(one).left; }
+          out.noSide = document.documentElement.scrollWidth <= innerWidth; return out; }""")
+        assert r["listIn"] and r["ringSquare"] and r["amtIn"] and r["clear"] and 0 < r["gap"] < 40, (w, r)
+        assert r["hasI"] and r["iClear"], (w, r)
+        assert r.get("keptIn", True) and r["noSide"], (w, r)
+        assert not pg.errors, pg.errors
+        await pg.close()
+
 @test
 async def the_round_chart_shows_where_the_month_goes(ctx):
     pg = await open_app(ctx)

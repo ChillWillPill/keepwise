@@ -118,8 +118,9 @@ p{margin:0}
 .rows{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--lift)}
 .row{padding:14px 18px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
-.row-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.row-top > div:last-child{text-align:right;flex:none}
+.row-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;align-items:flex-start}
+.row-top > div:first-child{flex:1 1 9ch;min-width:0}
+.row-top > div:last-child{text-align:right;flex:0 1 auto;margin-left:auto;max-width:100%}
 .name{font-weight:600}
 
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -165,18 +166,19 @@ a.btn{display:block;text-decoration:none}
 
 .stack{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--chip)}
 .stack i{display:block;height:100%}
-.dn{display:grid;grid-template-columns:minmax(150px,200px) minmax(0,1fr);gap:18px;align-items:center}
-.dn-ring{position:relative;width:100%;max-width:200px;margin:0 auto;aspect-ratio:1}
+.dn{display:flex;flex-wrap:wrap;gap:16px 18px;align-items:center;justify-content:center}
+.dn-card,.dn{flex:none}
+.dn-ring{position:relative;width:200px;height:200px;max-width:100%;margin:0 auto;flex:none}
 .dn-ring svg{width:100%;height:100%;display:block}
 .dn-pct{font:700 6.2px var(--body);fill:#fff}.dn-pct.dk{fill:#1c2420}.dn-pct.kp{fill:var(--card)}
 .dn-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;padding:0 26%}
 .dn-mid b{font:600 1.15rem/1.1 var(--display);letter-spacing:-.02em;white-space:nowrap}.dn-mid span{font-size:.72rem}
-.dn-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;min-width:0}
+.dn-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;min-width:0;flex:1 1 250px}
 .dn-list li{display:grid;grid-template-columns:10px minmax(0,1fr) auto 3ch;gap:8px;align-items:baseline;font-size:.88rem}
 .dn-list i{width:10px;height:10px;border-radius:50%;align-self:center}
 .dn-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dn-p{color:var(--muted);text-align:right;font-size:.8rem}
 .dn-list li.keep{border-top:1px solid var(--line);padding-top:7px;font-weight:600}
-@media (max-width:430px){.dn{grid-template-columns:1fr;gap:12px}.dn-ring{max-width:190px}}
+@media (max-width:430px){.dn-ring{width:190px;height:190px}.dn-list{flex-basis:100%}}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.9rem;color:var(--muted)}
 .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--c);vertical-align:-1px}
 .meter{height:9px;border-radius:99px;background:var(--chip);overflow:hidden}
@@ -233,7 +235,7 @@ details summary::-webkit-details-marker{display:none}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;height:104px;border-bottom:1px solid var(--line)}
 .cmp-col{appearance:none;border:0;background:transparent;border-radius:14px 14px 0 0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;padding:0;cursor:pointer;position:relative;font:inherit;color:var(--ink)}
 .cmp-col:hover,.cmp-col.on,.cmp-col:focus-visible{background:var(--chip);outline:none}
-.cmp-val{font-weight:600;font-size:.95rem;color:var(--muted)}
+.cmp-val{font-weight:600;font-size:clamp(.7rem,3.5vw,.95rem);color:var(--muted);white-space:nowrap}
 .cmp-bar{display:block;width:44%;max-width:72px;border-radius:4px 4px 0 0;background:var(--green)}
 .cmp-bar.now{background:color-mix(in srgb,var(--green) 55%,var(--card))}
 .cmp-tip{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 14px;display:none;flex-direction:column;align-items:flex-start;gap:2px;white-space:nowrap;z-index:2;text-align:left;font-size:.95rem;pointer-events:none}
@@ -518,8 +520,8 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .st-line span:first-child{min-width:0;overflow-wrap:anywhere}
 .st-foot{padding-top:12px;border-top:1px solid var(--line)}
 /* ---- coming up ---- */
-.st-one{display:flex;justify-content:space-between;align-items:baseline;gap:12px;background:var(--bg);border-radius:14px;padding:14px}
-.st-one b{font:600 1.35rem var(--display)}
+.st-one{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;background:var(--bg);border-radius:14px;padding:14px}
+.st-one span{white-space:nowrap}.st-one b{font:600 clamp(1.05rem,5.4vw,1.35rem) var(--display);white-space:nowrap;margin-left:auto}
 .up-list{display:flex;flex-direction:column}
 .up-row{display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
 .up-row:first-child{border-top:0;padding-top:2px}
@@ -612,7 +614,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .link.quiet-del{align-self:center;color:var(--muted);font-weight:500;font-size:.82rem;text-decoration:underline}
 .card>.linkrow:first-child{border-top:0;padding-top:0;margin-top:0}
 .has-hint:not(.hint-open) p.hint-p{display:none}
-.hero{position:relative}.hero-warn{color:var(--rust);font-weight:600;margin:0}.info-btn.hero-i{position:absolute;top:6px;right:6px;margin:0}
+.hero{position:relative}.hero.has-hint>:first-child{padding-inline:26px}.hero-warn{color:var(--rust);font-weight:600;margin:0}.info-btn.hero-i{position:absolute;top:6px;right:6px;margin:0}
 .hint-btn svg{width:18px;height:18px}
 h2.hint-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 /* ===== bigger screens: a tablet gets more room; a computer gets a menu down the side, two columns of cards and lists side by side ===== */
@@ -739,6 +741,8 @@ function fmt(v){
   try { return new Intl.NumberFormat("en-US", {style:"currency", currency:FMT_CUR || S.cur, minimumFractionDigits: whole?0:2, maximumFractionDigits: whole?0:2}).format(n); }
   catch(e){ return `${FMT_CUR || S.cur} ${n.toLocaleString("en-US", {minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2})}`; }  // a currency this phone does not know still shows its code
 }
+// Above a narrow bar a long amount is shortened (-333k, 1.3M) so it is never cut off; the full amount is one tap away.
+const fmtBar = v => { const f = fmt(v); if (f.length <= 8) return f; const a = Math.abs(v), sg = v < 0 ? "-" : ""; return sg + (a >= 1e6 ? (a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "") + "M" : a >= 1e4 ? Math.round(a / 1e3) + "k" : Math.round(a).toLocaleString("en-US")); };
 const sym = () => { try { return new Intl.NumberFormat("en-US",{style:"currency",currency:S.cur,maximumFractionDigits:0}).formatToParts(0).find(p=>p.type==="currency").value; } catch(e){ return S.cur || "$"; } };
 function toast(msg, undo){
   const t = $("toast"); t.textContent = msg; delete t.dataset.full;
@@ -1910,7 +1914,7 @@ OUT.donut = () => {
     const lab = x.pct >= 7 ? `<text x="${(60 + R * Math.cos(mid)).toFixed(1)}" y="${(60 + R * Math.sin(mid) + 2.4).toFixed(1)}" text-anchor="middle" class="dn-pct${x.keep ? " kp" : x.color === "#c9a13a" ? " dk" : ""}">${Math.round(x.pct)}%</text>` : "";
     return `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${x.color}" stroke-width="22" stroke-dasharray="${Math.max(0.1, len - 0.9).toFixed(2)} ${(CIRC - Math.max(0.1, len - 0.9)).toFixed(2)}" stroke-dashoffset="${(-start).toFixed(2)}" transform="rotate(-90 60 60)"></circle>${lab}`; }).join("");
   return `<section class="card dn-card" data-donut><h2>Where your month goes</h2>
-    <div class="dn"><div class="dn-ring"><svg viewBox="0 0 120 120" role="img" aria-label="${esc(D.parts.map(x => `${x.name} ${Math.round(x.pct)} percent`).join(", "))}">${ring}</svg>
+    <div class="dn"><div class="dn-ring"><svg viewBox="0 0 120 120" width="200" height="200" role="img" aria-label="${esc(D.parts.map(x => `${x.name} ${Math.round(x.pct)} percent`).join(", "))}">${ring}</svg>
       <div class="dn-mid"><b class="tnum" style="font-size:min(1.15rem, calc(6rem / ${(fmt(D.out).length * 0.62).toFixed(2)}))">${fmt(D.out)}</b><span class="muted">goes out</span></div></div>
       <ul class="dn-list">${D.parts.map(x => `<li${x.keep ? ' class="keep"' : ""}><i style="background:${x.color}"></i><span class="dn-name">${esc(x.name)}</span><span class="tnum dn-amt">${fmt(x.amount)}</span><span class="tnum dn-p">${x.pct >= 0.5 ? Math.round(x.pct) : "<1"}%</span></li>`).join("")}</ul></div></section>`;
 };
@@ -2705,7 +2709,7 @@ const currentKey = () => compute().planKey;
 function keptBars(keys){
   const list = keys.slice(0, 6).reverse(), vals = list.map(k => keptOf(S.statements[k])), max = Math.max(1, ...vals.map(Math.abs));
   return `<div class="hist-bars" role="img" aria-label="Money kept, last ${list.length} months">${list.map((k, i) => { const v = vals[i];
-    return `<button type="button" class="hist-col" data-stmt="${k}" aria-label="${esc(keyLabel(k))}: kept ${fmt(v)}"><span class="hist-v tnum ${v < 0 ? "bad" : ""}">${fmt(v)}</span><span class="hist-bar ${v < 0 ? "neg" : ""}${k === currentKey() ? " now" : ""}" style="height:${Math.max(6, Math.abs(v) / max * 96)}px"></span><span class="hist-m">${esc(keyLabel(k, true))}</span></button>`; }).join("")}</div>`;
+    return `<button type="button" class="hist-col" data-stmt="${k}" aria-label="${esc(keyLabel(k))}: kept ${fmt(v)}"><span class="hist-v tnum ${v < 0 ? "bad" : ""}">${fmtBar(v)}</span><span class="hist-bar ${v < 0 ? "neg" : ""}${k === currentKey() ? " now" : ""}" style="height:${Math.max(6, Math.abs(v) / max * 96)}px"></span><span class="hist-m">${esc(keyLabel(k, true))}</span></button>`; }).join("")}</div>`;
 }
 OUT.historyCard = () => {
   const keys = statementKeys(); if (!keys.length) return "";
