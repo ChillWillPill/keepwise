@@ -3008,6 +3008,47 @@ async def loans_and_giving_from_a_statement_go_to_their_own_places(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def a_statement_laid_out_in_columns_is_read_line_for_line(ctx):
+    # A real bank layout: newest first, descriptions over two to four lines with numbers inside them, amounts set on the
+    # left of their column, two lines listed out of posting order and an overdrawn balance printed without its minus.
+    pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "columns-statement.pdf")); await pg.wait_for_timeout(3500)
+    v = await stx(pg, "#view"); assert "23 transactions" in v and "Sep 2026 to Sep 2026 (1 month)" in v, v[:300]
+    chk = await stx(pg, ".st-check"); assert "Money in PKR 190,183.78" in chk and "money out PKR 194,950.71" in chk, chk
+    assert "Opening balance PKR 9,000, closing PKR 4,233.07" in chk and "every line adds up" in chk and "not add up" not in chk, chk
+    await pg.click("[data-st-open=all]"); await pg.wait_for_timeout(200)
+    al = [x.replace(" ", " ").replace("\n", " | ") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()]; j = " || ".join(al)
+    assert len(al) == 23 and al[0].startswith("Sep 1, 2026") and al[-1].startswith("Sep 30, 2026"), (al[0], al[-1])
+    # the whole description, numbers and all, belongs to its transaction; a line that only looks like a date is not one
+    assert "Debit Card/POS 342112225659 5366190+++++6162 31/08 624317002830 PKR 1549.99 225659 3108 5366190 FOOD PANDA KARACHI | Eating out | PKR 1,549.99" in j, j[:700]
+    assert "EZVIZ WAN CHAI TRANSACTION AMT PKR 1999.00 USD AMT 7.21 /USD Rate 277.95 | Everything else | PKR 2,004.02" in j and "2001" not in v.split("transactions")[1][:60]
+    assert "RATE 4.00% + FED | Bank charges | PKR 22.34" in j
+    # pay that arrives as a transfer is pay, with the platform's name
+    inc = await stx(pg, "[data-st=income]"); assert "Deel" in inc and "PKR 120,000/mo" in inc and "Payoneer" in inc and "PKR 53,432.78/mo" in inc and "2 deposits" in inc, inc
+    assert "Refunds and one-off money in" in inc and "PKR 2,001" in inc, "money that came back is not income"
+    # people, in full, wherever the bank puts the name; the kind of account is not part of it
+    out = await stx(pg, "[data-moves=out]"); inn = await stx(pg, "[data-moves=in]")
+    assert "Sara Noor" in out and "Maryam Zehra Hassan" in out and "Danish Ali" in out and "Asaan" not in out.replace("(ASAAN AC)", "") and "Cash withdrawals" in out, out
+    assert "Omar Farooq Sheikh" in inn and "Deel" not in inn and "Py" not in inn.replace("Payoneer", ""), inn
+    titles = await pg.evaluate("[...document.querySelectorAll('.st-item .move-txt > span')].map(e => e.textContent.trim())")
+    assert not any(re.match(r"(Sm|Xyz|Mbmb|Pk|Hbl|Baf|Bafl|Funds|Debit|Pkr|No name)\b", x) for x in titles), titles
+    # your own accounts, both ways
+    oo = await stx(pg, "[data-moves=own-out]"); oi = await stx(pg, "[data-moves=own-in]")
+    assert "TO ALI RAZA KHAN IBAN XXXX-4458" in oo and "PKR 100,000" in oo and "FR ALI RAZA KHAN IBAN XXXX-4458" in oi and "PKR 7,950" in oi, (oo, oi)
+    # the instalment and its mark-up are one loan payment; paying your own card is a card payment, not a friend
+    ln = await stx(pg, "[data-st=loans]"); assert "Finance payment" in ln and "PKR 29,455/mo" in ln and "1 payment" in ln and "Credit card payment" in ln and "PKR 11,090/mo" in ln and "(2)" in ln, ln
+    # shops and services by their own names, in their own groups
+    sp = await stx(pg, "[data-st=spending]")
+    for want in ("Groceries", "Metro Habib Cash", "Hope Pharmacy", "Government payments", "Food Panda", "Bank charges"): assert want in sp, (want, sp)
+    assert "Karachi" not in sp and "Lahore" not in sp
+    sb = await stx(pg, "[data-st=subs]"); assert "YouTube" in sb and "London" not in sb.split("Google YouTube London")[0], sb
+    assert "Tax payments" in await stx(pg, "[data-st=bills]") and "PKR 291.25" in await stx(pg, "[data-st=bills]")
+    hero = await stx(pg, ".import-body .hero"); assert "PKR 173,432.78 comes in" in hero and "PKR 85,560.71 goes out" in hero, hero
+    await use_as_plan(pg); await pg.wait_for_timeout(300)
+    st = await state(pg); assert st["income"] == 173432.78 and {l["name"]: l["pay"] for l in st["loans"]} == {"Finance payment": 29455, "Credit card payment": 11090}, (st["income"], st["loans"])
+    assert not pg.errors, pg.errors
+
+@test
 async def subscriptions_are_found_properly_in_a_statement(ctx):
     L = ["Date,Description,Amount"]
     for m in ("04", "05", "06", "07"):
@@ -3032,6 +3073,37 @@ async def subscriptions_are_found_properly_in_a_statement(ctx):
     await use_as_plan(pg); await pg.wait_for_timeout(300)
     st = await state(pg); assert sorted(s["name"] for s in st["subs"]) == ["Apple 10.99", "Apple 2.99", "Grammarly", "Hulu", "Quiet Books Club"], [s["name"] for s in st["subs"]]
     assert not pg.errors, pg.errors
+
+@test
+async def the_round_chart_shows_where_the_month_goes(ctx):
+    pg = await open_app(ctx)
+    card = pg.locator("[data-donut]"); assert await card.count() == 1 and "Where your month goes" in await card.inner_text()
+    rows = await pg.evaluate("[...document.querySelectorAll('[data-donut] .dn-list li')].map(li => [li.querySelector('.dn-name').textContent, li.querySelector('.dn-amt').textContent, li.querySelector('.dn-p').textContent, li.classList.contains('keep')])")
+    names = [r[0] for r in rows]; amt = {r[0]: money(r[1]) for r in rows}
+    # the biggest lines each have a slice, the rest are gathered, and what you keep closes the ring
+    assert names[0] == "Rent" and amt["Rent"] == 1850 and "Subscriptions" in names and names[-1] == "What you keep" and rows[-1][3] and any(n.startswith("Other (") for n in names), rows
+    leg = await text(pg, ".legend"); needs, misc, sav = [money(x) for x in re.findall(r"\$[\d,.]+", leg)]
+    out = sum(v for k, v in amt.items() if k != "What you keep"); assert abs(out - (needs + misc)) < 0.05 and abs(amt["What you keep"] - sav) < 0.01, (out, needs, misc, sav)
+    mid = await text(pg, "[data-donut] .dn-mid"); assert f"${needs + misc:,.2f}" in mid and "goes out" in mid, mid
+    pcts = [int(r[2].replace("%", "").replace("<", "")) for r in rows]; assert 97 <= sum(pcts) <= 103 and pcts[0] == round(1850 / (out + sav) * 100), pcts
+    # one slice per row, drawn all the way round, with the share written on the slices big enough to hold it
+    arcs = await pg.evaluate("[...document.querySelectorAll('[data-donut] svg circle')].map(c => parseFloat(c.getAttribute('stroke-dasharray')))")
+    assert len(arcs) == len(rows) and 255 < sum(arcs) + 0.9 * len(arcs) < 266, arcs
+    labels = await pg.locator("[data-donut] svg text").all_text_contents(); assert "36%" in labels and len(labels) == len([p for p in pcts if p >= 7]), labels
+    assert "percent" in await pg.locator("[data-donut] svg").get_attribute("aria-label")
+    # it follows the plan: drop the most expensive subscription and its slice shrinks while what you keep grows
+    before = dict(amt); await tab(pg, "subs"); await pg.locator("[data-sub] [data-keep=drop]").first.click(); await pg.wait_for_timeout(200); await tab(pg, "month")
+    rows2 = await pg.evaluate("Object.fromEntries([...document.querySelectorAll('[data-donut] .dn-list li')].map(li => [li.querySelector('.dn-name').textContent, li.querySelector('.dn-amt').textContent]))")
+    out2 = sum(money(v) for k, v in rows2.items() if k != "What you keep"); assert out2 < out - 1 and money(rows2["What you keep"]) > before["What you keep"] + 1, rows2
+    # it fits the narrowest phone and a computer, in both themes
+    for w, h in ((280, 640), (360, 740), (1280, 800)):
+        await pg.set_viewport_size({"width": w, "height": h}); await pg.wait_for_timeout(300)
+        box = await pg.evaluate("(() => { const c = document.querySelector('[data-donut]').getBoundingClientRect(), m = document.querySelector('[data-donut] .dn-mid b').getBoundingClientRect(), r = document.querySelector('[data-donut] .dn-ring').getBoundingClientRect(); return [c.left >= 0 && c.right <= innerWidth + 1, m.width < r.width * 0.56, [...document.querySelectorAll('[data-donut] li')].every(li => li.getBoundingClientRect().right <= c.right + 1)]; })()")
+        assert all(box), (w, box)
+    # an empty plan has nothing to draw
+    pg2 = await open_app(ctx); await pg2.evaluate("window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.expenses = []; s.subs = []; s.loans = []; s.giving = []; s.spends = []; s.trips = []; localStorage.setItem('keepwise-app-v1', JSON.stringify(s))")
+    await pg2.reload(); await pg2.wait_for_timeout(500); assert await pg2.locator("[data-donut]").count() == 0
+    assert not pg.errors and not pg2.errors, (pg.errors, pg2.errors)
 
 @test
 async def bigger_screens_use_their_width(ctx):

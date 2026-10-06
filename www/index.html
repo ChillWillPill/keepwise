@@ -195,6 +195,18 @@ a.btn{display:block;text-decoration:none}
 
 .stack{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--chip)}
 .stack i{display:block;height:100%}
+.dn{display:grid;grid-template-columns:minmax(150px,200px) minmax(0,1fr);gap:18px;align-items:center}
+.dn-ring{position:relative;width:100%;max-width:200px;margin:0 auto;aspect-ratio:1}
+.dn-ring svg{width:100%;height:100%;display:block}
+.dn-pct{font:700 6.2px var(--body);fill:#fff}.dn-pct.dk{fill:#1c2420}.dn-pct.kp{fill:var(--card)}
+.dn-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;padding:0 26%}
+.dn-mid b{font:600 1.15rem/1.1 var(--display);letter-spacing:-.02em;white-space:nowrap}.dn-mid span{font-size:.72rem}
+.dn-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;min-width:0}
+.dn-list li{display:grid;grid-template-columns:10px minmax(0,1fr) auto 3ch;gap:8px;align-items:baseline;font-size:.88rem}
+.dn-list i{width:10px;height:10px;border-radius:50%;align-self:center}
+.dn-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dn-p{color:var(--muted);text-align:right;font-size:.8rem}
+.dn-list li.keep{border-top:1px solid var(--line);padding-top:7px;font-weight:600}
+@media (max-width:430px){.dn{grid-template-columns:1fr;gap:12px}.dn-ring{max-width:190px}}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.9rem;color:var(--muted)}
 .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--c);vertical-align:-1px}
 .meter{height:9px;border-radius:99px;background:var(--chip);overflow:hidden}
@@ -1058,19 +1070,20 @@ const KEEP_FIRST = /^(APPLE|GOOGLE|PAYPAL|AMAZON)$/;
 const CAT_RULES = [
   ["Salary",/PAYROLL|SALARY|WAGES|DIRECT DEP|PAYCHECK|BGC|NET PAY/],
   ["Tax",/\bTAX\b|IRS|HMRC|FBR|REVENUE SERVICE|COUNCIL TAX|INCOME TAX|WITHHOLDING/],
+  ["Govt",/GOVT|GOVERNMENT INSTRUMENT|GOVERNMENT PAYMENT|\bPRAL|\bPSID\b|CHALLAN/],
   ["Giving",/DONATION|DONATE|CHARITY|CHARITABLE|ZAKAT|SADAQA|SADQA|TITHE|CHURCH|MOSQUE|MASJID|TEMPLE|SYNAGOGUE|EDHI|SHAUKAT KHANUM|UNICEF|RED CROSS|RED CRESCENT|GOFUNDME|SAVE THE CHILDREN|OXFAM|ALKHIDMAT|SAYLANI|CHHIPA|FOUNDATION|WELFARE/],
-  ["Loans",/LOAN|MORTGAGE|\bMTG\b|CREDIT CARD PAYMENT|CREDIT CARD PMT|CARD PAYMENT|\bCC PAYMENT|\bCC PMT|\bEMI\b|INSTALLMENT|INSTALMENT|\bQIST|FINANCING|FINANCE|IJARAH|MURABAHA|NELNET|NAVIENT|SALLIE MAE|MOHELA|AIDVANTAGE|AFFIRM|KLARNA|AFTERPAY|CLEARPAY|\bZIP PAY|LENDING|\bKARZ/],
+  ["Loans",/LOAN|MORTGAGE|\bMTG\b|CREDIT CARD PAYMENT|CREDIT CARD PMT|CARD PAYMENT|\bCC PAYMENT|\bCC PMT|\bEMI\b|INSTALLMENT|INSTALMENT|\bQIST|FINANCING|FINANCE|IJARAH|MURABAHA|NELNET|NAVIENT|SALLIE MAE|MOHELA|AIDVANTAGE|AFFIRM|KLARNA|AFTERPAY|CLEARPAY|\bZIP PAY|LENDING|\bKARZ|MARK UP|MARKUP|PROFIT MARK/],
   ["Housing",/RENT|APARTMENT|PROPERTY|LETTING|LANDLORD|HOA/],
   ["Utilities",/ELECTRIC|ENERGY|WATER|GAS BILL|COMCAST|XFINITY|VERIZON|AT&T|T MOBILE|TMOBILE|INTERNET|BROADBAND|CON ED|BRITISH GAS|OCTOPUS|VODAFONE|EE LIMITED|JAZZ|ZONG|TELENOR|PTCL|K ELECTRIC|SUI GAS/],
   ["Insurance",/GEICO|INSURANCE|STATE FARM|PROGRESSIVE|ALLSTATE|AVIVA|DIRECT LINE|ADMIRAL|JUBILEE/],
   ["Subscriptions",/NETFLIX|SPOTIFY|HULU|DISNEY|ICLOUD|APPLE COM BILL|APPLE COM|ADOBE|AUDIBLE|PRIME|YOUTUBE|PARAMOUNT|PEACOCK|\bMAX\b|HBO|FITNESS|GYM|PELOTON|DROPBOX|MICROSOFT|OFFICE 365|OPENAI|CHATGPT|CLAUDE|ANTHROPIC|NOTION|DUOLINGO|PATREON|NOW TV|BRITBOX|CRUNCHYROLL|XBOX|PLAYSTATION|NINTENDO|CANVA|GRAMMARLY|LINKEDIN|TINDER|BUMBLE|HEADSPACE|CALM|NYTIMES|WSJ/],
-  ["Groceries",/TRADER JOE|KROGER|WHOLE FOODS|ALDI|TESCO|SAINSBURY|SAFEWAY|LIDL|WALMART|GROCERY|ASDA|COSTCO|CARREFOUR|IMTIAZ|METRO CASH|MORRISONS|WAITROSE/],
+  ["Groceries",/TRADER JOE|KROGER|WHOLE FOODS|ALDI|TESCO|SAINSBURY|SAFEWAY|LIDL|WALMART|GROCERY|ASDA|COSTCO|CARREFOUR|IMTIAZ|METRO CASH|METRO HABIB|CASH N CARRY|CASH AND CARRY|MORRISONS|WAITROSE/],
   ["Dining",/STARBUCKS|CHIPOTLE|MCDONALD|DOORDASH|UBER EATS|GRUBHUB|RESTAURANT|CAFE|COFFEE|PIZZA|DELIVEROO|JUST EAT|GREGGS|FOOD ?PANDA|KFC|SUBWAY|BURGER|DOMINO/],
-  ["Transport",/UBER|LYFT|CAREEM|SHELL|EXXON|CHEVRON|\bBP\b|PSO|METRO|TRANSIT|PARKING|TFL|TRAINLINE|FUEL|PETROL/],
-  ["Health",/CVS|WALGREENS|PHARMA|CHEMIST|BOOTS|CLINIC|DENTAL|HOSPITAL/],
+  ["Transport",/UBER|LYFT|CAREEM|SHELL|EXXON|CHEVRON|ARAMCO|TOTAL PARCO|ATTOCK|\bBP\b|PSO|METRO|TRANSIT|PARKING|TFL|TRAINLINE|FUEL|PETROL/],
+  ["Health",/CVS|WALGREENS|PHARMA|CHEMIST|BOOTS|CLINIC|CLINIX|DENTAL|HOSPITAL|\bLAB\b|LABORATOR/],
   ["Shopping",/AMAZON|TARGET|BEST BUY|ETSY|EBAY|ARGOS|DARAZ|IKEA|ZARA|H&M|NIKE|APPLE STORE/],
   ["Savings",/VANGUARD|FIDELITY|ROBINHOOD|SCHWAB|ETRADE|E TRADE|COINBASE|BINANCE|KRAKEN|WEALTHFRONT|BETTERMENT|ACORNS|MUTUAL FUND|INVESTMENT|BROKERAGE|\bSIP\b|\bIRA\b|401K|PENSION CONTRIB|NATIONAL SAVINGS/],
-  ["Bank",/CHARGES|\bCHGS?\b|\bFEES?\b|EXCISE DUTY|SERVICE CHARGE|SMS ALERT|\bFED\b|OVERDRAFT|MARKUP/],
+  ["Bank",/CHARGES|\bCHGS?\b|\bFEES?\b|EXCISE DUTY|SERVICE CHARGE|SMS ALERT|\bFED\b|OVERDRAFT/],
   ["Transfers",/TRANSFER|\bTRF\b|\bTFR\b|\bIBFT\b|RAAST|1 ?LINK|\bFT\b|\bP2P\b|ZELLE|VENMO|CASH APP|\bWISE\b|REMIT|WESTERN UNION|MONEYGRAM|XOOM|PAYONEER|\bSWIFT\b|INWARD|OUTWARD|ATM|WITHDRAWAL|\bCASH\b|\bCWD\b|EASYPAISA|JAZZCASH|SADAPAY|NAYAPAY|\bUPI\b|\bIMPS\b|\bNEFT\b|\bRTGS\b|FASTER PAYMENT|SEND MONEY|MONEY SENT|MONEY RECEIVED/]
 ];
 // A rule matches whole words: IRS must not fire on FIRST, nor RENT on CURRENT. Short names must match exactly; longer ones may carry an ending.
@@ -1085,10 +1098,10 @@ const upperWords = d => String(d).toUpperCase().replace(/[^A-Z ]/g, " ").split(/
 // A description is cut into words and codes. Anything with a digit in it (a reference, an account number, a masked IBAN)
 // is a code, never part of a name, so "SM21200134A8B0A6 FR ALI RAZA IBAN XXXX-1723" reads as the person and not the reference.
 function nameTokens(desc){
-  return String(desc).toUpperCase().split(/\s+/).filter(Boolean).map(t => /\d/.test(t) || /^X{2,}[-X]*$/.test(t) ? null : t.replace(/[^A-Z&' ]+/g, " ").split(/\s+/).map(w => w.replace(/^'+|'+$/g, "")).filter(Boolean));
+  return String(desc).toUpperCase().replace(/\([^)]{0,30}\)/g, " ").split(/\s+/).filter(Boolean).map(t => /\d/.test(t) || /^X{2,}[-X]*$/.test(t) ? null : t.replace(/[^A-Z&' ]+/g, " ").split(/\s+/).map(w => w.replace(/^'+|'+$/g, "")).filter(Boolean));
 }
-const DIR_WORDS = new Set(["TO", "FR", "FROM", "FAVOURING", "BENEFICIARY", "PAYEE", "SENDER"]);
-const PARTY_STOP = new Set([...MOVE_STOP, ..."THRU THROUGH DIGITAL IBAN BIC PK GB US AE IN BY ORDER CONF CONFIRMATION WEB PURPOSE TRXN TXNS AMT RATE CHARGES CHGS FEE TAX PKR USD EUR GBP AED INR SAR CAD AUD BANKISLAMI BAHL HMB SCB SUMMIT SILK DUBAI ISLAMIC BOP SINDH KHYBER BARAKA SAMBA CITI CITIBANK CHASE WELLS FARGO BOA BOFA HSBC BARCLAYS LLOYDS NATWEST SANTANDER MONZO REVOLUT STARLING ICICI HDFC SBI AXIS KOTAK PAYTM GPAY PHONEPE PAYPAL MOBILINK MICROFINANCE TELENOR KONNECT DEBIT CREDIT CARD POS".split(" ")]);
+const DIR_WORDS = new Set(["TO", "FR", "FRM", "FROM", "FAVOURING", "BENEFICIARY", "PAYEE", "SENDER"]);
+const PARTY_STOP = new Set([...MOVE_STOP, ..."THRU THROUGH DIGITAL IBAN BIC PK GB US AE IN BY ORDER CONF CONFIRMATION WEB PURPOSE TRXN TXNS AMT RATE CHARGES CHGS FEE TAX PKR USD EUR GBP AED INR SAR CAD AUD BANKISLAMI BAHL HMB SCB SUMMIT SILK DUBAI ISLAMIC BOP SINDH KHYBER BARAKA SAMBA CITI CITIBANK CHASE WELLS FARGO BOA BOFA HSBC BARCLAYS LLOYDS NATWEST SANTANDER MONZO REVOLUT STARLING ICICI HDFC SBI AXIS KOTAK PAYTM GPAY PHONEPE PAYPAL MOBILINK MICROFINANCE TELENOR KONNECT DEBIT CREDIT CARD POS BAF BAFL MEZ MEZN MBL HABB UNIL MUCB ABPA SWITCH RV THRU PY".split(" ")]);
 // The other person's name: the words that follow TO or FROM, or failing that the last run of words in the line
 // (many banks print the name at the very end, after the account number).
 function partyKey(desc){
@@ -1116,14 +1129,16 @@ function holderName(text){
   const m = String(text).slice(0, 6000).match(/(?:account\s*(?:title|name|holder)|title\s*of\s*account|customer\s*name|account\s*owner)\s*[:\-]?\s*([A-Za-z][A-Za-z .']{3,40})/i);
   return m ? upperWords(m[1]).filter(w => !MOVE_STOP.has(w)).slice(0, 4) : [];
 }
-const sameName = (key, holder) => { if (!key || holder.length < 2) return false; const k = key.split(" "); return k.filter(w => holder.includes(w)).length >= Math.min(2, k.length) && k.length >= 2; };
+const sameName = (key, holder) => { if (!key || holder.length < 2) return false; const k = key.split(" "), hit = w => holder.includes(w) || (w.length >= 2 && holder.some(h => h.startsWith(w)));   // a bank may cut a long name short
+  return k.filter(hit).length >= Math.min(2, k.length) && k.length >= 2; };
 const catOfDesc = d => { const u = " " + d.toUpperCase().replace(/[^A-Z0-9& ]/g, " ") + " "; for (const [c, re] of CAT_RULES) if (re.test(u)) return c; return "Other"; };
-const NEEDS_CATS = new Set(["Housing","Utilities","Insurance","Loans","Groceries","Transport","Health","Tax","Bank"]);
+const NEEDS_CATS = new Set(["Housing","Utilities","Insurance","Loans","Groceries","Transport","Health","Tax","Bank","Govt"]);
 const BILL_CAT = new Set(["Housing","Utilities","Insurance"]);
-const CAT_LABEL = {Groceries:"Groceries", Dining:"Eating out", Transport:"Getting around", Health:"Health", Shopping:"Shopping", Other:"Everything else", Transfers:"Transfers and cash", Tax:"Tax payments", Bank:"Bank charges", Savings:"Savings and investments", Housing:"Housing", Utilities:"Utilities", Insurance:"Insurance"};
+const CAT_LABEL = {Groceries:"Groceries", Dining:"Eating out", Transport:"Getting around", Health:"Health", Shopping:"Shopping", Other:"Everything else", Transfers:"Transfers and cash", Tax:"Tax payments", Bank:"Bank charges", Govt:"Government payments", Savings:"Savings and investments", Housing:"Housing", Utilities:"Utilities", Insurance:"Insurance"};
 
 const MERCH_STOP = new Set([...[...STOP_WORDS].filter(w => !/^(APPLE|GOOGLE|PAYPAL)$/.test(w)), ..."PKR USD EUR GBP AED INR SAR CAD AUD AMT TRANSACTION RATE ENDING FED PVT PRIVATE LIMITED CHECKCARD DEBITCARD PURCHASES INTL".split(" ")]);
-const CARD_LINE = /CARD|\bPOS\b|PURCHASE/, STORE_FRONT = /^(APPLE|GOOGLE|PAYPAL)$/;
+const TOWNS = new Set("KARACHI LAHORE ISLAMABAD RAWALPINDI FAISALABAD MULTAN PESHAWAR QUETTA SIALKOT GUJRANWALA HYDERABAD LONDON DUBLIN CORK SINGAPORE STOCKHOLM AMSTERDAM LUXEMBOURG DUBAI SHARJAH DOHA RIYADH JEDDAH MUMBAI DELHI BANGALORE BENGALURU CHENNAI KOLKATA PUNE CHICAGO HOUSTON SEATTLE AUSTIN BOSTON DALLAS MIAMI ATLANTA DENVER PHOENIX TORONTO VANCOUVER SYDNEY MELBOURNE PARIS BERLIN MADRID ROME ZURICH TOKYO SEOUL MANCHESTER BIRMINGHAM GLASGOW EDINBURGH".split(" "));
+const CARD_LINE = /CARD|\bPOS\b|PURCHASE/, STORE_FRONT = /^(APPLE|GOOGLE|PAYPAL)$/, STORE_ITEMS = /^(ICLOUD|MUSIC|TV|ONE|ARCADE|YOUTUBE|PLAY|STORAGE|WORKSPACE|DRIVE|FITNESS|NEWS|BOOKS)$/;
 // The shop's name: the first run of real words, with the bank's codes, card numbers and currency left out. On a card
 // line the last word is usually the town, so it is dropped when the name is long enough without it.
 function merchantKey(desc){
@@ -1131,14 +1146,16 @@ function merchantKey(desc){
   for (const tok of nameTokens(desc)){ if (!tok){ cur = null; continue; } for (const w of tok){ if (MERCH_STOP.has(w)) continue; if (!cur){ cur = []; runs.push(cur); } cur.push(w); } }
   let r = runs.find(x => x.some(w => w.length > 1));
   if (r){ r = r.slice();
-    if (CARD_LINE.test(up)){ if (r.length >= 3 && r[r.length - 1].length === 2) r.pop(); if (r.length >= 3) r.pop(); }
+    if (CARD_LINE.test(up)){ if (r.length >= 3 && r[r.length - 1].length === 2) r.pop();
+      if (r.length >= 2 && TOWNS.has(r[r.length - 1])) r.pop(); else if (r.length >= 3) r.pop(); }
+    if (r.length === 2 && STORE_FRONT.test(r[0]) && CARD_LINE.test(up) && !STORE_ITEMS.test(r[1])) r.pop();   // "APPLE.COM/BILL CORK": the second word is the town the store bills from
     if (r.length > 1 && STORE_FRONT.test(r[0])) r.shift();
     r = r.filter(w => w.length > 1).slice(0, 3); if (r.length) return r.join(" "); }
   const words = up.replace(/[^A-Z& ]/g, " ").split(/\s+/).filter(w => w.length > 1);
   const kept = words.filter((w, i) => !STOP_WORDS.has(w) || (i === 0 && KEEP_FIRST.test(w) && words.length === 1));
   return (kept.slice(0, 2).join(" ") || words.slice(0, 2).join(" ") || up).trim();
 }
-const titleCase = k => k.toLowerCase().replace(/(^|[\s-])[a-z]/g, c => c.toUpperCase()).replace(/\bIcloud\b/, "iCloud").replace(/\bAt&t\b/i, "AT&T");
+const titleCase = k => k.toLowerCase().replace(/(^|[\s-])[a-z]/g, c => c.toUpperCase()).replace(/\bIcloud\b/, "iCloud").replace(/\bYoutube\b/, "YouTube").replace(/\bAt&t\b/i, "AT&T");
 
 // ---- dates and amounts ----
 const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
@@ -1162,7 +1179,8 @@ function parseAnyDate(s, yearHint, dayFirst){
   if ((m = s.match(/^([A-Za-z]{3,4})[a-z]*\.?\s+(\d{1,2}),?\s*(\d{2,4})?/)) && MONTHS[m[1].toLowerCase()] !== undefined){
     let y = m[3] ? +m[3] : yearHint; if (y < 100) y += 2000; return new Date(y, MONTHS[m[1].toLowerCase()], +m[2]);
   }
-  const t = Date.parse(s); return isNaN(t) ? null : new Date(t);
+  if (!/\b(19|20)\d{2}\b/.test(s)) return null;   // a browser will "read" almost anything as a date; only try when a real year is written
+  const t = Date.parse(s), d = isNaN(t) ? null : new Date(t); return d && d.getFullYear() > 1989 && d.getFullYear() <= new Date().getFullYear() + 1 ? d : null;
 }
 function parseMoney(s){
   if (s == null) return NaN; s = String(s).trim(); if (!s) return NaN;
@@ -1186,6 +1204,17 @@ function signByBalance(tx){
   if (best.hit < tx.length * 0.6) return false;
   tx.forEach((t, i) => { if (best.sign[i]){ t.amt = best.sign[i] * Math.abs(t.amt); t.unsure = false; } });
   return true;
+}
+// Does every line agree with the bank's own running balance? Banks do not always list lines in the order they were
+// posted, and some print an overdrawn balance without its minus sign, so each line is checked on its own: the balance
+// before it must be the balance after some other line. Exactly one line, the first of the period, starts from nowhere.
+function balanceCheck(tx){
+  if (tx.length < 2 || tx.some(t => t.bal == null || isNaN(t.bal))) return null;
+  const c = v => Math.abs(Math.round(v * 100)), after = new Set(tx.map(t => c(t.bal)));
+  const loose = tx.filter(t => !after.has(c(t.bal - t.amt)) && !after.has(c(-t.bal - t.amt)));
+  if (loose.length !== 1) return {bad: Math.max(1, loose.length - 1)};
+  const first = loose[0], last = first === tx[0] ? tx[tx.length - 1] : tx[0];
+  return {bad: 0, opening: r2(first.bal - first.amt), closing: last.bal};
 }
 const signByWords = t => { t.amt = catOfDesc(t.desc) === "Salary" || CREDIT_WORDS.test(t.desc) ? Math.abs(t.amt) : -Math.abs(t.amt); };
 
@@ -1276,12 +1305,14 @@ function pdfColumns(rows){
   for (const r of rows){
     const t = rowText(r);
     if (!/\bdate\b/i.test(t) || DATE_RE.test(t) || !/(debit|credit|withdraw|deposit|paid (in|out)|money (in|out)|amount|balance)/i.test(t)) continue;
-    const c = {};
+    const c = {}, geo = {};
     r.items.forEach(it => { const re = /(?:paid|money)\s(?:in|out)|[A-Za-z][A-Za-z./()]*/gi; let m;
-      while ((m = re.exec(it.s))){ const w = m[0].toLowerCase(), L = Math.max(1, it.s.length), x = it.x + (m.index + m[0].length / 2) / L * it.w, xr = it.x + (m.index + m[0].length) / L * it.w;
+      while ((m = re.exec(it.s))){ const w = m[0].toLowerCase(), L = Math.max(1, it.s.length), xl = it.x + m.index / L * it.w, x = it.x + (m.index + m[0].length / 2) / L * it.w, xr = it.x + (m.index + m[0].length) / L * it.w;
+        if (geo.dateX == null && /date/.test(w)) geo.dateX = xl;
+        if (geo.descX == null && /^(desc|particular|narrat|details|transaction details|remarks)/.test(w)) geo.descX = xl;
         const k = /^(debit|withdraw|dr\b|paid out|money out|payments?$)/.test(w) ? "db" : /^(credit|deposit|cr\b|paid in|money in|receipts?$)/.test(w) ? "cr" : /^balance/.test(w) ? "bal" : /^amount/.test(w) ? "am" : null;
-        if (k && !c[k]) c[k] = {x, xr}; } });
-    if (c.db || c.cr || c.am) return c;
+        if (k && !c[k]) c[k] = {x, xr, xl}; } });
+    if (c.db || c.cr || c.am){ const xs = Object.values(c).map(v => v.xl); Object.defineProperty(c, "geo", {value: {...geo, moneyX: Math.min(...xs)}}); return c; }
   }
   return null;
 }
@@ -1294,13 +1325,22 @@ function txFromRows(rows){
   const moneyIn = (r, withInts) => { const found = [];
     r.items.forEach(it => { const L = Math.max(1, it.s.length); for (const src of withInts ? [MONEY_RE, MONEY_INT_RE] : [MONEY_RE]){ const re = new RegExp(src.source, "gi"); let m;
       while ((m = re.exec(it.s))){ if (found.some(f => f.it === it && m.index < f.end && m.index + m[0].length > f.i)) continue;
-        found.push({it, i: m.index, end: m.index + m[0].length, s: m[0], int: src === MONEY_INT_RE, x: it.x + (m.index + m[0].length / 2) / L * it.w, xr: it.x + (m.index + m[0].length) / L * it.w}); } } });
+        found.push({it, i: m.index, end: m.index + m[0].length, s: m[0], int: src === MONEY_INT_RE, xl: it.x + m.index / L * it.w, x: it.x + (m.index + m[0].length / 2) / L * it.w, xr: it.x + (m.index + m[0].length) / L * it.w}); } } });
     return found.sort((a, b) => a.x - b.x); };
-  const colOf = f => { let best = null, bd = Infinity; colList.forEach(([k, c]) => { const d = Math.min(Math.abs(f.x - c.x), Math.abs(f.xr - c.xr)); if (d < bd){ bd = d; best = k; } }); return bd <= reach ? best : null; };
+  const colOf = f => { let best = null, bd = Infinity; colList.forEach(([k, c]) => { const d = Math.min(Math.abs(f.x - c.x), Math.abs(f.xr - c.xr), Math.abs(f.xl - c.xl)); if (d < bd){ bd = d; best = k; } }); return bd <= reach ? best : null; };
+  // When the table's columns are known, the page itself says what each piece of text is: a date sits in the date column,
+  // and anything that starts in the description column on the lines below a transaction is more of its description.
+  const G = cols && cols.geo && cols.geo.dateX != null && cols.geo.descX != null && cols.geo.descX < cols.geo.moneyX ? cols.geo : null;
+  const inDesc = it => it.x >= G.descX - 4 && it.x < G.moneyX - 3;
   const out = []; let prevBal = null, cur = null, more = 0, lastY = 0, descX = 0;
   for (const r of rows){
-    const line = rowText(r), dm = line.match(DATE_RE);
+    const line = rowText(r), dm = (!G || r.items[0].x <= G.dateX + 14) && line.match(DATE_RE);
     const date = dm ? parseAnyDate(dm[1], yearHint, dayFirst) : null;
+    if (G && (!date || isNaN(date))){
+      if (cur && more < 10 && r.p === cur.p && lastY - r.y > 0 && lastY - r.y <= 22 && r.items.every(inDesc)){ cur.desc = (cur.desc + " " + line).replace(/\s+/g, " ").trim(); more++; lastY = r.y; }
+      else { if (NOT_A_TX.test(line)){ const n = line.match(MONEY_RE); if (n) prevBal = Math.abs(parseMoney(n[n.length - 1])); } cur = null; }
+      continue;
+    }
     if (!date || isNaN(date)){
       // a description that runs onto the next line belongs to the transaction above it
       if (cur && more < 3 && r.p === cur.p && lastY - r.y <= 18 && lastY - r.y > 0 && line.length <= 90 && !NOT_MORE_DESC.test(line) && !NOT_A_TX.test(line) && !moneyIn(r, false).length && r.items[0].x >= descX - 24){ cur.desc = (cur.desc + " " + line).replace(/\s+/g, " ").trim(); more++; lastY = r.y; }
@@ -1310,7 +1350,7 @@ function txFromRows(rows){
     cur = null;
     let rest = line.slice(dm[0].length).trim(); const d2 = rest.match(DATE_RE); if (d2 && parseAnyDate(d2[1], yearHint, dayFirst)) rest = rest.slice(d2[0].length).trim();   // a second "value date" column
     const nums = rest.match(MONEY_RE);
-    const placed = cols ? moneyIn(r, true).map(f => ({...f, col: colOf(f)})).filter(f => f.col && !(f.int && !f.col)) : [];
+    const placed = cols ? moneyIn(r, true).filter(f => !G || f.it.x >= G.moneyX - 3).map(f => ({...f, col: colOf(f)})).filter(f => f.col) : [];
     const inCol = k => { const f = placed.filter(p => p.col === k); return f.length ? f[f.length - 1] : null; };
     let amt = NaN, bal = null, unsure = false, desc = rest.replace(MONEY_RE, " ");
     const pd = inCol("db"), pc = inCol("cr"), pa = inCol("am"), pb = inCol("bal");
@@ -1320,6 +1360,7 @@ function txFromRows(rows){
       else if (pa){ amt = parseMoney(pa.s); if (/CR/i.test(pa.s)) amt = Math.abs(amt); else if (!/-|\(|DR/i.test(pa.s)) unsure = true; }
       if (pb) bal = parseMoney(pb.s);
       placed.filter(p => p.int).forEach(p => { desc = desc.replace(p.s, " "); });
+      if (G) desc = r.items.filter(inDesc).map(it => it.s).join(" ");   // the wording exactly as printed, numbers included
     } else {
       if (!nums) continue;
       amt = parseMoney(nums.length >= 2 ? nums[nums.length - 2] : nums[0]);
@@ -1349,13 +1390,24 @@ function txFromRows(rows){
 // wrote them. Nothing is counted until the person ticks it on the review screen.
 const OWN_RE = /\bOWN ACC|\bSELF\b|\bSAVINGS?\b|\bCHECKING\b|CHEQUING|INTERNAL TRANSFER|BETWEEN (MY|OWN|YOUR) ACC|\bMY ACCOUNT\b|\bSAV\b|\bCHK\b/;
 const isOwnMove = desc => OWN_RE.test(" " + String(desc).toUpperCase().replace(/[^A-Z0-9 ]/g, " ") + " ");
+// Pay that arrives as a transfer: a payroll or freelance platform, or a home remittance, is income and not a friend sending money.
+function payPlatform(desc, hasPayoneer){ const u = " " + String(desc).toUpperCase().replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ") + " ";
+  const m = u.match(/ (DEEL|PAYONEER|UPWORK|FIVERR|GUSTO|ADP|PAYCHEX|RIPPLING|TOPTAL|REMOTE COM) /); if (m) return m[1];
+  return / HOME REMIT/.test(u) ? (hasPayoneer ? "PAYONEER" : "HOME REMITTANCE") : ""; }
+const REVERSAL = /\bRV\b|REVERSAL|REVERSED|REFUND|CHARGEBACK/i;
+function stLoanName(desc, kind, key){ const u = String(desc).toUpperCase();
+  if (kind === "card") return /^(TRANSFER|ONLINE|CARD|PAYMENT|FUNDS|CREDIT|\s)+$/.test(key) ? "Credit card payment" : titleCase(key);
+  if (/FINANCE PAYMENT|MARK.?UP/.test(u)) return "Finance payment";
+  return /^(TRANSFER|ONLINE|FINANCE|LOAN|PAYMENT|FUNDS|\s)+$/.test(key) ? `${loanKind(kind)} payment` : titleCase(key); }
 function stLoanKind(desc){ const u = " " + String(desc).toUpperCase().replace(/[^A-Z0-9 ]/g, " ") + " ";
   return /CREDIT CARD| CC | CARD PAYMENT/.test(u) ? "card" : /MORTGAGE| MTG |HOME (LOAN|FINANC)|HOUSE (LOAN|FINANC)/.test(u) ? "home" : /STUDENT|NELNET|NAVIENT|SALLIE|MOHELA|AIDVANTAGE/.test(u) ? "student" : / (CAR|AUTO|VEHICLE|MOTOR) |IJARAH/.test(u) ? "car" : /PERSONAL/.test(u) ? "personal" : /AFFIRM|KLARNA|AFTERPAY|CLEARPAY|ZIP PAY|INSTAL/.test(u) ? "other" : "bank"; }
 function stCause(desc){ const u = String(desc).toUpperCase();
   return /ZAKAT|SADAQA|SADQA|TITHE|CHURCH|MOSQUE|MASJID|TEMPLE|SYNAGOGUE/.test(u) ? "faith" : /UNICEF|SAVE THE CHILDREN|CHILD/.test(u) ? "children" : /ORPHAN/.test(u) ? "orphans" : /RED CROSS|RED CRESCENT|EDHI|RELIEF|CHHIPA|ALKHIDMAT|SAYLANI/.test(u) ? "relief" : /KHANUM|HOSPITAL|CANCER|HEALTH/.test(u) ? "health" : /SCHOOL|EDUCATION|SCHOLAR/.test(u) ? "education" : "other"; }
 function analyzeStatement(tx, fileName, holder, me){
   holder = holder || []; me = me || new Set();
-  tx = tx.slice().sort((a, b) => a.date - b.date);
+  tx = tx.slice(); if (tx.length > 1 && tx[0].date > tx[tx.length - 1].date) tx.reverse();   // a file that runs newest first is read oldest first
+  tx.sort((a, b) => a.date - b.date);
+  const hasPayoneer = tx.some(t => /PAYONEER/i.test(t.desc)), platformOf = t => t.amt > 0 ? payPlatform(t.desc, hasPayoneer) : "";
   const all = tx, first = tx[0].date, last = tx[tx.length - 1].date;
   const months = Math.max(1, Math.round((last - first) / (30.44 * DAY) + 0.5));
   const group = list => { const g = {}; list.forEach(t => { const k = merchantKey(t.desc); (g[k] = g[k] || []).push(t); }); return g; };
@@ -1375,16 +1427,17 @@ function analyzeStatement(tx, fileName, holder, me){
   const tag = (list, where) => { list.forEach(t => { t.where = where; }); return list; };
   const totalIn = r2(tx.filter(t => t.amt > 0).reduce((a, t) => a + t.amt, 0)), totalOut = r2(tx.filter(t => t.amt < 0).reduce((a, t) => a - t.amt, 0));
   // transfers and cash are set aside first: by direction, and by whether the other name is the account holder's own
-  const isMove = t => catOfDesc(t.desc) === "Transfers";
+  const isMove = t => catOfDesc(t.desc) === "Transfers" && !platformOf(t);
   const moveTx = tx.filter(isMove); tx = tx.filter(t => !isMove(t));
-  const mv = {sent: {}, recv: {}, ownOut: [], ownIn: [], cashOut: [], cashIn: []};
+  const mv = {sent: {}, recv: {}, ownOut: [], ownIn: [], cashOut: [], cashIn: []}, reversed = [];
   moveTx.forEach(t => { const kind = moveKind(t.desc, t.amt);
+    if (t.amt > 0 && REVERSAL.test(t.desc)){ reversed.push(t); return; }   // money that came back is not someone paying you
     if (kind === "cash"){ (t.amt < 0 ? mv.cashOut : mv.cashIn).push(t); return; }
     const key = partyKey(t.desc) || "UNNAMED";
     if (!me.has("!" + key) && (sameName(key, holder) || me.has(key) || isOwnMove(t.desc))){ t.party = key; (t.amt < 0 ? mv.ownOut : mv.ownIn).push(t); return; }
     const b = t.amt < 0 ? mv.sent : mv.recv; (b[key] = b[key] || []).push(t); });
   const people = (g, dir) => Object.entries(g).map(([k, list]) => { const total = sumOf(list), abroad = dir === "received" && list.some(t => moveKind(t.desc, t.amt) === "remit");
-      const regular = !!cadenceOf(list) || new Set(list.map(t => `${t.date.getFullYear()}-${t.date.getMonth()}`)).size >= Math.max(2, months);
+      const regular = !!cadenceOf(list) || new Set(list.map(t => `${t.date.getFullYear()}-${t.date.getMonth()}`)).size >= Math.max(2, months) || (months === 1 && list.length >= 2);
       const name = k === "UNNAMED" ? "No name shown" : titleCase(k); tag(list, dir === "sent" ? `Sent to ${name}` : `Received from ${name}`);
       return {id: `${dir}:${k}`, key: k, name, total: r2(total), monthly: mo(total), count: list.length, regular, abroad, tx: list, on: abroad || regular}; })
     .sort((a, b) => b.total - a.total);
@@ -1394,9 +1447,10 @@ function analyzeStatement(tx, fileName, holder, me){
     cashOut: lump("cash:out", mv.cashOut, "Cash withdrawal", mv.cashOut.length > 0), cashIn: lump("cash:in", mv.cashIn, "Cash deposit", false),
     ownKeys: [...new Set([...mv.ownOut, ...mv.ownIn].map(t => t.party))], notMe: [...me].filter(k => k[0] === "!").map(k => k.slice(1))};
   // money in
-  const credits = tx.filter(t => t.amt > 0), cg = group(credits), income = [], other = [];
+  const credits = tx.filter(t => t.amt > 0), cg = {}, income = [], other = [...reversed];
+  credits.forEach(t => { const k = platformOf(t) || merchantKey(t.desc); (cg[k] = cg[k] || []).push(t); });
   for (const [k, list] of Object.entries(cg)){
-    const cad = cadenceOf(list), isPay = list.some(t => catOfDesc(t.desc) === "Salary");
+    const cad = cadenceOf(list), isPay = list.some(t => catOfDesc(t.desc) === "Salary" || platformOf(t));
     const total = list.reduce((a, t) => a + t.amt, 0);
     if (isPay || (cad && catOfDesc(list[0].desc) !== "Loans")){   // a loan paid out to you is not pay
       const avg = total / list.length, days = list.map(t => t.date.getDate());
@@ -1407,18 +1461,22 @@ function analyzeStatement(tx, fileName, holder, me){
   income.sort((a, b) => b.monthly - a.monthly);
   const otherCredits = lump("in:other", other.sort((a, b) => a.date - b.date), "Other money in", false);
   // money out
-  const debits = tx.filter(t => t.amt < 0), dg = group(debits), subs = [], bills = [], loans = [], giving = [], taxTx = [], taxes = [], spend = {};
+  const debits = tx.filter(t => t.amt < 0), dg = {}, subs = [], bills = [], loans = [], giving = [], taxTx = [], taxes = [], spend = {};
   const everyOf = cad => cad === "weekly" ? "wk" : cad === "yearly" ? "yr" : "mo";
   const addSub = (k, list, name, known) => { const amts = list.map(t => -t.amt), cad = cadenceOf(list), lastAmt = amts[amts.length - 1], total = amts.reduce((a, b) => a + b, 0), often = cad === "weekly" || cad === "biweekly";
     subs.push({id: "sub:" + k, name, price: r2(often ? perMonth(lastAmt, cad) : lastAmt), cycle: cad === "yearly" ? "yr" : "mo", monthly: r2(perMonth(lastAmt, cad || "monthly")), since: isoOf(list[0].date), lastCharge: isoOf(list[list.length - 1].date),
       charges: list.length, paid: r2(total), cadence: cad || "monthly", known, tx: tag(list, "Subscription"), on: true}); };
+  // the instalment and the mark-up on one loan carry the same reference: they are one payment on one loan
+  const loanRef = d => { const u = String(d).toUpperCase(); if (!/FINANCE PAYMENT|MARK.?UP|INSTAL|\bEMI\b/.test(u)) return ""; const m = u.match(/\b[A-Z]{1,4}\d{8,}\b/); return m ? "LOAN " + m[0] : ""; };
+  debits.forEach(t => { const k = (catOfDesc(t.desc) === "Loans" && loanRef(t.desc)) || merchantKey(t.desc); (dg[k] = dg[k] || []).push(t); });
   for (const [k, list] of Object.entries(dg)){
     const cat = catOfDesc(list[0].desc), cad = cadenceOf(list), amts = list.map(t => -t.amt), total = amts.reduce((a, b) => a + b, 0);
     const lastAmt = amts[amts.length - 1], name = titleCase(k);
     if (cat === "Tax"){ taxes.push({name, total: r2(total), monthly: r2(total / months)}); taxTx.push(...tag(list, "Tax")); continue; }
     // any payment on a loan, a mortgage, a card or an installment plan belongs with Loans and debt, never with bills
-    if (cat === "Loans"){ const kind = stLoanKind(list[0].desc), ev = cad === "biweekly" ? "2wk" : everyOf(cad);
-      loans.push({id: "loan:" + k, name, kind, pay: r2(lastAmt), every: ev, monthly: r2(perMonth(lastAmt, cad || "monthly")), total: r2(total), count: list.length, tx: tag(list, "Loan"), on: true}); continue; }
+    if (cat === "Loans"){ const kind = stLoanKind(list.map(t => t.desc).join(" ")), byDay = {}; list.forEach(t => { const d = isoOf(t.date); byDay[d] = r2((byDay[d] || 0) + -t.amt); });
+      const days = Object.keys(byDay).sort(), pay = byDay[days[days.length - 1]], lc = cadenceOf(days.map(d => ({date: new Date(d + "T00:00:00"), amt: byDay[d]}))), ev = lc === "biweekly" ? "2wk" : everyOf(lc);
+      loans.push({id: "loan:" + k, name: stLoanName(list.map(t => t.desc).join(" "), kind, k), kind, pay, every: ev, monthly: r2(perMonth(pay, lc || "monthly")), total: r2(total), count: days.length, tx: tag(list, "Loan"), on: true}); continue; }
     if (cat === "Giving"){ const ev = everyOf(cad), often = cad === "biweekly";
       giving.push({id: "give:" + k, name, cause: stCause(list[0].desc), amount: r2(cad ? (often ? perMonth(lastAmt, cad) : lastAmt) : total / months), every: ev, monthly: r2(cad ? perMonth(lastAmt, cad) : total / months), total: r2(total), count: list.length, tx: tag(list, "Giving"), on: true}); continue; }
     if (cad && BILL_CAT.has(cat)){ bills.push({id: "bill:" + k, name, cat, monthly: r2(perMonth(lastAmt, cad)), total: r2(total), cadence: cad, count: list.length, tx: tag(list, "Bill"), on: true}); continue; }
@@ -1431,7 +1489,7 @@ function analyzeStatement(tx, fileName, holder, me){
         rep.forEach(([a, l]) => addSub(`${k} ${a}`, l, `${name} ${a}`, true)); continue; }
       addSub(k, list, name, true); continue;
     }
-    if (cad && !["Groceries", "Transfers", "Transport", "Dining", "Health", "Bank", "Savings"].includes(cat) && lastAmt < 250){ addSub(k, list, name, false); continue; }
+    if (cad && !["Groceries", "Transfers", "Transport", "Dining", "Health", "Bank", "Savings", "Govt"].includes(cat) && lastAmt < 250){ addSub(k, list, name, false); continue; }
     (spend[cat] = spend[cat] || []).push([name, total, list]);
   }
   subs.sort((a, b) => b.monthly - a.monthly); bills.sort((a, b) => b.monthly - a.monthly); loans.sort((a, b) => b.monthly - a.monthly); giving.sort((a, b) => b.monthly - a.monthly);
@@ -1503,7 +1561,7 @@ async function readStatementFile(file, password){
   if (/\.(xlsx?|numbers|ods)$/i.test(name)) throw new Error("Spreadsheet files can't be read yet. Open it and save it as CSV, or download the CSV or PDF from your bank.");
   if (/\.pdf$/i.test(name) || file.type === "application/pdf"){ const rows = await pdfRows(await file.arrayBuffer(), password); text = rows.map(rowText).join("\n"); tx = txFromRows(rows); }
   else { text = await file.text(); tx = txFromCSV(text); }
-  STMT.tx = tx; STMT.holder = holderName(text); STMT.me = new Set(); STMT.pick = {}; STMT.open = new Set(); STMT.confirm = false;
+  STMT.check = balanceCheck(tx); STMT.tx = tx; STMT.holder = holderName(text); STMT.me = new Set(); STMT.pick = {}; STMT.open = new Set(); STMT.confirm = false;
   const R = analyzeStatement(tx, name, STMT.holder, STMT.me); R.cur = detectCurrency(text.replace(/\n/g, " ")); return R;
 }
 // ---- statements in another currency ----
@@ -1552,7 +1610,7 @@ V.importReview = () => {
   FMT_CUR = STMT.fx && STMT.fx.mode === "switch" ? STMT.fx.from : null;
   const html = `<div class="inline" style="justify-content:space-between"><h1>Your statement</h1><button class="btn small" type="button" data-import-cancel>Cancel</button></div>
   <p class="muted" style="text-align:center">${esc(R.fileName)} · ${R.count} transactions · ${monthsLabel(R.first)} to ${monthsLabel(R.last)} (${R.months} month${R.months > 1 ? "s" : ""}). Read on this phone only.</p>
-  <p class="muted small st-check" style="text-align:center" data-keep>Money in ${fmt(r2(R.totalIn * k))} · money out ${fmt(r2(R.totalOut * k))}. If these match your statement, every line was read.</p>
+  <p class="muted small st-check" style="text-align:center" data-keep>Money in ${fmt(r2(R.totalIn * k))} · money out ${fmt(r2(R.totalOut * k))}. If these match your statement, every line was read.${STMT.check ? `<br>${STMT.check.bad ? `<b class="bad">${STMT.check.bad} line${STMT.check.bad === 1 ? " does" : "s do"} not add up with the bank’s running balance. Check those amounts.</b>` : `Opening balance ${fmt(r2(STMT.check.opening * k))}, closing ${fmt(r2(STMT.check.closing * k))}: every line adds up with the bank’s running balance.`}` : ""}</p>
   <div data-out="fxCard">${fxCard()}</div>
   <div data-out="importBody" class="import-body">${OUT.importBody()}</div>`;
   FMT_CUR = null; return html;
@@ -1576,7 +1634,7 @@ function stItem(x, title, sub, amount, o){
 }
 const stAll = (key, list) => list.length >= 3 ? `<button class="link plain small st-all" type="button" data-st-all="${key}">${list.some(x => x.on) ? "Untick all" : "Tick all"}</button>` : "";
 const stHead = (title, key, list, info, tip) => `<div class="inline st-h" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">${title}${list ? ` <span class="muted small">(${list.length})</span>` : ""}${info ? infoBtn(info, "About " + title.toLowerCase()) : ""}</h2>${list ? stAll(key, list) : ""}</div>${info ? infoTip(info, tip) : ""}`;
-const stTimes = x => x.regular ? `${x.count} time${x.count === 1 ? "" : "s"} · ${fmt(x.total)} in this statement · every month` : `${x.count} time${x.count === 1 ? "" : "s"} · adds ${fmt(x.monthly)}/mo if ticked`;
+const stTimes = x => x.regular ? `${x.count} time${x.count === 1 ? "" : "s"} · ${fmt(x.total)} in this statement${STMT.result && STMT.result.months > 1 ? " · every month" : ""}` : `${x.count} time${x.count === 1 ? "" : "s"} · adds ${fmt(x.monthly)}/mo if ticked`;
 const stMoved = x => x.regular ? `${fmt(x.monthly)}/mo` : fmt(x.total);
 // Transfers: what you sent and what you received are shown apart, and money moved between your own accounts is shown
 // apart from both, every transaction listed, and never counted.
@@ -1737,6 +1795,7 @@ V.month = () => {
   <div data-out="trips">${OUT.trips()}</div>
   <div data-out="stack">${OUT.stack()}</div>
   <div data-out="envelopes">${OUT.envelopes()}</div>
+  <div data-out="donut">${OUT.donut()}</div>
   <div data-out="historyCard">${OUT.historyCard()}</div>
   <div data-out="dropCard">${OUT.dropCard()}</div>
   ${UI.askOpen ? "" : askCard(false)}`;
@@ -1756,6 +1815,33 @@ OUT.stack = () => {
   const s = Math.max(0, C.savings);
   return `<div class="stack" role="img" aria-label="Needs ${fmt(C.needs)}, misc ${fmt(C.misc)}, savings ${fmt(s)}"><i style="width:${C.needs/tot*100}%;background:var(--ink)"></i><i style="width:${C.misc/tot*100}%;background:var(--rust)"></i><i style="width:${s/tot*100}%;background:var(--green)"></i></div>
   <div class="legend tnum" style="margin-top:10px"><span style="--c:var(--ink)">Needs ${fmt(C.needs)}</span><span style="--c:var(--rust)">Misc ${fmt(C.misc)}</span><span style="--c:var(--green)">Savings ${fmt(s)}</span></div>`;
+};
+// Where the month goes, as a ring: the biggest lines each get a slice with its share, the rest are gathered as Other,
+// and what you keep is the green slice. Drawn on the device from the same numbers as the rest of Month.
+const DONUT_COLORS = ["#2f7fb8", "#c9a13a", "#b5523a", "#7a5aa6", "#2a9d8f", "#d77a3d"];
+function donutParts(){
+  const C = compute(), items = [];
+  S.expenses.forEach(e => { const w = swapFor("expense", e.id), a = w ? +w.altCost : +e.amount || 0; if (a > 0) items.push({name: e.name || "Unnamed", amount: a}); });
+  const subs = C.liveSubs.reduce((t, x) => { const w = swapFor("sub", x.id); return t + (w ? +w.altCost : subMonthly(x)); }, 0);
+  [["Subscriptions", subs], ["Loans and debt", C.loans], ["Giving", givingMonthly()], ["Trips and events", C.trips], ["One-off spending", C.spends]].forEach(([name, amount]) => { if (amount > 0.005) items.push({name, amount}); });
+  items.sort((a, b) => b.amount - a.amount);
+  const top = items.slice(0, 6).map((x, i) => ({...x, color: DONUT_COLORS[i]})), rest = items.slice(6).reduce((t, x) => t + x.amount, 0);
+  if (rest > 0.005) top.push({name: `Other (${items.length - 6})`, amount: rest, color: "#8d968f"});
+  const out = items.reduce((t, x) => t + x.amount, 0), keep = Math.max(0, C.savings);
+  if (keep > 0.005) top.push({name: "What you keep", amount: keep, color: "var(--green)", keep: true});
+  const total = out + keep; top.forEach(x => { x.pct = total > 0 ? x.amount / total * 100 : 0; });
+  return {parts: top, out, total};
+}
+OUT.donut = () => {
+  const D = donutParts(); if (D.out <= 0.005 || D.parts.length < 2) return "";
+  const R = 42, CIRC = 2 * Math.PI * R; let at = 0;
+  const ring = D.parts.map(x => { const len = x.pct / 100 * CIRC, start = at, mid = (start + len / 2) / CIRC * 2 * Math.PI - Math.PI / 2; at += len;
+    const lab = x.pct >= 7 ? `<text x="${(60 + R * Math.cos(mid)).toFixed(1)}" y="${(60 + R * Math.sin(mid) + 2.4).toFixed(1)}" text-anchor="middle" class="dn-pct${x.keep ? " kp" : x.color === "#c9a13a" ? " dk" : ""}">${Math.round(x.pct)}%</text>` : "";
+    return `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${x.color}" stroke-width="22" stroke-dasharray="${Math.max(0.1, len - 0.9).toFixed(2)} ${(CIRC - Math.max(0.1, len - 0.9)).toFixed(2)}" stroke-dashoffset="${(-start).toFixed(2)}" transform="rotate(-90 60 60)"></circle>${lab}`; }).join("");
+  return `<section class="card dn-card" data-donut><h2>Where your month goes</h2>
+    <div class="dn"><div class="dn-ring"><svg viewBox="0 0 120 120" role="img" aria-label="${esc(D.parts.map(x => `${x.name} ${Math.round(x.pct)} percent`).join(", "))}">${ring}</svg>
+      <div class="dn-mid"><b class="tnum" style="font-size:min(1.15rem, calc(6rem / ${(fmt(D.out).length * 0.62).toFixed(2)}))">${fmt(D.out)}</b><span class="muted">goes out</span></div></div>
+      <ul class="dn-list">${D.parts.map(x => `<li${x.keep ? ' class="keep"' : ""}><i style="background:${x.color}"></i><span class="dn-name">${esc(x.name)}</span><span class="tnum dn-amt">${fmt(x.amount)}</span><span class="tnum dn-p">${x.pct >= 0.5 ? Math.round(x.pct) : "<1"}%</span></li>`).join("")}</ul></div></section>`;
 };
 const UI = {compare:false};
 function compareChart(now, after, afterLabel){
