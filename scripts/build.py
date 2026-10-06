@@ -51,6 +51,7 @@ manifest = {
   "name": "KeepWise", "short_name": "KeepWise", "description": "What you keep at month end.",
   "start_url": "./", "scope": "./", "display": "standalone", "orientation": "portrait",
   "background_color": "#f3efe6", "theme_color": "#f3efe6",
+  "shortcuts": [{"name": "Ask KeepWise", "short_name": "Ask", "description": "Open KeepWise ready to ask or log spending.", "url": "./?ask", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"}]}],
   "icons": [
     {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
     {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},

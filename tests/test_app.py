@@ -38,6 +38,12 @@ async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False, prev
         if os.path.exists(path): await route.fulfill(path=path, content_type="application/javascript")
         else: await route.abort()
     await pg.route("https://cdnjs.cloudflare.com/**", serve_vendor)
+    # the picture reader for scanned statements normally comes from jsDelivr; the same files are kept beside the tests
+    async def serve_ocr(route):
+        path = os.path.join(HERE, "vendor", "ocr", route.request.url.rsplit("/", 1)[-1])
+        if os.path.exists(path): await route.fulfill(path=path, content_type="application/gzip" if path.endswith(".gz") else "application/javascript", headers={"access-control-allow-origin": "*"})
+        else: await route.abort()
+    await ctx.route(re.compile(r"https://cdn\.jsdelivr\.net/npm/(@tesseract|tesseract)"), serve_ocr)
     if welcome is False: await pg.add_init_script("window.KEEPWISE_NO_SETUP = true;")  # most tests start on the example month
     if not fb and not preview: await pg.add_init_script("window.KEEPWISE_FIREBASE = null;")  # no network sign-in in ordinary tests
     if fb:  # sign-in tests: a project config plus an offline stand-in for the Firebase SDK
@@ -3072,6 +3078,86 @@ async def subscriptions_are_found_properly_in_a_statement(ctx):
     sub = await stx(pg, "[data-st=subs]"); assert "APPLE.COM/BILL" in sub and "(5)" in sub, sub
     await use_as_plan(pg); await pg.wait_for_timeout(300)
     st = await state(pg); assert sorted(s["name"] for s in st["subs"]) == ["Apple 10.99", "Apple 2.99", "Grammarly", "Hulu", "Quiet Books Club"], [s["name"] for s in st["subs"]]
+    assert not pg.errors, pg.errors
+
+@test
+async def a_link_opens_keepwise_on_the_owl(ctx):
+    # the phone's back tap can be pointed at this link; a normal open stays a normal open
+    pg = await open_app(ctx)
+    assert await pg.locator("[data-ask-sheet]").count() == 0, "a normal open does not raise the owl"
+    await pg.goto(URL + "?ask"); await pg.wait_for_timeout(500)
+    assert await pg.locator("[data-ask-sheet] #ask-in").count() == 1, "the link opens Ask KeepWise"
+    assert "ask" not in await pg.evaluate("location.search"), "the address is tidied"
+    await pg.reload(); await pg.wait_for_timeout(500)
+    assert await pg.locator("[data-ask-sheet]").count() == 0, "a refresh is a normal open again"
+    await menu_to(pg, "settings")
+    row = pg.locator("[data-set-app] [data-ask-row]"); assert await row.count() == 1
+    assert await pg.locator("[data-info-tip=asklink]").count() == 0, "the how-to waits behind its (i)"
+    await row.locator("[data-info=asklink]").click(); await pg.wait_for_timeout(150)
+    tip = await pg.inner_text("[data-info-tip=asklink]"); assert "unlocked" in tip and "Ask KeepWise" in tip and "\u2014" not in tip, tip
+    await ctx.grant_permissions(["clipboard-read", "clipboard-write"])
+    await pg.click("[data-ask-link]"); await pg.wait_for_timeout(200)
+    assert "copied" in (await pg.inner_text("#toast")).lower()
+    if "www" in PAGE:
+        man = json.load(open(os.path.join(os.path.dirname(PAGE), "manifest.webmanifest")))
+        assert man["shortcuts"][0]["url"] == "./?ask" and man["shortcuts"][0]["name"] == "Ask KeepWise"
+    # a first visit still gets its setup, not the owl
+    p2 = await ctx.new_page(); await p2.add_init_script("window.KEEPWISE_FIREBASE = null; localStorage.clear();"); await p2.goto(URL + "?ask"); await p2.wait_for_timeout(400)
+    assert await p2.locator("[data-ask-sheet]").count() == 0 and await p2.evaluate("document.getElementById('wise').hidden"), "setup comes first"
+    assert not pg.errors, pg.errors
+
+@test
+async def a_statement_in_sections_is_read_by_its_headings(ctx):
+    # deposits and withdrawals in their own sections, withdrawals printed with no minus: the heading says which way each goes
+    pg = await open_app(ctx)
+    await pg.set_input_files("#stmt", os.path.join(FIX, "sections-statement.pdf")); await pg.wait_for_timeout(2500)
+    chk = await stx(pg, ".st-check"); assert "Money in $1,400" in chk and "money out $200" in chk, chk
+    assert "add up to the totals printed on the statement" in chk and "money in $1,400" in chk and "do not" not in chk, chk
+    assert await pg.locator("[data-st-ocr]").count() == 0, "a PDF with its text is not called a picture"
+    await pg.click("[data-st-open=all]"); await pg.wait_for_timeout(200)
+    rows = [x.replace("\u00a0", " ").replace("\n", " | ") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()]
+    assert len(rows) == 10, rows
+    joined = " ## ".join(rows)
+    for want in ("CORNER MART PAYROLL MAY", "debit card payment 4747 STARBUCKS PLAZA NORTE BT 1234567654532109875322", "Checkcard 2201 TOYSRUS 333-267-6947 BA 123456789012345", "Payment Debit Card 4747 UNIVERSITY OF LAKEVIEW BO"): assert want in joined, (want, rows)
+    v = await stx(pg, "#view"); assert "Starbucks" in v and "Toysrus" in v, v[:1500]
+    assert not pg.errors, pg.errors
+
+async def picture_rows(pg, name):
+    await pg.set_input_files("#stmt", os.path.join(FIX, name))
+    await pg.wait_for_selector(".st-check", timeout=120000)
+    chk = await stx(pg, ".st-check"); assert "Money in $1,400" in chk and "money out $200" in chk, chk
+    assert "add up to the totals printed on the statement" in chk and "do not" not in chk, chk
+    assert "read from a picture" in await stx(pg, "[data-st-ocr]"), "the person is told to check a picture reading"
+    await pg.click("[data-st-open=all]"); await pg.wait_for_timeout(200)
+    rows = [x.replace("\u00a0", " ").replace("\u2212", "-").replace("\n", " | ") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()]
+    assert len(rows) == 10, rows
+    joined = " ## ".join(rows)
+    for want in ("May 19, 2026 | CORNER MART PAYROLL MAY", "+$1,250", "STARBUCKS PLAZA NORTE", "$10.49", "May 29, 2026 | Deposit", "TOYSRUS 333-267-6947", "$89.51", "$32.81", "UNIVERSITY OF LAKEVIEW", "$17.19"): assert want in joined, (want, rows)
+    assert sum(1 for r in rows if "+$" in r) == 4, rows   # four deposits; the rest went out, as their section says
+    return rows
+
+@test
+async def a_scanned_statement_is_read_from_the_picture(ctx):
+    # the pages are pictures with no text in the file: the words are read on the device and checked against the printed totals
+    pg = await open_app(ctx)
+    await picture_rows(pg, "scanned-statement.pdf")
+    v = await stx(pg, "#view"); assert "10 transactions" in v and "Starbucks" in v, v[:300]
+    assert not pg.errors, pg.errors
+
+@test
+async def a_photo_of_a_statement_is_read_even_when_it_leans(ctx):
+    # a phone photo: dim, a little soft and turned a few degrees. It is levelled first, then read like a scan.
+    pg = await open_app(ctx)
+    assert "image/*" in await pg.get_attribute("#stmt", "accept")
+    await picture_rows(pg, "statement-photo-tilted.jpg")
+    assert not pg.errors, pg.errors
+
+@test
+async def a_card_purchase_is_not_a_loan_payment(ctx):
+    pg, rows = await read_csv(ctx, "cards.csv", "Date,Description,Amount\n05/06/2026,debit card payment 4747 STARBUCKS PLAZA NORTE BT 1234567654532109875322,-10.49\n05/08/2026,Payment Debit Card 4747 UNIVERSITY OF LAKEVIEW BO 123456,-17.19\n05/09/2026,CREDIT CARD PAYMENT THANK YOU,-300.00\n05/10/2026,Checkcard 2202 MACDONALDS 678-344-6314 BO 1338,-32.81\n")
+    j = " ## ".join(rows); assert "STARBUCKS PLAZA NORTE BT 1234567654532109875322 | Eating out" in j and "MACDONALDS 678-344-6314 BO 1338 | Eating out" in j, rows
+    assert "CREDIT CARD PAYMENT THANK YOU | Loan" in j and "UNIVERSITY OF LAKEVIEW BO 123456 | Everything else" in j, rows
+    assert "University Of Lakeview" in await stx(pg, "#view")
     assert not pg.errors, pg.errors
 
 @test

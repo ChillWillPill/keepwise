@@ -679,7 +679,7 @@ h2.hint-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 <div class="tour" id="tour" role="dialog" aria-label="Tour of KeepWise" hidden></div>
 <div class="lockscreen" id="lockscreen" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
-<input type="file" id="stmt" accept=".csv,.pdf,text/csv,application/pdf" class="sr" tabindex="-1" aria-hidden="true">
+<input type="file" id="stmt" accept=".csv,.pdf,text/csv,application/pdf,image/*" class="sr" tabindex="-1" aria-hidden="true">
 <input type="file" id="restore-in" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true" aria-label="Backup file">
 <input type="file" id="vcf" accept=".vcf,text/vcard,text/x-vcard" class="sr" tabindex="-1" aria-hidden="true">
 
@@ -746,6 +746,7 @@ function toast(msg, undo){
     b.addEventListener("click", () => { t.hidden = true; undo(); }); t.append(b); }
   t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, undo ? 10000 : 2600);
 }
+const toastStay = msg => { toast(msg); clearTimeout(toast.t); };   // for work that takes a while: stays until the next message or the result
 // Removing something can be taken back for a few seconds: keep a copy of everything, and put it back on Undo.
 const undoable = () => { const snap = JSON.stringify(S); return () => { const keepTab = S.tab; S = JSON.parse(snap); S.tab = keepTab; save(); render(true); toast("Put back."); }; };
 
@@ -1011,7 +1012,7 @@ const V = {};
 const OUT = {};
 // Big numbers keep their full size, and shrink only when a long amount (PKR 121,256.99) would not fit the screen.
 function importCard(){
-  return `<section class="card import-card"><div><h3>Import a bank statement</h3><p class="muted small">${S.imported ? `Last import: ${esc(S.imported.file)}, ${monthsLabel(S.imported.from)} to ${monthsLabel(S.imported.to)}.` : "CSV or PDF from your bank. KeepWise finds your pay, bills and every subscription. Read on this phone only."}</p></div>
+  return `<section class="card import-card"><div><h3>Import a bank statement</h3><p class="muted small">${S.imported ? `Last import: ${esc(S.imported.file)}, ${monthsLabel(S.imported.from)} to ${monthsLabel(S.imported.to)}.` : "CSV or PDF from your bank, or a clear photo of a paper statement. KeepWise finds your pay, bills and every subscription. Read on this phone only."}</p></div>
     <button class="btn primary" type="button" data-import-open>${S.imported ? "Import another statement" : "Choose a statement"}</button></section>`;
 }
 const avatarHue = name => { let h = 0; for (const ch of String(name)) h = (h * 33 + ch.charCodeAt(0)) % 360; return h; };
@@ -1033,7 +1034,7 @@ function peopleList(c){
 }
 const fitSize = (txt, maxRem, sidePx) => `font-size:min(${maxRem}rem, calc((100vw - ${sidePx}px) / ${(String(txt).length * 0.62).toFixed(2)}))`; // live-updating fragments: id -> () => html
 
-// ================= bank statement import (CSV or PDF, read on this device only) =================
+// ================= bank statement import (CSV, PDF, scan or photo, read on this device only) =================
 const STMT = {result:null, busy:false, err:"", tx:null, holder:[], me:new Set(), pick:{}, open:new Set(), confirm:false};
 const STOP_WORDS = new Set(["POS","DEBIT","CREDIT","CARD","PURCHASE","RECURRING","PAYMENT","PMT","ACH","COM","WWW","INC","LLC","LTD","USA","US","UK","THE","STORE","ORDER","TRIP","MKTPLACE","OIL","DIRECT","DEP","DD","SO","FPI","BGC","TFR","REF","ONLINE","VISA","MASTERCARD","CONTACTLESS","APPLE","PAY","GOOGLE","SQ","TST","PP","PAYPAL","BILL"]);
 const KEEP_FIRST = /^(APPLE|GOOGLE|PAYPAL|AMAZON)$/;
@@ -1042,16 +1043,16 @@ const CAT_RULES = [
   ["Tax",/\bTAX\b|IRS|HMRC|FBR|REVENUE SERVICE|COUNCIL TAX|INCOME TAX|WITHHOLDING/],
   ["Govt",/GOVT|GOVERNMENT INSTRUMENT|GOVERNMENT PAYMENT|\bPRAL|\bPSID\b|CHALLAN/],
   ["Giving",/DONATION|DONATE|CHARITY|CHARITABLE|ZAKAT|SADAQA|SADQA|TITHE|CHURCH|MOSQUE|MASJID|TEMPLE|SYNAGOGUE|EDHI|SHAUKAT KHANUM|UNICEF|RED CROSS|RED CRESCENT|GOFUNDME|SAVE THE CHILDREN|OXFAM|ALKHIDMAT|SAYLANI|CHHIPA|FOUNDATION|WELFARE/],
-  ["Loans",/LOAN|MORTGAGE|\bMTG\b|CREDIT CARD PAYMENT|CREDIT CARD PMT|CARD PAYMENT|\bCC PAYMENT|\bCC PMT|\bEMI\b|INSTALLMENT|INSTALMENT|\bQIST|FINANCING|FINANCE|IJARAH|MURABAHA|NELNET|NAVIENT|SALLIE MAE|MOHELA|AIDVANTAGE|AFFIRM|KLARNA|AFTERPAY|CLEARPAY|\bZIP PAY|LENDING|\bKARZ|MARK UP|MARKUP|PROFIT MARK/],
+  ["Loans",/LOAN|MORTGAGE|\bMTG\b|CREDIT CARD PAYMENT|CREDIT CARD PMT|(?<!DEBIT )CARD PAYMENT|\bCC PAYMENT|\bCC PMT|\bEMI\b|INSTALLMENT|INSTALMENT|\bQIST|FINANCING|FINANCE|IJARAH|MURABAHA|NELNET|NAVIENT|SALLIE MAE|MOHELA|AIDVANTAGE|AFFIRM|KLARNA|AFTERPAY|CLEARPAY|\bZIP PAY|LENDING|\bKARZ|MARK UP|MARKUP|PROFIT MARK/],
   ["Housing",/RENT|APARTMENT|PROPERTY|LETTING|LANDLORD|HOA/],
   ["Utilities",/ELECTRIC|ENERGY|WATER|GAS BILL|COMCAST|XFINITY|VERIZON|AT&T|T MOBILE|TMOBILE|INTERNET|BROADBAND|CON ED|BRITISH GAS|OCTOPUS|VODAFONE|EE LIMITED|JAZZ|ZONG|TELENOR|PTCL|K ELECTRIC|SUI GAS/],
   ["Insurance",/GEICO|INSURANCE|STATE FARM|PROGRESSIVE|ALLSTATE|AVIVA|DIRECT LINE|ADMIRAL|JUBILEE/],
   ["Subscriptions",/NETFLIX|SPOTIFY|HULU|DISNEY|ICLOUD|APPLE COM BILL|APPLE COM|ADOBE|AUDIBLE|PRIME|YOUTUBE|PARAMOUNT|PEACOCK|\bMAX\b|HBO|FITNESS|GYM|PELOTON|DROPBOX|MICROSOFT|OFFICE 365|OPENAI|CHATGPT|CLAUDE|ANTHROPIC|NOTION|DUOLINGO|PATREON|NOW TV|BRITBOX|CRUNCHYROLL|XBOX|PLAYSTATION|NINTENDO|CANVA|GRAMMARLY|LINKEDIN|TINDER|BUMBLE|HEADSPACE|CALM|NYTIMES|WSJ/],
   ["Groceries",/TRADER JOE|KROGER|WHOLE FOODS|ALDI|TESCO|SAINSBURY|SAFEWAY|LIDL|WALMART|GROCERY|ASDA|COSTCO|CARREFOUR|IMTIAZ|METRO CASH|METRO HABIB|CASH N CARRY|CASH AND CARRY|MORRISONS|WAITROSE/],
-  ["Dining",/STARBUCKS|CHIPOTLE|MCDONALD|DOORDASH|UBER EATS|GRUBHUB|RESTAURANT|CAFE|COFFEE|PIZZA|DELIVEROO|JUST EAT|GREGGS|FOOD ?PANDA|KFC|SUBWAY|BURGER|DOMINO/],
+  ["Dining",/STARBUCKS|CHIPOTLE|MCDONALD|MACDONALD|DOORDASH|UBER EATS|GRUBHUB|RESTAURANT|CAFE|COFFEE|PIZZA|DELIVEROO|JUST EAT|GREGGS|FOOD ?PANDA|KFC|SUBWAY|BURGER|DOMINO/],
   ["Transport",/UBER|LYFT|CAREEM|SHELL|EXXON|CHEVRON|ARAMCO|TOTAL PARCO|ATTOCK|\bBP\b|PSO|METRO|TRANSIT|PARKING|TFL|TRAINLINE|FUEL|PETROL/],
   ["Health",/CVS|WALGREENS|PHARMA|CHEMIST|BOOTS|CLINIC|CLINIX|DENTAL|HOSPITAL|\bLAB\b|LABORATOR/],
-  ["Shopping",/AMAZON|TARGET|BEST BUY|ETSY|EBAY|ARGOS|DARAZ|IKEA|ZARA|H&M|NIKE|APPLE STORE/],
+  ["Shopping",/AMAZON|TARGET|BEST BUY|TOYS ?R ?US|ETSY|EBAY|ARGOS|DARAZ|IKEA|ZARA|H&M|NIKE|APPLE STORE/],
   ["Savings",/VANGUARD|FIDELITY|ROBINHOOD|SCHWAB|ETRADE|E TRADE|COINBASE|BINANCE|KRAKEN|WEALTHFRONT|BETTERMENT|ACORNS|MUTUAL FUND|INVESTMENT|BROKERAGE|\bSIP\b|\bIRA\b|401K|PENSION CONTRIB|NATIONAL SAVINGS/],
   ["Bank",/CHARGES|\bCHGS?\b|\bFEES?\b|EXCISE DUTY|SERVICE CHARGE|SMS ALERT|\bFED\b|OVERDRAFT/],
   ["Transfers",/TRANSFER|\bTRF\b|\bTFR\b|\bIBFT\b|RAAST|1 ?LINK|\bFT\b|\bP2P\b|ZELLE|VENMO|CASH APP|\bWISE\b|REMIT|WESTERN UNION|MONEYGRAM|XOOM|PAYONEER|\bSWIFT\b|INWARD|OUTWARD|ATM|WITHDRAWAL|\bCASH\b|\bCWD\b|EASYPAISA|JAZZCASH|SADAPAY|NAYAPAY|\bUPI\b|\bIMPS\b|\bNEFT\b|\bRTGS\b|FASTER PAYMENT|SEND MONEY|MONEY SENT|MONEY RECEIVED/]
@@ -1117,7 +1118,7 @@ function merchantKey(desc){
   let r = runs.find(x => x.some(w => w.length > 1));
   if (r){ r = r.slice();
     if (CARD_LINE.test(up)){ if (r.length >= 3 && r[r.length - 1].length === 2) r.pop();
-      if (r.length >= 2 && TOWNS.has(r[r.length - 1])) r.pop(); else if (r.length >= 3) r.pop(); }
+      if (r.length >= 2 && TOWNS.has(r[r.length - 1])) r.pop(); else if (r.length >= 3){ const last = r.pop(); if (/^(OF|THE|AND|DE|DEL|LA|FOR|AT)$/.test(r[r.length - 1])) r.push(last); } }   // "UNIVERSITY OF LAKEVIEW" keeps its last word
     if (r.length === 2 && STORE_FRONT.test(r[0]) && CARD_LINE.test(up) && !STORE_ITEMS.test(r[1])) r.pop();   // "APPLE.COM/BILL CORK": the second word is the town the store bills from
     if (r.length > 1 && STORE_FRONT.test(r[0])) r.shift();
     r = r.filter(w => w.length > 1).slice(0, 3); if (r.length) return r.join(" "); }
@@ -1186,6 +1187,15 @@ function balanceCheck(tx){
   const first = loose[0], last = first === tx[0] ? tx[tx.length - 1] : tx[0];
   return {bad: 0, opening: r2(first.bal - first.amt), closing: last.bal};
 }
+// With no running balance, the statement's own printed totals do the checking: the lines must add up to them.
+function statementCheck(tx){
+  const b = balanceCheck(tx); if (b) return b;
+  const s = tx.summary; if (!s) return null;
+  const tin = r2(tx.filter(t => t.amt > 0).reduce((a, t) => a + t.amt, 0)), tout = r2(-tx.filter(t => t.amt < 0).reduce((a, t) => a + t.amt, 0)), off = (a, b) => Math.abs(a - b) > 0.005;
+  if (s.totalIn != null || s.totalOut != null) return {kind: "totals", bad: (s.totalIn != null && off(s.totalIn, tin) ? 1 : 0) + (s.totalOut != null && off(s.totalOut, tout) ? 1 : 0), totalIn: s.totalIn, totalOut: s.totalOut};
+  if (s.opening != null && s.closing != null) return {kind: "ends", bad: off(s.opening + tin - tout, s.closing) ? 1 : 0, opening: s.opening, closing: s.closing};
+  return null;
+}
 const signByWords = t => { t.amt = catOfDesc(t.desc) === "Salary" || CREDIT_WORDS.test(t.desc) ? Math.abs(t.amt) : -Math.abs(t.amt); };
 
 // ---- CSV ----
@@ -1252,18 +1262,79 @@ async function pdfLib(){
   return window.pdfjsLib;
 }
 // Every line of the PDF, with where each piece of text sits across the page, so amounts can be matched to their column.
-async function pdfRows(buf, password){
+async function pdfRows(buf, password, allScans){
   const lib = await pdfLib();
   let doc;
   try { doc = await lib.getDocument({data: buf, isEvalSupported: false, disableFontFace: true, ...(password ? {password} : {})}).promise; }
   catch(e){ if (e && e.name === "PasswordException"){ const x = new Error("locked"); x.locked = true; x.wrong = !!password; throw x; } throw e; }
-  const out = [];
+  const out = []; let scans = 0;
   for (let p = 1; p <= doc.numPages; p++){
     const page = await doc.getPage(p), content = await page.getTextContent(), rows = new Map();
+    if (allScans || content.items.filter(it => it.str.trim()).length < 6){   // a page with no words in it is a picture of a page
+      if (scans >= OCR_MAX_PAGES) continue; scans++;
+      toastStay(`Reading page ${p} of ${doc.numPages} from the picture. This can take a moment.`);
+      const v1 = page.getViewport({scale: 1}), k = Math.min(4, 2400 / v1.width), vp = page.getViewport({scale: k}), c = document.createElement("canvas"); c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+      const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); await page.render({canvasContext: g, viewport: vp}).promise;
+      (await ocrRows(c, p, k)).forEach(r => out.push(r)); c.width = c.height = 0; continue;
+    }
     content.items.forEach(it => { if (!it.str.trim()) return; const y = Math.round(it.transform[5] / 3) * 3; if (!rows.has(y)) rows.set(y, []); rows.get(y).push({x: it.transform[4], w: it.width || 0, s: it.str}); });
     [...rows.entries()].sort((a, b) => b[0] - a[0]).forEach(([y, items]) => out.push({p, y, items: items.sort((a, b) => a.x - b.x)}));
   }
+  if (scans) out.ocr = true;
   return out;
+}
+// ---- scans and photos: the words are read from the picture, on this device ----
+// A scanned statement is a picture of a page, so there is no text in the file to read. A small open source reader
+// (Tesseract) is downloaded on first use and then works on the phone itself; the picture is never sent anywhere.
+const OCR_CDN = "https://cdn.jsdelivr.net/npm/";
+let ocrW = null;
+async function ocrWorker(){
+  if (ocrW) return ocrW;
+  const fail = () => new Error("Couldn't load the picture reader. Check your connection and try again.");
+  if (!window.Tesseract){ try { await loadScript(OCR_CDN + "tesseract.js@5.1.1/dist/tesseract.min.js"); } catch(e){ throw fail(); } }
+  try { ocrW = await window.Tesseract.createWorker("eng", 1, {workerPath: OCR_CDN + "tesseract.js@5.1.1/dist/worker.min.js", corePath: OCR_CDN + "tesseract.js-core@5.1.1", langPath: OCR_CDN + "@tesseract.js-data/eng@1.0.0/4.0.0_best_int", gzip: true}); }
+  catch(e){ ocrW = null; throw fail(); }
+  return ocrW;
+}
+// A reader can take a zero for an O or a one for an l. Inside something that is plainly an amount or a date, put the digit back.
+const ocrDigits = w => w.replace(/[Oo]/g, "0").replace(/[lI|]/g, "1");
+function ocrFix(w, first){
+  w = w.replace(/^[\u2013\u2014\u2212]/, "-");
+  if (/^[-(]?[$£€]?[\dOolI|,]+\.[\dOolI|]{2}\)?-?$/.test(w) && /\d/.test(w)) return ocrDigits(w);
+  if (first && /^[\dOolI|]{1,2}[\/.-]?[\dOolI|]{2}[\/.-]?[\dOolI|]{2,4}$/.test(w) && /[\/.-]/.test(w)){
+    const d = ocrDigits(w), sep = d.match(/[\/.-]/)[0], n = d.replace(/\D/g, "");
+    if (/^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}$/.test(d)) return d;
+    if (n.length === 6 || n.length === 8) return n.slice(0, 2) + sep + n.slice(2, 4) + sep + n.slice(4);   // a slash the reader missed
+    return d;
+  }
+  return w;
+}
+// Words from one picture, gathered into the lines of the page, in the same shape pdfRows gives. `k` is picture pixels per point.
+async function ocrRows(canvas, p, k, again){
+  const w = await ocrWorker(), res = await w.recognize(canvas, {}, {blocks: true, text: false}), words = [], all = [];
+  ((res.data && res.data.blocks) || []).forEach(b => (b.paragraphs || []).forEach(pg => (pg.lines || []).forEach(l => all.push(l))));
+  // A photo is rarely dead straight, and a leaning page reads badly. The slope of the long lines says how far it leans:
+  // the picture is turned level and read once more, and whatever lean is left is taken out when lines are gathered.
+  const slopes = all.filter(l => l.baseline && l.baseline.x1 - l.baseline.x0 > canvas.width * 0.2).map(l => (l.baseline.y1 - l.baseline.y0) / (l.baseline.x1 - l.baseline.x0)).sort((a, b) => a - b);
+  const lean = slopes.length >= 3 ? slopes[slopes.length >> 1] : 0;
+  if (!again && Math.abs(lean) > 0.006 && Math.abs(lean) < 0.3){
+    const c = document.createElement("canvas"); c.width = canvas.width; c.height = canvas.height; const g = c.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.translate(c.width / 2, c.height / 2); g.rotate(-Math.atan(lean)); g.drawImage(canvas, -c.width / 2, -c.height / 2);
+    return ocrRows(c, p, k, true);
+  }
+  all.forEach(l => { const yc = (l.bbox.y0 + l.bbox.y1) / 2 - lean * (l.bbox.x0 + l.bbox.x1) / 2;
+    (l.words || []).forEach(x => { const t = (x.text || "").trim(); if (t && x.confidence > 15) words.push({s: t, x: x.bbox.x0 / k, w: (x.bbox.x1 - x.bbox.x0) / k, yc: yc / k, h: (x.bbox.y1 - x.bbox.y0) / k}); }); });
+  if (!words.length) return [];
+  const hs = words.map(x => x.h).sort((a, b) => a - b), tol = Math.max(2, hs[hs.length >> 1] * 0.6), H = canvas.height / k, rows = [];
+  words.sort((a, b) => a.yc - b.yc).forEach(x => { const r = rows[rows.length - 1]; if (r && Math.abs(x.yc - r.yc) <= tol){ r.items.push(x); r.yc += (x.yc - r.yc) / r.items.length; } else rows.push({yc: x.yc, items: [x]}); });
+  return rows.map(r => { const items = r.items.sort((a, b) => a.x - b.x).map((x, i) => ({x: x.x, w: x.w, s: ocrFix(x.s, i === 0)})); return {p, y: Math.round(H - r.yc), items}; });
+}
+const OCR_MAX_PAGES = 12;
+async function imageRows(file){
+  let bmp; try { bmp = await createImageBitmap(file); } catch(e){ throw new Error("That picture can't be opened here. Try a JPG or PNG, or a screenshot of the statement."); }
+  const f = Math.max(0.3, Math.min(3, 2200 / bmp.width)), c = document.createElement("canvas"); c.width = Math.round(bmp.width * f); c.height = Math.round(bmp.height * f);
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
+  const rows = await ocrRows(c, 1, c.width / 612); rows.ocr = true; return rows;   // measured as if the picture were a letter page, so spacing means the same as in a PDF
 }
 const rowText = r => r.items.map(i => i.s).join(" ").replace(/\s+/g, " ").trim();
 const MONEY_RE = /\(?-?[£$€₹]?\s?(?:Rs\.?\s?)?\d{1,3}(?:,\d{3})*\.\d{2}\)?(?:\s?(?:CR|DR))?-?/gi;
@@ -1271,6 +1342,10 @@ const MONEY_INT_RE = /\(?-?\d{1,3}(?:,\d{3})+\)?(?:\s?(?:CR|DR))?-?/gi;   // 50,
 const DATE_RE = /^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{1,2}[\s-][A-Za-z]{3,4}[a-z]*(?:[\s-,]+\d{2,4})?|[A-Za-z]{3,4}\.?\s\d{1,2}(?:,?\s\d{4})?)\b/;
 const NOT_A_TX = /opening|closing|brought forward|carried forward|balance b\/f|balance c\/f|b\/f balance|c\/f balance/i;
 const NOT_MORE_DESC = /page \d+|\bof \d+\b|statement|balance|total|continued|customer|account (no|number|title|type)|branch|www\.|https?:|helpline|generated|address|summary|sort code|\biban\b|\bswift\b|member fdic|disclaimer|computer generated/i;
+// Many banks print money in and money out in separate sections, each under its own heading, with a total at the foot.
+// The heading says which way every line under it goes, and the printed totals let the reading be checked.
+const SEC_IN = /^(deposits?|credits?|additions|money in|paid in|other credits|electronic deposits|interest (paid|earned)|payments received)\b/i;
+const SEC_OUT = /^(withdrawals?|debits?|subtractions|checks?\b|cheques?\b|money out|paid out|purchases|fees\b|service (fees|charges)|atm\b|card (purchases|payments)|electronic (withdrawals|payments)|other (withdrawals|debits|subtractions)|payments? (made|out))/i;
 function pdfColumns(rows){
   for (const r of rows){
     const t = rowText(r);
@@ -1302,19 +1377,29 @@ function txFromRows(rows){
   // and anything that starts in the description column on the lines below a transaction is more of its description.
   const G = cols && cols.geo && cols.geo.dateX != null && cols.geo.descX != null && cols.geo.descX < cols.geo.moneyX ? cols.geo : null;
   const inDesc = it => it.x >= G.descX - 4 && it.x < G.moneyX - 3;
-  const out = []; let prevBal = null, cur = null, more = 0, lastY = 0, descX = 0;
+  const out = []; let prevBal = null, cur = null, more = 0, lastY = 0, descX = 0, section = 0; const sum = {}, sec = {};
+  const lastMoney = line => { const n = line.match(MONEY_RE); return n ? parseMoney(n[n.length - 1]) : NaN; };
+  const note = line => {   // a line that is not a transaction: a section heading, a printed total, or the opening or closing balance
+    const v = lastMoney(line), tot = line.match(/^total\s+(?:of\s+)?(.*)/i);
+    if (tot && !isNaN(v)){ const k = SEC_IN.test(tot[1]) ? "totalIn" : SEC_OUT.test(tot[1]) ? "totalOut" : null;
+      if (k && section){ sum[k] = r2((sec[k] ? sum[k] : 0) + Math.abs(v)); sec[k] = true; }   // several sections one way add together
+      else if (k && !sec[k]) sum[k] = Math.abs(v);                                             // a total in the summary box, until the sections give their own
+      section = 0; return; }
+    if (isNaN(v)){ if (line.length < 70){ if (SEC_IN.test(line)) section = 1; else if (SEC_OUT.test(line)) section = -1; } return; }
+    if (/^(beginning|opening|previous|starting) balance/i.test(line)) sum.opening = v; else if (/^(ending|closing|new) balance/i.test(line)) sum.closing = v;
+  };
   for (const r of rows){
     const line = rowText(r), dm = (!G || r.items[0].x <= G.dateX + 14) && line.match(DATE_RE);
     const date = dm ? parseAnyDate(dm[1], yearHint, dayFirst) : null;
     if (G && (!date || isNaN(date))){
       if (cur && more < 10 && r.p === cur.p && lastY - r.y > 0 && lastY - r.y <= 22 && r.items.every(inDesc)){ cur.desc = (cur.desc + " " + line).replace(/\s+/g, " ").trim(); more++; lastY = r.y; }
-      else { if (NOT_A_TX.test(line)){ const n = line.match(MONEY_RE); if (n) prevBal = Math.abs(parseMoney(n[n.length - 1])); } cur = null; }
+      else { if (NOT_A_TX.test(line)){ const n = line.match(MONEY_RE); if (n) prevBal = Math.abs(parseMoney(n[n.length - 1])); } note(line); cur = null; }
       continue;
     }
     if (!date || isNaN(date)){
       // a description that runs onto the next line belongs to the transaction above it
       if (cur && more < 3 && r.p === cur.p && lastY - r.y <= 18 && lastY - r.y > 0 && line.length <= 90 && !NOT_MORE_DESC.test(line) && !NOT_A_TX.test(line) && !moneyIn(r, false).length && r.items[0].x >= descX - 24){ cur.desc = (cur.desc + " " + line).replace(/\s+/g, " ").trim(); more++; lastY = r.y; }
-      else { if (NOT_A_TX.test(line)){ const n = line.match(MONEY_RE); if (n) prevBal = Math.abs(parseMoney(n[n.length - 1])); } cur = null; }
+      else { if (NOT_A_TX.test(line)){ const n = line.match(MONEY_RE); if (n) prevBal = Math.abs(parseMoney(n[n.length - 1])); } note(line); cur = null; }
       continue;
     }
     cur = null;
@@ -1324,6 +1409,7 @@ function txFromRows(rows){
     const inCol = k => { const f = placed.filter(p => p.col === k); return f.length ? f[f.length - 1] : null; };
     let amt = NaN, bal = null, unsure = false, desc = rest.replace(MONEY_RE, " ");
     const pd = inCol("db"), pc = inCol("cr"), pa = inCol("am"), pb = inCol("bal");
+    const oneCol = cols && (pd || pc || pa) ? !(pd || pc) : !(nums && nums.length >= 3);   // one amount, so a section heading can say which way it went
     if (cols && (pd || pc || pa)){
       const d = pd ? parseMoney(pd.s) : NaN, c = pc ? parseMoney(pc.s) : NaN;
       if (!isNaN(c) && c !== 0) amt = Math.abs(c); else if (!isNaN(d) && d !== 0) amt = -Math.abs(d);
@@ -1343,15 +1429,17 @@ function txFromRows(rows){
     desc = desc.replace(/\s+/g, " ").trim();
     if (!desc || NOT_A_TX.test(desc)){ const b = bal != null ? bal : nums ? parseMoney(nums[nums.length - 1]) : NaN; if (!isNaN(b)) prevBal = Math.abs(b); continue; }
     if (isNaN(amt) || !amt){ if (bal != null && !isNaN(bal)) prevBal = bal; continue; }
+    if (section && oneCol){ if (section < 0){ amt = -Math.abs(amt); unsure = false; } else if (unsure){ amt = Math.abs(amt); unsure = false; } }
     if (unsure && bal != null && prevBal != null && Math.abs(Math.abs(prevBal - bal) - Math.abs(amt)) < 0.02){ amt = bal > prevBal ? Math.abs(amt) : -Math.abs(amt); unsure = false; }
     if (bal != null && !isNaN(bal)) prevBal = bal;
     cur = {date, desc, amt, bal: bal != null && !isNaN(bal) ? bal : null, unsure, p: r.p}; more = 0; lastY = r.y;
     const firstText = r.items.find(it => !DATE_RE.test(it.s.trim()) || it.s.trim().length > 14); descX = firstText ? firstText.x : 0;
     out.push(cur);
   }
-  if (!out.length) throw new Error("Couldn't read transactions from that PDF. Scanned statements (photos) can't be read; try the CSV export from your bank's website instead.");
+  if (!out.length) throw new Error(rows.ocr ? "Couldn't find transactions in that picture. It needs to be straight and sharp, with the dates and amounts showing. A PDF or CSV from your bank's website reads best." : "Couldn't find transactions in that PDF. Try the CSV export from your bank's website instead.");
   if (out.some(t => t.unsure)){ signByBalance(out); out.forEach(t => { if (t.unsure) signByWords(t); }); }
   out.forEach(t => { delete t.unsure; delete t.p; });
+  Object.defineProperty(out, "summary", {value: sum}); if (rows.ocr) Object.defineProperty(out, "ocr", {value: true});
   return out;
 }
 
@@ -1370,7 +1458,7 @@ function stLoanName(desc, kind, key){ const u = String(desc).toUpperCase();
   if (/FINANCE PAYMENT|MARK.?UP/.test(u)) return "Finance payment";
   return /^(TRANSFER|ONLINE|FINANCE|LOAN|PAYMENT|FUNDS|\s)+$/.test(key) ? `${loanKind(kind)} payment` : titleCase(key); }
 function stLoanKind(desc){ const u = " " + String(desc).toUpperCase().replace(/[^A-Z0-9 ]/g, " ") + " ";
-  return /CREDIT CARD| CC | CARD PAYMENT/.test(u) ? "card" : /MORTGAGE| MTG |HOME (LOAN|FINANC)|HOUSE (LOAN|FINANC)/.test(u) ? "home" : /STUDENT|NELNET|NAVIENT|SALLIE|MOHELA|AIDVANTAGE/.test(u) ? "student" : / (CAR|AUTO|VEHICLE|MOTOR) |IJARAH/.test(u) ? "car" : /PERSONAL/.test(u) ? "personal" : /AFFIRM|KLARNA|AFTERPAY|CLEARPAY|ZIP PAY|INSTAL/.test(u) ? "other" : "bank"; }
+  return /CREDIT CARD| CC |(?<!DEBIT) CARD PAYMENT/.test(u) ? "card" : /MORTGAGE| MTG |HOME (LOAN|FINANC)|HOUSE (LOAN|FINANC)/.test(u) ? "home" : /STUDENT|NELNET|NAVIENT|SALLIE|MOHELA|AIDVANTAGE/.test(u) ? "student" : / (CAR|AUTO|VEHICLE|MOTOR) |IJARAH/.test(u) ? "car" : /PERSONAL/.test(u) ? "personal" : /AFFIRM|KLARNA|AFTERPAY|CLEARPAY|ZIP PAY|INSTAL/.test(u) ? "other" : "bank"; }
 function stCause(desc){ const u = String(desc).toUpperCase();
   return /ZAKAT|SADAQA|SADQA|TITHE|CHURCH|MOSQUE|MASJID|TEMPLE|SYNAGOGUE/.test(u) ? "faith" : /UNICEF|SAVE THE CHILDREN|CHILD/.test(u) ? "children" : /ORPHAN/.test(u) ? "orphans" : /RED CROSS|RED CRESCENT|EDHI|RELIEF|CHHIPA|ALKHIDMAT|SAYLANI/.test(u) ? "relief" : /KHANUM|HOSPITAL|CANCER|HEALTH/.test(u) ? "health" : /SCHOOL|EDUCATION|SCHOLAR/.test(u) ? "education" : "other"; }
 function analyzeStatement(tx, fileName, holder, me){
@@ -1529,9 +1617,15 @@ function applyStatement(R, mode){
 async function readStatementFile(file, password){
   const name = file.name || "statement"; let tx, text;
   if (/\.(xlsx?|numbers|ods)$/i.test(name)) throw new Error("Spreadsheet files can't be read yet. Open it and save it as CSV, or download the CSV or PDF from your bank.");
-  if (/\.pdf$/i.test(name) || file.type === "application/pdf"){ const rows = await pdfRows(await file.arrayBuffer(), password); text = rows.map(rowText).join("\n"); tx = txFromRows(rows); }
+  if (/\.pdf$/i.test(name) || file.type === "application/pdf"){
+    const buf = await file.arrayBuffer(); let rows = await pdfRows(buf.slice(0), password);
+    try { tx = txFromRows(rows); }
+    catch(e){ if (rows.ocr) throw e; rows = await pdfRows(buf.slice(0), password, true); tx = txFromRows(rows); }   // words in the file but no transactions: the pages may be pictures with a little text laid over
+    text = rows.map(rowText).join("\n"); }
+  else if (/^image\//.test(file.type) || /\.(jpe?g|png|webp|heic|heif|bmp|gif)$/i.test(name)){ toastStay("Reading your statement from the picture. This can take a moment."); const rows = await imageRows(file); text = rows.map(rowText).join("\n"); tx = txFromRows(rows); }
   else { text = await file.text(); tx = txFromCSV(text); }
-  STMT.check = balanceCheck(tx); STMT.tx = tx; STMT.holder = holderName(text); STMT.me = new Set(); STMT.pick = {}; STMT.open = new Set(); STMT.confirm = false;
+  if (ocrW){ try { ocrW.terminate(); } catch(e){} ocrW = null; }   // the picture reader is heavy: let the phone have its memory back
+  STMT.ocr = !!tx.ocr; STMT.check = statementCheck(tx); STMT.tx = tx; STMT.holder = holderName(text); STMT.me = new Set(); STMT.pick = {}; STMT.open = new Set(); STMT.confirm = false;
   const R = analyzeStatement(tx, name, STMT.holder, STMT.me); R.cur = detectCurrency(text.replace(/\n/g, " ")); return R;
 }
 // ---- statements in another currency ----
@@ -1573,6 +1667,13 @@ function fxCard(){
 const monthsLabel = iso => { if (!iso) return ""; const [y, m] = iso.split("-").map(Number); return new Date(y, m - 1, 1).toLocaleString("en-US", {month: "short", year: "numeric"}); };
 function paidFor(s){ if (!s.since) return ""; const [y, m, d] = s.since.split("-").map(Number); const mo = Math.max(1, Math.round((todayMid() - new Date(y, m - 1, d)) / (30.44 * DAY))); return `Paying since ${monthsLabel(s.since)} · ${s.charges} charge${s.charges === 1 ? "" : "s"} · ${fmt(s.paid)} so far`; }
 // ---- review screen ----
+function stCheckLine(c, k){
+  const m = v => fmt(r2(v * k)), bad = t => `<b class="bad">${t}</b>`;
+  if (c.kind === "totals"){ const pr = [c.totalIn != null ? `money in ${m(c.totalIn)}` : "", c.totalOut != null ? `money out ${m(c.totalOut)}` : ""].filter(Boolean).join(", ");
+    return c.bad ? bad(`The statement’s own totals say ${pr}. The lines here do not add up to that, so check the amounts.`) : `The lines add up to the totals printed on the statement: ${pr}.`; }
+  if (c.kind === "ends") return c.bad ? bad(`The lines do not add up from the opening balance ${m(c.opening)} to the closing balance ${m(c.closing)}. Check the amounts.`) : `Opening balance ${m(c.opening)}, closing ${m(c.closing)}: the lines add up between them.`;
+  return c.bad ? bad(`${c.bad} line${c.bad === 1 ? " does" : "s do"} not add up with the bank’s running balance. Check those amounts.`) : `Opening balance ${m(c.opening)}, closing ${m(c.closing)}: every line adds up with the bank’s running balance.`;
+}
 V.importReview = () => {
   const R = STMT.result;
   if (!R) return "";
@@ -1580,7 +1681,7 @@ V.importReview = () => {
   FMT_CUR = STMT.fx && STMT.fx.mode === "switch" ? STMT.fx.from : null;
   const html = `<div class="inline" style="justify-content:space-between"><h1>Your statement</h1><button class="btn small" type="button" data-import-cancel>Cancel</button></div>
   <p class="muted" style="text-align:center">${esc(R.fileName)} · ${R.count} transactions · ${monthsLabel(R.first)} to ${monthsLabel(R.last)} (${R.months} month${R.months > 1 ? "s" : ""}). Read on this phone only.</p>
-  <p class="muted small st-check" style="text-align:center" data-keep>Money in ${fmt(r2(R.totalIn * k))} · money out ${fmt(r2(R.totalOut * k))}. If these match your statement, every line was read.${STMT.check ? `<br>${STMT.check.bad ? `<b class="bad">${STMT.check.bad} line${STMT.check.bad === 1 ? " does" : "s do"} not add up with the bank’s running balance. Check those amounts.</b>` : `Opening balance ${fmt(r2(STMT.check.opening * k))}, closing ${fmt(r2(STMT.check.closing * k))}: every line adds up with the bank’s running balance.`}` : ""}</p>
+  <p class="muted small st-check" style="text-align:center" data-keep>Money in ${fmt(r2(R.totalIn * k))} · money out ${fmt(r2(R.totalOut * k))}. If these match your statement, every line was read.${STMT.check ? `<br>${stCheckLine(STMT.check, k)}` : ""}${STMT.ocr ? `<br><span data-st-ocr>This was read from a picture, so a digit can be misread. Please check each line against your statement.</span>` : ""}</p>
   <div data-out="fxCard">${fxCard()}</div>
   <div data-out="importBody" class="import-body">${OUT.importBody()}</div>`;
   FMT_CUR = null; return html;
@@ -2225,7 +2326,7 @@ V.plan = () => `
   <button class="w-choice plus-entry" type="button" data-plus-open><span class="pill gold">Plus</span><span><b>KeepWise Plus</b><span class="muted small">Live splits with friends, every device, and more.</span></span>${I.chev}</button>
   <section class="card"><h2>Your data</h2><p class="muted small">Your money data stays on this device and is never uploaded. KeepWise gives estimates, not financial advice.</p>
     <button class="btn" type="button" data-history>Monthly statements</button>
-    <button class="btn primary" type="button" data-import-open>Import a bank statement (CSV or PDF)</button>
+    <button class="btn primary" type="button" data-import-open>Import a bank statement (CSV, PDF or photo)</button>
     ${S.example ? `<button class="btn primary" type="button" data-w-start>Set up my month</button>` : ""}
     <div class="inline" style="justify-content:space-between"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank" style="margin-left:auto">Start empty</button></div>
     <div id="reset-confirm"></div>
@@ -2908,7 +3009,7 @@ V.welcome = () => {
     <label class="field"><span>Rent or mortgage</span><span class="money-in w-big"><em>${esc((() => { try { return new Intl.NumberFormat("en-US", {style:"currency", currency: DRAFT.cur, maximumFractionDigits:0}).formatToParts(0).find(p => p.type === "currency").value; } catch(e){ return "$"; } })())}</em><input data-w="home" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(DRAFT.home)}" aria-label="Rent or mortgage each month"></span></label>
     <button class="btn primary w-cta" type="button" data-w-next>Continue</button><button class="link plain w-alt" type="button" data-w-skip>I don’t pay rent</button><button class="link plain w-alt" type="button" data-w-back>Back</button></div>`;
   return `<div class="welcome">${dots(3)}<h1 class="w-title">Add the rest your way</h1><p class="w-sub">You can always do the other one later.</p>
-    <button class="w-choice" type="button" data-w-import><span class="w-ic">${I.receipt}</span><span><b>Import a bank statement</b><span class="muted small">CSV or PDF. KeepWise finds your bills and every subscription. Read on this phone only.</span></span>${I.chev}</button>
+    <button class="w-choice" type="button" data-w-import><span class="w-ic">${I.receipt}</span><span><b>Import a bank statement</b><span class="muted small">CSV, PDF or a clear photo. KeepWise finds your bills and every subscription. Read on this phone only.</span></span>${I.chev}</button>
     <button class="w-choice" type="button" data-w-finish><span class="w-ic">${I.plan}</span><span><b>Add things myself</b><span class="muted small">Start with what you entered and add bills as you go.</span></span>${I.chev}</button>
     <button class="link plain w-alt" type="button" data-w-back>Back</button></div>`;
 };
@@ -4169,6 +4270,14 @@ const accView = () => {
   return accComplete() ? accProfile() : accFinish();
 };
 V.account = () => accView();
+// A link that opens KeepWise with the owl already up, so the phone's own back tap can be pointed at it.
+// Only the phone can listen for a tap on its back; KeepWise cannot do that itself, and never runs while the phone is locked.
+const ASK_LINK = SITE_URL + "?ask";
+const askLinkTip = () => "This link opens KeepWise with Ask KeepWise ready. "
+  + (IS_IOS ? "On iPhone: in the Shortcuts app make a shortcut that opens this link, then go to Settings, Accessibility, Touch, Back Tap and choose it. The link opens in Safari, which keeps its own copy of your plan, apart from a KeepWise icon on the Home Screen."
+    : /Android/.test(navigator.userAgent) ? "On Android: install KeepWise from the website, then hold its icon and choose Ask KeepWise. On a Pixel, go to Settings, System, Gestures, Quick Tap, Open app and pick KeepWise. Other phones have their own back tap setting."
+    : "Save it as a bookmark, or on a phone point the back tap setting at it.")
+  + " Your phone has to be unlocked first.";
 const setHead = t => `<div class="inline" style="justify-content:space-between"><h1>${t}</h1><button class="btn small" type="button" data-settings-close>Done</button></div>`;
 V.settings = () => UI.settings === "security" ? `${setHead("Security")}
   <div data-out="lockBox">${OUT.lockBox()}</div>`
@@ -4179,7 +4288,9 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security")}
   <section class="card" data-set-app><h2>App</h2>
     <button class="btn" type="button" data-menu-theme>Appearance: ${S.theme === "light" ? "Light" : S.theme === "dark" ? "Dark" : "Auto"}</button>
     <button class="btn" type="button" data-tour-start>Replay the tour</button>
-    <div data-out="installBtn">${OUT.installBtn()}</div></section>
+    <div data-out="installBtn">${OUT.installBtn()}</div>
+    <div class="inline" style="justify-content:space-between" data-ask-row><span class="h-info">Open on the owl${infoBtn("asklink", "About opening on the owl")}</span><button class="btn small" type="button" data-ask-link>Copy link</button></div>
+    ${infoTip("asklink", askLinkTip())}</section>
   ${UI.delOpen ? `<div class="note" data-del-box><p><b>Delete account and data?</b> Erasing this phone clears your budget here for good. Deleting your account erases your profile.</p><div class="inline" style="margin-top:10px;flex-wrap:wrap"><button class="btn danger" type="button" data-reset="blank">Erase this phone</button>${ACC.user && ACC.profile ? `<button class="btn danger" type="button" data-del-acct>Delete my account</button>` : ""}<button class="btn" type="button" data-del-toggle>Keep everything</button></div><div id="reset-confirm"></div></div>`
     : `<button class="link small quiet-del" type="button" data-del-toggle>Delete account and data</button>`}`;
 const SN_IC = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
@@ -4760,6 +4871,7 @@ view.addEventListener("click", async e => {
     if (b.hasAttribute("data-swap-on")){ w.on = !w.on; save(); render(true); toast(w.on ? `Using ${w.alt}. Your month updated.` : "Swap turned off."); return; }
     if (b.hasAttribute("data-del-swap")){ const u = undoable(); S.swaps = S.swaps.filter(x => x !== w); save(); render(true); toast(`Removed ${w.alt}.`, u); return; }
   }
+  if (b.hasAttribute("data-ask-link")){ try { await navigator.clipboard.writeText(ASK_LINK); toast("Link copied."); } catch(err){ UI.info = "asklink"; render(true); toast(ASK_LINK); } return; }
   if (b.dataset.copy){ const c = b.dataset.copy;
     const fallback = () => { const r = document.createRange(); r.selectNodeContents(b); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Code selected. Copy it from the menu."); };
     try { await navigator.clipboard.writeText(c); toast(`Copied ${c}`); } catch(err){ fallback(); } return; }
@@ -5094,6 +5206,8 @@ if (S.tab === "subs") remindSeen();  // opening straight onto Subs counts as che
 save();
 applyTheme();
 lockLoad();
+// Opened from the Ask KeepWise link or icon shortcut: start with the owl up, then tidy the address so a refresh is a normal open.
+try { const q = new URLSearchParams(location.search); if (q.has("ask")){ UI.askOpen = !firstRun; q.delete("ask"); const rest = q.toString(); history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash); } } catch(e){}
 render(false);
 if (LOCK.cfg && !window.KEEPWISE_NO_LOCK) lockNow();
 bioAvailable().then(ok => { LOCK.bioOk = ok; if (S && S.tab === "plan" && !LOCK.on) refreshOuts(); });
