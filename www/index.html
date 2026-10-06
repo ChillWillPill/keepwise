@@ -113,6 +113,8 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .wise-fab[hidden]{display:none}.wise-fab img{width:44px;height:44px;border-radius:50%;pointer-events:none}
 .wise-fab.moving{transform:scale(1.12);box-shadow:0 10px 26px rgba(0,0,0,.28);cursor:grabbing}
 .app.typing .wise-fab,.app.welcoming .wise-fab,.app.touring .wise-fab{display:none}
+.app.touring .wise-fab.tour-focus{display:grid;position:fixed;z-index:70;pointer-events:none;border-radius:50%;width:64px;height:64px;animation:owlHi 1.6s ease-in-out infinite}.app.touring .wise-fab.tour-focus img{width:52px;height:52px}
+@keyframes owlHi{50%{transform:scale(1.08)}}@media (prefers-reduced-motion:reduce){.app.touring .wise-fab.tour-focus{animation:none}}
 .ask-sheet{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;padding:calc(76px + env(safe-area-inset-top,0px)) 12px 12px}
 .ask-back{position:absolute;inset:0;border:0;padding:0;background:var(--scrim,rgba(20,26,22,.38));cursor:default}
 .ask-panel{position:relative;width:100%;max-width:520px;max-height:100%;overflow-y:auto;box-shadow:0 18px 50px rgba(0,0,0,.3)}
@@ -2050,7 +2052,7 @@ function monthFind(sel){
 V.month = () => {
   if (UI.biz) return spaceSwitch() + bizPreview();
   const C = compute(), tabs = monthTabs(), on = k => !tabs || (UI.mseg || "now") === k;
-  const top = `${spaceSwitch()}${S.hideNote ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on the Plan tab, or import a bank statement. Everything stays on this device." : "Add your other bills on the Plan tab and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
+  const top = `${spaceSwitch()}${S.hideNote || TOUR.on ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on the Plan tab, or import a bank statement. Everything stays on this device." : "Add your other bills on the Plan tab and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>`;
   const now = `  <div data-out="monthClose">${OUT.monthClose()}</div>
@@ -3164,10 +3166,9 @@ OUT.comingUp = () => {
     return `<section class="card" data-up-empty><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Coming up</h2><span class="muted small">Next 7 days</span></div>
       <p class="small" data-keep>Nothing is due in the next 7 days.</p>${undated ? `<p class="small muted" data-keep>${undated === 1 ? "1 subscription has no renewal day yet, so it cannot show here." : `${undated} subscriptions have no renewal day yet, so they cannot show here.`}</p><div class="linkrow"><button class="link" data-go="subs" type="button">Add renewal days</button></div>` : ""}</section>`; }
   const total = soon.filter(x => x.s.keep !== "drop").reduce((a, x) => a + x.s.price, 0);
-  const upRows = [...items.map(x => x.html), ...(splitRows ? splitRows.split(/(?=<div class="up-row)/).filter(x => x.startsWith("<div")) : [])], upShort = monthTabs() && !UI.comingAll && upRows.length > 2;
+  const upRows = [...items.map(x => x.html), ...(splitRows ? splitRows.split(/(?=<div class="up-row)/).filter(x => x.startsWith("<div")) : [])], upShort = false;   // everything due is always listed
   return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Coming up</h2><span class="muted small">Next 7 days</span></div>
     <div class="up-list">${upShort ? upRows.slice(0, 2).join("") : items.map(x => x.html).join("") + splitRows}</div>
-    ${monthTabs() && upRows.length > 2 ? `<button class="link plain small" type="button" data-coming-all style="align-self:flex-start">${UI.comingAll ? "Show less" : `Show all ${upRows.length}`}</button>` : ""}
     ${total ? `<p class="small muted">${fmt(total)} will be charged this week.</p>` : ""}
     ${soon.length || splitRows ? `<div class="linkrow inline" style="justify-content:space-between;gap:16px">${soon.length ? `<button class="link" type="button" data-go="subs">All subscriptions</button>` : "<span></span>"}${splitRows ? `<button class="link" type="button" data-go="split">Open Split</button>` : ""}</div>` : ""}</section>`;
 };
@@ -4322,16 +4323,17 @@ const TOUR_KEY = "keepwise-tour-done";
 const TOUR = {on: false, i: 0, saved: null, welcome: null, tab: null};
 const TOUR_STEPS = [
   ["month", ".hero", "What you keep", "This is the number KeepWise is built around: what you will have left at the end of the month if the plan holds."],
-  ["month", 'form[data-form="ask"]', "Just say it", "Type or say what you spent or were paid, like “dinner 30 euros”, “add rent 1200 as a bill” or “got a 300 bonus”. KeepWise puts it in the right place and converts the currency at today’s rate. It is free, and it is read on your phone."],
+  ["month", 'form[data-form="ask"]', "Just say it", "Tap the owl, then type or say what you spent or were paid, like “dinner 30 euros”, “add rent 1200 as a bill” or “got a 300 bonus”. KeepWise puts it in the right place and converts the currency at today’s rate. You can also ask it things, like “what do I spend most on?”."],
+  ["month", '[data-out="donut"]', "Where your month goes", "One chart of everything going out this month. Tap a slice or a name to see what is behind it."],
   ["month", '[data-out="comingUp"]', "Coming up", "Charges and money due in the next 7 days, so nothing arrives as a surprise."],
-  ["month", '[data-out="envelopes"]', "Where it goes", "Savings, Expenditures and Miscellaneous, each against its share of your income. Tap Details on any of them to see what is inside."],
+  ["month", '[data-out="envelopes"]', "Your envelopes", "Savings, Expenditures and Miscellaneous, each against its share of your income. Open one to tick a bill once it is paid, or tap Again to log the same spending in one go."],
+  ["month", "#find-btn", "Search", "Looking for something? Tap the looking glass and type a few letters. It finds places in the app and your own bills, subscriptions and loans by name."],
   ["subs", '[data-out="subsList"]', "Subscriptions", "Everything you pay for on repeat. Mark what you use, and KeepWise flags what looks forgotten so you can keep it or drop it."],
-  ["cheaper", "#view", "Cheaper", "Inside Subs. Ways to pay less for things already on your list, with what each one would keep per month and per year."],
-  ["codes", "#view", "Codes", "Also inside Subs. Promo codes you find, kept in one place and ready at checkout."],
-  ["plan", "#view", "Plan", "Your pay, monthly lines, loans, savings goals and giving live here."],
-  ["month", "#acct-btn", "Menu", "Your profile, settings, the app lock, backups and support are behind this button."],
+  ["cheaper", "#view .sub-seg", "Cheaper and Code", "Two more parts of Subs. Cheaper shows ways to pay less for things already on your list. Code keeps the promo codes you find, ready at checkout."],
+  ["plan", '[data-out="expList"]', "Plan", "Set this up once: your pay, how it is shared between the envelopes, and the bills that go out every month."],
+  ["plan", '[data-out="loans"]', "Debt and savings", "Loans and cards you are paying back, your emergency fund, a goal to save for, and what you give."],
   ["split", "#view", "Split", "Split a bill with friends or family. KeepWise works out who owes what and writes the message for you to send."],
-  ["month", "#bell", "Notifications", "The bell collects what needs a look: money to confirm, charges this week and subscriptions that look unused."],
+  ["month", "#acct-btn", "Menu", "Your profile, your data, bank statement import, backups, the app lock and support are behind this button. The bell beside it collects what needs a look."],
 ];
 const tourSeen = () => { try { return !!localStorage.getItem(TOUR_KEY); } catch(e){ return true; } };
 function tourStart(){
@@ -4341,25 +4343,31 @@ function tourStart(){
   UI.welcome = null; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.stmt = null; UI.biz = false; UI.share = false;
   appEl.classList.add("touring"); tourShow();
 }
+// On the step about asking, the owl itself is shown, lifted just above the tour card, then put back where it was.
+function tourOwl(on){ const w = $("wise"); if (!w) return;
+  if (!on){ if (TOUR.owlCss != null){ w.style.cssText = TOUR.owlCss; TOUR.owlCss = null; } return; }
+  if (TOUR.owlCss == null) TOUR.owlCss = w.style.cssText;
+  const r = $("tour").getBoundingClientRect(); w.style.cssText = `left:auto;top:auto;right:20px;bottom:${Math.max(96, Math.round(innerHeight - r.top + 18))}px`; }
 function tourShow(){
   const el = $("tour"), n = TOUR_STEPS.length, last = TOUR.i >= n; el.hidden = false;
-  document.querySelectorAll(".tour-focus").forEach(x => x.classList.remove("tour-focus"));
+  document.querySelectorAll(".tour-focus").forEach(x => x.classList.remove("tour-focus")); tourOwl(false);
   if (last){ el.innerHTML = `<div class="tour-top"><span class="pill gold">Tour</span></div><h3>That is the whole app.</h3>
       <p class="muted">${TOUR.saved ? "What you saw was an example month. Your own numbers are exactly as you left them." : "What you saw was an example month. Yours takes about a minute to set up."}</p>
       <div class="tour-nav"><button class="btn small" type="button" data-tour-back>Back</button><button class="btn small primary" type="button" data-tour-end>${TOUR.saved ? "Back to my month" : "Set up my month"}</button></div>`; return; }
   const [tabName, sel, title, text] = TOUR_STEPS[TOUR.i];
   if (S.tab !== tabName || TOUR.i === 0){ S.tab = tabName; if (TOUR.i === 0) UI.mseg = "now"; render(false); }
-  const target = (tabName === "month" && !/^#(view|bell|acct-btn)$/.test(sel) ? monthFind(sel) : null) || document.querySelector(sel) || (/data-form="ask"/.test(sel) ? $("wise") : null), m = $("main");
+  const target = (tabName === "month" && !/^#(view|bell|acct-btn|find-btn)$/.test(sel) ? monthFind(sel) : tabName === "plan" && sel !== "#view" ? planFind(sel) : null) || document.querySelector(sel) || (/data-form="ask"/.test(sel) ? $("wise") : null), m = $("main");
   if (target && !target.offsetParent && target.closest("details")) target.closest("details").open = true;
-  if (target){ if (sel !== "#view" && sel !== "#bell" && sel !== "#acct-btn" && target.id !== "wise"){ target.classList.add("tour-focus"); m.scrollTop += target.getBoundingClientRect().top - m.getBoundingClientRect().top - 14; } else { m.scrollTop = 0; if (sel === "#bell" || sel === "#acct-btn" || target.id === "wise") target.classList.add("tour-focus"); } }
+  if (target){ if (sel !== "#view" && sel !== "#bell" && sel !== "#acct-btn" && sel !== "#find-btn" && target.id !== "wise"){ target.classList.add("tour-focus"); m.scrollTop += target.getBoundingClientRect().top - m.getBoundingClientRect().top - 14; } else { m.scrollTop = 0; if (sel === "#bell" || sel === "#acct-btn" || sel === "#find-btn" || target.id === "wise") target.classList.add("tour-focus"); } }
   el.innerHTML = `<div class="tour-top"><span class="tour-who"><img alt="" src="${(document.querySelector(".logo") || {}).src || ""}"><span class="muted small" data-tour-count>${TOUR.i + 1} of ${n}</span></span><button class="link plain small" type="button" data-tour-skip>Skip tour</button></div>
     <h3>${title}</h3><p class="muted">${text}</p>
     <div class="tour-nav">${TOUR.i ? `<button class="btn small" type="button" data-tour-back>Back</button>` : ""}<button class="btn small primary" type="button" data-tour-next>${TOUR.i === n - 1 ? "Finish" : "Next"}</button></div>`;
+  if (target && target.id === "wise" && target.classList.contains("tour-focus")) tourOwl(true);
 }
 function tourEnd(){
   if (!TOUR.on) return;
   document.querySelectorAll(".tour-focus").forEach(x => x.classList.remove("tour-focus"));
-  appEl.classList.remove("touring"); $("tour").hidden = true; TOUR.on = false; window.__kwTour = false;
+  tourOwl(false); appEl.classList.remove("touring"); $("tour").hidden = true; TOUR.on = false; window.__kwTour = false;
   try { localStorage.setItem(TOUR_KEY, "1"); } catch(e){}
   if (TOUR.saved){ S = TOUR.saved; S.tab = TOUR.tab || "month"; TOUR.saved = null; } else { S.tab = "month"; UI.welcome = TOUR.welcome != null ? TOUR.welcome : null; }
   render(false);

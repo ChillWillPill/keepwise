@@ -2213,26 +2213,26 @@ async def tour_walks_the_example_and_never_touches_your_numbers(ctx):
     tour = pg.locator("#tour"); assert await tour.is_visible()
     mine = await pg.evaluate("localStorage.getItem('keepwise-app-v1')"); assert "My own line" in mine   # saved once as the tour starts, then left alone
     seen = []
-    for i in range(11):
-        v = await tour.inner_text(); assert f"{i + 1} of 11" in v and "Skip tour" in v, v   # Skip is on every step
+    for i in range(12):
+        v = await tour.inner_text(); assert f"{i + 1} of 12" in v and "Skip tour" in v, v   # Skip is on every step
         seen.append(v.split("\n")[2] if "\n" in v else v)
-        if i in (0, 1, 2, 3, 4): assert await pg.locator(".tour-focus").count() == 1, f"step {i + 1} points at something"
+        if i in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11): assert await pg.locator(".tour-focus").count() == 1, f"step {i + 1} points at something"
         box = await pg.locator(".tour-focus").first.bounding_box() if await pg.locator(".tour-focus").count() else None
         if box: assert box["y"] < 500, f"step {i + 1}: what it points at is on screen"
         assert (await pg.locator("#tour [data-tour-back]").count() == 1) == (i > 0)
         await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(200)
-    for title in ("What you keep", "Just say it", "Coming up", "Where it goes", "Subscriptions", "Cheaper", "Codes", "Plan", "Menu", "Split", "Notifications"):
+    for title in ("What you keep", "Just say it", "Where your month goes", "Coming up", "Your envelopes", "Search", "Subscriptions", "Cheaper and Code", "Plan", "Debt and savings", "Split", "Menu"):
         assert any(title in x for x in seen), (title, seen)
     v = await tour.inner_text(); assert "That is the whole app" in v and "exactly as you left them" in v and "Back to my month" in v
     assert "My own line" not in await pg.inner_text("#app"), "the tour shows the example, not your month"
     assert await pg.evaluate("localStorage.getItem('keepwise-app-v1')") == mine, "nothing is saved during the tour"
-    await pg.click("#tour [data-tour-back]"); await pg.wait_for_timeout(150); assert "11 of 11" in await tour.inner_text()
+    await pg.click("#tour [data-tour-back]"); await pg.wait_for_timeout(150); assert "12 of 12" in await tour.inner_text()
     await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-end]"); await pg.wait_for_timeout(250)
     assert not await tour.is_visible() and await pg.locator(".tour-focus").count() == 0 and not await pg.evaluate("document.getElementById('app').classList.contains('touring')")
     assert (await state(pg))["tab"] == "plan" and "My own line" in await text(pg, "[data-out=expList]"), "your own numbers are back, on the tab you left"
     # it can be replayed from Plan, and skipped at any step
     await menu_to(pg, "tour")
-    await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(150); assert "3 of 11" in await tour.inner_text()
+    await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(150); assert "3 of 12" in await tour.inner_text()
     await pg.click("#tour [data-tour-skip]"); await pg.wait_for_timeout(250)
     assert not await tour.is_visible() and (await state(pg))["tab"] == "plan" and "My own line" in await text(pg, "[data-out=expList]")
     await pg.reload(); await pg.wait_for_timeout(400); assert "My own line" in await pg.evaluate("localStorage.getItem('keepwise-app-v1')")
@@ -2240,10 +2240,10 @@ async def tour_walks_the_example_and_never_touches_your_numbers(ctx):
     # a first visit: the tour is offered before setup, and finishing it leads into setup
     pg = await open_app(ctx, welcome=True); await pg.evaluate("window.__kwErasing = true; localStorage.clear()"); await pg.reload(); await pg.wait_for_timeout(400)
     assert "Take a one-minute tour first" in await text(pg, "#view")
-    await pg.click("[data-tour-start]"); await pg.wait_for_timeout(250); assert "1 of 11" in await pg.locator("#tour").inner_text()
+    await pg.click("[data-tour-start]"); await pg.wait_for_timeout(250); assert "1 of 12" in await pg.locator("#tour").inner_text()
     await pg.click("#tour [data-tour-skip]"); await pg.wait_for_timeout(250); assert "See what you keep" in await text(pg, "#view"), "Skip returns to where you were"
     await pg.click("[data-tour-start]"); await pg.wait_for_timeout(200)
-    for _ in range(11): await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(120)
+    for _ in range(12): await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(120)
     assert "Set up my month" in await pg.locator("#tour").inner_text()
     await pg.click("#tour [data-tour-end]"); await pg.wait_for_timeout(250); assert "What comes in?" in await text(pg, "#view")
     assert await pg.evaluate("localStorage.getItem('keepwise-app-v1')") is None, "a tour before setup saves nothing"
@@ -3410,13 +3410,12 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     assert await has("[data-out=envelopes]") == 0 and await has(".import-card") == 0 and await has('form[data-form="ask"]') == 0, "the rest is not on the Overview, and Ask is on the owl"
     assert not await pg.evaluate("document.getElementById('wise').hidden"), "the owl button is there to ask"
     if await has("[data-hide-note]"): await pg.click("[data-hide-note]"); await pg.wait_for_timeout(200)   # the first-visit note is extra, once
-    fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight; })()"); assert fit < 90, ("the Overview is about one screen", fit)
+    fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight * 2; })()"); assert fit <= 0, ("the Overview is no more than one scroll", fit)
     assert await has(".dn-compact .dn-list li") <= 6 and await pg.locator(".dn-compact .dn-amt").first.is_hidden()
     # "Needs you" is one line until it is tapped; "Coming up" shows two and offers the rest
     if await has("[data-need-open]"):
         await pg.click("[data-need-open]"); await pg.wait_for_timeout(200); assert await has("[data-out=needs] .card.needs") == 1
-    if await has("[data-coming-all]"):
-        assert await has("[data-out=comingUp] .up-row") == 2; await pg.click("[data-coming-all]"); await pg.wait_for_timeout(200); assert await has("[data-out=comingUp] .up-row") > 2
+    assert await has("[data-coming-all]") == 0 and await has("[data-out=comingUp] .up-row") > 2, "everything coming up is listed, with no show more or less"
     # Budget: the envelopes, on one screen
     await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(250)
     assert await has("[data-out=envelopes] .env-row") >= 3 and await has(".hero") == 0 and await has("[data-donut]") == 0
@@ -3435,7 +3434,14 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     await pg.click("#acct-btn"); await pg.wait_for_timeout(280); await pg.click("#sidenav [data-menu=tour]"); await pg.wait_for_timeout(300)
     assert await pg.locator(".hero.tour-focus").count() == 1
     await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator("#wise.tour-focus").count() == 1, "Ask is shown on the owl"
+    ob = await pg.locator("#wise").bounding_box(); tb = await pg.locator("#tour").bounding_box()
+    assert await pg.locator("#wise").is_visible() and ob["y"] + ob["height"] <= tb["y"] and ob["y"] > 60, ("the owl itself is on show, clear of the tour card", ob, tb)
+    assert "Tap the owl" in await pg.inner_text("#tour")
+    await pg.screenshot(path=os.environ.get("KW_SHOT", os.devnull)) if os.environ.get("KW_SHOT") else None
+    await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator("[data-out=donut].tour-focus").count() == 1 and await pg.locator("[data-donut]").is_visible(), "the chart has its own step"
+    assert await pg.locator("#view [data-hide-note]").count() == 0, "the example note stays out of the tour"
     await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator('[data-out="comingUp"].tour-focus').count() == 1
+    assert not await pg.locator("#wise").is_visible() and await pg.evaluate("document.getElementById('wise').style.cssText") == "", "then it steps back"
     await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator('[data-out="envelopes"].tour-focus').count() == 1 and await pg.locator("[data-mseg=budget]").get_attribute("aria-pressed") == "true"
     await pg.click("[data-tour-skip]"); await pg.wait_for_timeout(200)
     assert not pg.errors, pg.errors
