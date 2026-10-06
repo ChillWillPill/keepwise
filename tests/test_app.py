@@ -1704,7 +1704,7 @@ async def trips_keep_their_own_budget_until_you_decide(ctx):
     assert "Added to this month under Miscellaneous, one time: Uber, $20." in await text(pg, "#ask-out") and (await state(pg))["trips"][0]["items"] == []
     assert abs(kept0 - money(await kept()) - 20) < 0.01, "a one-off comes out of what you keep this month"
     await open_misc(pg); assert "Uber" in await text(pg, ".env-body") and "one time" in await text(pg, ".env-body")
-    await pg.click("[data-spend] [data-spend-del]"); await pg.wait_for_timeout(200); assert abs(money(await kept()) - kept0) < 0.01
+    await pg.click("[data-spend-open]"); await pg.wait_for_timeout(150); await pg.click(".spend-log [data-spend-del]"); await pg.wait_for_timeout(200); assert abs(money(await kept()) - kept0) < 0.01
     await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(100)
     await ask_type(pg, "can I afford 100"); await pg.wait_for_timeout(150); assert (await text(pg, "#ask-out")).startswith("Yes")
     # day 2 of the trip: the Ask box takes spending straight to the trip, dated today, with no questions
@@ -1827,7 +1827,7 @@ async def one_off_spending_lands_in_the_month_on_screen(ctx):
     # a second one goes above it, and removing one puts the money back
     await ask_type(pg, "taxi 7"); await pg.wait_for_timeout(350)
     assert "Taxi" in await pg.locator(".env-body .line").first.inner_text() and abs(k0 - money(await kept()) - 17) < 0.01
-    await pg.locator("[data-spend]").first.locator("[data-spend-del]").click(); await pg.wait_for_timeout(200)
+    await pg.locator("[data-spend-open]").first.click(); await pg.wait_for_timeout(150); await pg.locator(".spend-log [data-spend-del]").first.click(); await pg.wait_for_timeout(200)
     assert abs(k0 - money(await kept()) - 10) < 0.01
     # it stays in that month after closing and reopening, and on that month's statement
     await pg.reload(); await pg.wait_for_timeout(400); assert abs(k0 - money(await kept()) - 10) < 0.01
@@ -2877,7 +2877,7 @@ async def read_csv(ctx, name, body, cur="USD"):
     f = os.path.join(TMP, name); open(f, "w", encoding="utf-8").write(body)
     await pg.set_input_files("#stmt", f); await pg.wait_for_timeout(600)
     await pg.click("[data-st-open=all]"); await pg.wait_for_timeout(200)
-    return pg, [x.replace(" ", " ").replace("\n", " | ") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()]
+    return pg, [x.replace(" ", " ").replace("\n", " | ").removesuffix(" | Change") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()]
 
 @test
 async def statement_columns_are_matched_by_what_they_hold(ctx):
@@ -3158,6 +3158,146 @@ async def a_card_purchase_is_not_a_loan_payment(ctx):
     j = " ## ".join(rows); assert "STARBUCKS PLAZA NORTE BT 1234567654532109875322 | Eating out" in j and "MACDONALDS 678-344-6314 BO 1338 | Eating out" in j, rows
     assert "CREDIT CARD PAYMENT THANK YOU | Loan" in j and "UNIVERSITY OF LAKEVIEW BO 123456 | Everything else" in j, rows
     assert "University Of Lakeview" in await stx(pg, "#view")
+    assert not pg.errors, pg.errors
+
+@test
+async def a_bill_can_be_ticked_as_paid_this_month(ctx):
+    # a tick beside each monthly bill and each loan repayment: tap when it has gone out, tap again to undo. It only keeps
+    # track, so what you keep does not move, and the ticks start again with the next month.
+    pg = await open_app(ctx)
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.loans = [{id: 'L1', kind: 'personal', name: 'Car loan', pay: 200, every: 'mo'}]; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(400)
+    kept = await pg.inner_text("[data-out=headline]")
+    await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
+    body = pg.locator("[data-env-open=needs] + .env-body"); ticks = body.locator(".tick"); n = await ticks.count(); assert n >= 3, n
+    assert "Tick each one when it has been paid" in await body.locator("[data-paid-sum]").inner_text()
+    first = body.locator(".line[data-exp]").first; name = (await first.locator("div > div").first.inner_text()).strip()
+    assert await first.locator(".tick").get_attribute("aria-pressed") == "false" and name in await first.locator(".tick").get_attribute("aria-label")
+    await first.locator(".tick").click(); await pg.wait_for_timeout(200)
+    first = body.locator(".line[data-exp]").first
+    assert await first.locator(".tick").get_attribute("aria-pressed") == "true" and "paid" in await first.get_attribute("class") and "Paid " in await first.inner_text()
+    sm = await body.locator("[data-paid-sum]").inner_text(); assert " paid" in sm and "still to go" in sm, sm
+    assert await pg.inner_text("[data-out=headline]") == kept, "ticking a bill does not change what you keep"
+    st = await state(pg); assert len(st["paid"]["on"]) == 1 and list(st["paid"]["on"])[0].startswith("e:")
+    await pg.reload(); await pg.wait_for_timeout(400); await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
+    body = pg.locator("[data-env-open=needs] + .env-body"); assert await body.locator(".tick[aria-pressed=true]").count() == 1, "the tick is remembered"
+    # a loan repayment is ticked the same way
+    await pg.click("[data-env-open=loans]"); await pg.wait_for_timeout(200)
+    lb = pg.locator("[data-env-open=loans] + .env-body"); await lb.locator(".tick").first.click(); await pg.wait_for_timeout(200)
+    assert "All paid this month" in await pg.locator("[data-env-open=loans] + .env-body [data-paid-sum]").inner_text()
+    assert "l:L1" in (await state(pg))["paid"]["on"]
+    # tap again to undo
+    await pg.locator("[data-env-open=loans] + .env-body .tick").first.click(); await pg.wait_for_timeout(200)
+    assert "l:L1" not in (await state(pg))["paid"]["on"]
+    # every bill ticked
+    await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
+    for i in range(await pg.locator("[data-env-open=needs] + .env-body .tick[aria-pressed=false]").count()):
+        await pg.locator("[data-env-open=needs] + .env-body .tick[aria-pressed=false]").first.click(); await pg.wait_for_timeout(120)
+    assert "paid this month" in await pg.locator("[data-env-open=needs] + .env-body [data-paid-sum]").inner_text()
+    # a new month starts with nothing ticked
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.paid.key = '2020-01'; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(400); await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-env-open=needs] + .env-body .tick[aria-pressed=true]").count() == 0
+    assert not pg.errors, pg.errors
+
+@test
+async def the_same_spending_is_logged_again_in_one_tap(ctx):
+    # something bought again is one row with a count and an Again button; tapping the row shows each time with its date
+    pg = await open_app(ctx)
+    await ask_type(pg, "coffee 4"); await pg.wait_for_timeout(500)
+    n0 = len((await state(pg))["spends"])
+    g = pg.locator("[data-spend-g='coffee']"); assert await g.count() == 1
+    assert "one time" in await g.inner_text() and await g.locator("[data-spend-del]").count() == 0, "Remove waits inside the row"
+    assert "$4" in await g.locator("[data-spend-again]").get_attribute("aria-label")
+    await g.locator("[data-spend-again]").click(); await pg.wait_for_timeout(250)
+    assert "Logged $4 for Coffee" in await pg.inner_text("#toast")
+    g = pg.locator("[data-spend-g='coffee']"); tx = await g.inner_text(); assert "2 times this month" in tx and "$8" in tx, tx
+    st = await state(pg); assert len(st["spends"]) == n0 + 1 and st["spends"][-1]["at"] > 0 and st["spends"][-1]["amount"] == 4
+    await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(250)
+    assert len((await state(pg))["spends"]) == n0 and "one time" in await pg.locator("[data-spend-g='coffee']").inner_text(), "a wrong tap is undone"
+    for _ in range(2): await pg.locator("[data-spend-g='coffee'] [data-spend-again]").click(); await pg.wait_for_timeout(200)
+    g = pg.locator("[data-spend-g='coffee']"); tx = await g.inner_text(); assert "3 times this month" in tx and "$12" in tx, tx
+    # tap the row: each time it was logged, with its date, to change or remove
+    await pg.evaluate("document.getElementById('toast').hidden = true")
+    await g.locator("[data-spend-open]").click(); await pg.wait_for_timeout(200)
+    log = pg.locator("[data-spend-g='coffee'] .spend-log"); assert await log.locator(".line").count() == 3
+    assert await log.locator("[data-spend-edit]").count() == 3 and await log.locator("[data-spend-del]").count() == 3
+    import datetime as _dt
+    assert _dt.datetime.utcnow().strftime("%b ") in await log.locator(".line").first.inner_text(), "each one shows its date"
+    await log.locator("[data-spend-edit]").first.click(); await pg.wait_for_timeout(200)
+    f = pg.locator("form[data-form=spendEdit]"); assert await f.count() == 1 and await f.locator("[name=amount]").input_value() == "4"
+    await f.locator("[name=amount]").fill("6"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    tx = await pg.locator("[data-spend-g='coffee'] > .line").inner_text(); assert "$14" in tx, tx
+    await pg.locator("[data-spend-g='coffee'] .spend-log [data-spend-del]").last.click(); await pg.wait_for_timeout(250)
+    tx = await pg.locator("[data-spend-g='coffee'] > .line").inner_text(); assert "2 times this month" in tx and "$10" in tx, tx
+    # Again now logs the last amount used
+    await pg.evaluate("document.getElementById('toast').hidden = true")
+    await pg.locator("[data-spend-g='coffee'] [data-spend-again]").click(); await pg.wait_for_timeout(250)
+    assert "Logged $6 for Coffee" in await pg.inner_text("#toast")
+    assert not pg.errors, pg.errors
+
+@test
+async def a_line_the_statement_leaves_unclear_is_asked_about(ctx):
+    # one amount column, no sign, no balance: wording settles some lines, and the person is asked about the rest
+    pg, rows = await read_csv(ctx, "unclear.csv", "Date,Description,Amount\n05/01/2026,ACME PAYROLL,2000.00\n05/03/2026,JOES HARDWARE,45.10\n05/04/2026,BLUE LANTERN,12.00\n05/05/2026,NETFLIX,15.99\n05/06/2026,ATM WITHDRAWAL,60.00\n")
+    ask = pg.locator("[data-st=ask]"); assert await ask.count() == 1
+    qs = ask.locator("[data-st-q]"); assert await qs.count() == 2, await ask.inner_text()
+    a = await stx(pg, "[data-st=ask]"); assert "JOES HARDWARE" in a and "BLUE LANTERN" in a and "NETFLIX" not in a and "left out until you say" in a, a
+    chk = await stx(pg, "[data-out=stCheck]"); assert "Money in $2,000" in chk and "money out $75.99" in chk, chk
+    assert "2 lines are waiting for your answer" in await stx(pg, "[data-st-count]")
+    j = " ## ".join(rows); assert "JOES HARDWARE | Waiting for your answer | $45.10" in j, rows
+    # one line answered
+    await qs.first.locator("[data-st-dir$=':-1']").click(); await pg.wait_for_timeout(250)
+    chk = await stx(pg, "[data-out=stCheck]"); assert "money out $121.09" in chk, chk
+    assert "1 line is waiting" in await stx(pg, "[data-st-count]")
+    # the rest in one tap, then one changed back
+    await pg.click("[data-st-dirall='1']"); await pg.wait_for_timeout(250)
+    chk = await stx(pg, "[data-out=stCheck]"); assert "Money in $2,057.10" in chk and "money out $75.99" in chk, chk
+    assert await pg.locator("[data-st-waiting]").count() == 0 and "All answered" in await stx(pg, "[data-st=ask]")
+    await pg.locator("[data-st=ask] [data-st-q]").first.locator("[data-st-dir$=':-1']").click(); await pg.wait_for_timeout(250)
+    chk = await stx(pg, "[data-out=stCheck]"); assert "Money in $2,012" in chk and "money out $121.09" in chk, chk
+    assert not pg.errors, pg.errors
+
+@test
+async def a_statement_line_can_be_left_out_or_moved(ctx):
+    pg, rows = await read_csv(ctx, "move.csv", "Date,Description,Amount\n03/01/2026,ACME PAYROLL,2000.00\n03/05/2026,ZEN GARDEN CLUB,-19.00\n04/05/2026,ZEN GARDEN CLUB,-19.00\n04/09/2026,RIVERSIDE STORAGE,-80.00\n04/11/2026,CORNER SHOP,-7.50\n")
+    # charged twice and not a name KeepWise knows: offered as a subscription, but left unticked for the person to check
+    sub = pg.locator("[data-st=subs] [data-st-item]"); assert await sub.count() == 1 and "Check this" in await sub.inner_text()
+    assert not await sub.locator("[data-st-pick]").is_checked() and "1 marked" in await stx(pg, "[data-st-tocheck]")
+    await sub.locator("[data-st-pick]").check(); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-st-tocheck]").count() == 0 and await pg.locator("[data-st-askpill]").count() == 0
+    # a line moved: everything from that name goes where the person says
+    line = pg.locator("[data-st=all] .st-t", has_text="RIVERSIDE STORAGE"); await line.locator("[data-st-act]").click(); await pg.wait_for_timeout(200)
+    acts = pg.locator("[data-st=all] [data-st-acts]"); assert await acts.count() == 1 and "everything from Riverside Storage" in await acts.inner_text()
+    await acts.locator("[data-st-move=bill]").click(); await pg.wait_for_timeout(250)
+    b = await stx(pg, "[data-st=bills]"); assert "Riverside Storage" in b and "Moved by you" in b, b
+    # and put back
+    line = pg.locator("[data-st=all] .st-t", has_text="RIVERSIDE STORAGE"); await line.locator("[data-st-act]").click(); await pg.wait_for_timeout(200)
+    await pg.locator("[data-st=all] [data-st-acts] [data-st-move='']").click(); await pg.wait_for_timeout(250)
+    assert "Riverside Storage" not in await stx(pg, "[data-st=bills]")
+    # a line left out is counted nowhere, and listed so it can come back
+    out0 = await stx(pg, ".hero")
+    line = pg.locator("[data-st=all] .st-t", has_text="CORNER SHOP"); await line.locator("[data-st-act]").click(); await pg.wait_for_timeout(200)
+    await pg.locator("[data-st=all] [data-st-acts] [data-st-skip]").click(); await pg.wait_for_timeout(250)
+    left = pg.locator("[data-st=left]"); assert await left.count() == 1 and "CORNER SHOP" in await left.inner_text()
+    assert await stx(pg, ".hero") != out0 and "CORNER SHOP | Left out by you" in " ## ".join([x.replace("\u00a0", " ").replace("\n", " | ") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()])
+    await left.locator("[data-st-skip]").click(); await pg.wait_for_timeout(250)
+    assert await pg.locator("[data-st=left]").count() == 0 and await stx(pg, ".hero") == out0
+    assert not pg.errors, pg.errors
+
+@test
+async def with_no_name_on_the_statement_the_names_are_offered(ctx):
+    pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
+    rows = [r for r in PK_ROWS() if not r.startswith("Account")]
+    csv = os.path.join(TMP, "pk-noname2.csv"); open(csv, "w").write("\n".join(rows) + "\n")
+    await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(600)
+    names = pg.locator("[data-st=ask] [data-st-names] .chip"); assert await names.count() >= 2
+    assert "does not show your name" in await stx(pg, "[data-st=ask]")
+    await pg.locator("[data-st=ask] [data-st-names] [data-st-me='ALI RAZA KHAN']").click(); await pg.wait_for_timeout(250)
+    assert "IBFT TO ALI RAZA KHAN MEEZAN BANK" in await stx(pg, "[data-moves=own-out]")
+    # with the name known there is nothing left to ask
+    await pg.fill("[data-stmt-holder]", "Ali Raza Khan"); await pg.locator("[data-stmt-holder]").blur(); await pg.wait_for_timeout(250)
+    assert await pg.locator("[data-st=ask]").count() == 0
     assert not pg.errors, pg.errors
 
 SPILL_CHECK = r"""() => { const out = [], vw = innerWidth, box = e => e.getBoundingClientRect(), vis = e => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility !== 'hidden' && !e.closest('[hidden]') && !e.closest('.sr') && box(e).width > 0; };
