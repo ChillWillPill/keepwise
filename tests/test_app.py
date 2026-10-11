@@ -3012,8 +3012,8 @@ async def loans_and_giving_from_a_statement_go_to_their_own_places(ctx):
     # they show where a loan typed by hand would show, and are counted once
     await tab(pg, "plan"); pl = await stx(pg, "[data-out=loans]"); assert "Rocket Mortgage" in pl and "Mortgage" in pl and "Chase" in pl, pl
     assert "Red Cross" in await stx(pg, "[data-out=giving]")
-    await tab(pg, "month"); leg = await stx(pg, ".legend"); needs, misc, sav = [money(x) for x in re.findall(r"\$[\d,.]+", leg)]
-    assert abs(needs - (900 + 80 + 60 + 310 + 1200 + 220 + 140 + 90)) < 0.5 and abs(misc - (25 + 3)) < 0.5, leg
+    await tab(pg, "month"); leg = await stx(pg, ".legend"); ex, loans, misc, sav = [money(x) for x in re.findall(r"\$[\d,.]+", leg)]
+    assert "Loans" in leg and abs((ex + loans) - (900 + 80 + 60 + 310 + 1200 + 220 + 140 + 90)) < 0.5 and abs(misc - (25 + 3)) < 0.5, leg
     # importing the same statement again updates the loans instead of doubling them
     await pg.set_input_files("#stmt", os.path.join(TMP, "loans.csv")); await pg.wait_for_timeout(500)
     await pg.click("[data-import-apply=merge]"); await pg.wait_for_timeout(300)
@@ -3753,6 +3753,70 @@ async def a_new_subscription_renews_a_month_or_a_year_from_the_day_it_was_added(
     await pg.click("[data-sub=nd] [data-renew-cancel]"); await pg.wait_for_timeout(200)
     assert f"Renews {exp[0]}" in await pg.inner_text("[data-sub=nd]"), await pg.inner_text("[data-sub=nd]")
     assert not pg.errors, pg.errors
+
+@test
+async def the_over_budget_warning_and_the_expenditures_card_agree(ctx):
+    # loans keep their own row: the Expenditures card, the bar and the warning all leave them out, so nothing is counted twice
+    pg = await open_app(ctx, month_tabs=True, w=393, h=852)
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+      s.loans = [{id: 'L1', kind: 'personal', name: 'Car loan', pay: 900, every: 'mo'}]; s.envMode = 'pct'; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(500)
+    re_ = __import__("re"); num = lambda x: float(x.replace("$", "").replace(",", ""))
+    warn = await pg.locator("[data-hero-warn]").count() and await pg.inner_text("[data-hero-warn]") or ""
+    await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(200)
+    head = await pg.locator(".env-row", has=pg.locator("[data-env-open=needs]")).locator(".env-head").inner_text()
+    vals = [num(x) for x in re_.findall(r"\$[\d,]+(?:\.\d+)?", head)]
+    assert "loans" not in head.lower(), head
+    if vals[0] > vals[1] + 0.005: assert "Expenditures are" in warn and abs(num(warn.split(" are ")[1].split(" over")[0]) - (vals[0] - vals[1])) < 0.02, (warn, head)
+    else: assert "over your budget" not in warn, ("a big loan alone never says Expenditures are over", warn, head)
+    legend = await pg.inner_text(".legend"); assert "Expenditures" in legend and "Loans $900" in legend, legend
+    assert "Car loan" in await pg.inner_text("[data-loans-row]") or "900" in await pg.inner_text("[data-loans-row]")
+    assert not pg.errors, pg.errors
+
+@test
+async def a_trip_shows_on_overview_from_a_week_before(ctx):
+    pg = await open_app(ctx, month_tabs=True, w=393, h=852)
+    async def with_trips(js):
+        await pg.evaluate("""(js) => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+          const iso = d => { const z = new Date(Date.now() + d * 864e5); return z.getFullYear() + '-' + String(z.getMonth() + 1).padStart(2, '0') + '-' + String(z.getDate()).padStart(2, '0'); };
+          (new Function('s', 'iso', js))(s, iso); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""", js)
+        await pg.reload(); await pg.wait_for_timeout(500)
+    # none planned: nothing about trips on Overview, and the plan card waits on Budget with its words behind the (i)
+    await with_trips("s.trips = [];")
+    assert await pg.locator("[data-trips-now]").count() == 0
+    await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(200)
+    card = pg.locator("[data-trips-empty]"); assert await card.count() == 1 and "Plan a trip" in await card.inner_text() and "Plan an event" in await card.inner_text()
+    assert "stays out of your month" not in await card.inner_text(), "the explanation sits behind the (i)"
+    await card.locator("[data-info]").first.click(); await pg.wait_for_timeout(150); assert "stays out of your month" in await card.inner_text()
+    # a trip three weeks away stays on Budget only; a week before, it shows on Overview and in Coming up
+    await with_trips("s.trips = [{id: 't1', name: 'Lisbon', kind: 'trip', start: iso(21), end: iso(25), budget: 900, items: []}];")
+    await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(200); assert await pg.locator("[data-trips-now]").count() == 0
+    await with_trips("s.trips = [{id: 't1', name: 'Lisbon', kind: 'trip', start: iso(3), end: iso(6), budget: 900, items: []}];")
+    await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(200)
+    now = await pg.inner_text("[data-trips-now]"); assert "Coming soon" in now and "Lisbon" in now and "starts in 3 days" in now, now
+    up = await pg.inner_text("[data-out=comingUp]"); assert "Lisbon" in up and "trip starts" in up, up
+    # one line before it starts; a tap opens it on Budget
+    await pg.click("[data-trip-goto=t1]"); await pg.wait_for_timeout(400)
+    assert await pg.get_attribute("[data-mseg=budget]", "aria-pressed") == "true" and await pg.locator("[data-out=trips] [data-trip=t1]").is_visible()
+    await with_trips("s.trips = [{id: 't1', name: 'Lisbon', kind: 'trip', start: iso(0), end: iso(3), budget: 900, items: []}];")
+    await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(200)
+    assert "Happening now" in await pg.inner_text("[data-trips-now]")
+    assert not pg.errors, pg.errors
+
+@test
+async def the_header_lines_up_with_the_page_on_every_phone(ctx):
+    # the logo and the last header button sit on the same edges as the cards below, and every button is evenly sized and centred
+    for w, h in ((320, 568), (360, 740), (375, 667), (375, 812), (390, 844), (393, 852), (414, 896), (430, 932)):
+        pg = await open_app(ctx, month_tabs=True, w=w, h=h)
+        r = await pg.evaluate("""() => { const b = e => e.getBoundingClientRect(), card = b(document.querySelector('#view .card, #view section'));
+          const btns = [...document.querySelectorAll('.hdr-actions > button')].filter(e => e.offsetParent), logo = b(document.querySelector('.home-link'));
+          const rs = btns.map(b), hd = b(document.querySelector('.app-header'));
+          const svgOff = btns.map(x => { const s = x.querySelector('svg, img'); if (!s) return 0; const a = b(x), c = b(s); return Math.max(Math.abs((a.left + a.right) / 2 - (c.left + c.right) / 2), Math.abs((a.top + a.bottom) / 2 - (c.top + c.bottom) / 2)); });
+          return {left: logo.left - card.left, right: rs[rs.length - 1].right - card.right, sizes: rs.map(x => Math.round(x.width)), tops: rs.map(x => Math.round(x.top)), mid: Math.abs((logo.top + logo.bottom) / 2 - (rs[0].top + rs[0].bottom) / 2), svg: Math.max(...svgOff), overflow: document.documentElement.scrollWidth - innerWidth, n: rs.length}; }""")
+        assert abs(r["left"]) <= 1 and abs(r["right"]) <= 1, (w, "edges", r)
+        assert len(set(r["sizes"])) == 1 and len(set(r["tops"])) == 1 and r["mid"] <= 2 and r["svg"] <= 1.5 and r["overflow"] <= 0 and r["n"] >= 3, (w, r)
+        assert not pg.errors, pg.errors
+        await pg.close()
 
 @test
 async def envelopes_can_be_set_as_amounts(ctx):
@@ -4600,7 +4664,7 @@ async def explanations_wait_behind_the_info_icon_but_warnings_stay(ctx):
     await pg.click(".hero [data-hint]"); await pg.wait_for_timeout(120); assert not await pg.locator(".hero [data-out=headline] p.muted").is_visible()
     # a money warning is never hidden: push needs over the envelope
     await tab(pg, "plan"); await ask_type(pg, "add rent top up 4000 as a bill"); await pg.wait_for_timeout(600); await tab(pg, "month")
-    w = pg.locator("[data-hero-warn]"); assert await w.is_visible() and ("over the envelope" in await w.inner_text() or "spends more than comes in" in await w.inner_text()), await pg.inner_text(".hero")
+    w = pg.locator("[data-hero-warn]"); assert await w.is_visible() and ("over your budget" in await w.inner_text() or "spends more than comes in" in await w.inner_text()), await pg.inner_text(".hero")
     # an empty month keeps its guidance
     await tab(pg, "plan"); await menu_to(pg, "data"); await pg.click("[data-reset=blank]"); await pg.click("#reset-confirm [data-reset-yes]"); await pg.wait_for_timeout(400)
     await tab(pg, "month"); await pg.wait_for_timeout(200)

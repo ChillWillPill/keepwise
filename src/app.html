@@ -496,6 +496,14 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .swap-use[aria-pressed="true"]{background:var(--green-soft);color:var(--green);border-color:transparent}
 .swap.on{background:color-mix(in srgb,var(--green-soft) 35%,transparent)}
 /* ---- other income, month close ---- */
+.trip-empty h2{margin:0}
+.trip-mini{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.trip-mini-t{flex:1;min-width:0;display:flex;flex-direction:column}.trip-mini-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.trip-mini svg:last-child{flex:none;opacity:.6}.trip-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.trip-tile{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;text-align:left;padding:10px 12px;border-radius:16px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}
+.trip-tile:hover{border-color:var(--green)}.trip-tile:active{transform:scale(.98)}.trip-tile b{font-size:.95rem;line-height:1.2}.trip-tile .trip-ic{grid-row:1/3}.trip-tile .muted{grid-column:2;line-height:1.25}
+.trip-ic{display:inline-flex;flex:none;width:36px;height:36px;border-radius:12px;align-items:center;justify-content:center;background:color-mix(in srgb,var(--green) 14%,transparent);color:var(--green)}
+.trip-ic.ev{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}
+@media (max-width:330px){.trip-tiles{grid-template-columns:1fr}}
 .link.inc-add{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;color:var(--green);font-weight:600}
 .link.inc-add .muted{font-weight:500;margin-left:6px}
 .inc-card{gap:14px}
@@ -769,6 +777,7 @@ h2.hint-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 @media (max-width:339px){.plus-prices{grid-template-columns:1fr}}   /* the narrowest phones: one price card per row, so nothing runs off the side */
 @media (max-width:430px){
   body{font-size:15px}
+  .app-header{padding-left:max(12px, env(safe-area-inset-left, 0px));padding-right:max(12px, env(safe-area-inset-right, 0px))}   /* the logo and the last button line up with the cards below */
   .view{padding:14px 12px 28px;gap:12px}
   .card{padding:14px;gap:10px;border-radius:18px}
   h1{font-size:1.6rem}h2{font-size:1.2rem}
@@ -2201,20 +2210,21 @@ OUT.sym = () => esc(sym());
 const EYE_ON = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
 const EYE_OFF = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10.5 10.5 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4.4-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>`;
 OUT.headline = () => {
-  const C = compute(), over = C.needs - C.envNeeds;
+  const C = compute(), over = r2(C.needs - C.loans - C.envNeeds);   // the Expenditures card's own figure against its budget
   const tail = S.priority === "ef" ? "if you follow emergency fund first and add nothing else" : S.priority === "goal" ? `if ${esc(S.goalName || "your goal")} comes first and you add nothing else` : "if you split it between goal and emergency fund";
   const hid = !!S.hideBal, eye = `<button class="hero-eye" type="button" data-hide-bal aria-pressed="${hid}" aria-label="${hid ? "Show the amount" : "Hide the amount"}">${hid ? EYE_OFF : EYE_ON}</button>`;
   if (hid) return `${eye}<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"}</h1><div class="big masked" style="margin-top:8px" data-bal-hidden aria-label="Amount hidden">••••••</div>`;
   return `${eye}<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"}</h1>
   <div class="big ${C.savings < 0 ? "neg" : ""}" style="margin-top:8px;${fitSize(fmt(Math.abs(C.savings)), 3, 88)}">${fmt(Math.abs(C.savings))}</div>
-  ${C.savings < 0 || over > 0.005 ? `<p class="small hero-warn" data-hero-warn style="margin-top:8px">${C.savings < 0 ? `${C.planMonth} spends more than comes in. Drop a flagged subscription or use a cheaper swap to close it.` : ""}${over > 0.005 ? ` Needs are ${fmt(over)} over the envelope.` : ""}</p>` : ""}
+  ${C.savings < 0 || over > 0.005 ? `<p class="small hero-warn" data-hero-warn style="margin-top:8px">${C.savings < 0 ? `${C.planMonth} spends more than comes in. Drop a flagged subscription or use a cheaper swap to close it.` : ""}${over > 0.005 ? ` Expenditures are ${fmt(over)} over your budget for them.` : ""}</p>` : ""}
   ${C.savings >= 0 || C.payBonus.extra > 0 ? `<p class="muted" style="margin-top:10px">${C.savings >= 0 ? `${C.planMonth} ends with ${fmt(C.endSaved)} saved ${tail}.` : ""}${C.payBonus.extra > 0 ? ` ${C.planMonth} has ${C.payBonus.count} paydays, so an extra ${fmt(C.payBonus.extra)} is counted.` : ""}</p>` : ""}`;
 };
 OUT.stack = () => {
   const C = compute(), tot = Math.max(C.income, C.needs + C.misc, 1);
   const s = Math.max(0, C.savings);
-  return `<div class="stack" role="img" aria-label="Needs ${fmt(C.needs)}, misc ${fmt(C.misc)}, savings ${fmt(s)}"><i style="width:${C.needs/tot*100}%;background:var(--ink)"></i><i style="width:${C.misc/tot*100}%;background:var(--rust)"></i><i style="width:${s/tot*100}%;background:var(--green)"></i></div>
-  <div class="legend tnum" style="margin-top:10px"><span style="--c:var(--ink)">Needs ${fmt(C.needs)}</span><span style="--c:var(--rust)">Misc ${fmt(C.misc)}</span><span style="--c:var(--green)">Savings ${fmt(s)}</span></div>`;
+  const ex = r2(C.needs - C.loans), parts = [["Expenditures", ex, "var(--ink)"], ...(C.loans > 0 ? [["Loans", C.loans, "var(--gold)"]] : []), ["Misc", C.misc, "var(--rust)"], ["Savings", s, "var(--green)"]];
+  return `<div class="stack" role="img" aria-label="${parts.map(([n, v]) => `${n} ${fmt(v)}`).join(", ")}">${parts.map(([, v, c]) => `<i style="width:${v/tot*100}%;background:${c}"></i>`).join("")}</div>
+  <div class="legend tnum" style="margin-top:10px">${parts.map(([n, v, c]) => `<span style="--c:${c}">${n} ${fmt(v)}</span>`).join("")}</div>`;
 };
 // Where the month goes, as a ring: the biggest lines each get a slice with its share, the rest are gathered as Other,
 // and what you keep is the green slice. Drawn on the device from the same numbers as the rest of Month.
@@ -2293,7 +2303,7 @@ OUT.envelopes = () => {
   const C = compute();
   const rows = [
     ["save","Savings","Money you keep", Math.max(0,C.savings), C.envSave, true],
-    ["needs","Expenditures","Bills, food, getting around", r2(C.needs - C.loans), C.envNeeds, false],
+    ["needs","Expenditures","Bills, food, getting around", r2(C.needs - C.loans), C.envNeeds, false],   // loans have their own row below, so they are never counted twice
     ["misc","Miscellaneous","The rest of life", C.misc, C.envMisc, false]
   ];
   return `<div class="rows">${rows.map(([k, n, d, v, env, isSave]) => {
@@ -3037,7 +3047,7 @@ const FIND_IC = {month: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4", plan: "M5 5h14v14H
 const FIND_PLACES = [
   ["Plan", "Pay, envelopes and bills", "plan", "budget setup", {tab: "plan"}, 1],
   ["Savings", "Plan · Debt & savings", "save", "emergency fund goal saving for leftover", {tab: "plan", sel: "[data-bind=efSaved]"}, 1],
-  ["Loans and debt", "Plan · Debt & savings", "loan", "credit card mortgage installments owe borrowed", {tab: "plan", sel: "[data-out=loans]"}, 1],
+  ["Loans and debt", "Plan · Debt & savings", "loan", "credit card mortgage installments owe borrowed repayments car insurance", {tab: "plan", sel: "[data-out=loans]"}, 1],
   ["Backups", "Menu · Your data & backups", "backup", "download export restore save file", {menu: "data", sel: "[data-set-backup]"}, 1],
   ["Monthly statements", "Month · Budget", "hist", "history past months last month report", {act: "history"}, 1],
   ["Import a bank statement", "Month · Income", "imp", "upload csv pdf photo scan picture", {tab: "month", sel: ".import-card"}, 1],
@@ -3046,7 +3056,7 @@ const FIND_PLACES = [
   ["Coming up", "Month · Overview", "bell", "due soon upcoming next week", {tab: "month", sel: "[data-out=comingUp]"}],
   ["Bills this month", "Month · Overview", "bill", "paid tick progress", {tab: "month", sel: "[data-out=billsCard]"}],
   ["Envelopes this month", "Month · Budget", "env", "spending expenditures misc miscellaneous spent tick paid again", {tab: "month", sel: "[data-out=envelopes]"}],
-  ["Trips and events", "Month · Budget", "split", "travel holiday vacation wedding party event", {tab: "month", sel: "[data-out=trips]"}],
+  ["Trips and events", "Month · Budget", "split", "travel holiday vacation wedding party event plan a trip plan an event", {tab: "month", sel: "[data-out=trips]"}],
   ["Regular pay", "Month · Income", "pay", "salary income wage paycheck payday how am i paid", {tab: "month", sel: "[data-out=payBox]"}],
   ["Other income", "Month · Income", "pay", "extra money in bonus side", {tab: "month", sel: "[data-out=extraIncome]"}],
   ["Envelope shares", "Plan · Monthly", "env", "percent amount flat 50 30 20 envelopes", {tab: "plan", sel: "[data-env-grid]"}],
@@ -3297,6 +3307,8 @@ OUT.comingUp = () => {
         <div class="up-main"><div class="name">Payday</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(+S.pay.amount || 0)}</div></div>`}));
   (S.extras || []).map(x => ({x, d: nextIncome(x)})).filter(v => v.d && daysUntil(v.d) <= 7 && !incomeLogged(v.x, isoOf(v.d))).forEach(({x, d}) => items.push({d, o: 3, html: `<div class="up-row in">${dateCell(d)}
         <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">${extraFixed(x) ? "+" + fmt(x.amount) : `<span class="small">amount varies</span>`}</div></div>`}));
+  (S.trips || []).filter(t => tripSoon(t) && daysUntil(isoDate(t.start)) <= 7).forEach(t => { const d = isoDate(t.start), b = +t.budget || 0; items.push({d, o: 4, html: `<div class="up-row" data-up-trip="${t.id}">${dateCell(d)}
+        <div class="up-main"><div class="name">${esc(t.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · ${isEvent(t) ? "event" : "trip"} starts, its own budget</div></div><div class="tnum name">${b > 0 ? fmt(b) : ""}</div></div>`}); });
   items.sort((a, b) => a.d - b.d || a.o - b.o);
   let bal = []; try { bal = myBalances(); } catch(e){}
   const splitRows = bal.slice(0, 4).map(x => `<div class="up-row${x.net > 0 ? " in" : ""}" data-up-split="${esc(x.p.id)}"><div class="up-date"><b style="font-size:.8rem">Split</b><span>open</span></div>
@@ -4080,17 +4092,28 @@ function tripCard(t){
       ${st === "counted" ? `<p class="muted small">This ${noun} counts in ${esc(keyLabel(t.countKey))}, under Miscellaneous.</p><button class="link small" type="button" data-trip-settle="separate" style="align-self:flex-start">Keep it separate instead</button>` : st === "separate" ? `<p class="muted small" data-keep>This ${noun} is kept apart from your months.</p><button class="link small" type="button" data-trip-settle="counted" style="align-self:flex-start">Count it in ${esc(C.planMonth)} instead</button>` : ""}</div>` : ""}</div>`;
 }
 // A trip or an event that is on today is shown on the first screen from its first day until its last.
-OUT.tripsNow = () => { const on = (S.trips || []).filter(t => tripState(t) === "active"); if (!on.length) return "";
-  return `<section class="card inc-card" data-trips-now><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Happening now</h2><span class="muted small">${on.length === 1 ? (on[0].kind === "event" ? "Event" : "Trip") : on.length + " on"}</span></div>${on.map(tripCard).join("")}</section>`; };
+// A trip or an event shows on the first screen from a week before it starts until its last day; with none, nothing about trips is shown here.
+const tripSoon = t => tripState(t) === "upcoming" && daysUntil(isoDate(t.start)) <= 7;
+OUT.tripsNow = () => { const all = S.trips || [], on = all.filter(t => tripState(t) === "active"), soon = all.filter(tripSoon).sort((a, b) => a.start.localeCompare(b.start)), list = [...on, ...soon]; if (!list.length) return "";
+  const nm = t => t.kind === "event" ? "Event" : "Trip", label = on.length && !soon.length ? (on.length === 1 ? nm(on[0]) : `${on.length} on`) : !on.length ? (soon.length === 1 ? `${nm(soon[0])} this week` : `${soon.length} this week`) : `${list.length} trips and events`;
+  return `<section class="card inc-card" data-trips-now><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>${on.length ? "Happening now" : "Coming soon"}</h2><span class="muted small">${label}</span></div>${on.map(tripCard).join("")}${soon.map(tripMini).join("")}</section>`; };
+// Before it starts, Overview keeps it to one line; the full card, to log spending, is a tap away on Budget.
+const tripMini = t => { const n = daysUntil(isoDate(t.start)), b = +t.budget || 0;
+  return `<button class="trip-mini" type="button" data-trip-goto="${t.id}"><span class="trip-ic${isEvent(t) ? " ev" : ""}">${isEvent(t) ? EVENT_IC : TRIP_IC}</span><span class="trip-mini-t"><b>${esc(t.name)}</b><span class="muted small">${esc(tripRange(t))} · ${n === 1 ? "starts tomorrow" : `starts in ${n} days`}</span></span><span class="tnum small">${b > 0 ? `${fmt(b)} budget` : ""}</span>${I.chev}</button>`; };
+const TRIP_IC = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
+const EVENT_IC = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 13h18M12 8c-1.5-3-5-4-5.5-2S9 8 12 8zm0 0c1.5-3 5-4 5.5-2S15 8 12 8z"/></svg>`;
 OUT.trips = () => {
   const list = (S.trips || []).slice().sort((a, b) => (b.start || "").localeCompare(a.start || ""));
-  if (!list.length && !UI.tripAdd) return `<div class="inc-add small" data-plan-row>${I.plus}<button class="link small" type="button" data-trip-add>Plan a trip</button> <span class="muted">or</span> <button class="link small" type="button" data-event-add>an event</button> <span class="muted">with a budget of its own, apart from your month</span></div>`;
+  if (!list.length && !UI.tripAdd) return `<section class="card trip-empty" data-plan-row data-trips-empty><h2 class="h-info">Trips and events${infoBtn("tripsEmpty", "About trips and events")}</h2>
+    ${infoTip("tripsEmpty", "Give a trip, a wedding or a birthday a budget of its own. What you spend on it stays out of your month until it is over, when you choose to count it or keep it separate.")}
+    <div class="trip-tiles"><button class="trip-tile" type="button" data-trip-add><span class="trip-ic">${TRIP_IC}</span><b>Plan a trip</b><span class="muted small">Flights, stays, food</span></button>
+    <button class="trip-tile" type="button" data-event-add><span class="trip-ic ev">${EVENT_IC}</span><b>Plan an event</b><span class="muted small">Wedding, party, concert</span></button></div></section>`;
   const order = {active: 0, ended: 1, upcoming: 2, separate: 3, counted: 3}, sorted = list.sort((a, b) => order[tripState(a)] - order[tripState(b)]), done = sorted.filter(t => order[tripState(t)] === 3), live = sorted.filter(t => order[tripState(t)] < 3);
   const shown = UI.tripsAll ? sorted : [...live, ...done.slice(0, 1)];
   return `<section class="card inc-card" data-trips><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Trips and events${infoBtn("trips", "About trips and events")}</h2></div>
     ${infoTip("trips", "A trip or an event (a wedding, a birthday, a concert) keeps its own budget. Type what you spend, like “uber 20, dinner 50”, and it is logged to it for today. If you pay in another currency, pick it on the trip or say it (“dinner 30 euros”) and it is converted at today’s rate. It stays out of your month until it is over, when you choose to count it or keep it separate.")}
     ${shown.map(tripCard).join("")}${sorted.length > shown.length ? `<button class="link small" type="button" data-trips-all style="align-self:center">Show ${sorted.length - shown.length} earlier</button>` : ""}
-    ${UI.tripAdd ? `<div class="inc-row editing">${tripForm(null, UI.tripDraft)}</div>` : `<div class="grid2"><button class="btn" type="button" data-trip-add>${I.plus}Plan a trip</button><button class="btn" type="button" data-event-add>${I.plus}Plan an event</button></div>`}</section>`;
+    ${UI.tripAdd ? `<div class="inc-row editing">${tripForm(null, UI.tripDraft)}</div>` : `<div class="trip-tiles"><button class="trip-tile" type="button" data-trip-add><span class="trip-ic">${TRIP_IC}</span><b>Plan a trip</b></button><button class="trip-tile" type="button" data-event-add><span class="trip-ic ev">${EVENT_IC}</span><b>Plan an event</b></button></div>`}</section>`;
 };
 
 /* ================= did it arrive? (asked from the day after money was due) ================= */
@@ -4503,7 +4526,7 @@ const TOUR_STEPS = [
   ["month", '[data-out="donut"]', "Where your month goes", "Everything going out this month, and what you keep. Tap the chart to open every line with its amount and its share."],
   ["month", '[data-out="comingUp"]', "Coming up", "Bills, subscriptions and money due in the next 7 days. In a quiet week it names what comes next."],
   ["month", '[data-out="billsCard"]', "Bills and savings", "How many of this month’s bills are paid, and how your emergency fund and goal are building. Tap either to go to it."],
-  ["month", '[data-out="envelopes"]', "Month · Budget", "Your three envelopes: Expenditures, Miscellaneous and Savings, each against its share. Open one to tick a bill once it is paid or tap Again to log the same spending. Trips and past months are here too."],
+  ["month", '[data-out="envelopes"]', "Month · Budget", "Your three envelopes: Expenditures, Miscellaneous and Savings, each against its share. Open one to tick a bill once it is paid or tap Again to log the same spending. Loans have their own row. Plan a trip or an event at the bottom: from a week before, it shows on Overview."],
   ["month", '[data-out="payBox"]', "Month · Income", "Your pay and how you are paid, other money that comes in, and bank statements. Import a statement and KeepWise finds your pay, bills and subscriptions."],
   ["subs", '[data-out="subsList"]', "Subs", "Everything you pay for on repeat. KeepWise flags what looks unused, and asks about each one a few days before it renews."],
   ["cheaper", "#view .sub-seg", "Subs · Cheaper", "Ways to pay less for things already on your list, with what each one keeps per month and per year."],
@@ -5339,6 +5362,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-event-add")){ UI.tripAdd = true; UI.tripEdit = null; UI.tripDraft = {kind: "event"}; render(true); const i = view.querySelector('form[data-form="trip"] [name=etype]'); if (i) i.focus(); return; }
   if (b.hasAttribute("data-trip-add")){ UI.tripAdd = true; UI.tripEdit = null; UI.tripDraft = null; render(true); const i = view.querySelector('form[data-form="trip"] [name=name]'); if (i) i.focus(); return; }
   if (b.hasAttribute("data-trip-cancel")){ UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; render(true); return; }
+  if (b.dataset.tripGoto){ UI.mseg = "budget"; goTo("month", `[data-out=trips] [data-trip="${b.dataset.tripGoto}"]`); return; }
   if (b.hasAttribute("data-trips-all")){ UI.tripsAll = true; refreshOuts(); return; }
   const tripEl = b.closest("[data-trip]"), tripX = tripEl && tripList().find(x => x.id === tripEl.dataset.trip);
   if (tripX){
