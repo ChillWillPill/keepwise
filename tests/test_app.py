@@ -3731,6 +3731,30 @@ async def a_yearly_subscription_counts_once_in_the_month_it_is_charged(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def a_new_subscription_renews_a_month_or_a_year_from_the_day_it_was_added(ctx):
+    pg = await open_app(ctx, month_tabs=True, w=393, h=852)
+    exp = await pg.evaluate("""() => { const f = d => d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}), t = new Date();
+      const dm = Math.min(t.getDate(), new Date(t.getFullYear(), t.getMonth() + 2, 0).getDate()), m = new Date(t.getFullYear(), t.getMonth() + 1, dm);
+      const y = new Date(t.getFullYear() + 1, t.getMonth(), t.getDate()); return [f(m), f(y) + ', ' + y.getFullYear()]; }""")
+    await _ask(pg, "zeta stream sub 12 monthly"); await pg.wait_for_timeout(300)
+    await _ask(pg, "omega cloud sub 99 yearly"); await pg.wait_for_timeout(300)
+    await pg.evaluate("(() => { const c = document.querySelector('#asksheet [data-ask-close]'); if (c) c.click(); })()")
+    await tab(pg, "subs")
+    mo = await pg.locator("[data-sub]", has_text="eta").filter(has_text="12").first.inner_text()
+    yr = await pg.locator("[data-sub]", has_text="99").filter(has_text="mega").first.inner_text()
+    assert f"Renews {exp[0]}" in mo and "today" not in mo.lower().split("renews")[1][:8], (mo, exp)
+    assert f"Renews {exp[1]}" in yr, (yr, exp)
+    # an older one with no date starts from when it was paid, not a blank today
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+      s.subs.push({id: 'nd', name: 'Nodate Club', price: 7, cycle: 'mo', last: null, group: '', env: 'misc', keep: 'auto'}); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(500); await tab(pg, "subs")
+    await pg.click("[data-sub=nd] [data-renew-open]"); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-sub=nd] [data-renew-day]").input_value() != "", "a day is already chosen"
+    await pg.click("[data-sub=nd] [data-renew-cancel]"); await pg.wait_for_timeout(200)
+    assert f"Renews {exp[0]}" in await pg.inner_text("[data-sub=nd]"), await pg.inner_text("[data-sub=nd]")
+    assert not pg.errors, pg.errors
+
+@test
 async def envelopes_can_be_set_as_amounts(ctx):
     pg = await open_app(ctx, month_tabs=True, w=375, h=812)
     await tab(pg, "plan")
@@ -4740,7 +4764,8 @@ async def date_fields_open_on_a_tap_and_keep_to_sensible_limits(ctx):
     await pg.click(f + "button[type=submit]"); await pg.wait_for_timeout(250); s = (await state(pg))["subs"][-1]
     assert s["name"] == "DayBox" and s["renewDay"] == 12 and "renewDate" not in s and s["last"] == today, s
     await pg.click("text=Add a subscription"); await pg.fill(f + "[name=name]", "NoDay"); await pg.fill(f + "[name=price]", "3"); await pg.click(f + "button[type=submit]"); await pg.wait_for_timeout(250)
-    s = (await state(pg))["subs"][-1]; assert s["name"] == "NoDay" and "renewDay" not in s and "renewDate" not in s, "the renewal stays optional"
+    s = (await state(pg))["subs"][-1]; dnow = await pg.evaluate("new Date().getDate()")
+    assert s["name"] == "NoDay" and s.get("renewDay") == dnow and s.get("paidOn") == today and "renewDate" not in s, ("with no day picked it renews a month from today", s)
     await pg.click("text=Add a subscription"); await pg.select_option(f + "[name=cycle]", "yr"); await pg.wait_for_timeout(100)
     assert await pg.locator(f + "[data-renew-yr]").is_visible() and not await pg.locator(f + "[data-renew-mo]").is_visible()
     assert await pg.get_attribute(f + "[name=renew]", "min") == today, "a next charge cannot be behind today"
@@ -4881,8 +4906,9 @@ async def coming_up_keeps_its_rules_and_never_disappears(ctx):
     t = await pg.locator("[data-out=comingUp] [data-up-empty]").inner_text()
     assert "Coming up" in t and "Nothing is due in the next 7 days." in t and "renewal day" not in t, "an empty month still shows the card: " + t
     # a subscription with no renewal day cannot be placed on a date, and the card says so
-    await tab(pg, "subs"); await pg.click("text=Add a subscription"); f = "form[data-form=addSub] "
-    await pg.fill(f + "[name=name]", "Claude Pro"); await pg.fill(f + "[name=price]", "20"); await pg.click(f + "button[type=submit]"); await pg.wait_for_timeout(250); await tab(pg, "month")
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+      s.subs.push({id: 'cp', name: 'Claude Pro', price: 20, cycle: 'mo', last: null, group: '', env: 'misc', keep: 'auto'}); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(500); await tab(pg, "month")
     t = await pg.inner_text("[data-out=comingUp]"); assert "1 subscription has no renewal day yet" in t and await pg.locator("[data-out=comingUp] [data-go=subs]").count() == 1, t
     await pg.click("[data-out=comingUp] [data-go=subs]"); await pg.wait_for_timeout(200); sid = (await state(pg))["subs"][-1]["id"]
     d = await pg.evaluate("(() => { const d = new Date(); d.setDate(d.getDate() + 2); return d.getDate(); })()")

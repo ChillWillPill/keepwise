@@ -3264,13 +3264,16 @@ function nextRenewal(s){
   const t = todayMid();
   if (s.cycle === "yr"){
     if (!s.renewDate) return null; const [y, m, d] = s.renewDate.split("-").map(Number); let r = new Date(y, m - 1, d);
-    while (r < t) r.setFullYear(r.getFullYear() + 1); return r;
+    while (r < t || (s.paidOn && isoOf(r) <= s.paidOn)) r.setFullYear(r.getFullYear() + 1); return r;   // already paid for this one: the next is a year on
   }
   if (!s.renewDay) return null;
-  let r = new Date(t.getFullYear(), t.getMonth(), Math.min(s.renewDay, daysInMonth(t.getFullYear(), t.getMonth())));
-  if (r < t) r = new Date(t.getFullYear(), t.getMonth() + 1, Math.min(s.renewDay, daysInMonth(t.getFullYear(), t.getMonth() + 1)));
+  const on = (y, m) => new Date(y, m, Math.min(s.renewDay, daysInMonth(y, m)));
+  let r = on(t.getFullYear(), t.getMonth());
+  if (r < t || (s.paidOn && isoOf(r) <= s.paidOn)) r = on(t.getFullYear(), t.getMonth() + 1);   // charged today already: the next is a month on
   return r;
 }
+// A subscription added with no date was paid the day it was added: it renews a month (or a year) from then.
+function startCycle(s, iso){ iso = iso || isoDaysAgo(0); s.paidOn = iso; setRenewalFrom(s, iso); }
 const dateWithYear = (d, always) => d.toLocaleDateString("en-US", always || d.getFullYear() !== new Date().getFullYear() ? {month: "short", day: "numeric", year: "numeric"} : {month: "short", day: "numeric"});
 const daysUntil = d => Math.round((d - todayMid()) / DAY);
 const whenLabel = n => n === 0 ? "Today" : n === 1 ? "Tomorrow" : `In ${n} days`;
@@ -4035,7 +4038,7 @@ async function logSpend(text, force){  // returns what to say back, or null when
   const bad = await convertLines(lines); if (bad) return FX_FAIL(bad);
   const conv = l => l.ocur ? `${fmtIn(l.orig, l.ocur)} (${fmt(l.amount)} at today’s rate)` : fmt(l.amount), each = lines.map(l => `${l.name}, ${conv(l)}`).join("; ");
   if (trip){ tripAddSpend(trip, lines); save(); ASK.go = {tab: "month", sel: `[data-trip="${trip.id}"]`, pre: () => { UI.tripOpen = trip.id; }}; return tripSpendReply(trip, lines); }
-  if (kind === "sub"){ const sid = uid(); ASK.go = {tab: "subs", sel: `[data-sub="${sid}"]`}; lines.forEach((l, i) => S.subs.push({id: i ? uid() : sid, name: l.name, price: l.amount, cycle: yearly ? "yr" : "mo", last: isoDaysAgo(0), ...(yearly ? {paidOn: isoDaysAgo(0)} : {}), group: "", env: "misc", keep: "auto"})); save();
+  if (kind === "sub"){ const sid = uid(); ASK.go = {tab: "subs", sel: `[data-sub="${sid}"]`}; lines.forEach((l, i) => S.subs.push({id: i ? uid() : sid, name: l.name, price: l.amount, cycle: yearly ? "yr" : "mo", last: isoDaysAgo(0), group: "", env: "misc", keep: "auto"})); S.subs.slice(-lines.length).forEach(x => startCycle(x)); save();
     return `Added to Subs: ${each}${yearly ? " a year" : " a month"}.`; }
   if (kind === "bill"){ const bid = uid(); ASK.go = {tab: "plan", sel: `[data-exp="${bid}"]`}; lines.forEach((l, i) => S.expenses.push({id: i ? uid() : bid, name: l.name, amount: l.amount, env: "needs"})); save();
     return `Added to Expenditures as a monthly bill: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`; }
@@ -5465,7 +5468,8 @@ view.addEventListener("click", async e => {
       UI.flashSub = s.id; clearTimeout(UI.flashT); UI.flashT = setTimeout(() => { UI.flashSub = null; }, 1500);
       const row = view.querySelector(`[data-sub="${s.id}"]`); if (row) row.classList.add("flash");
       toast(wasFlagged ? `${s.name} marked as used today. It is no longer flagged.` : `${s.name} marked as used today.`); return; }
-    if (b.hasAttribute("data-renew-open")){ UI.renewEdit = s.id; render(true); const el = view.querySelector(`[data-sub="${s.id}"] [data-renew-day],[data-sub="${s.id}"] [data-renew-date]`); if (el) el.focus(); return; }
+    if (b.hasAttribute("data-renew-open")){ if (!s.renewDay && !s.renewDate){ startCycle(s, s.paidOn || s.lastCharge || isoDaysAgo(0)); save(); }   // start from when it was paid, never from a blank today
+      UI.renewEdit = s.id; render(true); const el = view.querySelector(`[data-sub="${s.id}"] [data-renew-day],[data-sub="${s.id}"] [data-renew-date]`); if (el) el.focus(); return; }
     if (b.hasAttribute("data-renew-cancel")){ UI.renewEdit = null; render(true); return; }
     if (b.hasAttribute("data-sub-edit")){ UI.subEdit = s.id; UI.renewEdit = null; render(true); return; }
     if (b.hasAttribute("data-sub-cancel")){ UI.subEdit = null; render(true); return; }
@@ -5740,7 +5744,7 @@ view.addEventListener("submit", async e => {
     Object.assign(x, {store, code, offer: String(fd.get("offer") || "").trim()}); UI.codeEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Updated the ${store} code.`); return; }
   if (kind === "addSub"){ const name = String(fd.get("name")).trim(), price = numv(fd.get("price")); if (!name || !price){ toast("Add a name and a price."); return; }
     const ns = {id:uid(), name, price, cycle:fd.get("cycle"), last:fd.get("last") || isoDaysAgo(0), group:String(fd.get("group")||"").trim(), env:"misc", keep:"auto"};
-    const rn = String(fd.get("renew") || ""), rd = +fd.get("renewDay") || 0; if (ns.cycle === "yr"){ if (rn) ns.renewDate = rn; else ns.paidOn = ns.last; } else if (rd >= 1 && rd <= 31) ns.renewDay = rd;
+    const rn = String(fd.get("renew") || ""), rd = +fd.get("renewDay") || 0; if (ns.cycle === "yr" && rn) ns.renewDate = rn; else if (ns.cycle !== "yr" && rd >= 1 && rd <= 31) ns.renewDay = rd; else startCycle(ns);
     S.subs.push(ns); save(); render(true); toast(`Added ${name}.`); return; }
   if (kind === "addSwap"){ const link = fd.get("link"), alt = String(fd.get("alt")).trim(); if (!link || !alt){ toast("Pick what you pay for and name the cheaper option."); return; }
     const [type,id] = link.split(":"), src = type === "expense" ? S.expenses.find(x=>x.id===id) : S.subs.find(x=>x.id===id);
