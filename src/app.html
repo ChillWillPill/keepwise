@@ -527,7 +527,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .st-item{border-top:1px solid var(--line);padding-bottom:6px}
 .st-item:first-of-type,.st-h+.st-item,.info-tip+.st-item{border-top:0}
 .st-item .move-row{border-top:0;padding-bottom:2px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:12px;row-gap:1px;align-items:start}
-.st-item .move-row input{grid-column:1;grid-row:1/5}
+.st-item .move-row input,.st-item .move-row .st-nocount{grid-column:1;grid-row:1/5}.st-item .move-row:has(.st-nocount){cursor:default}
 .st-item .move-txt{display:contents}
 .st-item .move-txt>span{grid-column:2;grid-row:1;overflow-wrap:anywhere;font-weight:600}
 .st-item .move-row>.tnum{grid-column:3;grid-row:1;white-space:nowrap}
@@ -536,6 +536,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .st-links{display:flex;gap:16px;flex-wrap:wrap;padding-left:34px}
 .st-links .link{min-height:32px;font-size:.84rem;font-weight:600;color:var(--green)}
 .st-all{font-size:.84rem;font-weight:600;color:var(--green);white-space:nowrap}
+.st-nocount{flex:0 0 auto;width:22px;height:22px;margin-top:1px;border-radius:50%;border:1.5px dashed var(--line);position:relative}.st-nocount::after{content:"";position:absolute;left:5px;right:5px;top:9px;height:1.5px;background:var(--muted);border-radius:2px}
 .st-tx{display:flex;flex-direction:column;margin:4px 0 6px;border:1px solid var(--line);border-radius:12px;background:var(--bg);max-height:420px;overflow-y:auto}
 .st-t{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:baseline;padding:8px 10px;border-top:1px solid var(--line);font-size:.86rem}
 .st-t:first-child{border-top:0}
@@ -974,7 +975,14 @@ window.addEventListener("pagehide", save);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
 
 /* ================= money math ================= */
-const subMonthly = s => s.cycle === "yr" ? s.price / 12 : s.price;   // an average, for "a month" comparisons only
+const subMonthly = s => s.cycle === "yr" ? s.price / 12 : s.price;   // an average, only for sorting and swap comparisons, never shown as a charge
+// What a subscription really costs, split by how it is charged: monthly ones a month, yearly ones once a year.
+function subPer(list){ let mo = 0, yr = 0; list.forEach(s => { const w = swapFor("sub", s.id); if (w) mo += +w.altCost || 0; else if (s.cycle === "yr") yr += +s.price || 0; else mo += +s.price || 0; }); return {mo: r2(mo), yr: r2(yr), year: r2(r2(mo) * 12 + yr)}; }
+function subsSay(list){ const p = subPer(list); return [p.mo || !p.yr ? `${fmt(p.mo)} a month` : "", p.yr ? `${fmt(p.yr)} a year` : ""].filter(Boolean).join(" and "); }
+function subsKeep(list){ const p = subPer(list);
+  if (!p.yr) return `${fmt(p.mo)} a month, ${fmt(p.year)} a year`;
+  if (!p.mo) return `${fmt(p.yr)} a year`;
+  return `${fmt(p.mo)} a month and ${fmt(p.yr)} a year, ${fmt(p.year)} a year in all`; }
 // What a subscription takes out of this month: a monthly one its price; a yearly one its whole price in the month it is
 // charged (the month it was paid, or the month it renews), and nothing in the eleven months between.
 function subCharged(s, k){
@@ -1019,7 +1027,7 @@ function compute(){
   const income = (+S.income || 0) + extraExpected() + bonus.extra + insTotal(planPeriodNow().key);  // one-off money in counts in the month it arrived
   const savings = income - needs - misc;
   const flagged = liveSubs.filter(s => flags[s.id].length && s.keep !== "keep");
-  const flaggedSave = flagged.reduce((a, s) => { const w = swapFor("sub", s.id); return a + (w ? +w.altCost : subMonthly(s)); }, 0);
+  const flaggedSave = r2(flagged.reduce((a, s) => a + subCostIn(s, pk), 0));   // what dropping them keeps in this month
   if (S.env.needs + S.env.misc + S.env.save !== 100) envFix();   // a plan restored from elsewhere is held to the same rule
   const flat = envFlatOn(), envNeeds = flat ? +S.envFlat.needs || 0 : income * S.env.needs / 100, envMisc = flat ? +S.envFlat.misc || 0 : income * S.env.misc / 100, envSave = flat ? r2(income - envNeeds - envMisc) : income * S.env.save / 100;
   const efTarget = S.efMonths * needs;
@@ -1651,10 +1659,10 @@ function analyzeStatement(tx, fileName, holder, me){
   tx.forEach(t => { delete t.mk; });
   // on a card statement, the credits are payments to the card, refunds and reversals: shown on their own, never counted as income
   const cardPay = [], cardBack = [];
-  if (STMT.card){ tx = tx.filter(t => { if (t.amt <= 0) return true; const k = merchantKey(t.desc); t.mk = "card:" + k; const to = MOVE["card:" + k]; if (to === "income" || to === "other") return true;
+  if (STMT.card){ tx = tx.filter(t => { if (t.amt <= 0) return true; const k = merchantKey(t.desc); t.mk = "card:" + k; const to = MOVE["card:" + k]; if (to === "income" || to === "other" || CASHBACK.test(t.desc)) return true;
     (CARD_PAY.test(t.desc) && !CARD_BACK.test(t.desc) ? cardPay : cardBack).push(t); return false; }); }
   // transfers and cash are set aside first: by direction, and by whether the other name is the account holder's own
-  const isMove = t => catOfDesc(t.desc) === "Transfers" && !platformOf(t);
+  const isMove = t => catOfDesc(t.desc) === "Transfers" && !platformOf(t) && !(t.amt > 0 && CASHBACK.test(t.desc));   // cash back is not a cash deposit
   const moveTx = tx.filter(isMove); tx = tx.filter(t => !isMove(t));
   const mv = {sent: {}, recv: {}, ownOut: [], ownIn: [], cashOut: [], cashIn: []}, reversed = [];
   moveTx.forEach(t => { const kind = moveKind(t.desc, t.amt);
@@ -1675,15 +1683,15 @@ function analyzeStatement(tx, fileName, holder, me){
     ownKeys: [...new Set([...mv.ownOut, ...mv.ownIn].map(t => t.party))], notMe: [...me].filter(k => k[0] === "!").map(k => k.slice(1))};
   // money in
   const credits = tx.filter(t => t.amt > 0), cg = {}, income = [], other = [...reversed];
-  credits.forEach(t => { const k = platformOf(t) || merchantKey(t.desc); (cg[k] = cg[k] || []).push(t); t.mkCard = t.mk && t.mk.startsWith("card:") ? t.mk : ""; t.mk = t.mkCard || "in:" + k; });
+  credits.forEach(t => { const k = CASHBACK.test(t.desc) ? "CASH BACK" : platformOf(t) || merchantKey(t.desc); (cg[k] = cg[k] || []).push(t); t.mkCard = t.mk && t.mk.startsWith("card:") ? t.mk : ""; t.mk = t.mkCard || "in:" + k; });
   for (const [k, list] of Object.entries(cg)){
-    const cad = cadenceOf(list), isPay = list.some(t => catOfDesc(t.desc) === "Salary" || platformOf(t)), to = MOVE["in:" + k] || MOVE[list[0].mkCard || "-"];
+    const cad = cadenceOf(list), back = k === "CASH BACK", isPay = back || list.some(t => catOfDesc(t.desc) === "Salary" || platformOf(t)), to = MOVE["in:" + k] || MOVE[list[0].mkCard || "-"];
     const total = list.reduce((a, t) => a + t.amt, 0);
     if (to === "other"){ other.push(...tag(list, "Other money in")); continue; }
     if (to === "income" || isPay || (cad && catOfDesc(list[0].desc) !== "Loans")){   // a loan paid out to you is not pay
       const avg = total / list.length, days = list.map(t => t.date.getDate());
       const payday = days.slice().sort((a, b) => days.filter(v => v === b).length - days.filter(v => v === a).length)[0];
-      income.push({id: "in:" + k, name: titleCase(k), monthly: r2(cad ? perMonth(avg, cad) : total / months), total: r2(total), cadence: cad || "irregular", payday, count: list.length, tx: tag(list, "Pay"), on: to === "income" || isPay || list.length >= 3, ask: !(to === "income" || isPay || list.length >= 3), moved: !!to});
+      income.push({id: "in:" + k, name: back ? "Cash back and rewards" : titleCase(k), back, monthly: r2(cad ? perMonth(avg, cad) : total / months), total: r2(total), cadence: cad || "irregular", payday, count: list.length, tx: tag(list, back ? "Cash back" : "Pay"), on: to === "income" || isPay || list.length >= 3, ask: !(to === "income" || isPay || list.length >= 3), moved: !!to});
     } else other.push(...tag(list, "Other money in"));
   }
   income.sort((a, b) => b.monthly - a.monthly);
@@ -1814,6 +1822,7 @@ function applyStatement(R, mode){
 const CARD_CUE = /credit\s*card\s*statement|card\s*statement|card\s*account\s*statement|minimum\s*(payment|amount)\s*due|credit\s*limit|available\s*credit/i;   // "card ending 1234" alone is not enough: a debit card prints that on a bank statement too
 const isCardStatement = text => CARD_CUE.test(String(text || "").slice(0, 4000));   // read from the top of the statement only: a bank account can pay a card bill
 const CARD_PAY = /\bPAYMENT\b|THANK\s*YOU|AUTO\s*-?PAY|\bPYMT\b|\bPMT\b|PAYMENT\s*RECEIVED|PAYMENT\s*-\s*|BILL\s*PAY|ONLINE\s*PAYMENT|DIRECT\s*DEBIT/i;
+const CASHBACK = /CASH\s*-?\s*BACK|CASHBACK|\bREWARDS?\b|REBATE|POINTS\s*REDEMPTION|REDEEMED\s*POINTS/i;   // money the bank gives you: it is credited and counts as money in
 const CARD_BACK = /REVERSAL|REVERSED|\bRV\b|REFUND|RETURN|CASH\s*BACK|CASHBACK|REWARD|WAIVE|WAIVER|WAIVED|REBATE|ADJUSTMENT|\bADJ\b|CHARGEBACK|CREDIT\s*VOUCHER|DISPUTE/i;
 function cardSigns(tx){   // most card files print charges as plain numbers and credits with a minus or CR: turn them the bank account way
   const buys = tx.filter(t => !CARD_PAY.test(t.desc) && !CARD_BACK.test(t.desc)); if (!buys.length) return;
@@ -1916,8 +1925,8 @@ const stExact = x => { const names = [...new Set(x.tx.map(t => t.desc))]; return
 function stItem(x, title, sub, amount, o){
   o = o || {}; const open = STMT.open.has(x.id), n = x.tx.length, pick = o.pick !== false;
   return `<div class="st-item" data-st-item="${esc(x.id)}">
-    <label class="move-row"><input type="checkbox" ${pick ? `data-st-pick="${esc(x.id)}"` : "disabled"} ${x.on && pick ? "checked" : ""} aria-label="Count ${esc(title)}"><span class="move-txt"><span>${esc(title)}${x.ask && !(x.id in STMT.pick) ? ` <span class="pill gold" data-st-askpill>Check this</span>` : x.moved ? ` <span class="pill grey">Moved by you</span>` : ""}${STMT.have && STMT.have.has(x.id) ? ` <span class="pill grey" data-st-have>In your plan</span>` : ""}</span>${o.exact === false ? "" : `<small class="st-exact">${esc(stExact(x))}</small>`}<small class="muted">${sub}</small></span><span class="tnum">${amount}</span></label>
-    <div class="st-links"><button class="link plain small" type="button" data-st-open="${esc(x.id)}" aria-expanded="${open}">${open ? "Hide" : n === 1 ? "Show the transaction" : `Show ${n} transactions`}</button>${o.me ? `<button class="link plain small" type="button" data-st-me="${esc(o.me)}">This is me</button>` : ""}</div>
+    <label class="move-row">${pick ? `<input type="checkbox" data-st-pick="${esc(x.id)}" ${x.on ? "checked" : ""} aria-label="Count ${esc(title)}">` : `<span class="st-nocount" data-st-nocount aria-hidden="true"></span>`}<span class="move-txt"><span>${esc(title)}${x.ask && !(x.id in STMT.pick) ? ` <span class="pill gold" data-st-askpill>Check this</span>` : x.moved ? ` <span class="pill grey">Moved by you</span>` : ""}${STMT.have && STMT.have.has(x.id) ? ` <span class="pill grey" data-st-have>In your plan</span>` : ""}</span>${o.exact === false ? "" : `<small class="st-exact">${esc(stExact(x))}</small>`}<small class="muted">${sub}</small></span><span class="tnum">${amount}</span></label>
+    <div class="st-links"><button class="link plain small" type="button" data-st-open="${esc(x.id)}" aria-expanded="${open}">${open ? "Hide" : n === 1 ? "Show the transaction" : `Show ${n} transactions`}</button>${!pick && !open ? `<span class="muted small" data-st-howcount>Tap Change on a line to count it</span>` : ""}${o.me ? `<button class="link plain small" type="button" data-st-me="${esc(o.me)}">This is me</button>` : ""}</div>
     ${open ? stTx(x.tx, false, true) : ""}</div>`;
 }
 // Asked first: lines whose direction the statement did not show, and, when the bank printed no account holder, which names are the person's own.
@@ -1970,15 +1979,15 @@ OUT.importBody = () => {
   STMT.have = stInPlan(STMT.result); const haveN = stLists(R).flat().filter(x => x.on && STMT.have.has(x.id)).length, newN = Math.max(0, R.picked - haveN);
   const html = `  ${stAskCard(R)}
   ${mine ? `<p class="note st-mine" data-st-mine><b>You already have a plan.</b> Lines marked “In your plan” are already there. “Add what’s missing” at the bottom keeps your plan and adds only the rest.</p>` : ""}
-  ${R.card ? `<p class="note" data-st-cardnote><b>Read as a credit card statement.</b> Charges count as money out. Payments to the card and refunds are credits, shown on their own and not counted as income.</p>` : ""}
+  ${R.card ? `<p class="note" data-st-cardnote><b>Read as a credit card statement.</b> Charges count as money out. Payments to the card and refunds are credits, shown on their own and not counted as income. Cash back and rewards are credited to you, so they count as money coming in.</p>` : ""}
   <section class="hero"><p class="label">A typical month</p>
     <div class="big tnum" style="${fitSize(fmt(left), 3, 88)}${left < 0 ? ";color:var(--rust)" : ""}">${fmt(left)}</div>
     <p class="muted">${fmt(inAll)} comes in, ${fmt(outAll)} goes out${R.taxOn ? `, including ${fmt(R.taxOn)} of tax payments` : ""}. Only ticked lines are counted.</p></section>
   <section class="card" data-st="income">${stHead("Money coming in", "income", R.income)}
-    ${R.income.length ? R.income.map(s => stItem(s, s.name, s.count === 1 ? `One deposit${s.payday ? `, on the ${ordinal(s.payday)}` : ""}` : `${s.cadence === "irregular" ? "Irregular" : s.cadence[0].toUpperCase() + s.cadence.slice(1)}${s.payday ? ` · usually on the ${ordinal(s.payday)}` : ""} · ${s.count} deposits`, `${fmt(s.monthly)}/mo`)).join("") : `<p class="muted">No regular salary found. You can type your income on the Month tab.</p>`}
+    ${R.income.length ? R.income.map(s => stItem(s, s.name, s.back ? `Credited to you · ${s.count} line${s.count === 1 ? "" : "s"} · ${fmt(s.total)} in this statement` : s.count === 1 ? `One deposit${s.payday ? `, on the ${ordinal(s.payday)}` : ""}` : `${s.cadence === "irregular" ? "Irregular" : s.cadence[0].toUpperCase() + s.cadence.slice(1)}${s.payday ? ` · usually on the ${ordinal(s.payday)}` : ""} · ${s.count} deposits`, `${fmt(s.monthly)}/mo`)).join("") : `<p class="muted">No regular salary found. You can type your income on the Month tab.</p>`}
     ${R.otherCredits.count ? stItem(R.otherCredits, "Refunds and one-off money in", `Not counted · ${R.otherCredits.count} line${R.otherCredits.count === 1 ? "" : "s"} · ${fmt(R.otherCredits.total)} in this statement`, `${fmt(R.otherCredits.monthly)}/mo`, {pick: false, exact: false}) : ""}</section>
   ${R.card && (R.card.pay.count || R.card.back.count) ? `<section class="card" data-st="card"><h2 class="h-info">Credits on this card${infoBtn("stCard", "About credits on a card")}</h2>
-    ${infoTip("stCard", "This is a credit card statement. Charges are money you spent. Credits are payments you made to the card, refunds and reversals, so they are not income and are not counted. If one really was money coming in, open it and choose where it belongs.")}
+    ${infoTip("stCard", "This is a credit card statement. Charges are money you spent. Credits are payments you made to the card, refunds and reversals, so they are not income and are not counted. Cash back and rewards are different: that money is yours, so it is listed under Money coming in. If one really was money coming in, open it and choose where it belongs.")}
     ${R.card.pay.count ? stItem(R.card.pay, "Payments to this card", `Not income · ${R.card.pay.count} payment${R.card.pay.count === 1 ? "" : "s"} · ${fmt(R.card.pay.total)} in this statement`, `+${fmt(R.card.pay.total)}`, {pick: false}) : ""}
     ${R.card.back.count ? stItem(R.card.back, "Refunds and reversals", `Not income · ${R.card.back.count} line${R.card.back.count === 1 ? "" : "s"} · ${fmt(R.card.back.total)} back on the card`, `+${fmt(R.card.back.total)}`, {pick: false}) : ""}</section>` : ""}
   <section class="card" data-st="subs">${stHead("Subscriptions", "subs", R.subs)}
@@ -2031,7 +2040,7 @@ OUT.needs = () => { const g = needGroups(); if (!g.length) return "";
   return `<section class="card needs" data-needs="${cur[0]}"><div class="inline" style="justify-content:space-between;align-items:center"><p class="label" style="margin:0">Needs you</p>${g.length > 1 ? `<span class="inline" style="gap:10px"><span class="pill grey" data-need-count>${i + 1} of ${g.length}</span><button class="link small" type="button" data-need-next>Next</button></span>` : ""}</div>${cur[1]}</section>`; };
 OUT.reviewCard = () => {
   const s = reviewPick(); if (!s) return "";
-  const since = s.since ? `You’ve paid ${fmt(s.paid || 0)} since ${monthsLabel(s.since)}.` : `It costs ${fmt(subMonthly(s))} a month.`;
+  const since = s.since ? `You’ve paid ${fmt(s.paid || 0)} since ${monthsLabel(s.since)}.` : s.cycle === "yr" ? `It costs ${fmt(s.price)} a year${nextRenewal(s) ? `, next charged ${shortDate(isoOf(nextRenewal(s)))}` : ""}.` : `It costs ${fmt(s.price)} a month.`;
   return `<section class="card review" data-review-id="${s.id}"><p class="label">Quick check</p>
     <h3 style="font-size:1.15rem">${UI.survey === s.id ? `Still using ${esc(s.name)}?` : `How much do you use ${esc(s.name)}?`}</h3>
     <p class="muted">${since}</p>
@@ -2359,7 +2368,7 @@ function envDetail(k, C){
     ${k === "misc" && GIVING_ON ? (S.giving || []).map(g => `<div class="line" data-give-line="${g.id}"><div><div>${esc(g.name || giveCause(g.cause))}</div><div class="muted small">Giving · ${esc(giveEvery(g.every)[1])}</div></div><div class="inline"><span class="tnum">${fmt(giveMonthly(g))}</span><button class="link plain" type="button" data-go="plan">Edit</button></div></div>`).join("") : ""}
     ${k === "needs" ? paidSum(exp.map(e => { const w = swapFor("expense", e.id); return ["e:" + e.id, +(w ? w.altCost : e.amount) || 0]; }), C.planKey) : ""}
     ${exp.map(e => { const w = swapFor("expense", e.id), pd = k === "needs" ? paidOn("e:" + e.id, C.planKey) : ""; return `<div class="line${pd ? " paid" : ""}" data-exp="${e.id}">${k === "needs" ? tickBtn("e:" + e.id, e.name, C.planKey) : ""}<div><div>${esc(e.name)}</div><div class="muted small">${pd ? `Paid ${shortDate(pd)}` : w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
-    ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Subscription · ${fmt(sb.price)}/yr` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subMonthly(sb))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
+    ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Yearly, ${fmt(sb.price)} · ${subCharged(sb, C.planKey) ? "charged this month" : nextRenewal(sb) ? `next ${shortDate(isoOf(nextRenewal(sb)))}` : "paid for the year"}` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subCostIn(sb, C.planKey))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
     ${k === "misc" ? (S.trips || []).filter(t => t.settled === "counted" && t.countKey === C.planKey).map(t => `<div class="line"><div><div>Trip: ${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))} · counted this month only</div></div><span class="tnum">${fmt(tripTotal(t))}</span></div>`).join("") : ""}
     ${!exp.length && !subs.length && !(k === "misc" && (C.trips > 0 || C.spends > 0)) ? `<p class="muted">Nothing here yet.</p>` : ""}
     <div class="inline add-line" data-add-line="${k}"><input data-new-name placeholder="Add a line" aria-label="New line name" enterkeyhint="next" value="${esc((LINE_DRAFT[k]||{}).n||"")}" style="flex:2 1 140px"><input data-new-amt inputmode="decimal" placeholder="0" aria-label="Amount per month" enterkeyhint="done" value="${esc((LINE_DRAFT[k]||{}).a||"")}" style="flex:1 1 80px"><button class="btn" type="button" data-add-line-btn>Add</button></div>
@@ -2376,7 +2385,7 @@ OUT.howto = () => {
   const list = names.length > 4 ? names.slice(0,4).join(", ") + ` and ${names.length-4} more` : names.join(", ");
   return `<ol class="steps">
     <li><div><h3>Where ${C.planMonth} ends</h3><p class="muted">Money coming in is ${fmt(C.income)}. Needs take ${fmt(C.needs)} and misc ${fmt(C.misc)}, so ${fmt(C.savings)} is left.${C.savings > 0 ? (S.priority === "ef" ? ` It goes to your emergency fund first: ${fmt(S.efSaved)} of ${fmt(C.efTarget)} so far.` : S.priority === "goal" ? ` It goes to ${esc(S.goalName || "your goal")} first.` : " Half goes to your emergency fund, half to your goal.") : ""}${C.misc < C.envMisc && C.savings > 0 ? ` Miscellaneous still has ${fmt(C.envMisc - C.misc)} of room if you choose to use it. That comes out of savings.` : ""}</p></div></li>
-    <li><div><h3>Drop what you don’t use</h3><p class="muted">${names.length ? `${esc(list)}. Rule: unused after ${S.ruleDays} days, or a duplicate of something you used more recently. Dropping them keeps ${fmt(C.flaggedSave)} a month, ${fmt(C.flaggedSave*12)} a year. After the drop, savings can finish at ${fmt(C.endSaved + C.flaggedSave)}.` : (C.liveSubs.length ? `Nothing flagged. The rule is unused after ${S.ruleDays} days, or a duplicate of something you used more recently.` : "No subscriptions yet. Once you add some, anything unused goes here.")}</p></div></li>
+    <li><div><h3>Drop what you don’t use</h3><p class="muted">${names.length ? `${esc(list)}. Rule: unused after ${S.ruleDays} days, or a duplicate of something you used more recently. Dropping them keeps ${subsKeep(C.flagged)}. After the drop, savings can finish at ${fmt(C.endSaved + C.flaggedSave)}.` : (C.liveSubs.length ? `Nothing flagged. The rule is unused after ${S.ruleDays} days, or a duplicate of something you used more recently.` : "No subscriptions yet. Once you add some, anything unused goes here.")}</p></div></li>
     <li><div><h3>${best && ownSwap(best.w) ? "Your own swap" : "The cheapest real swap"}</h3><p class="muted">${best ? `${esc(best.w.title)} → ${esc(best.w.alt)} keeps about ${fmt(best.save)} a month.` : (S.swaps.length ? "You’re already using every swap on the Cheaper tab." : "No swaps yet. Add a cheaper option for something you pay for on the Cheaper tab.")}</p></div></li>
     <li><div><h3>On payday</h3><p class="muted">${C.savings > 0 ? `${paydayLine(C)} Do not borrow it back.${S.priority !== "goal" && C.efGap > 0 ? ` Target: ${S.efMonths} months of needs (${fmt(C.efTarget)})${C.efMonthsLeft ? `, reached in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}` : ""}.` : ""} You have ${fmt(S.efSaved)} now; this month lands at ${fmt(C.endSaved)}.` : (C.savings < 0 ? "Fix the shortfall first: nothing is left to move this month." : "Nothing is left over yet. Add the money coming in and your costs, and this shows what to move.")}</p></div></li>
   </ol>`;
@@ -2393,7 +2402,7 @@ function plainly(){
     : `In ${C.planMonth} you spend ${fmt(C.needs + C.misc - C.income)} more than you bring in. Fix that before anything else.`);
   if (C.savings > 0) lines.push(`Move it to savings on payday. That takes you from ${fmt(S.efSaved)} to ${fmt(now)}.`);
   if (C.needs > C.envNeeds) lines.push(`Bills and food are ${fmt(C.needs - C.envNeeds)} over what you planned for them.`);
-  if (C.flagged.length) lines.push(`You pay ${fmt(C.flaggedSave)} a month for ${C.flagged.length} thing${C.flagged.length > 1 ? "s" : ""} you barely use. Dropping them gets you to ${fmt(now + C.flaggedSave)}.`);
+  if (C.flagged.length) lines.push(`You pay ${subsSay(C.flagged)} for ${C.flagged.length} thing${C.flagged.length > 1 ? "s" : ""} you barely use. Dropping them gets you to ${fmt(now + C.flaggedSave)}.`);
   if (best) lines.push(`${ownSwap(best.w) ? "Your own swap" : "The biggest easy win"}: ${best.w.title.toLowerCase()} → ${best.w.alt.toLowerCase()}, about ${fmt(best.save)} a month.`);
   if (Math.abs(net) >= 0.01) lines.push(net > 0 ? `Friends and family owe you ${fmt(net)} overall.` : `You owe friends and family ${fmt(-net)} overall.`);
   return lines.join("\n");
@@ -2478,7 +2487,7 @@ function answerMore(t, C){
     return list([`${C.planMonth}: ${fmt(C.income)} expected in. Regular pay ${fmt(+S.income || 0)}${ex.length ? `, other income ${fmt(extraExpected())}` : ""}.`, ...ex.map(x => `${x.name}: ${fmt(gotIn(x, k))} received of ${fmt(extraMonthly(x))}`)]); }
   if (/renew|next charge|coming up|due (this|next)|this week|upcoming/.test(t)){ const soon = S.subs.filter(x => x.keep !== "drop").map(x => ({x, d: nextRenewal(x)})).filter(v => v.d && daysUntil(v.d) <= 7).sort((a, b) => a.d - b.d);
     return soon.length ? list([`${soon.length} charge${soon.length === 1 ? "" : "s"} in the next 7 days, ${fmt(soon.reduce((a, v) => a + v.x.price, 0))} in all:`, ...soon.map(v => `${v.x.name}: ${fmt(v.x.price)}, ${whenLabel(daysUntil(v.d)).toLowerCase()}`)]) : "Nothing is due to be charged in the next 7 days."; }
-  if (/(how much|total|cost).*(subscri)|subscri.*(cost|total|how much)/.test(t)){ const m = r2(C.liveSubs.reduce((a, x) => a + subMonthly(x), 0)); return C.liveSubs.length ? `${C.liveSubs.length} subscriptions cost ${fmt(m)} a month, ${fmt(r2(m * 12))} a year.` : "You have no subscriptions on your list yet."; }
+  if (/(how much|total|cost).*(subscri)|subscri.*(cost|total|how much)/.test(t)){ const p = subPer(C.liveSubs), now = r2(C.liveSubs.reduce((a, x) => a + subCostIn(x, C.planKey), 0)); return C.liveSubs.length ? `${C.liveSubs.length} subscription${C.liveSubs.length === 1 ? "" : "s"} cost ${subsKeep(C.liveSubs)}.${p.yr ? ` Charged in ${C.planMonth}: ${fmt(now)}.` : ""}` : "You have no subscriptions on your list yet."; }
   if (/notification|attention|to do|todo|remind|anything new|what.s new/.test(t)){ const n = allNotes().filter(x => !noteRead(x)); return n.length ? list([`${n.length} thing${n.length === 1 ? "" : "s"} to look at:`, ...n.map(x => x.text)]) : "Nothing needs your attention right now."; }
   if (/\b(goal|saving for|target)\b/.test(t) && S.goalName){ return `${S.goalName}: ${fmt(C.toGoal)} goes to it this month${+S.goalAmt > 0 && C.toGoal > 0 ? `, so ${fmt(S.goalAmt)} takes about ${Math.ceil(S.goalAmt / C.toGoal)} months` : ""}.`; }
   if (/\b(codes?|promo)\b/.test(t)) return S.codes.length ? `You have ${S.codes.length} code${S.codes.length === 1 ? "" : "s"} saved: ${S.codes.slice(0, 5).map(c => c.store).join(", ")}.` : "You have no codes saved yet.";
@@ -2500,7 +2509,7 @@ function answer(q){
     return b.map(x => x.net > 0 ? `${x.p.name} owes you ${fmt(x.net)}` : `You owe ${x.p.name} ${fmt(-x.net)}`).join("\n");
   }
   if (/cancel|drop|unused|subscri/.test(t)){
-    return C.flagged.length ? `Your rules flag ${C.flagged.length}:\n${C.flagged.map(s => `${s.name}, ${fmt(subMonthly(s))}/mo (${C.flags[s.id].join("; ")})`).join("\n")}\nTogether: ${fmt(C.flaggedSave)} a month.` : C.liveSubs.length ? `Nothing is flagged. Every subscription was used in the last ${S.ruleDays} days.` : "You have no subscriptions on your list yet.";
+    return C.flagged.length ? `Your rules flag ${C.flagged.length}:\n${C.flagged.map(s => `${s.name}, ${fmt(s.price)}/${s.cycle === "yr" ? "yr" : "mo"} (${C.flags[s.id].join("; ")})`).join("\n")}\nTogether: ${subsKeep(C.flagged)}.` : C.liveSubs.length ? `Nothing is flagged. Every subscription was used in the last ${S.ruleDays} days.` : "You have no subscriptions on your list yet.";
   }
   if (/emergency|fund|cushion/.test(t)){
     if (C.efGap <= 0) return `Your emergency fund is full: ${fmt(S.efSaved)} covers ${S.efMonths} months of needs.`;
@@ -2540,12 +2549,12 @@ V.subs = () => `
       <button class="btn primary" type="submit">Add subscription</button>
     </form></details>`;
 OUT.subsSummary = () => {
-  const C = compute(), tot = C.liveSubs.reduce((a,s) => a + subMonthly(s), 0), dropped = S.subs.filter(s => s.keep === "drop");
+  const C = compute(), now = r2(C.liveSubs.reduce((a,s) => a + subCostIn(s, C.planKey), 0)), dropped = S.subs.filter(s => s.keep === "drop");
   return `<div class="card"><div class="summary3">
-    <div><span class="label">Per month</span><b>${fmt(tot)}</b></div>
-    <div><span class="label">Per year</span><b>${fmt(tot*12)}</b></div>
-    <div><span class="label">Flagged</span><b class="${C.flagged.length ? "bad" : ""}">${fmt(C.flaggedSave)}</b></div></div>
-    ${dropped.length ? `<p class="small good">Dropping ${dropped.length} keeps ${fmt(dropped.reduce((a,s)=>a+subMonthly(s),0))} a month.</p>` : ""}</div>`;
+    <div><span class="label">This month</span><b data-subs-now>${fmt(now)}</b></div>
+    <div><span class="label">A year</span><b data-subs-year>${fmt(subPer(C.liveSubs).year)}</b></div>
+    <div><span class="label">Flagged a year</span><b class="${C.flagged.length ? "bad" : ""}">${fmt(subPer(C.flagged).year)}</b></div></div>
+    ${dropped.length ? `<p class="small good">Dropping ${dropped.length} keeps ${subsKeep(dropped)}.</p>` : ""}</div>`;
 };
 OUT.subsList = () => {
   const C = compute();
@@ -2567,7 +2576,7 @@ OUT.subsList = () => {
       ${editBtns(false, "data-del-sub", "", "data-sub-cancel")}</form></div>`;
     return `<div class="row${UI.flashSub === s.id ? " flash" : ""}" data-sub="${s.id}"><div class="row-top"><div><div class="name">${esc(s.name)}</div>
       <div class="muted small">${!s.last ? "Usage not checked yet" : d === 0 ? "Last used today" : d === 1 ? "Last used yesterday" : `Last used ${d} days ago`}${s.group ? ` · ${esc(s.group)}` : ""}</div>${s.since ? `<div class="muted small">${esc(paidFor(s))}</div>` : ""}<div>${renew}</div></div>
-      <div><div class="name tnum">${fmt(s.price)}<span class="muted small">/${s.cycle === "yr" ? "yr" : "mo"}</span></div>${s.cycle === "yr" ? `<div class="muted small tnum">${fmt(subMonthly(s))}/mo</div>` : ""}</div></div>
+      <div><div class="name tnum">${fmt(s.price)}<span class="muted small">/${s.cycle === "yr" ? "yr" : "mo"}</span></div>${s.cycle === "yr" ? `<div class="muted small" data-sub-yearly>Once a year</div>` : ""}</div></div>
       ${renewEditor}
       ${f.length ? `<div class="inline">${f.map(r => `<span class="pill ${k === "keep" ? "grey" : "flag"}">${esc(r)}</span>`).join("")}</div>` : ""}
       <div class="inline" style="justify-content:space-between">
@@ -3000,7 +3009,7 @@ function localNotes(){
     if (x.keep === "drop") add(`c:${x.id}:${isoOf(d)}`, `Cancel ${x.name} before it renews`, `You chose to drop it. It renews ${w}, ${fmt(x.price)}.`, "subs", `[data-sub="${x.id}"]`);
     else add(`r:${x.id}:${isoOf(d)}`, `${x.name} renews ${w}`, `${fmt(x.price)} on ${dayMonth(d)}.${surveyDue(x) ? " Still using it?" : ""}`, "subs", `[data-sub="${x.id}"]`, x.id); });
   (S.trips || []).filter(t => tripState(t) === "ended").forEach(t => add(`t:${t.id}:${t.end}`, isEvent(t) ? `${t.name} is over` : `Your ${t.name} trip is over`, `You spent ${fmt(tripTotal(t))}. Choose whether it counts in this month or stays separate.`, "month", `[data-trip="${t.id}"]`));
-  const C = compute(); if (C.flagged.length) add(`f:${C.planKey}:${C.flagged.length}`, `${C.flagged.length} subscription${C.flagged.length === 1 ? " looks" : "s look"} unused`, `Dropping ${C.flagged.length === 1 ? "it" : "them"} would keep ${fmt(C.flaggedSave)} a month.`, "subs", `[data-sub="${C.flagged[0].id}"]`);
+  const C = compute(); if (C.flagged.length) add(`f:${C.planKey}:${C.flagged.length}`, `${C.flagged.length} subscription${C.flagged.length === 1 ? " looks" : "s look"} unused`, `Dropping ${C.flagged.length === 1 ? "it" : "them"} would keep ${subsKeep(C.flagged)}.`, "subs", `[data-sub="${C.flagged[0].id}"]`);
   billsSoon(3).forEach(v => { const n = daysUntil(v.d); add(`bd:${v.e.id}:${isoOf(v.d)}`, `${v.e.name} is due ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `${fmt(v.e.amount)} on ${dayMonth(v.d)}. You pay this one yourself.`, "plan", `[data-exp="${v.e.id}"]`); });
   billsDue().forEach(v => add(`b:${v.e.id}:${isoOf(v.date)}`, `Did you pay ${v.e.name}?`, `${fmt(v.e.amount)} was due ${dayMonth(v.date)}.`, "month", `[data-bill-due="${v.e.id}"]`));
   (S.loans || []).filter(loanNeedsDetails).forEach(l => add(`ld:${l.id}`, `Finish the details for ${l.name || loanKind(l.kind)}`, "Add the amount left or the end date, so KeepWise can show when it ends and your statement is complete.", "plan", `[data-loan="${l.id}"]`, null, l.id));
@@ -3166,7 +3175,7 @@ const inMonth = (iso, k) => !!iso && periodKeyOfIso(iso) === k;
 // What a month looked like, saved as you go. Past months stop changing once the plan moves on to the next month.
 function buildStatement(){
   const C = compute(), k = C.planKey;
-  const live = S.subs.map(s => { const w = swapFor("sub", s.id); return {n: s.name, m: r2(w ? +w.altCost : subMonthly(s)), k: s.keep}; });
+  const live = S.subs.map(s => { const w = swapFor("sub", s.id); return {n: s.name, m: r2(subCostIn(s, k)), k: s.keep}; });
   const lines = S.expenses.map(e => { const w = swapFor("expense", e.id); return {n: e.name, a: r2(w ? +w.altCost : +e.amount || 0), e: e.env}; });
   const swaps = S.swaps.filter(w => w.on && linkedItem(w)).map(w => ({t: w.title || linkedItem(w).name, a: w.alt, s: r2(swapSaving(w))}));
   const splits = S.splits.filter(x => inMonth(x.date, k)), pays = (S.settlements || []).filter(x => inMonth(x.date, k));
@@ -3418,12 +3427,14 @@ OUT.installBtn = () => installEvt && !STANDALONE ? `<button class="btn" type="bu
 
 /* ================= share what you found (image made on this device) ================= */
 function shareFacts(){
-  const C = compute(), dropped = S.subs.filter(s => s.keep === "drop"), droppedAmt = dropped.reduce((a, s) => a + subMonthly(s), 0);
-  const swapsOn = S.swaps.filter(w => w.on).reduce((a, w) => a + swapSaving(w), 0);
-  if (droppedAmt + swapsOn >= 1) return {kicker: "With KeepWise I cut", amount: droppedAmt + swapsOn, line: `${dropped.length ? `${dropped.length} subscription${dropped.length > 1 ? "s" : ""} I didn’t use` : ""}${dropped.length && swapsOn >= 1 ? " and " : ""}${swapsOn >= 1 ? "a few cheaper swaps" : ""}.`};
-  if (C.flaggedSave >= 1) return {kicker: "KeepWise found", amount: C.flaggedSave, line: "in subscriptions I barely use."};
+  const C = compute(), dropped = S.subs.filter(s => s.keep === "drop"), yearly = [...dropped, ...C.flagged].some(s => s.cycle === "yr" && !swapFor("sub", s.id));
+  // with a yearly subscription in the mix the card speaks in years, so nothing yearly is ever shown as a monthly charge
+  const per = yearly ? "a year" : "a month", times = yearly ? 12 : 1, amt = list => yearly ? subPer(list).year : subPer(list).mo;
+  const droppedAmt = amt(dropped), swapsOn = S.swaps.filter(w => w.on).reduce((a, w) => a + swapSaving(w), 0) * times;
+  if (droppedAmt + swapsOn >= 1) return {kicker: "With KeepWise I cut", amount: droppedAmt + swapsOn, per, line: `${dropped.length ? `${dropped.length} subscription${dropped.length > 1 ? "s" : ""} I didn’t use` : ""}${dropped.length && swapsOn >= 1 ? " and " : ""}${swapsOn >= 1 ? "a few cheaper swaps" : ""}.`};
+  if (amt(C.flagged) >= 1) return {kicker: "KeepWise found", amount: amt(C.flagged), per, line: "in subscriptions I barely use."};
   const best = C.inactiveSwaps.reduce((a, x) => a + x.save, 0);
-  if (best >= 1) return {kicker: "KeepWise found", amount: best, line: "I could keep with cheaper swaps."};
+  if (best >= 1) return {kicker: "KeepWise found", amount: best, per: "a month", line: "I could keep with cheaper swaps."};
   return null;
 }
 async function drawShareCard(F){
@@ -3440,7 +3451,7 @@ async function drawShareCard(F){
   const amt = new Intl.NumberFormat("en-US", {style: "currency", currency: S.cur, maximumFractionDigits: F.amount % 1 < 0.005 ? 0 : 2, minimumFractionDigits: F.amount % 1 < 0.005 ? 0 : 2}).format(r2(F.amount));
   let size = 190; g.font = `600 ${size}px ${ser}`; while (g.measureText(amt).width > W - 260 && size > 80){ size -= 8; g.font = `600 ${size}px ${ser}`; }
   g.fillStyle = "#1b6843"; g.fillText(amt, 124, 430 + size * 0.95);
-  g.fillStyle = "#1c2420"; g.font = `600 52px ${sans}`; g.fillText("a month", 130, 430 + size * 0.95 + 80);
+  g.fillStyle = "#1c2420"; g.font = `600 52px ${sans}`; g.fillText(F.per || "a month", 130, 430 + size * 0.95 + 80);
   g.fillStyle = "#4d564e"; g.font = `500 40px ${sans}`;
   const words = F.line.split(" "); let ln = "", y = 430 + size * 0.95 + 150;
   for (const w of words){ const t = ln ? ln + " " + w : w; if (g.measureText(t).width > W - 260){ g.fillText(ln, 130, y); ln = w; y += 54; } else ln = t; } if (ln) g.fillText(ln, 130, y);
@@ -3456,12 +3467,12 @@ async function openShare(){
   UI.share = true; render(false);
 }
 V.share = () => `<div class="inline" style="justify-content:space-between"><h1>Share</h1><button class="btn small" type="button" data-share-close>Done</button></div>
-  <img class="share-img" src="${SHARE.url}" alt="${esc(SHARE.facts.kicker)} ${fmt(SHARE.facts.amount)} a month">
+  <img class="share-img" src="${SHARE.url}" alt="${esc(SHARE.facts.kicker)} ${fmt(SHARE.facts.amount)} ${SHARE.facts.per || "a month"}">
   <p class="muted small" style="text-align:center">Only this amount is shown. No names, no income, no list of what you pay for.</p>
   <div class="grid2"><button class="btn" type="button" data-share-save>${I.download}Save image</button><button class="btn primary" type="button" data-share-go>${I.share}Share</button></div>`;
 async function doShare(){
   const file = new File([SHARE.blob], "keepwise.png", {type: "image/png"});
-  const text = `${SHARE.facts.kicker} ${fmt(SHARE.facts.amount)} a month. ${SITE_URL}`;
+  const text = `${SHARE.facts.kicker} ${fmt(SHARE.facts.amount)} ${SHARE.facts.per || "a month"}. ${SITE_URL}`;
   try {
     if (navigator.canShare && navigator.canShare({files: [file]})) { await navigator.share({files: [file], text}); return; }
     if (navigator.share) { await navigator.share({text}); return; }
@@ -4683,8 +4694,15 @@ function refreshOuts(){
   document.querySelectorAll("#view [data-out]").forEach(el => {
     if (isField(active) && el.contains(active)) return; // never rebuild the box someone is typing in
     if (el.querySelector(OPEN_FORMS)) return;            // nor one with a half-filled card: a date picker or the Done key takes focus away
-    const f = OUT[el.dataset.out]; if (f) el.innerHTML = f();
+    const f = OUT[el.dataset.out]; if (!f) return;
+    // a list that scrolls inside its card keeps its place, so changing a line low down never jumps back to the top
+    const key = n => { const k = n.closest("[data-st-item], [data-st]"); return (k ? (k.dataset.stItem || k.dataset.st) : "") + "|" + n.className; };
+    const kept = [...el.querySelectorAll(".st-tx, .scroll-keep")].filter(n => n.scrollTop > 0).map(n => [key(n), n.scrollTop]);
+    el.innerHTML = f();
+    if (kept.length) { const now = [...el.querySelectorAll(".st-tx, .scroll-keep")]; kept.forEach(([k, top]) => { const n = now.find(x => key(x) === k); if (n) n.scrollTop = top; }); }
   });
+  if (STMT.act != null){ const a = document.querySelector(`#view [data-st-acts="${STMT.act}"]`), box = a && a.closest(".st-tx");
+    if (box){ const r = a.getBoundingClientRect(), b = box.getBoundingClientRect(); if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8; else if (r.top < b.top) box.scrollTop -= b.top - r.top + 8; } }
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
   flashKeep(); renderBell(); tidyHints();
 }

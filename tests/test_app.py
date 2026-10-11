@@ -3318,6 +3318,22 @@ async def a_credit_card_statement_reads_charges_and_credits_the_right_way(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def cash_back_is_credited_as_money_in(ctx):
+    # on a card: cash back and rewards are money given to you, unlike payments to the card and refunds
+    body = ("Credit Card Statement - card ending 4321\nDate,Description,Amount\n03/02/2026,AMAZON MKTPLACE,54.20\n03/12/2026,PAYMENT THANK YOU,-500.00\n"
+            "03/15/2026,AMAZON MKTPLACE REFUND,-24.99\n03/28/2026,CASH BACK REWARD,-12.40\n04/02/2026,WHOLE FOODS MARKET,88.15\n04/28/2026,CASHBACK CREDIT,-9.60\n")
+    pg, rows = await read_csv(ctx, "cb.csv", body)
+    inc = await stx(pg, "[data-st=income]"); card = await stx(pg, "[data-st=card]")
+    assert "Cash back and rewards" in inc and "Credited to you" in inc and "$22" in inc, inc
+    assert "CASH" not in card and "Refunds and reversals" in card and "24.99" in card, card
+    it = pg.locator("[data-st=income] .st-item", has_text="Cash back and rewards"); assert await it.locator("input[type=checkbox]").is_checked()
+    assert "comes in" in await stx(pg, ".hero") and "$11 comes in" in await stx(pg, ".hero"), await stx(pg, ".hero")
+    # on a bank statement too
+    pg2, _ = await read_csv(ctx, "cb2.csv", "Date,Description,Amount\n03/01/2026,ACME PAYROLL,2000.00\n03/20/2026,CASHBACK REWARD,5.00\n03/22/2026,CORNER SHOP,-7.50\n")
+    inc2 = await stx(pg2, "[data-st=income]"); assert "Cash back and rewards" in inc2 and "Refunds and one-off" not in inc2, inc2
+    assert not pg.errors and not pg2.errors, (pg.errors, pg2.errors)
+
+@test
 async def a_bank_line_can_be_turned_round(ctx):
     pg, rows = await read_csv(ctx, "flip.csv", "Date,Description,Amount\n03/01/2026,ACME PAYROLL,2000.00\n03/04/2026,JOHN SMITH,150.00\n03/11/2026,CORNER SHOP,-7.50\n")
     h0 = await stx(pg, ".hero")
@@ -3325,6 +3341,24 @@ async def a_bank_line_can_be_turned_round(ctx):
     b = pg.locator("[data-st=all] [data-st-acts] [data-st-flip]").first; assert "money out" in await b.inner_text(); await b.click(); await pg.wait_for_timeout(250)
     r = " ## ".join([x.replace("\u00a0", " ") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()]); assert "−$150" in r and "Turned round by you" in r, r
     assert await stx(pg, ".hero") != h0, "the month changes with it"
+    assert not pg.errors, pg.errors
+
+@test
+async def changing_a_line_low_in_the_list_opens_it_right_there(ctx):
+    rows = ["Date,Description,Amount", "03/01/2026,ACME PAYROLL,2000.00", "03/02/2026,STORE REFUND 88,0.30"] + [f"03/{(i % 27) + 2:02d}/2026,SHOP NUMBER {i},-{5 + i}.00" for i in range(40)]
+    pg, _ = await read_csv(ctx, "long.csv", "\n".join(rows) + "\n")
+    # a group that is not counted shows no checkbox that looks tappable, and says how to count it
+    oc = pg.locator("[data-st=income] .st-item", has_text="Refunds and one-off money in")
+    assert await oc.locator("input[type=checkbox]").count() == 0 and await oc.locator("[data-st-nocount]").count() == 1
+    assert "Tap Change" in await oc.inner_text()
+    box = pg.locator("[data-st=all] .st-tx").first
+    await box.evaluate("b => { b.scrollTop = b.scrollHeight; }"); await pg.wait_for_timeout(150)
+    top0 = await box.evaluate("b => b.scrollTop"); assert top0 > 200, top0
+    last = pg.locator("[data-st=all] .st-t").last; await last.locator("[data-st-act]").click(); await pg.wait_for_timeout(250)
+    box = pg.locator("[data-st=all] .st-tx").first
+    top1 = await box.evaluate("b => b.scrollTop"); assert top1 >= top0 - 2, (top0, top1)
+    seen = await pg.evaluate("""() => { const a = document.querySelector('[data-st=all] [data-st-acts]'), b = a.closest('.st-tx'); const r = a.getBoundingClientRect(), q = b.getBoundingClientRect(); return r.top >= q.top - 1 && r.bottom <= q.bottom + 1; }""")
+    assert seen, "the line's choices open where you tapped"
     assert not pg.errors, pg.errors
 
 @test
@@ -3661,6 +3695,15 @@ async def a_yearly_subscription_counts_once_in_the_month_it_is_charged(ctx):
     await with_subs("s.subs.push({id: 'y1', name: 'Cloud Vault', price: 120, cycle: 'yr', renewDate: iso(180), last: iso(-200), group: '', env: 'misc', keep: 'auto'});")
     assert abs(await keep() - base) < 0.01, (await keep(), base)
     await tab(pg, "subs"); row = pg.locator("[data-sub=y1]"); assert "120" in await row.inner_text()
+    # a yearly one is never shown as a monthly charge: the row says once a year, and the totals count it in the month it is charged
+    rt = await row.inner_text(); assert "/mo" not in rt and "10.00" not in rt and "Once a year" in rt, rt
+    summ = await pg.inner_text("[data-subs-now]"), await pg.inner_text("[data-subs-year]")
+    st = await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1')).subs")
+    mo = sum(x["price"] for x in st if x.get("cycle") != "yr" and x.get("keep") != "drop")
+    assert abs(float(summ[0].replace("$", "").replace(",", "")) - mo) < 0.02, (summ, mo)
+    assert abs(float(summ[1].replace("$", "").replace(",", "")) - (mo * 12 + 120)) < 0.05, (summ, mo)
+    a = await _ask(pg, "how much do my subscriptions cost"); assert "$120 a year" in a and "subscriptions cost" in a, a
+    await pg.evaluate("(() => { const c = document.querySelector('#asksheet [data-ask-close]'); if (c) c.click(); })()")
     assert await pg.locator("[data-sub=y1] .flag, [data-sub=y1] [data-flag]").count() == 0 and "Unused" not in await row.inner_text(), "paid up for the year: no drop question"
     await tab(pg, "month")
     # renews in three days: the whole year comes out of this month, and Needs you asks about it now
@@ -4217,12 +4260,13 @@ async def month_start_check_in(ctx):
 @test
 async def keepwise_never_flags_itself(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
+    flag0 = (await text(pg, "[data-out=subsSummary]")).split("FLAGGED")[-1]
     await pg.click("text=Add a subscription"); f = pg.locator("form[data-form=addSub]")
     await f.locator("[name=name]").fill("KeepWise Plus"); await f.locator("[name=price]").fill("15"); await f.locator("[name=last]").fill("2025-01-01"); await f.locator("[name=group]").fill("Video")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(150)
     row = pg.locator("[data-sub]", has_text="KeepWise Plus"); t = await row.inner_text()
     assert "Unused for" not in t and "Duplicate" not in t, t
-    assert "$94.95" in await text(pg, "[data-out=subsSummary]"), "the flagged total does not include it"
+    assert (await text(pg, "[data-out=subsSummary]")).split("FLAGGED")[-1] == flag0, "the flagged total does not include it"
     assert "Duplicate of KeepWise" not in await text(pg, "[data-out=subsList]")
     for _ in range(3):
         q = await text(pg, "[data-out=reviewCard]"); assert "KeepWise" not in q
