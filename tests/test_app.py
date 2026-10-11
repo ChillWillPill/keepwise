@@ -3331,6 +3331,10 @@ async def cash_back_is_credited_as_money_in(ctx):
     # on a bank statement too
     pg2, _ = await read_csv(ctx, "cb2.csv", "Date,Description,Amount\n03/01/2026,ACME PAYROLL,2000.00\n03/20/2026,CASHBACK REWARD,5.00\n03/22/2026,CORNER SHOP,-7.50\n")
     inc2 = await stx(pg2, "[data-st=income]"); assert "Cash back and rewards" in inc2 and "Refunds and one-off" not in inc2, inc2
+    # interest or profit paid into a bank account is money in too, but a refunded charge is not
+    pg3, _ = await read_csv(ctx, "cb3.csv", "Date,Description,Amount\n03/01/2026,ACME PAYROLL,2000.00\n03/31/2026,INTEREST PAID,3.10\n03/25/2026,CORNER SHOP REFUND,4.00\n03/22/2026,CORNER SHOP,-7.50\n")
+    inc3 = await stx(pg3, "[data-st=income]"); assert "Interest and profit" in inc3 and "$3.10" in inc3 and "Refunds and one-off" in inc3, inc3
+    assert not pg3.errors, pg3.errors
     assert not pg.errors and not pg2.errors, (pg.errors, pg2.errors)
 
 @test
@@ -3562,6 +3566,11 @@ async def plan_is_two_short_parts_on_a_phone(ctx):
     assert await has("[data-exp]") == 4 and f"Show all {n}" in await pg.inner_text("[data-exp-all]"), "a long list starts short"
     fits = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight <= m.clientHeight * 2; })()"); assert fits, "no more than one scroll"
     await pg.click("[data-exp-all]"); await pg.wait_for_timeout(150); assert await has("[data-exp]") == n and "Show less" in await pg.inner_text("[data-exp-all]")
+    # opening and closing the list keeps your place on the page instead of jumping to the top
+    await pg.locator("[data-exp-all]").scroll_into_view_if_needed(); top = await pg.evaluate("document.getElementById('main').scrollTop"); assert top > 100, top
+    await pg.click("[data-exp-all]"); await pg.wait_for_timeout(150)
+    assert await pg.evaluate("document.getElementById('main').scrollTop") > 50, "Show less stays where you were"
+    await pg.click("[data-exp-all]"); await pg.wait_for_timeout(150)
     await pg.click("[data-pseg=goals]"); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-pseg=goals]").get_attribute("aria-pressed") == "true" and await pg.evaluate("document.getElementById('main').scrollTop") == 0
     assert await has("[data-out=loans]") == 1 and await has("[data-bind=efSaved]") == 1 and await has("[data-out=giving]") == 1 and await has("[data-plus-open]") == 1, "loans, savings, giving and Plus"

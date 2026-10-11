@@ -1662,7 +1662,7 @@ function analyzeStatement(tx, fileName, holder, me){
   if (STMT.card){ tx = tx.filter(t => { if (t.amt <= 0) return true; const k = merchantKey(t.desc); t.mk = "card:" + k; const to = MOVE["card:" + k]; if (to === "income" || to === "other" || CASHBACK.test(t.desc)) return true;
     (CARD_PAY.test(t.desc) && !CARD_BACK.test(t.desc) ? cardPay : cardBack).push(t); return false; }); }
   // transfers and cash are set aside first: by direction, and by whether the other name is the account holder's own
-  const isMove = t => catOfDesc(t.desc) === "Transfers" && !platformOf(t) && !(t.amt > 0 && CASHBACK.test(t.desc));   // cash back is not a cash deposit
+  const isMove = t => catOfDesc(t.desc) === "Transfers" && !platformOf(t) && !(t.amt > 0 && (CASHBACK.test(t.desc) || (!STMT.card && EARNED.test(t.desc))));   // cash back is not a cash deposit
   const moveTx = tx.filter(isMove); tx = tx.filter(t => !isMove(t));
   const mv = {sent: {}, recv: {}, ownOut: [], ownIn: [], cashOut: [], cashIn: []}, reversed = [];
   moveTx.forEach(t => { const kind = moveKind(t.desc, t.amt);
@@ -1683,15 +1683,15 @@ function analyzeStatement(tx, fileName, holder, me){
     ownKeys: [...new Set([...mv.ownOut, ...mv.ownIn].map(t => t.party))], notMe: [...me].filter(k => k[0] === "!").map(k => k.slice(1))};
   // money in
   const credits = tx.filter(t => t.amt > 0), cg = {}, income = [], other = [...reversed];
-  credits.forEach(t => { const k = CASHBACK.test(t.desc) ? "CASH BACK" : platformOf(t) || merchantKey(t.desc); (cg[k] = cg[k] || []).push(t); t.mkCard = t.mk && t.mk.startsWith("card:") ? t.mk : ""; t.mk = t.mkCard || "in:" + k; });
+  credits.forEach(t => { const k = CASHBACK.test(t.desc) ? "CASH BACK" : !STMT.card && !REVERSAL.test(t.desc) && EARNED.test(t.desc) ? "INTEREST" : platformOf(t) || merchantKey(t.desc); (cg[k] = cg[k] || []).push(t); t.mkCard = t.mk && t.mk.startsWith("card:") ? t.mk : ""; t.mk = t.mkCard || "in:" + k; });
   for (const [k, list] of Object.entries(cg)){
-    const cad = cadenceOf(list), back = k === "CASH BACK", isPay = back || list.some(t => catOfDesc(t.desc) === "Salary" || platformOf(t)), to = MOVE["in:" + k] || MOVE[list[0].mkCard || "-"];
+    const cad = cadenceOf(list), back = k === "CASH BACK" || k === "INTEREST", isPay = back || list.some(t => catOfDesc(t.desc) === "Salary" || platformOf(t)), to = MOVE["in:" + k] || MOVE[list[0].mkCard || "-"];
     const total = list.reduce((a, t) => a + t.amt, 0);
     if (to === "other"){ other.push(...tag(list, "Other money in")); continue; }
     if (to === "income" || isPay || (cad && catOfDesc(list[0].desc) !== "Loans")){   // a loan paid out to you is not pay
       const avg = total / list.length, days = list.map(t => t.date.getDate());
       const payday = days.slice().sort((a, b) => days.filter(v => v === b).length - days.filter(v => v === a).length)[0];
-      income.push({id: "in:" + k, name: back ? "Cash back and rewards" : titleCase(k), back, monthly: r2(cad ? perMonth(avg, cad) : total / months), total: r2(total), cadence: cad || "irregular", payday, count: list.length, tx: tag(list, back ? "Cash back" : "Pay"), on: to === "income" || isPay || list.length >= 3, ask: !(to === "income" || isPay || list.length >= 3), moved: !!to});
+      income.push({id: "in:" + k, name: k === "CASH BACK" ? "Cash back and rewards" : k === "INTEREST" ? "Interest and profit" : titleCase(k), back, monthly: r2(cad ? perMonth(avg, cad) : total / months), total: r2(total), cadence: cad || "irregular", payday, count: list.length, tx: tag(list, k === "CASH BACK" ? "Cash back" : back ? "Interest" : "Pay"), on: to === "income" || isPay || list.length >= 3, ask: !(to === "income" || isPay || list.length >= 3), moved: !!to});
     } else other.push(...tag(list, "Other money in"));
   }
   income.sort((a, b) => b.monthly - a.monthly);
@@ -1823,6 +1823,7 @@ const CARD_CUE = /credit\s*card\s*statement|card\s*statement|card\s*account\s*st
 const isCardStatement = text => CARD_CUE.test(String(text || "").slice(0, 4000));   // read from the top of the statement only: a bank account can pay a card bill
 const CARD_PAY = /\bPAYMENT\b|THANK\s*YOU|AUTO\s*-?PAY|\bPYMT\b|\bPMT\b|PAYMENT\s*RECEIVED|PAYMENT\s*-\s*|BILL\s*PAY|ONLINE\s*PAYMENT|DIRECT\s*DEBIT/i;
 const CASHBACK = /CASH\s*-?\s*BACK|CASHBACK|\bREWARDS?\b|REBATE|POINTS\s*REDEMPTION|REDEEMED\s*POINTS/i;   // money the bank gives you: it is credited and counts as money in
+const EARNED = /\b(INTEREST|PROFIT|DIVIDENDS?|DIV\s*PAID)\b(?!.*\b(CHARGE|FEE|REVERSAL|REVERSED|ON\s*LOAN)\b)/i;   // on a bank account, interest or profit paid to you is money in (on a card it is a charge being undone)
 const CARD_BACK = /REVERSAL|REVERSED|\bRV\b|REFUND|RETURN|CASH\s*BACK|CASHBACK|REWARD|WAIVE|WAIVER|WAIVED|REBATE|ADJUSTMENT|\bADJ\b|CHARGEBACK|CREDIT\s*VOUCHER|DISPUTE/i;
 function cardSigns(tx){   // most card files print charges as plain numbers and credits with a minus or CR: turn them the bank account way
   const buys = tx.filter(t => !CARD_PAY.test(t.desc) && !CARD_BACK.test(t.desc)); if (!buys.length) return;
@@ -4673,8 +4674,15 @@ OUT.lockBox = () => {
 function renderTabs(){
   $("tabbar").innerHTML = TABS.filter(([k]) => !SUB_TABS.includes(k) || k === "subs").map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k || (k === "subs" && SUB_TABS.includes(S.tab))?'aria-current="page"':""}><span class="ti">${I[k]}</span><span>${n}</span></button>`).join("");
 }
+// Lists that scroll inside a card (and the Ask panel) keep their place when the screen is redrawn, so a change low down never jumps back to the top.
+const INNER_SCROLL = ".st-tx, .scroll-keep, .ask-panel";
+function innerScrollKeep(root){
+  const key = n => { const k = n.closest("[data-st-item], [data-st], [data-out]"); return (k ? (k.dataset.stItem || k.dataset.st || k.dataset.out) : "") + "|" + n.className; };
+  const kept = root ? [...root.querySelectorAll(INNER_SCROLL)].filter(n => n.scrollTop > 0).map(n => [key(n), n.scrollTop]) : [];
+  return () => { if (!kept.length || !root) return; const now = [...root.querySelectorAll(INNER_SCROLL)]; kept.forEach(([k, top]) => { const n = now.find(x => key(x) === k); if (n) n.scrollTop = top; }); };
+}
 function render(keepScroll){
-  const main = $("main"), top = main.scrollTop;
+  const main = $("main"), top = main.scrollTop, back = keepScroll ? innerScrollKeep(document.getElementById("app") || document.body) : () => {};
   const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.find ? V.find() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : UI.settings ? V.settings() : V[S.tab]();
   const askOk = !STMT.result && !UI.pdfLock && !UI.account && UI.welcome == null && !UI.biz; if (!askOk) UI.askOpen = false;
   const sheet = $("asksheet"); if (sheet){ sheet.innerHTML = UI.askOpen ? askSheet() : ""; sheet.hidden = !UI.askOpen; }
@@ -4684,7 +4692,7 @@ function render(keepScroll){
   renderTabs(); renderBell();
   { const sn = $("sidenav"); if (sn){ sn.innerHTML = UI.menu ? sideNav() : ""; sn.hidden = !UI.menu; } }
   layoutWide(); tidyHints();
-  main.scrollTop = keepScroll ? top : 0;
+  main.scrollTop = keepScroll ? top : 0; back();
   if (VOICE.rec) voicePaint();  // a redraw while listening keeps the Stop button and the words heard so far
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
 }
@@ -4696,10 +4704,7 @@ function refreshOuts(){
     if (el.querySelector(OPEN_FORMS)) return;            // nor one with a half-filled card: a date picker or the Done key takes focus away
     const f = OUT[el.dataset.out]; if (!f) return;
     // a list that scrolls inside its card keeps its place, so changing a line low down never jumps back to the top
-    const key = n => { const k = n.closest("[data-st-item], [data-st]"); return (k ? (k.dataset.stItem || k.dataset.st) : "") + "|" + n.className; };
-    const kept = [...el.querySelectorAll(".st-tx, .scroll-keep")].filter(n => n.scrollTop > 0).map(n => [key(n), n.scrollTop]);
-    el.innerHTML = f();
-    if (kept.length) { const now = [...el.querySelectorAll(".st-tx, .scroll-keep")]; kept.forEach(([k, top]) => { const n = now.find(x => key(x) === k); if (n) n.scrollTop = top; }); }
+    const back = innerScrollKeep(el); el.innerHTML = f(); back();
   });
   if (STMT.act != null){ const a = document.querySelector(`#view [data-st-acts="${STMT.act}"]`), box = a && a.closest(".st-tx");
     if (box){ const r = a.getBoundingClientRect(), b = box.getBoundingClientRect(); if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8; else if (r.top < b.top) box.scrollTop -= b.top - r.top + 8; } }
@@ -5314,7 +5319,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-hide-bal")){ S.hideBal = !S.hideBal; save(); if (UI.settings) render(true); else refreshOuts(); return; }
   if (b.dataset.envmode){ if ((b.dataset.envmode === "flat") !== envFlatOn()){ envSetMode(b.dataset.envmode); save(); render(true); } return; }
   if (b.dataset.pseg){ UI.pseg = b.dataset.pseg; UI.info = null; UI.expAll = false; render(false); $("main").scrollTop = 0; const t = view.querySelector(`[data-pseg="${UI.pseg}"]`); if (t) t.focus({preventScroll: true}); return; }
-  if (b.hasAttribute("data-exp-all")){ UI.expAll = !UI.expAll; render(false); return; }
+  if (b.hasAttribute("data-exp-all")){ UI.expAll = !UI.expAll; render(true); const t = view.querySelector("[data-exp-all]"); if (t && !UI.expAll) t.scrollIntoView({block: "nearest"}); return; }
   if (b.dataset.mseg){ UI.mseg = b.dataset.mseg; UI.info = null; UI.needOpen = false; UI.comingAll = false; render(false); $("main").scrollTop = 0; const t = view.querySelector(`[data-mseg="${UI.mseg}"]`); if (t) t.focus({preventScroll: true}); return; }
   if (b.dataset.paid){ const k = compute().planKey, id = b.dataset.paid; if (!S.paid || S.paid.key !== k) S.paid = {key: k, on: {}};
     if (S.paid.on[id]) delete S.paid.on[id]; else S.paid.on[id] = isoDaysAgo(0); save(); render(true); const t = view.querySelector(`[data-paid="${id}"]`); if (t) t.focus({preventScroll: true}); return; }
