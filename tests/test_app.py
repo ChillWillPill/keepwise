@@ -907,19 +907,23 @@ async def account_google_signout_and_delete(ctx):
     await pg.fill(f + " [name=dob]", "1990-07-04"); await pg.check(f + " [name=consent]")
     await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(400)
     assert (await fs_docs(pg))["users/g1"]["provider"] == "google.com"
-    await pg.click("[data-acc-plus]"); await pg.wait_for_timeout(300)
+    assert await pg.locator("#view .plus-card, #view [data-acc-plus]").count() == 0 and await pg.locator("#view [data-acc-delete]").count() == 0, "Plus and deleting live in their own places, not on the profile"
+    await menu_to(pg, "plus"); await pg.click("[data-acc-plus]"); await pg.wait_for_timeout(300)
     d = (await fs_docs(pg))["users/g1"]; assert d["plusInterest"] is True and d["plusInterestAt"]
     assert "on the waitlist" in await text(pg, "#view")
     await pg.click("[data-acc-plus-off]"); await pg.wait_for_timeout(300)
     assert (await fs_docs(pg))["users/g1"]["plusInterest"] is False and await pg.locator("[data-acc-plus]").count() == 1
+    await open_account(pg)
     await pg.click("[data-acc-signout]"); await pg.wait_for_timeout(300)
     assert "Continue with Google" in await text(pg, "#view")
     await pg.click("[data-acc-google]"); await pg.wait_for_timeout(400)
     assert "Save changes" in await text(pg, "#view"), "a finished profile opens straight away"
-    await pg.click("[data-acc-delete]"); await pg.wait_for_timeout(120)
+    async def del_from_settings():
+        await menu_to(pg, "settings"); await pg.click("#view [data-del-toggle]"); await pg.wait_for_timeout(120); await pg.click("[data-del-acct]"); await pg.wait_for_timeout(200)
+    await del_from_settings()
     await pg.click("[data-acc-delete-no]"); await pg.wait_for_timeout(120)
     assert "users/g1" in await fs_docs(pg)
-    await pg.click("[data-acc-delete]"); await pg.wait_for_timeout(120)
+    await del_from_settings()
     await pg.click("[data-acc-delete-yes]"); await pg.wait_for_timeout(400)
     assert "users/g1" not in await fs_docs(pg), "profile erased"
     assert "Continue with Google" in await text(pg, "#view")
@@ -938,7 +942,7 @@ async def account_screens_fit_small_phones(ctx):
         sw = await pg.evaluate("[document.documentElement.scrollWidth, innerWidth, document.querySelector('#main').scrollWidth, document.querySelector('#main').clientWidth]")
         assert sw[0] <= sw[1] and sw[2] <= sw[3], f"profile overflows at 320px: {sw}"
         await pg.screenshot(path=os.path.join(os.environ.get("SHOT_DIR", TMP), f"account-{scheme}.png"), full_page=False)
-        await pg.click("[data-acc-delete]"); await pg.click("[data-acc-delete-yes]"); await pg.wait_for_timeout(300)
+        await pg.click("[data-acc-signout]"); await pg.wait_for_timeout(300); await pg.evaluate("localStorage.clear()")
         await pg.close()
 
 @test
@@ -1270,13 +1274,13 @@ async def statement_prints_cleanly(ctx):
 @test
 async def backup_download_and_restore(ctx):
     pg = await open_app(ctx); await tab(pg, "plan"); assert await pg.locator("[data-out=backupBox]").count() == 0, "backups moved off Plan"
-    await menu_to(pg, "backup")
+    await menu_to(pg, "data")
     assert "No backup yet" in await text(pg, "[data-out=backupBox]")
     async with pg.expect_download() as dl: await pg.click("[data-out=backupBox] [data-backup]")
     d = await dl.value; assert re.match(r"keepwise-backup-\d{4}-\d\d-\d\d\.json", d.suggested_filename)
     j = json.load(open(await d.path())); assert j["app"] == "KeepWise" and j["kind"] == "backup" and j["data"]["income"] == 5200
     await pg.wait_for_timeout(150); assert "Last backup today" in await text(pg, "[data-out=backupBox]")
-    await tab(pg, "plan"); await pg.fill("[data-bind=income]", "99"); await pg.locator("[data-bind=income]").blur(); await pg.wait_for_timeout(200); await menu_to(pg, "backup")
+    await tab(pg, "plan"); await pg.fill("[data-bind=income]", "99"); await pg.locator("[data-bind=income]").blur(); await pg.wait_for_timeout(200); await menu_to(pg, "data")
     bad = os.path.join(TMP, "notbackup.json"); open(bad, "w").write('{"hello":1}')
     await pg.set_input_files("#restore-in", bad); await pg.wait_for_timeout(200)
     assert "isn’t a KeepWise backup" in await pg.inner_text("#toast") and (await state(pg))["income"] == 99
@@ -2213,26 +2217,26 @@ async def tour_walks_the_example_and_never_touches_your_numbers(ctx):
     tour = pg.locator("#tour"); assert await tour.is_visible()
     mine = await pg.evaluate("localStorage.getItem('keepwise-app-v1')"); assert "My own line" in mine   # saved once as the tour starts, then left alone
     seen = []
-    for i in range(12):
-        v = await tour.inner_text(); assert f"{i + 1} of 12" in v and "Skip tour" in v, v   # Skip is on every step
+    for i in range(16):
+        v = await tour.inner_text(); assert f"{i + 1} of 16" in v and "Skip tour" in v, v   # Skip is on every step
         seen.append(v.split("\n")[2] if "\n" in v else v)
-        if i in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11): assert await pg.locator(".tour-focus").count() == 1, f"step {i + 1} points at something"
+        if i in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15): assert await pg.locator(".tour-focus").count() == 1, f"step {i + 1} points at something"
         box = await pg.locator(".tour-focus").first.bounding_box() if await pg.locator(".tour-focus").count() else None
         if box: assert box["y"] < 500, f"step {i + 1}: what it points at is on screen"
         assert (await pg.locator("#tour [data-tour-back]").count() == 1) == (i > 0)
         await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(200)
-    for title in ("What you keep", "Just say it", "Where your month goes", "Coming up", "Your envelopes", "Search", "Subscriptions", "Cheaper and Code", "Plan", "Debt and savings", "Split", "Menu"):
+    for title in ("Month · What you keep", "The owl", "Where your month goes", "Coming up", "Bills and savings", "Month · Budget", "Month · Income", "Subs", "Subs · Cheaper", "Subs · Code", "Plan · Monthly", "Plan · Debt & savings", "Split", "Search", "Notifications", "Menu"):
         assert any(title in x for x in seen), (title, seen)
     v = await tour.inner_text(); assert "That is the whole app" in v and "exactly as you left them" in v and "Back to my month" in v
     assert "My own line" not in await pg.inner_text("#app"), "the tour shows the example, not your month"
     assert await pg.evaluate("localStorage.getItem('keepwise-app-v1')") == mine, "nothing is saved during the tour"
-    await pg.click("#tour [data-tour-back]"); await pg.wait_for_timeout(150); assert "12 of 12" in await tour.inner_text()
+    await pg.click("#tour [data-tour-back]"); await pg.wait_for_timeout(150); assert "16 of 16" in await tour.inner_text()
     await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-end]"); await pg.wait_for_timeout(250)
     assert not await tour.is_visible() and await pg.locator(".tour-focus").count() == 0 and not await pg.evaluate("document.getElementById('app').classList.contains('touring')")
     assert (await state(pg))["tab"] == "plan" and "My own line" in await text(pg, "[data-out=expList]"), "your own numbers are back, on the tab you left"
     # it can be replayed from Plan, and skipped at any step
     await menu_to(pg, "tour")
-    await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(150); assert "3 of 12" in await tour.inner_text()
+    await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(150); assert "3 of 16" in await tour.inner_text()
     await pg.click("#tour [data-tour-skip]"); await pg.wait_for_timeout(250)
     assert not await tour.is_visible() and (await state(pg))["tab"] == "plan" and "My own line" in await text(pg, "[data-out=expList]")
     await pg.reload(); await pg.wait_for_timeout(400); assert "My own line" in await pg.evaluate("localStorage.getItem('keepwise-app-v1')")
@@ -2240,10 +2244,10 @@ async def tour_walks_the_example_and_never_touches_your_numbers(ctx):
     # a first visit: the tour is offered before setup, and finishing it leads into setup
     pg = await open_app(ctx, welcome=True); await pg.evaluate("window.__kwErasing = true; localStorage.clear()"); await pg.reload(); await pg.wait_for_timeout(400)
     assert "Take a one-minute tour first" in await text(pg, "#view")
-    await pg.click("[data-tour-start]"); await pg.wait_for_timeout(250); assert "1 of 12" in await pg.locator("#tour").inner_text()
+    await pg.click("[data-tour-start]"); await pg.wait_for_timeout(250); assert "1 of 16" in await pg.locator("#tour").inner_text()
     await pg.click("#tour [data-tour-skip]"); await pg.wait_for_timeout(250); assert "See what you keep" in await text(pg, "#view"), "Skip returns to where you were"
     await pg.click("[data-tour-start]"); await pg.wait_for_timeout(200)
-    for _ in range(12): await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(120)
+    for _ in range(16): await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(120)
     assert "Set up my month" in await pg.locator("#tour").inner_text()
     await pg.click("#tour [data-tour-end]"); await pg.wait_for_timeout(250); assert "What comes in?" in await text(pg, "#view")
     assert await pg.evaluate("localStorage.getItem('keepwise-app-v1')") is None, "a tour before setup saves nothing"
@@ -2578,7 +2582,7 @@ async def data_moves_from_browser_to_home_screen_app(ctx):
     assert "it starts empty" in note and "Copy my data" in note and "Paste my data" in note, note
     await pg.click("[data-a2hs] [data-move-copy]"); await pg.wait_for_timeout(150)
     code = await pg.evaluate("window.__clip"); assert code.startswith("KEEPWISE:") and "Copied" in await text(pg, "[data-a2hs]")
-    await menu_to(pg, "backup"); assert await pg.locator("[data-out=backupBox] [data-move-copy]").count() == 1, "also reachable from Account settings after the note is dismissed"
+    await menu_to(pg, "data"); assert await pg.locator("#view [data-move-copy]").count() >= 1, "also reachable from Your data & backups after the note is dismissed"
     await c1.close()
     # 2. the Home Screen app: empty storage, first run
     c2 = await br.new_context(user_agent=IPHONE_UA, viewport={"width": 390, "height": 844}); app = await c2.new_page(); app.errors = []
@@ -2611,12 +2615,12 @@ async def explanations_sit_behind_info_buttons_everywhere(ctx):
         b = pg.locator(f"[data-info={key}]"); assert await b.count() == 1, key
         assert await pg.locator("[data-info-tip]").count() == 0, f"{key}: nothing is open before a tap"
         await b.scroll_into_view_if_needed(); await b.click(); await pg.wait_for_timeout(120)
-        tip = await pg.inner_text(f"[data-info-tip={key}]"); assert words in tip and len(tip) <= 190, (key, tip)
+        tip = await pg.inner_text(f"[data-info-tip={key}]"); assert words in tip and (len(tip) <= 190 or key == "ask"), (key, tip)   # the Ask guide lists the words to use
         box, m = await pg.locator(f"[data-info-tip={key}]").bounding_box(), await pg.locator("#main").bounding_box()
-        assert box["x"] >= 0 and box["x"] + box["width"] <= 390 and box["y"] + box["height"] <= m["y"] + m["height"] + 1, f"{key}: the tip is on screen"
+        assert box["x"] >= 0 and box["x"] + box["width"] <= 390 and (key == "ask" or box["y"] + box["height"] <= m["y"] + m["height"] + 1), f"{key}: the tip is on screen"
         await pg.locator(f"[data-info={key}]").click(); await pg.wait_for_timeout(100)
         assert await pg.locator("[data-info-tip]").count() == 0
-    await check("ask", "same numbers")
+    await check("ask", "numbers on this page")
     await tab(pg, "cheaper"); await check("cheaper", "Prices are estimates")
     await tab(pg, "codes"); await check("codes", "Tap a code to copy it")
     await tab(pg, "plan"); await check("envelopes", "count toward Miscellaneous")
@@ -2895,8 +2899,8 @@ async def statement_columns_are_matched_by_what_they_hold(ctx):
     body = "Date,Details,Amount,Balance\n2026-07-20,CARD REFUND SHOE SHOP,35.00,2019.01\n2026-07-14,NETFLIX.COM,17.99,1984.01\n2026-07-05,ACME LTD,2000.00,2002.00\n2026-07-02,COFFEE HOUSE,8.00,2.00\n"
     pg, al = await read_csv(ctx, "bal.csv", body)
     line = lambda w: [x for x in al if w in x][0]
-    assert len(al) == 4 and line("ACME LTD").endswith("+$2,000") and line("SHOE SHOP").endswith("+$35") and line("NETFLIX").endswith("| $17.99"), al
-    assert line("COFFEE HOUSE").endswith("| $8"), "the oldest line has no earlier balance, so its wording decides"
+    assert len(al) == 4 and line("ACME LTD").endswith("+$2,000") and line("SHOE SHOP").endswith("+$35") and line("NETFLIX").endswith("| −$17.99"), al
+    assert line("COFFEE HOUSE").endswith("| −$8"), "the oldest line has no earlier balance, so its wording decides"
     # a type column that says which way, tabs between columns, and a continental amount
     body = "Booking date\tText\tDebit/Credit\tAmount\n01.07.2026\tGEHALT ACME\tCredit\t2.500,00\n03.07.2026\tSUPERMARKT\tDebit\t1.234,56\n"
     pg, al = await read_csv(ctx, "tabs.tsv", body, "EUR")
@@ -2904,7 +2908,7 @@ async def statement_columns_are_matched_by_what_they_hold(ctx):
     # semicolons, and money in brackets for money out
     body = "Date;Description;Amount\n07/01/2026;PAYROLL ACME;3000.00\n07/03/2026;HARDWARE STORE;(45.10)\n"
     pg, al = await read_csv(ctx, "semi.csv", body)
-    assert len(al) == 2 and al[0].endswith("+$3,000") and "HARDWARE STORE" in al[1] and al[1].endswith("| $45.10"), al
+    assert len(al) == 2 and al[0].endswith("+$3,000") and "HARDWARE STORE" in al[1] and al[1].endswith("| −$45.10"), al
     # a spreadsheet file is turned away with what to do instead
     pg = await open_app(ctx); x = os.path.join(TMP, "s.xlsx"); open(x, "wb").write(b"PK\x03\x04junk")
     await pg.set_input_files("#stmt", x); await pg.wait_for_timeout(300)
@@ -3029,9 +3033,9 @@ async def a_statement_laid_out_in_columns_is_read_line_for_line(ctx):
     al = [x.replace(" ", " ").replace("\n", " | ") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()]; j = " || ".join(al)
     assert len(al) == 23 and al[0].startswith("Sep 1, 2026") and al[-1].startswith("Sep 30, 2026"), (al[0], al[-1])
     # the whole description, numbers and all, belongs to its transaction; a line that only looks like a date is not one
-    assert "Debit Card/POS 342112225659 5366190+++++6162 31/08 624317002830 PKR 1549.99 225659 3108 5366190 FOOD PANDA KARACHI | Eating out | PKR 1,549.99" in j, j[:700]
-    assert "EZVIZ WAN CHAI TRANSACTION AMT PKR 1999.00 USD AMT 7.21 /USD Rate 277.95 | Everything else | PKR 2,004.02" in j and "2001" not in v.split("transactions")[1][:60]
-    assert "RATE 4.00% + FED | Bank charges | PKR 22.34" in j
+    assert "Debit Card/POS 342112225659 5366190+++++6162 31/08 624317002830 PKR 1549.99 225659 3108 5366190 FOOD PANDA KARACHI | Eating out | −PKR 1,549.99" in j, j[:700]
+    assert "EZVIZ WAN CHAI TRANSACTION AMT PKR 1999.00 USD AMT 7.21 /USD Rate 277.95 | Everything else | −PKR 2,004.02" in j and "2001" not in v.split("transactions")[1][:60]
+    assert "RATE 4.00% + FED | Bank charges | −PKR 22.34" in j
     # pay that arrives as a transfer is pay, with the platform's name
     inc = await stx(pg, "[data-st=income]"); assert "Deel" in inc and "PKR 120,000/mo" in inc and "Payoneer" in inc and "PKR 53,432.78/mo" in inc and "2 deposits" in inc, inc
     assert "Refunds and one-off money in" in inc and "PKR 2,001" in inc, "money that came back is not income"
@@ -3289,6 +3293,41 @@ async def a_statement_line_can_be_left_out_or_moved(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def a_credit_card_statement_reads_charges_and_credits_the_right_way(ctx):
+    # charges printed as plain numbers, credits with a minus: payments to the card and refunds are credits, never income
+    body = ("Credit Card Statement - card ending 4321\nDate,Description,Amount\n03/02/2026,AMAZON MKTPLACE,54.20\n03/05/2026,SHELL OIL 123,40.00\n03/09/2026,WHOLE FOODS MARKET,88.15\n"
+            "03/12/2026,PAYMENT THANK YOU,-500.00\n03/15/2026,AMAZON MKTPLACE REFUND,-24.99\n03/18/2026,ANNUAL FEE,95.00\n03/19/2026,ANNUAL FEE REVERSAL,-95.00\n03/20/2026,NETFLIX.COM,15.49\n04/20/2026,NETFLIX.COM,15.49\n")
+    pg, rows = await read_csv(ctx, "card.csv", body)
+    assert await pg.locator("[data-st-cardnote]").count() == 1
+    card = await stx(pg, "[data-st=card]"); assert "Payments to this card" in card and "500" in card and "Refunds and reversals" in card and "119.99" in card, card
+    inc = await stx(pg, "[data-st=income]"); assert "Payment Thank You" not in inc and "500" not in inc, inc
+    r = " ## ".join(rows); assert "WHOLE FOODS MARKET | −$88.15" in r or "−$88.15" in r, r
+    assert "+$500" in r and "+$24.99" in r, "credits are shown with a plus, charges with a minus"
+    # the exact wording is shown, and any line can be turned round
+    await pg.locator("[data-st=card] [data-st-open]").first.click(); await pg.wait_for_timeout(150)
+    assert "PAYMENT THANK YOU" in await stx(pg, "[data-st=card]")
+    line = pg.locator("[data-st=all] .st-t", has_text="WHOLE FOODS"); await line.locator("[data-st-act]").click(); await pg.wait_for_timeout(200)
+    await pg.locator("[data-st=all] [data-st-acts] [data-st-flip]").first.click(); await pg.wait_for_timeout(250)
+    assert "WHOLE FOODS" in await stx(pg, "[data-st=card]") and "Turned round by you" in await stx(pg, "[data-st=all]")
+    await pg.locator("[data-st=all] [data-st-acts] [data-st-unflip]").click(); await pg.wait_for_timeout(250)
+    assert "WHOLE FOODS" not in await stx(pg, "[data-st=card]") and "Turned round by you" not in await stx(pg, "[data-st=all]")
+    # a credit that really was money in can be moved there
+    line = pg.locator("[data-st=all] .st-t", has_text="PAYMENT THANK YOU"); await line.locator("[data-st-act]").click(); await pg.wait_for_timeout(200)
+    await pg.locator("[data-st=all] [data-st-acts] [data-st-move=income]").click(); await pg.wait_for_timeout(250)
+    inc = await stx(pg, "[data-st=income]"); assert "PAYMENT THANK YOU" in inc and "Moved by you" in inc and "Payments to this card" not in await stx(pg, "[data-st=card]"), inc
+    assert not pg.errors, pg.errors
+
+@test
+async def a_bank_line_can_be_turned_round(ctx):
+    pg, rows = await read_csv(ctx, "flip.csv", "Date,Description,Amount\n03/01/2026,ACME PAYROLL,2000.00\n03/04/2026,JOHN SMITH,150.00\n03/11/2026,CORNER SHOP,-7.50\n")
+    h0 = await stx(pg, ".hero")
+    line = pg.locator("[data-st=all] .st-t", has_text="JOHN SMITH"); await line.locator("[data-st-act]").click(); await pg.wait_for_timeout(200)
+    b = pg.locator("[data-st=all] [data-st-acts] [data-st-flip]").first; assert "money out" in await b.inner_text(); await b.click(); await pg.wait_for_timeout(250)
+    r = " ## ".join([x.replace("\u00a0", " ") for x in await pg.locator("[data-st=all] .st-t").all_inner_texts()]); assert "−$150" in r and "Turned round by you" in r, r
+    assert await stx(pg, ".hero") != h0, "the month changes with it"
+    assert not pg.errors, pg.errors
+
+@test
 async def with_no_name_on_the_statement_the_names_are_offered(ctx):
     pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
     rows = [r for r in PK_ROWS() if not r.startswith("Account")]
@@ -3403,7 +3442,7 @@ async def a_statement_adds_only_what_the_plan_is_missing(ctx):
 async def month_is_three_short_parts_on_a_phone(ctx):
     # Overview, Budget and More behind a switch, so what matters is on screen without scrolling; a computer keeps one page
     pg = await open_app(ctx, month_tabs=True, w=393, h=852)
-    sw = pg.locator("[data-mseg-switch] button"); assert [x.strip() for x in await sw.all_inner_texts()] == ["Overview", "Budget", "More"]
+    sw = pg.locator("[data-mseg-switch] button"); assert [x.strip() for x in await sw.all_inner_texts()] == ["Overview", "Budget", "Income"]
     assert await pg.locator("[data-mseg=now]").get_attribute("aria-pressed") == "true"
     has = lambda sel: pg.locator(sel).count()
     assert await has(".hero [data-out=headline]") == 1 and await has("[data-donut]") == 1 and await has("[data-out=comingUp] .card") == 1, "Overview: what you keep, the chart, what is coming"
@@ -3419,11 +3458,13 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     # Budget: the envelopes, on one screen
     await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(250)
     assert await has("[data-out=envelopes] .env-row") >= 3 and await has(".hero") == 0 and await has("[data-donut]") == 0
-    fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight; })()"); assert fit <= 2, ("Budget fits the screen", fit)
+    fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight * 2; })()"); assert fit <= 0, ("Budget is no more than one scroll", fit)
+    assert await has("[data-out=trips]") == 1 and await has("[data-out=historyCard]") == 1, "trips and past months sit with the budget"
     await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200); assert await has("[data-env-open=needs] + .env-body .tick") >= 3
-    # More: income, statements, trips and the rest
+    # Income: pay, other income and a statement to read it from
     await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(250)
-    assert await has(".import-card") == 1 and await has("#m-income") == 1 and await has("[data-out=trips]") == 1 and await has("[data-out=historyCard]") == 1 and await has(".space-switch") == 1
+    assert await has(".import-card") == 1 and await has("#m-income") == 1 and await has("[data-out=trips]") == 0 and await has(".space-switch") == 1
+    first = await pg.evaluate("(() => { const k = [...document.querySelectorAll('#view > *')].filter(e => !e.matches('[data-mseg-switch]') && e.offsetHeight); return k[0] && k[0].matches('.import-card'); })()"); assert first, "statement import leads the Income part"
     tip = pg.locator(".import-card [data-info-tip=import]"); assert await tip.count() == 0 and "clear photo" not in await pg.inner_text(".import-card"), "the how-to waits behind the (i)"
     await pg.click(".import-card [data-info=import]"); await pg.wait_for_timeout(150); assert "clear photo of a paper statement" in await tip.inner_text()
     await pg.click(".import-card [data-info=import]"); await pg.wait_for_timeout(150); assert await tip.count() == 0
@@ -3448,7 +3489,9 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     assert await pg.locator("#view [data-hide-note]").count() == 0, "the example note stays out of the tour"
     await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator('[data-out="comingUp"].tour-focus').count() == 1
     assert not await pg.locator("#wise").is_visible() and await pg.evaluate("document.getElementById('wise').style.cssText") == "", "then it steps back"
+    await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator('[data-out=billsCard].tour-focus').count() == 1
     await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator('[data-out="envelopes"].tour-focus').count() == 1 and await pg.locator("[data-mseg=budget]").get_attribute("aria-pressed") == "true"
+    await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator('[data-out="payBox"].tour-focus').count() == 1 and await pg.locator("[data-mseg=more]").get_attribute("aria-pressed") == "true", "each part of Month in turn"
     await pg.click("[data-tour-skip]"); await pg.wait_for_timeout(200)
     assert not pg.errors, pg.errors
     # a computer has the room: one page, no switch
@@ -3496,7 +3539,7 @@ async def plan_is_two_short_parts_on_a_phone(ctx):
     said = await _ask(pg, "I have a car loan, 220 a month"); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-pseg=goals]").get_attribute("aria-pressed") == "true" and await pg.locator("#view [data-loan].flash").is_visible(), said
     # Your data is a row in the side menu, and what it holds still works
-    await menu_to(pg, "data"); assert await pg.inner_text("#view h1") == "Your data"
+    await menu_to(pg, "data"); assert await pg.inner_text("#view h1") == "Your data & backups"
     t = await pg.inner_text("#view"); assert "Monthly statements" in t and "Import a bank statement" in t and "Start empty" in t and "never uploaded" in t
     await pg.click("[data-history]"); await pg.wait_for_timeout(150); assert await pg.locator("#view [data-your-data]").count() == 0 and "statement" in (await pg.inner_text("#view")).lower(), "the statements open from there"
     await menu_to(pg, "data"); await pg.click("[data-reset=blank]"); await pg.click("#reset-confirm [data-reset-yes]"); await pg.wait_for_timeout(300)
@@ -3529,7 +3572,7 @@ async def search_opens_from_the_header_and_goes_to_the_exact_place(ctx):
     await pg.locator(".find-row", has_text=nm).first.click(); await pg.wait_for_timeout(250)
     assert await pg.locator("[data-pseg=month]").get_attribute("aria-pressed") == "true" and await pg.locator("#view [data-exp].flash").is_visible()
     # other words work, places in the menu open, and Enter takes the first
-    for q, head in (("passcode", "Security"), ("export", "Account settings"), ("erase", "Your data")):
+    for q, head in (("passcode", "Security & privacy"), ("export", "Your data & backups"), ("erase", "Your data & backups")):
         await pg.click("#find-btn"); await pg.fill("#find-in", q); await pg.keyboard.press("Enter"); await pg.wait_for_timeout(250)
         assert await pg.inner_text("#view h1") == head, (q, await pg.inner_text("#view h1"))
     await pg.click("#find-btn"); await pg.fill("#find-in", "zzzz"); await pg.wait_for_timeout(350)
@@ -3543,6 +3586,204 @@ async def search_opens_from_the_header_and_goes_to_the_exact_place(ctx):
         bad = await p2.evaluate(SPILL_CHECK); assert not bad, (w, bad[:5])
         over = await p2.evaluate("(() => { const h = document.querySelector('.app-header'); return h.scrollWidth > h.clientWidth + 1 || document.documentElement.scrollWidth > innerWidth; })()"); assert not over, w
         await p2.close()
+
+@test
+async def overview_always_has_bills_and_savings_progress(ctx):
+    # two cards that never run dry: bills paid so far this month, and how the savings are building
+    pg = await open_app(ctx, month_tabs=True, w=393, h=852)
+    card = pg.locator("[data-bills-card]"); assert await card.count() == 1
+    assert "of" in await pg.inner_text("[data-bills-count]") and "paid" in await pg.inner_text("[data-bills-count]")
+    sv = pg.locator("[data-save-card]"); assert await sv.count() == 1 and await pg.locator("[data-save-ef]").count() == 1 and await pg.locator("[data-save-goal]").count() == 1
+    await pg.click("[data-bills-open]"); await pg.wait_for_timeout(250)
+    assert await pg.locator("[data-mseg=budget]").get_attribute("aria-pressed") == "true", "the bills card opens the list to tick"
+    await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(200); await pg.click("[data-save-go]"); await pg.wait_for_timeout(250)
+    assert await pg.locator("#view [data-bind=efSaved]").is_visible(), "Change goes to the savings in Plan"
+    # a quiet week still names what comes next
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.splits = []; s.extras = [];
+      const d = new Date(); const far = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 20); s.subs = [{id: 'z1', name: 'Gym', price: 30, cycle: 'mo', renewDay: far.getDate(), keep: 'keep'}]; s.expenses.forEach(e => delete e.due); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(500)
+    if await pg.locator("[data-up-empty]").count(): assert "Next:" in await pg.inner_text("[data-up-empty]"), await pg.inner_text("[data-up-empty]")
+    # messages carry the owl and match the theme; reading a statement shows the owl loader
+    await tab(pg, "month")
+    await _ask(pg, "coffee 4"); t = pg.locator("#toast")
+    assert await t.locator(".toast-owl").count() == 1 and await t.is_visible()
+    bg = await t.evaluate("e => getComputedStyle(e).backgroundColor"); assert bg not in ("rgb(0, 0, 0)",), bg
+    await pg.set_input_files("#stmt", {"name": "s.csv", "mimeType": "text/csv", "buffer": b"Date,Description,Amount\n10/01/2026,ACME PAYROLL,2600.00\n10/03/2026,STREAMLINE TV,-15.99\n"})
+    await pg.wait_for_timeout(60)
+    await pg.wait_for_timeout(1200); assert not await pg.locator("#busy").is_visible(), "the owl loader goes away when reading is done"
+    assert not pg.errors, pg.errors
+
+@test
+async def ask_explains_the_words_and_they_work(ctx):
+    # no picker: the (i) says which words put an entry where, and each example does exactly that
+    pg = await open_app(ctx, month_tabs=True, w=375, h=812)
+    st = lambda: pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1'))")
+    await pg.click("#wise"); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-ask-kind]").count() == 0, "no picker"
+    await pg.click(".ask-panel [data-info=ask]"); await pg.wait_for_timeout(150)
+    tip = await pg.inner_text(".ask-panel [data-info-tip=ask]")
+    for w in ("Money in", "received", "Subscription", "sub", "Expenditure", "monthly", "Misc"): assert w in tip, (w, tip)
+    async def say(q):
+        await pg.evaluate("document.getElementById('toast').hidden = true")
+        if await pg.locator("#ask-in").count() == 0: await pg.click("#wise"); await pg.wait_for_timeout(200)
+        await pg.fill("#ask-in", q); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(600)
+    await say("Received 300 from Ali"); assert any(x["amount"] == 300 for x in (await st()).get("ins", [])), "money in"
+    await say("Netflix sub 15"); assert any(x["name"].lower().startswith("netflix") and x["price"] == 15 for x in (await st())["subs"]), "subscription"
+    await say("Rent 1200 monthly"); assert any(x["amount"] == 1200 and x["env"] == "needs" and x["name"].lower().startswith("rent") for x in (await st())["expenses"]), "expenditure"
+    await say("Coffee 4"); assert any(x["amount"] == 4 for x in (await st()).get("spends", [])), "misc"
+    assert not pg.errors, pg.errors
+
+@test
+async def a_trip_on_today_shows_on_the_first_screen(ctx):
+    pg = await open_app(ctx, month_tabs=True, w=375, h=812)
+    assert await pg.locator("[data-trips-now]").count() == 0, "nothing on, nothing shown"
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+      const iso = d => { const z = new Date(Date.now() + d * 864e5); return z.getFullYear() + '-' + String(z.getMonth() + 1).padStart(2, '0') + '-' + String(z.getDate()).padStart(2, '0'); };
+      s.trips = [{id: 't1', name: 'Lahore', start: iso(-1), end: iso(2), budget: 500, spends: []}, {id: 't2', kind: 'event', name: 'Old party', start: iso(-9), end: iso(-5), budget: 100, spends: []}, {id: 't3', name: 'Later trip', start: iso(9), end: iso(12), budget: 100, spends: []}];
+      localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(500)
+    box = pg.locator("[data-trips-now]"); assert await box.count() == 1
+    t = await box.inner_text(); assert "Lahore" in t and "Old party" not in t and "Later trip" not in t, t
+    hero = await pg.locator(".hero").bounding_box(); bx = await box.bounding_box(); assert bx["y"] > hero["y"], "it sits under what you keep"
+    assert not pg.errors, pg.errors
+
+@test
+async def a_yearly_subscription_counts_once_in_the_month_it_is_charged(ctx):
+    pg = await open_app(ctx, month_tabs=True, w=393, h=852)
+    keep = lambda: pg.evaluate("parseFloat(document.querySelector('.hero .big').textContent.replace(/[^0-9.-]/g, ''))")
+    async def with_subs(js):
+        await pg.evaluate("""(js) => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+          const iso = d => { const z = new Date(Date.now() + d * 864e5); return z.getFullYear() + '-' + String(z.getMonth() + 1).padStart(2, '0') + '-' + String(z.getDate()).padStart(2, '0'); };
+          s.subs = s.subs.filter(x => x.cycle !== 'yr'); s.reviewSnooze = null; s.subs.forEach(x => { x.reviewedAt = iso(0); }); (new Function('s', 'iso', js))(s, iso); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""", js)
+        await pg.reload(); await pg.wait_for_timeout(500)
+    await with_subs(""); base = await keep()
+    # renews in about six months: paid already this year, so nothing comes out of this month, and it is not put up for dropping
+    await with_subs("s.subs.push({id: 'y1', name: 'Cloud Vault', price: 120, cycle: 'yr', renewDate: iso(180), last: iso(-200), group: '', env: 'misc', keep: 'auto'});")
+    assert abs(await keep() - base) < 0.01, (await keep(), base)
+    await tab(pg, "subs"); row = pg.locator("[data-sub=y1]"); assert "120" in await row.inner_text()
+    assert await pg.locator("[data-sub=y1] .flag, [data-sub=y1] [data-flag]").count() == 0 and "Unused" not in await row.inner_text(), "paid up for the year: no drop question"
+    await tab(pg, "month")
+    # renews in three days: the whole year comes out of this month, and Needs you asks about it now
+    await with_subs("s.subs.push({id: 'y2', name: 'Cloud Vault', price: 120, cycle: 'yr', renewDate: iso(3), last: iso(-200), group: '', env: 'misc', keep: 'auto'});")
+    assert abs((base - await keep()) - 120) < 0.01, (await keep(), base)
+    need = await pg.inner_text("[data-out=needs]"); assert "Cloud Vault" in need, need
+    # added through Ask as yearly: the whole amount counts this month
+    await with_subs(""); b0 = await keep()
+    await _ask(pg, "adobe sub 240 yearly"); await pg.wait_for_timeout(300); await tab(pg, "month")
+    assert abs((b0 - await keep()) - 240) < 0.01, (await keep(), b0)
+    # a monthly one is asked about in the five days before it renews, not at random
+    d = await pg.evaluate("new Date(Date.now() + 4 * 864e5).getDate()")
+    await with_subs(f"s.subs.forEach(x => {{ x.reviewedAt = iso(-40); x.renewDay = ((new Date(Date.now() + 20 * 864e5)).getDate()); }}); s.subs[0].renewDay = {d};")
+    first = await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1')).subs[0].name")
+    assert first in await pg.inner_text("[data-out=needs]"), (first, await pg.inner_text("[data-out=needs]"))
+    assert not pg.errors, pg.errors
+
+@test
+async def envelopes_can_be_set_as_amounts(ctx):
+    pg = await open_app(ctx, month_tabs=True, w=375, h=812)
+    await tab(pg, "plan")
+    assert await pg.get_attribute("[data-envmode=pct]", "aria-pressed") == "true", "shares of income by default"
+    inc = await pg.evaluate("(() => { const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); return +s.income; })()")
+    await pg.click("[data-envmode=flat]"); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-envflat=needs]").count() == 1 and await pg.locator("[data-env=needs]").count() == 0
+    await pg.fill("[data-envflat=needs]", "2000"); await pg.press("[data-envflat=needs]", "Tab"); await pg.fill("[data-envflat=misc]", "500"); await pg.press("[data-envflat=misc]", "Tab"); await pg.wait_for_timeout(250)
+    st = await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1'))"); assert st["envMode"] == "flat" and st["envFlat"]["needs"] == 2000 and st["envFlat"]["misc"] == 500
+    chk = await pg.inner_text("[data-out=envCheck]"); assert "what is left" in chk, chk
+    # the month measures against the amounts, and they stay put when pay changes
+    await tab(pg, "month"); await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(200)
+    b = await pg.inner_text("[data-out=envelopes]"); assert "of $2,000" in b and "of $500" in b, b
+    # back to shares: the amounts become the nearest whole percentages
+    await tab(pg, "plan"); await pg.click("[data-envmode=pct]"); await pg.wait_for_timeout(200)
+    v = int(await pg.input_value("[data-env=needs]")); assert v == round(2000 / inc * 100), (v, inc)
+    # amounts that add up to more than comes in are called out
+    await pg.click("[data-envmode=flat]"); await pg.wait_for_timeout(200); await pg.fill("[data-envflat=needs]", str(int(inc) + 100)); await pg.press("[data-envflat=needs]", "Tab"); await pg.wait_for_timeout(250)
+    assert "more than" in await pg.inner_text("[data-out=envCheck]")
+    assert not pg.errors, pg.errors
+
+@test
+async def the_balance_can_be_hidden_and_stays_hidden(ctx):
+    pg = await open_app(ctx, month_tabs=True, w=375, h=812)
+    big = lambda: pg.inner_text(".hero .big")
+    assert "$" in await big() and await pg.get_attribute("[data-hide-bal]", "aria-pressed") == "false", "shown by default"
+    eb = await pg.locator("[data-hide-bal]").bounding_box(); ib = await pg.locator(".hero .hero-i").bounding_box() if await pg.locator(".hero .hero-i").count() else None
+    if ib: assert eb["x"] + eb["width"] <= ib["x"] + 1, "the eye sits beside the (i), not on it"
+    await pg.click("[data-hide-bal]"); await pg.wait_for_timeout(150)
+    assert "$" not in await big() and "•" in await big() and await pg.locator("[data-hero-warn]").count() == 0
+    await pg.reload(); await pg.wait_for_timeout(500); assert "•" in await big(), "still hidden after opening the app again"
+    await pg.click("[data-hide-bal]"); await pg.wait_for_timeout(150); assert "$" in await big()
+    assert not pg.errors, pg.errors
+
+@test
+async def the_month_chart_opens_into_every_line(ctx):
+    pg = await open_app(ctx, month_tabs=True, w=375, h=812)
+    assert await pg.locator("[data-dn-full]").count() == 0
+    n_small = await pg.locator(".dn-list li").count()
+    await pg.click(".dn-tap"); await pg.wait_for_timeout(300)
+    full = pg.locator("[data-dn-full] li"); n = await full.count()
+    st = await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1'))")
+    assert n > n_small and n >= len([e for e in st["expenses"] if e["amount"] > 0]), (n, n_small)
+    t = await pg.inner_text("[data-dn-full]"); assert "Other (" not in t and "%" in t and "What you keep" in t
+    assert any(s["name"] in t for s in st["subs"] if s.get("keep") != "drop"), "each subscription on its own line"
+    # the shares add up to everything coming in, and the amounts to what goes out
+    pcts = await pg.evaluate("[...document.querySelectorAll('[data-dn-full] .dn-v small')].map(e => e.textContent)")
+    assert all(p.endswith("%") for p in pcts)
+    bad = await pg.evaluate(SPILL_CHECK); assert not bad, bad[:5]
+    await pg.click("[data-dn-open][aria-expanded=true]"); await pg.wait_for_timeout(200); assert await pg.locator("[data-dn-full]").count() == 0
+    assert not pg.errors, pg.errors
+
+@test
+async def car_insurance_runs_by_its_policy(ctx):
+    pg = await open_app(ctx, month_tabs=True, w=375, h=812)
+    await tab(pg, "plan"); await pg.click("[data-pseg=goals]"); await pg.wait_for_timeout(200)
+    await pg.click("[data-loan-add]"); await pg.wait_for_timeout(200)
+    f = 'form[data-form="loan"]'
+    await pg.select_option(f + " [name=kind]", "carins"); await pg.wait_for_timeout(100)
+    assert await pg.locator(f + " [name=premium]").is_visible() and not await pg.locator(f + " [name=pay]").is_visible(), "the policy has its own fields"
+    start = await pg.evaluate("(() => { const t = new Date(); const d = new Date(t.getFullYear(), t.getMonth() - 2, t.getDate()); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })()")
+    await pg.fill(f + " [name=name]", "Geico Auto"); await pg.fill(f + " [name=premium]", "900"); await pg.select_option(f + " [name=term]", "6"); await pg.select_option(f + " [name=plan]", "monthly")
+    await pg.fill(f + " [name=start]", start); await pg.fill(f + " [name=insfee]", "5"); await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(300)
+    row = await pg.inner_text("[data-carins]"); assert "Geico Auto" in row and "$155" in row and "4 of 6 payments left" in row and "$620 left this term" in row and "renews" in row, row
+    # paid in full near the end of a 12-month policy: nothing this month, and a nudge to compare quotes before it renews
+    start2 = await pg.evaluate("(() => { const t = new Date(); const d = new Date(t.getFullYear(), t.getMonth() - 12, t.getDate() + 20); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })()")
+    await pg.click("[data-carins] [data-loan-edit]"); await pg.wait_for_timeout(200)
+    await pg.select_option(f + " [name=term]", "12"); await pg.select_option(f + " [name=plan]", "full"); await pg.fill(f + " [name=start]", start2); await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(300)
+    row = await pg.inner_text("[data-carins]"); assert "Paid until" in row and "Renews in" in row and "Compare a few quotes" in row, row
+    assert not pg.errors, pg.errors
+
+@test
+async def every_search_result_lands_on_its_place(ctx):
+    # each place search offers is opened the way a person would, and must land exactly where it says
+    pg = await open_app(ctx, month_tabs=True, w=393, h=852)
+    places = await pg.evaluate("window.KEEPWISE_FIND_PLACES")
+    assert len(places) >= 30
+    for p in places:
+        await pg.evaluate("document.getElementById('toast').hidden = true")
+        if await pg.locator("#tour:not([hidden])").count(): await pg.click("[data-tour-skip]"); await pg.wait_for_timeout(150)
+        if await pg.locator(".ask-sheet [data-ask-close]").count(): await pg.locator(".ask-sheet [data-ask-close]").first.click(); await pg.wait_for_timeout(150)
+        await pg.click("#find-btn"); await pg.wait_for_timeout(150); await pg.fill("#find-in", p["name"], timeout=5000); await pg.wait_for_timeout(300)
+        row = pg.locator(".find-row", has=pg.locator(".find-nm", has_text=p["name"])).first
+        assert await row.count(), (p["name"], "not offered for its own name")
+        await row.click(); await pg.wait_for_timeout(400)
+        g = p["go"]; where = p["name"]
+        assert await pg.locator("#find-in").count() == 0, where
+        if g.get("sel"):
+            el = pg.locator("#view " + g["sel"]).first; assert await el.count(), (where, g)
+            bx = await el.bounding_box(); m = await pg.locator("#main").bounding_box()
+            assert bx and bx["y"] < m["y"] + m["height"] and bx["y"] + min(bx["height"], 40) > m["y"], (where, "not brought into view", bx)
+        if g.get("menu") in ("data", "security", "settings", "support"):
+            h = {"data": "Your data & backups", "security": "Security & privacy", "settings": "Settings", "support": "Support"}[g["menu"]]
+            assert await pg.inner_text("#view h1") == h, (where, await pg.inner_text("#view h1"))
+        if g.get("menu") == "profile": assert await pg.locator("#view").inner_text(), where
+        if g.get("menu") == "plus": assert "Plus" in await pg.inner_text("#view"), where
+        if g.get("menu") == "tour": assert await pg.locator("#tour:not([hidden])").count() == 1, where
+        if g.get("act") == "history": assert "statement" in (await pg.inner_text("#view")).lower(), where
+        if g.get("act") == "inbox": assert "Notifications" in await pg.inner_text("#view"), where
+        if g.get("act") == "ask": assert await pg.locator("#ask-in").count() == 1, where
+        if g.get("tab") and not g.get("sel"):
+            assert await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1')).tab") == g["tab"], where
+        for close in ("[data-settings-close]", "[data-plus-close]"):
+            if await pg.locator("#view " + close).count(): await pg.click("#view " + close); await pg.wait_for_timeout(120)
+    assert not pg.errors, pg.errors
 
 @test
 async def nothing_spills_or_is_cut_off_at_any_size(ctx):
@@ -3575,7 +3816,7 @@ async def nothing_spills_or_is_cut_off_at_any_size(ctx):
                         if env == "misc": await pg.locator("[data-spend-g='coffee'] [data-spend-open]").click(); await pg.wait_for_timeout(150)
                         bad = await pg.evaluate(SPILL_CHECK); assert not bad, (w, zoom, env, bad[:6])
             await pg.click("[data-tab=month]"); await pg.wait_for_timeout(150)
-            if w < 1024: await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(150)
+            if w < 1024: await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(150)
             await pg.click("[data-history]"); await pg.wait_for_timeout(200)
             bad = await pg.evaluate(SPILL_CHECK); assert not bad, (w, zoom, "history", bad[:6])
             assert not pg.errors, pg.errors
@@ -3743,9 +3984,9 @@ async def loans_section_counts_and_finishes(ctx):
     need0 = money((await text(pg, "[data-out=expTotal]")).split("·")[0])
     await tab(pg, "month"); kept0 = money(await text(pg, "[data-out=envelopes] .env-row >> nth=0")); assert await pg.locator("[data-loans-row]").count() == 0, "no row until there is a loan"
     await tab(pg, "plan")
-    box = await text(pg, "[data-out=loans]"); assert "Loans and debt" in box and "Add a loan or credit card" in box
+    box = await text(pg, "[data-out=loans]"); assert "Loans and debt" in box and "Add a loan, card or car insurance" in box
     await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
-    assert [o.strip() for o in await f.locator("[name=kind] option").all_inner_texts()] == ["Bank loan", "Personal loan", "Student debt", "Credit card", "Car loan", "Mortgage", "Other debt"]
+    assert [o.strip() for o in await f.locator("[name=kind] option").all_inner_texts()] == ["Bank loan", "Personal loan", "Student debt", "Credit card", "Car loan", "Car insurance", "Mortgage", "Other debt"]
     assert [o.strip() for o in await f.locator("[name=every] option").all_inner_texts()] == ["Every month", "Every week", "Every 2 weeks", "Every year"]
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(100); assert "Enter the payment amount" in await pg.inner_text("#toast")
     # a student debt paid weekly, with an amount left and no end date: the finish is estimated and says interest is not included
@@ -4200,19 +4441,20 @@ async def the_side_menu_opens_each_place(ctx):
     assert await pg.locator("#sidenav").is_hidden()
     await pg.click("#acct-btn"); await pg.wait_for_timeout(300)
     rows = await pg.locator("#sidenav .sn-row span").all_inner_texts()
-    assert rows == ["Sign in or create account", "Account settings", "Security", "Appearance", "Your data", "Backups", "Replay the tour", "Support"], rows
+    assert rows == ["Sign in or create account", "Settings", "Security & privacy", "Your data & backups", "Replay the tour", "Support"], rows
     assert "Delete" not in await pg.inner_text("#sidenav"), "delete is not offered in the menu"
     box = await pg.locator("#sidenav .sn").bounding_box(); assert box["x"] > 0 and abs(box["x"] + box["width"] - 360) < 1 and box["height"] >= 759, "a panel on the right, full height"
     # tapping outside closes it and changes nothing
     await pg.mouse.click(10, 300); await pg.wait_for_timeout(250); assert await pg.locator("#sidenav").is_hidden() and await pg.locator(".hero").count() == 1
     await _menu(pg, "close"); assert await pg.locator("#sidenav").is_hidden()
     # each row goes to its own place
-    await _menu(pg, "settings"); assert await pg.locator("#view h1").inner_text() == "Account settings" and await pg.locator("[data-set-backup]").count() == 1 and await pg.locator("[data-lock-card]").count() == 0
-    await _menu(pg, "security"); assert await pg.locator("#view h1").inner_text() == "Security" and await pg.locator("[data-lock-card]").count() == 1 and await pg.locator("[data-set-backup]").count() == 0
+    await _menu(pg, "settings"); assert await pg.locator("#view h1").inner_text() == "Settings" and await pg.locator("[data-set-backup]").count() == 0 and await pg.locator("[data-lock-card]").count() == 0
+    t = await pg.inner_text("#view"); assert "Appearance" in t and "Replay the tour" not in t, "the tour has its own row in the menu, so it is not repeated here"
+    await _menu(pg, "security"); assert await pg.locator("#view h1").inner_text() == "Security & privacy" and await pg.locator("[data-lock-card]").count() == 1 and await pg.locator("[data-set-backup]").count() == 0
     await pg.click("[data-lock-set]"); await pg.wait_for_timeout(150); assert await pg.locator("form[data-form=lockSet]").count() == 1, "the passcode form opens on the Security screen"
     await pg.click("[data-lock-cancel]"); await pg.wait_for_timeout(100)
     await _menu(pg, "support"); assert await pg.locator("#view h1").inner_text() == "Support" and await pg.locator("[data-help-link=email]").get_attribute("href") == "mailto:support@mykeepwise.com"
-    await _menu(pg, "backup"); assert await pg.locator("#view h1").inner_text() == "Account settings" and await pg.locator("[data-backup]").count() == 1
+    await _menu(pg, "data"); assert await pg.locator("#view h1").inner_text() == "Your data & backups" and await pg.locator("[data-backup]").count() == 1
     await pg.click("[data-settings-close]"); await pg.wait_for_timeout(150); assert await pg.locator(".hero").count() == 1, "Done returns to the month"
     await _menu(pg, "plus"); assert "Everything free stays free" in await pg.inner_text("#view")
     await pg.click("[data-plus-close]"); await pg.wait_for_timeout(150)
@@ -4221,10 +4463,16 @@ async def the_side_menu_opens_each_place(ctx):
     await _menu(pg, "personal"); assert await pg.locator(".hero [data-out=headline]").count() == 1
     await _menu(pg, "profile"); assert await pg.locator("#view").inner_text() != "" and await pg.locator(".hero").count() == 0, "the account screen opens"
     await tab(pg, "month")
-    # appearance changes the theme and leaves the menu open
-    await pg.click("#acct-btn"); await pg.wait_for_timeout(280); before = await pg.evaluate("document.documentElement.dataset.theme || ''")
-    await pg.click("#sidenav [data-menu=theme]"); await pg.wait_for_timeout(200)
-    assert await pg.evaluate("document.documentElement.dataset.theme || ''") != before and await pg.locator("#sidenav .sn").count() == 1
+    # appearance is chosen in Settings: Auto, Light or Dark
+    await _menu(pg, "settings"); await pg.click("[data-theme-set=dark]"); await pg.wait_for_timeout(150)
+    assert await pg.evaluate("document.documentElement.dataset.theme || ''") == "dark" and await pg.get_attribute("[data-theme-set=dark]", "aria-pressed") == "true"
+    await pg.click("[data-theme-set=system]"); await pg.wait_for_timeout(150)
+    # Security & privacy and Your data & backups each carry enough to be worth a screen
+    await _menu(pg, "security"); t = await pg.inner_text("#view"); assert "Hide the big number" in t and "on this phone only" in t.lower() and await pg.locator("#view [data-lock-card]").count() == 1
+    await pg.click("#view [data-hide-bal]"); await pg.wait_for_timeout(150); assert await pg.get_attribute("#view [data-hide-bal]", "aria-checked") == "true"
+    await pg.click("#view [data-hide-bal]"); await pg.wait_for_timeout(150)
+    await _menu(pg, "data"); t = await pg.inner_text("#view"); assert "What KeepWise keeps" in t and "monthly bills" in t and "Backups" in t and "Copy my data" in t and "Paste my data" in t and "Start empty" in t, t[:400]
+    await tab(pg, "month")
     await _menu(pg, "tour"); assert not await pg.locator("#tour").is_hidden(), "the tour replays from the menu"
     await pg.click("[data-tour-skip]") if await pg.locator("[data-tour-skip]").count() else None
     # the header keeps its theme button, and it works
@@ -4241,7 +4489,7 @@ async def settings_leave_plan_and_delete_sits_quietly_at_the_foot(ctx):
     assert await pg.locator("#view [data-your-data]").count() == 0 and await pg.locator("#view [data-reset]").count() == 0, "and Your data moved to the side menu"
     hs = await pg.evaluate("[...document.querySelectorAll('#view h2')].map(h => h.childNodes[0].textContent.trim())")
     assert hs.index("Giving") == hs.index("Savings") + 1, hs
-    await menu_to(pg, "data"); assert await pg.inner_text("#view h1") == "Your data"
+    await menu_to(pg, "data"); assert await pg.inner_text("#view h1") == "Your data & backups"
     assert await pg.locator("#view [data-import-open].primary").count() == 1 and await pg.locator("#view [data-history]").count() == 1
     await pg.set_viewport_size({"width": 780, "height": 760}); await pg.wait_for_timeout(150)
     a = await pg.locator("[data-reset=example]").bounding_box(); b = await pg.locator("[data-reset=blank]").bounding_box(); card = await pg.locator("[data-reset=blank]").locator("xpath=ancestor::section[1]").bounding_box()
@@ -4533,7 +4781,7 @@ async def a_forgotten_passcode_can_be_reset_by_signing_in_again(ctx):
     assert "Connect to the internet" in await pg.inner_text("[data-lock-rmsg]") and await pg.locator("#lockscreen").is_visible()
     await pg.evaluate("window.__mockOffline = false"); await pg.fill("[data-lock-recover] [name=pw]", "Secret1!x"); await pg.click("[data-lock-recover] [type=submit]"); await pg.wait_for_timeout(700)
     assert not await pg.locator("#lockscreen").is_visible() and await pg.evaluate("localStorage.getItem('keepwise-lock-v1')") is None, "the right password removes the old passcode"
-    assert await pg.locator("#view h1").inner_text() == "Security" and await pg.locator("form[data-form=lockSet]").count() == 1 and "Set a new passcode" in await pg.inner_text("#toast")
+    assert await pg.locator("#view h1").inner_text() == "Security & privacy" and await pg.locator("form[data-form=lockSet]").count() == 1 and "Set a new passcode" in await pg.inner_text("#toast")
     assert (await state(pg))["expenses"] == spends, "nothing on the phone was touched"
     f = "form[data-form=lockSet] "; await pg.fill(f + "[name=pin]", "1357"); await pg.fill(f + "[name=pin2]", "1357"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(500)
     await pg.reload(); await pg.wait_for_timeout(700); assert await pg.locator("#lockscreen").is_visible()
