@@ -554,7 +554,9 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 /* ---- other income, month close ---- */
 .grid2.md-pick{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) !important}
 .trip-empty h2{margin:0}
-.bank-rows .line{padding:10px 12px;gap:10px}.bank-rows .line .muted{overflow-wrap:anywhere}
+.bank-rows .line{padding:10px 12px;gap:10px}
+.biz-mini{display:grid;grid-template-columns:1fr 104px auto;gap:8px;align-items:center}.biz-mini select{grid-column:1/-1}.biz-mini:has(select[name=cycle]) select{grid-column:auto}.biz-mini[data-form=bizSub]{grid-template-columns:1fr 96px 1fr auto}.biz-lines{max-height:360px}[data-biz-list] .rows .line,[data-biz-subs] .rows .line,[data-biz-shares] .rows .line{padding:10px 12px;gap:10px}.biz-lines .move-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
+@media (max-width:430px){.biz-mini[data-form=bizSub]{grid-template-columns:1fr 1fr}.biz-mini[data-form=bizSub] input[name=name]{grid-column:1/-1}}.bank-rows .line .muted{overflow-wrap:anywhere}
 .place-in svg{flex:none;color:var(--muted)}.place-res{margin-top:6px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;box-shadow:var(--lift)}.place-res[hidden]{display:none}
 .place-opt{display:flex;gap:10px;align-items:flex-start;width:100%;padding:11px 14px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}.place-opt:first-child{border-top:0}.place-opt svg{flex:none;margin-top:2px;color:var(--green)}.place-opt b{display:block;font-weight:600}.place-opt .muted{display:block}.place-note{margin:0;padding:11px 14px}.place-credit{margin:0;padding:6px 14px 8px;font-size:.72rem;text-align:right;border-top:1px solid var(--line)}
 .place-chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;color:var(--green);font-weight:600;font-size:.86rem;text-decoration:none}.place-chip svg{flex:none}.place-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2214,6 +2216,79 @@ function handleReview(kind, id){
 function spaceSwitch(){
   return `<div class="space-switch" role="group" aria-label="Which money"><button type="button" data-space="personal" aria-pressed="${!UI.biz}">Personal</button><button type="button" data-space="business" aria-pressed="${!!UI.biz}">Business <span class="pill gold">Plus</span></button></div>`;
 }
+/* ================= KeepWise Plus: Business space (tester preview) =================
+   Plus is not on sale yet. A hidden tester switch turns it on: tap the "KeepWise Plus" label 7 times.
+   Business money stays on this phone like everything else. */
+const plusOn = () => !!S.plusTester;
+const PLUS_TAP = {n: 0, t: 0};
+const BIZ_COST_CATS = ["Software", "Equipment", "Supplies", "Marketing", "Travel", "Meals", "Fees", "Contractors", "Other"], BIZ_IN_CATS = ["Sales", "Services", "Other"];
+const BIZ = {lines: null, pick: new Set(), file: ""};
+const bizData = () => { if (!S.biz) S.biz = {taxPct: 25, entries: [], subs: [], shares: [], imported: []}; const b = S.biz; ["entries", "subs", "shares", "imported"].forEach(k => b[k] = b[k] || []); if (b.taxPct == null) b.taxPct = 25; return b; };
+const bizShareSrc = id => { const [t, x] = String(id).split(":"); return t === "e" ? (S.expenses || []).find(e => e.id === x) : t === "s" ? (S.subs || []).find(v => v.id === x) : null; };
+const bizShareName = sh => { const it = bizShareSrc(sh.src); return it ? it.name : "Removed item"; };
+const bizShareMonthly = (sh, k) => { const it = bizShareSrc(sh.src); if (!it) return 0; const base = sh.src[0] === "e" ? (+it.amount || 0) : subCostIn(it, k); return r2(base * (+sh.pct || 0) / 100); };
+const bizSubIn = (v, k) => v.cycle === "yr" ? (v.on && annivIn(v.on, k) ? +v.price || 0 : 0) : +v.price || 0;
+function bizMonth(k){ const b = bizData(), es = b.entries.filter(e => inMonth(e.date, k));
+  const inc = r2(es.filter(e => e.kind === "in").reduce((a, e) => a + e.amount, 0)), outE = r2(es.filter(e => e.kind === "out").reduce((a, e) => a + e.amount, 0));
+  const subs = r2(b.subs.reduce((a, v) => a + bizSubIn(v, k), 0)), shares = r2(b.shares.reduce((a, sh) => a + bizShareMonthly(sh, k), 0)), out = r2(outE + subs + shares);
+  return {es, inc, out, subs, shares, outE, profit: r2(inc - out)}; }
+function bizYear(){ const b = bizData(), y = new Date().getFullYear(), nowM = new Date().getMonth(), k = planPeriodNow().key;
+  const es = b.entries.filter(e => e.date && +e.date.slice(0, 4) === y);
+  const inc = r2(es.filter(e => e.kind === "in").reduce((a, e) => a + e.amount, 0)), outE = es.filter(e => e.kind === "out").reduce((a, e) => a + e.amount, 0);
+  const months = nowM + 1, from = x => x.since && +x.since.slice(0, 4) === y ? +x.since.slice(5, 7) - 1 : x.since && +x.since.slice(0, 4) > y ? 99 : 0, live = x => Math.max(0, nowM - from(x) + 1);   // counted only from the month it was added
+  const subs = b.subs.reduce((a, v) => a + (v.cycle === "yr" ? (v.on && +v.on.slice(0, 4) <= y && +v.on.slice(5, 7) - 1 <= nowM && +v.on.slice(5, 7) - 1 >= from(v) ? +v.price || 0 : 0) : (+v.price || 0) * live(v)), 0);
+  const shares = b.shares.reduce((a, sh) => a + bizShareMonthly(sh, k) * live(sh), 0), out = r2(outE + subs + shares);
+  return {inc, out, profit: r2(inc - out), months, es, from}; }
+function bizCsv(){ const b = bizData(), y = new Date().getFullYear(), Y = bizYear(), rows = [["Date", "Type", "Name", "Category", "Amount"]];
+  Y.es.slice().sort((a, c) => a.date.localeCompare(c.date)).forEach(e => rows.push([e.date, e.kind === "in" ? "Income" : "Cost", e.name, e.cat || "", (e.kind === "in" ? e.amount : -e.amount).toFixed(2)]));
+  for (let m = 0; m < Y.months; m++){ const d = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+    b.subs.forEach(v => { if (m < Y.from(v)) return; if (v.cycle === "yr"){ if (v.on && +v.on.slice(5, 7) - 1 === m) rows.push([`${y}-${v.on.slice(5)}`, "Cost", v.name, "Subscription (yearly)", (-(+v.price || 0)).toFixed(2)]); } else rows.push([d, "Cost", v.name, "Subscription (monthly)", (-(+v.price || 0)).toFixed(2)]); });
+    b.shares.forEach(sh => m >= Y.from(sh) && rows.push([d, "Cost", `${bizShareName(sh)} (${sh.pct}% business)`, "Business share", (-bizShareMonthly(sh, planPeriodNow().key)).toFixed(2)])); }
+  rows.push([], ["", "", "Total income", "", Y.inc.toFixed(2)], ["", "", "Total costs", "", (-Y.out).toFixed(2)], ["", "", "Profit", "", Y.profit.toFixed(2)], ["", "", `Tax set-aside at ${b.taxPct}%`, "", r2(Math.max(0, Y.profit) * b.taxPct / 100).toFixed(2)]);
+  return rows.map(r => r.map(c => csvCell(c == null ? "" : String(c))).join(",")).join("\n") + "\n"; }
+async function bizRead(file){
+  busy("Reading your statement");
+  try { await readStatementFile(file); const tx = (STMT.tx || []).slice(); STMT.tx = null; const done = new Set(bizData().imported);
+    BIZ.lines = tx.map(t => { const date = isoOf(t.date), key = `${date}|${t.desc}|${t.amt}`; return {key, date, desc: String(t.desc).slice(0, 80), amt: +t.amt}; }).filter(l => !done.has(l.key)).sort((a, c) => c.date.localeCompare(a.date));
+    BIZ.pick = new Set(); BIZ.file = file.name || "statement"; busy(false); render(true);
+    const box = view.querySelector("[data-biz-import-card]"); if (box) box.scrollIntoView({block: "start"}); }
+  catch(err){ busy(false); toast(err && err.message ? err.message : "Couldn't read that file."); }
+}
+function bizSpace(){
+  const b = bizData(), k = planPeriodNow().key, M = bizMonth(k), Y = bizYear(), C = compute();
+  const taxM = r2(Math.max(0, M.profit) * b.taxPct / 100), taxY = r2(Math.max(0, Y.profit) * b.taxPct / 100), d = UI.bizDraft || {kind: "out"};
+  const catOpts = (list, v) => list.map(c => `<option ${c === v ? "selected" : ""}>${c}</option>`).join("");
+  const shareable = [...(S.expenses || []).map(e => ["e:" + e.id, e.name]), ...(S.subs || []).filter(v => v.keep !== "drop").map(v => ["s:" + v.id, v.name])].filter(([id]) => !b.shares.some(sh => sh.src === id));
+  return `<section class="hero biz-hero" data-biz-hero><div class="inline" style="justify-content:space-between"><p class="muted small">${esc(C.planMonth)} · Business</p><span class="pill gold" data-plus-tap>Plus preview</span></div>
+    <div class="big tnum" data-biz-profit>${fmt(M.profit)}</div><p class="muted">${fmt(M.inc)} came in, ${fmt(M.out)} went out.</p></section>
+  <section class="card" data-biz-tax><h2 class="h-info">Tax set-aside${infoBtn("bizTax", "About the tax set-aside")}</h2>${infoTip("bizTax", "A share of your business profit to keep aside for tax, so tax time is never a surprise. Pick the rate your accountant suggests; KeepWise only does the math, it is not tax advice.")}
+    <div class="inline" style="gap:10px;flex-wrap:nowrap"><span class="small">Keep aside</span><span class="money-in" style="max-width:110px"><input data-biz-taxpct inputmode="decimal" value="${b.taxPct}" aria-label="Tax set-aside percent"><em>%</em></span><span class="small">of profit</span></div>
+    <p data-biz-taxline>That is <b>${fmt(taxM)}</b> this month and <b>${fmt(taxY)}</b> so far this year.</p>
+    <div class="biz-bar"><span style="width:${Y.inc > 0 ? Math.min(100, Math.round(Math.max(0, Y.profit) / Y.inc * 100)) : 0}%"></span></div><p class="muted small">Profit so far this year: ${fmt(Y.profit)} from ${fmt(Y.inc)} in.</p></section>
+  <section class="card" data-biz-add><h2>Add business money</h2>
+    <form data-form="bizEntry" style="display:flex;flex-direction:column;gap:10px">
+      <div class="seg sub-seg biz-kind" role="group" aria-label="Money in or a cost" style="grid-template-columns:1fr 1fr"><button type="button" data-biz-kind="out" aria-pressed="${d.kind !== "in"}">A cost</button><button type="button" data-biz-kind="in" aria-pressed="${d.kind === "in"}">Money in</button></div>
+      <label class="field"><span>${d.kind === "in" ? "From" : "What for"}</span><input name="name" maxlength="60" autocomplete="off" placeholder="${d.kind === "in" ? "e.g. Etsy payout" : "e.g. Candle jars"}" enterkeyhint="next"></label>
+      <div class="grid2"><label class="field"><span>Amount</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" placeholder="0" enterkeyhint="done"></span></label>
+        <label class="field"><span>Category</span><select name="cat">${catOpts(d.kind === "in" ? BIZ_IN_CATS : BIZ_COST_CATS, d.kind === "in" ? "Sales" : "Supplies")}</select></label></div>
+      <label class="field"><span>Date</span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}"></label>
+      <input type="hidden" name="kind" value="${d.kind === "in" ? "in" : "out"}"><button class="btn primary" type="submit">${d.kind === "in" ? "Add money in" : "Add cost"}</button></form></section>
+  <section class="card" data-biz-list><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>This month</h2><span class="muted small tnum">${M.es.length} entr${M.es.length === 1 ? "y" : "ies"}</span></div>
+    ${M.es.length ? `<div class="rows">${M.es.slice().sort((a, c) => c.date.localeCompare(a.date)).map(e => `<div class="line" data-biz-entry="${e.id}"><div style="min-width:0"><div>${esc(e.name)}</div><div class="muted small">${shortDate(e.date)} · ${esc(e.cat || "")}</div></div><div class="inline"><span class="tnum ${e.kind === "in" ? "good" : ""}">${e.kind === "in" ? "+" : ""}${fmt(e.amount)}</span><button class="link danger-link small" type="button" data-biz-del aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Nothing yet this month. Add a sale or a cost above, or sort a statement below.</p>`}
+    ${M.subs || M.shares ? `<p class="muted small">Also counted: ${M.subs ? `${fmt(M.subs)} in subscriptions` : ""}${M.subs && M.shares ? " and " : ""}${M.shares ? `${fmt(M.shares)} as the business share of personal bills` : ""}.</p>` : ""}</section>
+  <section class="card" data-biz-subs><h2>Business subscriptions</h2>
+    ${b.subs.length ? `<div class="rows">${b.subs.map(v => `<div class="line" data-biz-sub="${v.id}"><div><div>${esc(v.name)}</div><div class="muted small">${v.cycle === "yr" ? `Yearly${v.on ? `, ${dayMonth(isoDate(v.on))}` : ""}` : "Monthly"}</div></div><div class="inline"><span class="tnum">${fmt(v.price)}${v.cycle === "yr" ? "/yr" : "/mo"}</span><button class="link danger-link small" type="button" data-biz-sub-del aria-label="Remove ${esc(v.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Software, hosting, tools: anything the business pays for on a schedule.</p>`}
+    <form data-form="bizSub" class="biz-mini"><input name="name" maxlength="40" placeholder="e.g. Canva Pro" aria-label="Subscription name" autocomplete="off"><span class="money-in"><em>${esc(sym())}</em><input name="price" inputmode="decimal" placeholder="0" aria-label="Price"></span><select name="cycle" aria-label="How often"><option value="mo">Monthly</option><option value="yr">Yearly</option></select><button class="btn small" type="submit">Add</button></form></section>
+  <section class="card" data-biz-shares><h2 class="h-info">Business share of personal bills${infoBtn("bizShare", "About business shares")}</h2>${infoTip("bizShare", "If you use your phone, internet or a subscription partly for the business, count that share as a business cost. Your personal month is not changed.")}
+    ${b.shares.length ? `<div class="rows">${b.shares.map(sh => `<div class="line" data-biz-share="${sh.id}"><div><div>${esc(bizShareName(sh))}</div><div class="muted small">${sh.pct}% business</div></div><div class="inline"><span class="tnum">${fmt(bizShareMonthly(sh, k))}/mo</span><button class="link danger-link small" type="button" data-biz-share-del aria-label="Remove ${esc(bizShareName(sh))}">Remove</button></div></div>`).join("")}</div>` : ""}
+    ${shareable.length ? `<form data-form="bizShare" class="biz-mini"><select name="src" aria-label="Personal bill">${shareable.map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join("")}</select><span class="money-in"><input name="pct" inputmode="numeric" placeholder="50" aria-label="Business percent"><em>%</em></span><button class="btn small" type="submit">Add</button></form>` : `<p class="muted small">Add bills and subscriptions to your personal plan first; then you can count part of them here.</p>`}</section>
+  <section class="card" data-biz-import-card><h2 class="h-info">Sort a statement${infoBtn("bizImport", "About sorting a statement")}</h2>${infoTip("bizImport", "Choose a CSV, PDF or photo of a statement. Tick the lines that were business: money in becomes business income, money out a business cost. Read on this phone only.")}
+    ${BIZ.lines ? (BIZ.lines.length ? `<p class="muted small">${esc(BIZ.file)}: tick what was business.</p><div class="st-tx biz-lines">${BIZ.lines.map((l, i) => `<label class="move-row"><input type="checkbox" data-biz-pick="${i}" ${BIZ.pick.has(i) ? "checked" : ""}><span style="flex:1;min-width:0"><span>${esc(l.desc)}</span><span class="muted small" style="display:block">${shortDate(l.date)}</span></span><span class="tnum ${l.amt > 0 ? "good" : ""}">${l.amt > 0 ? "+" : ""}${fmt(Math.abs(l.amt))}</span></label>`).join("")}</div>
+      <div class="grid2"><button class="btn" type="button" data-biz-import-cancel>Cancel</button><button class="btn primary" type="button" data-biz-import-add ${BIZ.pick.size ? "" : "disabled"}>Add ${BIZ.pick.size} to Business</button></div>` : `<p class="muted small">Every line in that statement is already in Business.</p><button class="btn" type="button" data-biz-import-cancel>Done</button>`)
+      : `<button class="btn" type="button" data-biz-import>Choose a statement</button>`}</section>
+  <section class="card" data-biz-export-card><h2>For your accountant</h2><p class="muted small">Everything for ${new Date().getFullYear()} so far: income, costs, subscriptions, business shares and the totals, as a spreadsheet file.</p><button class="btn" type="button" data-biz-export>Export ${new Date().getFullYear()} as CSV</button></section>
+  <p class="muted small" style="text-align:center">You are testing KeepWise Plus. <button class="link small" type="button" data-plus-off>Turn off the preview</button></p>`;
+}
 function bizPreview(){
   const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
   const row = (n, sub, v) => `<li><div><b>${n}</b><span class="muted small">${sub}</span></div><span class="tnum">${v}</span></li>`;
@@ -2225,7 +2300,7 @@ function bizPreview(){
       <section class="card"><h2>Sorted from your statement</h2><p>18 transactions marked as business, 94 as personal.</p><p class="muted small">Export the year for your accountant as a spreadsheet.</p></section>
     </div>
     <section class="biz-panel card" role="dialog" aria-labelledby="biz-h">
-      <span class="pill gold" style="align-self:flex-start">KeepWise Plus</span>
+      <span class="pill gold" style="align-self:flex-start" data-plus-tap>KeepWise Plus</span>
       <h2 id="biz-h">Keep business and personal money apart</h2>
       <ul class="biz-feats">
         <li><b>A separate Business Account</b> with its own income, costs and subscriptions.</li>
@@ -2274,7 +2349,7 @@ function monthFind(sel){
   UI.mseg = was; render(false); return null;
 }
 V.month = () => {
-  if (UI.biz) return spaceSwitch() + bizPreview();
+  if (UI.biz) return spaceSwitch() + (plusOn() ? bizSpace() : bizPreview());
   const C = compute(), tabs = monthTabs(), on = k => !tabs || (UI.mseg || "now") === k;
   const top = `${spaceSwitch()}${S.hideNote || TOUR.on ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on the Plan tab, or import a bank statement. Everything stays on this device." : "Add your other bills on the Plan tab and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
@@ -5510,6 +5585,13 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("main").addEventListener("scroll", segStick, {passive: true});
+// The hidden Plus tester switch: tap the "KeepWise Plus" label 7 times in a row.
+document.addEventListener("click", e => { const t = e.target.closest && e.target.closest("[data-plus-tap]"); if (!t) return;
+  const now = Date.now(); PLUS_TAP.n = now - PLUS_TAP.t < 1500 ? PLUS_TAP.n + 1 : 1; PLUS_TAP.t = now;
+  if (PLUS_TAP.n >= 7){ PLUS_TAP.n = 0; S.plusTester = !S.plusTester; save(); render(false); toast(S.plusTester ? "Plus preview is on. Business is ready to try." : "Plus preview is off."); } });
+document.addEventListener("change", e => { const t = e.target;
+  if (t.matches && t.matches("[data-biz-taxpct]")){ const v = Math.max(0, Math.min(60, Math.round(numv(t.value) * 10) / 10 || 0)); bizData().taxPct = v; save(); render(true); return; }
+  if (t.matches && t.matches("[data-biz-pick]")){ const i = +t.dataset.bizPick; if (t.checked) BIZ.pick.add(i); else BIZ.pick.delete(i); const btn = document.querySelector("[data-biz-import-add]"); if (btn){ btn.disabled = !BIZ.pick.size; btn.textContent = `Add ${BIZ.pick.size} to Business`; } } });
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
 $("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
@@ -5770,7 +5852,7 @@ view.addEventListener("click", async e => {
     catch(err){ toast("That did not work. Your passcode still unlocks KeepWise."); }
     return; }
   if (b.hasAttribute("data-pdf-cancel")){ UI.pdfLock = null; render(false); return; }
-  if (b.hasAttribute("data-import-open")){ $("stmt").click(); return; }
+  if (b.hasAttribute("data-import-open")){ UI.bizPickFile = false; $("stmt").click(); return; }
   if (b.hasAttribute("data-bank-add")){ UI.bankAdd = true; BANK.err = ""; render(true); const i = view.querySelector("[data-form=bank] [name=token]"); if (i) i.focus(); return; }
   if (b.hasAttribute("data-bank-cancel")){ UI.bankAdd = false; BANK.err = ""; render(true); return; }
   if (b.hasAttribute("data-bank-refresh")){ if (BANK.busy) return; BANK.busy = true; render(true); await bankFetch(true); BANK.busy = false; render(true); if (!BANK.err) toast("Your bank is up to date."); return; }
@@ -5894,6 +5976,17 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-moments")){ UI.moments = true; render(false); return; }
   if (b.hasAttribute("data-moments-close")){ UI.moments = false; render(false); return; }
   if (b.dataset.space){ UI.biz = b.dataset.space === "business"; render(false); return; }
+  if (b.hasAttribute("data-plus-off")){ S.plusTester = false; save(); render(false); toast("Plus preview is off."); return; }
+  if (b.dataset.bizKind){ UI.bizDraft = {kind: b.dataset.bizKind}; render(true); return; }
+  if (b.hasAttribute("data-biz-del")){ const id = b.closest("[data-biz-entry]").dataset.bizEntry, u = undoable(); bizData().entries = bizData().entries.filter(e => e.id !== id); save(); render(true); toast("Removed.", u); return; }
+  if (b.hasAttribute("data-biz-sub-del")){ const id = b.closest("[data-biz-sub]").dataset.bizSub, u = undoable(); bizData().subs = bizData().subs.filter(v => v.id !== id); save(); render(true); toast("Removed.", u); return; }
+  if (b.hasAttribute("data-biz-share-del")){ const id = b.closest("[data-biz-share]").dataset.bizShare, u = undoable(); bizData().shares = bizData().shares.filter(v => v.id !== id); save(); render(true); toast("Removed.", u); return; }
+  if (b.hasAttribute("data-biz-import")){ UI.bizPickFile = true; $("stmt").click(); return; }
+  if (b.hasAttribute("data-biz-import-cancel")){ BIZ.lines = null; BIZ.pick = new Set(); render(true); return; }
+  if (b.hasAttribute("data-biz-import-add")){ const bd = bizData(), u = undoable(), picked = [...BIZ.pick].map(i => BIZ.lines[i]).filter(Boolean);
+    picked.forEach(l => { bd.entries.push({id: uid(), kind: l.amt > 0 ? "in" : "out", name: l.desc.slice(0, 60), amount: r2(Math.abs(l.amt)), date: l.date, cat: l.amt > 0 ? "Sales" : "From statement"}); bd.imported.push(l.key); });
+    bd.imported = bd.imported.slice(-3000); BIZ.lines = null; BIZ.pick = new Set(); save(); render(true); toast(`Added ${picked.length} to Business.`, u); return; }
+  if (b.hasAttribute("data-biz-export")){ const ok = await saveFile(new Blob([bizCsv()], {type: "text/csv"}), `keepwise-business-${new Date().getFullYear()}.csv`); if (ok) toast("Saved. Send the file to your accountant."); return; }
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
   if (b.hasAttribute("data-receipt-close")){ UI.receiptInfo = false; render(true); return; }
   const loanRow = b.closest("[data-loan]"), loanX = loanRow && loanList().find(x => x.id === loanRow.dataset.loan);
@@ -6048,6 +6141,17 @@ view.addEventListener("submit", async e => {
     if (!lines.length){ toast("Type what you spent, like “uber 20”."); return; }
     const bad = await convertLines(lines); if (bad){ toast(FX_FAIL(bad)); return; }
     tripAddSpend(t, lines); save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(tripSpendReply(t, lines)); return; }
+  if (kind === "bizEntry"){ const name = String(fd.get("name") || "").trim().slice(0, 60), amount = numv(fd.get("amount")), date = String(fd.get("date") || isoDaysAgo(0)), k2 = fd.get("kind") === "in" ? "in" : "out";
+    if (!name){ toast(k2 === "in" ? "Say where the money came from." : "Say what the cost was for."); f.querySelector("[name=name]").focus(); return; }
+    if (!(amount > 0)){ toast("Enter the amount."); f.querySelector("[name=amount]").focus(); return; }
+    const u = undoable(); bizData().entries.push({id: uid(), kind: k2, name, amount: r2(amount), date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0), cat: String(fd.get("cat") || "Other")});
+    save(); render(true); toast(k2 === "in" ? `Added ${fmt(amount)} in.` : `Added a ${fmt(amount)} cost.`, u); return; }
+  if (kind === "bizSub"){ const name = String(fd.get("name") || "").trim().slice(0, 40), price = numv(fd.get("price")), cycle = fd.get("cycle") === "yr" ? "yr" : "mo";
+    if (!name || !(price > 0)){ toast("Enter the name and the price."); return; }
+    const u = undoable(); bizData().subs.push({id: uid(), name, price: r2(price), cycle, since: isoDaysAgo(0), ...(cycle === "yr" ? {on: isoDaysAgo(0)} : {})}); save(); render(true); toast(`Added ${name}.`, u); return; }
+  if (kind === "bizShare"){ const src = String(fd.get("src") || ""), pct = Math.round(numv(fd.get("pct")));
+    if (!bizShareSrc(src)){ toast("Pick a bill."); return; } if (!(pct > 0 && pct <= 100)){ toast("Enter a share between 1 and 100%."); return; }
+    const u = undoable(); bizData().shares.push({id: uid(), src, pct, since: isoDaysAgo(0)}); save(); render(true); toast(`${pct}% of ${bizShareName({src})} now counts for the business.`, u); return; }
   if (kind === "bank"){ if (BANK.busy) return; const tok = String(fd.get("token") || ""); BANK.busy = true; BANK.err = ""; render(true);
     const ok = await bankConnect(tok); BANK.busy = false; if (ok || bankOn()){ UI.bankAdd = false; } render(true);
     if (ok){ const n = (S.bank.accounts || []).length; toast(n ? `Connected. ${n} account${n === 1 ? "" : "s"} found.` : "Connected."); } else if (!bankOn()) { const i = view.querySelector("[data-form=bank] [name=token]"); if (i){ i.value = tok; } } return; }
@@ -6160,7 +6264,7 @@ function addNames(names){
     if (!old){ S.people.push({id:uid(), name:n}); added++; } else if (old.archived){ old.archived = false; added++; } });
   save(); render(true); toast(added ? `Added ${added} ${added === 1 ? "person" : "people"}.` : "Everyone there is already on your list.");
 }
-$("stmt").addEventListener("change", e => { const file = e.target.files[0]; e.target.value = ""; if (file) openStatement(file); });
+$("stmt").addEventListener("change", e => { const file = e.target.files[0]; e.target.value = ""; const biz = UI.bizPickFile; UI.bizPickFile = false; if (!file) return; if (biz && UI.biz && plusOn()) bizRead(file); else openStatement(file); });
 // Some banks lock the PDF with a password. KeepWise asks for it, uses it once on this phone to open the file, and keeps
 // neither the password nor the file.
 async function openStatement(file, password){
