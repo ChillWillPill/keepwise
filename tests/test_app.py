@@ -2093,6 +2093,38 @@ async def giving_is_a_line_you_name_yourself(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def the_part_switch_stays_in_reach_while_scrolling(ctx):
+    for w, h, scheme in [(375, 667, "light"), (320, 568, "dark"), (430, 932, "light")]:
+        pg = await open_app(ctx, month_tabs=True, w=w, h=h, scheme=scheme)
+        async def check(where):
+            await pg.evaluate("document.getElementById('main').scrollTop = 0"); await pg.wait_for_timeout(120)
+            g = pg.locator(".view>.seg.sub-seg"); assert await g.count() == 1, where
+            assert "stuck" not in (await g.get_attribute("class")), f"{where}: no shadow at the top"
+            top0 = (await g.bounding_box())["y"]
+            await pg.evaluate("document.getElementById('main').scrollTop = 900"); await pg.wait_for_timeout(150)
+            scrolled = await pg.evaluate("document.getElementById('main').scrollTop")
+            if scrolled < 60: return   # a page shorter than the screen has nothing to pin
+            box = await g.bounding_box(); mtop = await pg.evaluate("document.getElementById('main').getBoundingClientRect().top")
+            assert abs(box["y"] - (mtop + 8)) <= 1.5, f"{where} {w}: switch at {box['y']} not pinned under the header at {mtop + 8}"
+            assert "stuck" in (await g.get_attribute("class")), f"{where}: pinned switch shows its shadow"
+            # nothing scrolling underneath shows through it, and every button can still be tapped
+            for b in await g.locator("button").all():
+                bb = await b.bounding_box(); hit = await pg.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return !!(e && e.closest('.seg.sub-seg')); }", [bb["x"] + bb["width"] / 2, bb["y"] + bb["height"] / 2])
+                assert hit, f"{where}: a button of the pinned switch is covered"
+            # switching part from down the page starts the new part at its top
+            btns = g.locator("button"); n = await btns.count()
+            for i in range(n):
+                if await btns.nth(i).get_attribute("aria-pressed") != "true": await btns.nth(i).click(); break
+            await pg.wait_for_timeout(200)
+            if where != "subs": assert await pg.evaluate("document.getElementById('main').scrollTop") == 0, f"{where}: new part opens at its top"
+        await check("month")
+        await pg.click("[data-tab=month]"); await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(150); await check("month budget")
+        await tab(pg, "subs"); await check("subs")
+        await tab(pg, "plan"); await check("plan")
+        assert not pg.errors, pg.errors
+        await pg.close()
+
+@test
 async def a_trip_or_an_event_can_be_placed_on_the_map(ctx):
     pg = await open_app(ctx, month_tabs=True); await pg.click("button:has-text('Budget')"); await pg.wait_for_timeout(150)
     await pg.click("[data-trip-add]"); f = pg.locator("form[data-form=trip]")
