@@ -2058,6 +2058,15 @@ async def giving_is_a_line_you_name_yourself(ctx):
     g = (await state(pg))["giving"]; assert [(x["name"], x["cause"], x["every"], x["amount"]) for x in g] == [("Local food bank", "relief", "wk", 12), ("", "children", "yr", 120)], g
     # yearly giving is given once: in full in its month (today, unless another date is picked), never as a monthly share
     yr = await pg.locator("[data-give]", has_text="$120").inner_text(); assert "/yr" in yr and "Given this month" in yr and "/mo" not in yr, yr
+    on = [x for x in (await state(pg))["giving"] if x["every"] == "yr"][0]["on"]; assert on == "2026-10-08", on   # today, so this year
+    # picking a day earlier in this month still counts this month; a month already gone means next year
+    await pg.locator("[data-give]", has_text="$120").locator("[data-give-edit]").click(); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=give]"); assert await f.locator("input[type=date]").count() == 0
+    await f.locator("[name=onM]").select_option("3"); await f.locator("[name=onD]").select_option("1"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    on = [x for x in (await state(pg))["giving"] if x["every"] == "yr"][0]["on"]; assert on == "2027-03-01", on
+    await pg.locator("[data-give]", has_text="$120").locator("[data-give-edit]").click(); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=give]"); await f.locator("[name=onM]").select_option("10"); await f.locator("[name=onD]").select_option("2"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    on = [x for x in (await state(pg))["giving"] if x["every"] == "yr"][0]["on"]; assert on == "2026-10-02", on
     assert "this month" in await text(pg, "[data-giving-now]")
     # weekly giving comes out at its monthly cost, yearly in full this month, both under Miscellaneous
     await tab(pg, "month"); assert abs(k0 - money(await kept()) - 172) < 0.01, (k0, await kept())
@@ -2068,6 +2077,31 @@ async def giving_is_a_line_you_name_yourself(ctx):
     assert "$24/mo" in await pg.locator("[data-give]", has_text="Local food bank").inner_text()
     await pg.locator("[data-give]", has_text="Local food bank").locator("[data-give-edit]").click(); await pg.wait_for_timeout(100); await pg.click("form[data-form=give] [data-give-del]"); await pg.wait_for_timeout(200)
     assert len((await state(pg))["giving"]) == 1; await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(200); assert len((await state(pg))["giving"]) == 2
+    assert not pg.errors, pg.errors
+
+@test
+async def yearly_giving_shows_coming_up_reminds_and_asks_after(ctx):
+    pg = await open_at(ctx, (2026, 10, 8, 9, 0))
+    async def setgive(on):
+        await pg.evaluate("""(on) => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+          s.giving = [{id: 'gy', name: 'Food bank', cause: 'relief', amount: 300, every: 'yr', on}]; delete s.yrAns; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""", on)
+        await pg.reload(); await pg.wait_for_timeout(500)
+    # three days ahead: in Coming up and under the bell
+    await setgive("2026-10-11")
+    up = await text(pg, "[data-out=comingUp]"); assert "Food bank" in up and "yearly giving" in up and "$300" in up, up
+    await pg.click("#bell"); await pg.wait_for_timeout(200); assert "Food bank is due in 3 days" in await pg.inner_text("#view"); await pg.click("[data-close-inbox]"); await pg.wait_for_timeout(150)
+    # the day after: asked once, and the answer is kept until next year
+    await setgive("2026-10-07")
+    if await pg.locator("[data-need-open]").count(): await pg.click("[data-need-open]"); await pg.wait_for_timeout(150)
+    for _ in range(4):
+        if await pg.locator("[data-yr-due='g:gy']").count(): break
+        if await pg.locator("[data-need-next]").count(): await pg.click("[data-need-next]"); await pg.wait_for_timeout(150)
+    row = pg.locator("[data-yr-due='g:gy']"); assert "Did you give to Food bank?" in await row.inner_text()
+    await row.locator("[data-yr-yes]").click(); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-yr-due='g:gy']").count() == 0 and "Next one is Oct 7, 2027" in await pg.inner_text("#toast")
+    # a date set for the first time is never asked about before it begins
+    await setgive("2027-10-07")
+    assert await pg.locator("[data-yr-due='g:gy']").count() == 0
     assert not pg.errors, pg.errors
 
 @test
@@ -4264,7 +4298,8 @@ async def loans_section_counts_and_finishes(ctx):
     card = [l for l in (await state(pg))["loans"] if l["kind"] == "card"][0]; assert card["card"] == "Mastercard" and card["fee"] == 120 and card["feeOn"]
     # with the fee charged in another month, only the payment counts now
     await pg.locator("[data-loan]").last.locator("[data-loan-edit]").click(); await pg.wait_for_timeout(120)
-    await pg.fill("form[data-form=loan] [name=feeOn]", "2026-03-15"); await pg.locator("form[data-form=loan] button[type=submit]").click(); await pg.wait_for_timeout(200)
+    assert await pg.locator("form[data-form=loan] [name=feeOnM]").count() == 1 and await pg.locator("form[data-form=loan] input[type=date][name=feeOn]").count() == 0, "a yearly date is a month and a day"
+    await pg.select_option("form[data-form=loan] [name=feeOnM]", "3"); await pg.select_option("form[data-form=loan] [name=feeOnD]", "15"); await pg.locator("form[data-form=loan] button[type=submit]").click(); await pg.wait_for_timeout(200)
     assert "$100 this month" in await text(pg, "[data-out=loans]")
     # Other lets you type the card's own name, and it comes back when you edit
     await pg.locator("[data-loan]").last.locator("[data-loan-edit]").click(); await pg.wait_for_timeout(120); f = pg.locator("form[data-form=loan]")

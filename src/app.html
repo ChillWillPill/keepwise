@@ -522,6 +522,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .swap-use[aria-pressed="true"]{background:var(--green-soft);color:var(--green);border-color:transparent}
 .swap.on{background:color-mix(in srgb,var(--green-soft) 35%,transparent)}
 /* ---- other income, month close ---- */
+.grid2.md-pick{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) !important}
 .trip-empty h2{margin:0}
 .trip-mini{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .trip-mini-t{flex:1;min-width:0;display:flex;flex-direction:column}.trip-mini-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.trip-mini svg:last-child{flex:none;opacity:.6}.trip-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -2069,7 +2070,7 @@ function reviewPick(){
 }
 // Needs you: everything KeepWise is waiting on you for, in one card and one kind of question at a time. Money that was
 // due comes first, then bills you pay yourself, then the quick check on a subscription. Next steps through them.
-function needGroups(){ return [["arrived", OUT.arrived()], ["bills", OUT.billsDue()], ["review", OUT.reviewCard()]].filter(g => g[1]); }
+function needGroups(){ return [["arrived", OUT.arrived()], ["bills", OUT.billsDue()], ["yearly", OUT.yearlyDue()], ["review", OUT.reviewCard()]].filter(g => g[1]); }
 OUT.needs = () => { const g = needGroups(); if (!g.length) return "";
   const i = Math.max(0, g.findIndex(x => x[0] === UI.needKind)), cur = g[i];
   if (monthTabs() && !UI.needOpen){ const t = ((cur[1].match(/<h3[^>]*>([\s\S]*?)<\/h3>/) || [])[1] || "Something to confirm").replace(/<[^>]+>/g, "").trim();
@@ -3057,7 +3058,7 @@ function notifications(){
 const surveyDue = x => x.keep !== "drop" && !isOurs(x) && !(x.reviewedAt && x.reviewedAt >= isoDaysAgo(20));
 // Take someone to the exact card a note or a notification is about, and mark it for a moment so the eye finds it.
 function goTo(tabName, sel){
-  if (sel && tabName === "month") UI.needKind = /data-arrive/.test(sel) ? "arrived" : /data-bill-due/.test(sel) ? "bills" : UI.needKind;   // bring the right question to the front
+  if (sel && tabName === "month") UI.needKind = /data-arrive/.test(sel) ? "arrived" : /data-bill-due/.test(sel) ? "bills" : /data-yr-due/.test(sel) ? "yearly" : UI.needKind;   // bring the right question to the front
   UI.find = false; UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; S.tab = tabName; save(); render(false);
   const el = sel && (monthFind(sel) || planFind(sel) || view.querySelector(sel)), m = $("main"); if (!el) return false;
   m.scrollTop += el.getBoundingClientRect().top - m.getBoundingClientRect().top - 16;
@@ -3077,6 +3078,8 @@ function localNotes(){
   (S.trips || []).filter(t => tripState(t) === "ended").forEach(t => add(`t:${t.id}:${t.end}`, isEvent(t) ? `${t.name} is over` : `Your ${t.name} trip is over`, `You spent ${fmt(tripTotal(t))}. Choose whether it counts in this month or stays separate.`, "month", `[data-trip="${t.id}"]`));
   const C = compute(); if (C.flagged.length) add(`f:${C.planKey}:${C.flagged.length}`, `${C.flagged.length} subscription${C.flagged.length === 1 ? " looks" : "s look"} unused`, `Dropping ${C.flagged.length === 1 ? "it" : "them"} would keep ${subsKeep(C.flagged)}.`, "subs", `[data-sub="${C.flagged[0].id}"]`);
   billsSoon(3).forEach(v => { const n = daysUntil(v.d); add(`bd:${v.e.id}:${isoOf(v.d)}`, `${v.e.name} is due ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `${fmt(v.e.amount)} on ${dayMonth(v.d)}. You pay this one yourself.`, "plan", `[data-exp="${v.e.id}"]`); });
+  yearlySoon(3).forEach(v => { const n = daysUntil(v.d); add(`yd:${v.x.key}:${isoOf(v.d)}`, `${v.x.name} is due ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `${fmt(v.x.amount)} on ${dayMonth(v.d)}. It comes once a year.`, v.x.go[0], v.x.go[1]); });
+  yearlyDue().forEach(v => add(`ya:${v.x.key}:${isoOf(v.date)}`, YR_ASK[v.x.kind](v.x.name), `${fmt(v.x.amount)} was due ${dayMonth(v.date)}.`, "month", `[data-yr-due="${v.x.key}"]`));
   billsDue().forEach(v => add(`b:${v.e.id}:${isoOf(v.date)}`, `Did you pay ${v.e.name}?`, `${fmt(v.e.amount)} was due ${dayMonth(v.date)}.`, "month", `[data-bill-due="${v.e.id}"]`));
   (S.loans || []).filter(loanNeedsDetails).forEach(l => add(`ld:${l.id}`, `Finish the details for ${l.name || loanKind(l.kind)}`, "Add the amount left or the end date, so KeepWise can show when it ends and your statement is complete.", "plan", `[data-loan="${l.id}"]`, null, l.id));
   (S.loans || []).filter(l => l.end && !loanDone(l)).forEach(l => { const f = loanFinish(l), n = f ? daysUntil(f.date) : 99; if (n >= 0 && n <= 30) add(`l:${l.id}:${l.end}`, `${l.name || loanKind(l.kind)} ends ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `After that, ${fmt(loanMonthly(l))} a month stays with you.`, "plan", `[data-loan="${l.id}"]`); });
@@ -3356,6 +3359,8 @@ OUT.comingUp = () => {
     items.push({d, o: 0, html: `<div class="up-row${drop ? " drop" : ""}">${dateCell(d)}
         <div class="up-main"><div class="name">${esc(s.name)}</div><div class="small ${drop ? "bad" : "muted"}">${drop ? `You chose to drop it. Cancel before ${n === 0 ? "today ends" : "it renews"}.` : whenLabel(n)}</div></div>
         <div class="tnum name">${fmt(s.price)}</div></div>`}); });
+  yearlySoon(7).forEach(({x, d}) => items.push({d, o: 1, html: `<div class="up-row" data-up-yearly="${esc(x.key)}">${dateCell(d)}
+        <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · ${x.kind === "giving" ? "yearly giving" : x.kind === "fee" ? "once a year" : "yearly payment"}</div></div><div class="tnum name">${fmt(x.amount)}</div></div>`}));
   billsSoon(7).forEach(({e, d}) => items.push({d, o: 1, html: `<div class="up-row" data-up-bill="${e.id}">${dateCell(d)}
         <div class="up-main"><div class="name">${esc(e.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · you pay this yourself</div></div><div class="tnum name">${fmt(e.amount)}</div></div>`}));
   (payOn() ? paydaysBetween(t0, t7) : []).filter(d => !((S.payGot || "") >= isoOf(d))).forEach(d => items.push({d, o: 2, html: `<div class="up-row in">${dateCell(d)}
@@ -4206,6 +4211,26 @@ function billsDue(){ return S.expenses.filter(e => e.due).map(e => ({e, date: bi
 const billsSoon = days => S.expenses.filter(e => e.due).map(e => ({e, d: billNextDue(e)})).filter(v => v.d && daysUntil(v.d) <= days && !((v.e.ans || "") >= isoOf(v.d))).sort((a, b) => a.d - b.d);
 function billTag(e){ if (!e.due) return ""; const d = billLastDue(e, 27); if (!d || e.ans !== isoOf(d)) return "";
   return e.ansPaid ? `<span class="pill ok" data-bill-state style="align-self:flex-start">Paid for ${esc(dayMonth(d))}</span>` : `<span class="inline" data-bill-state style="gap:10px"><span class="pill gold">Not paid yet</span><button class="link small" type="button" data-bill-mark>Mark as paid</button></span>`; }
+// Things paid once a year (yearly giving, a loan paid yearly, a card's yearly fee) show in Coming up the week before,
+// get a heads-up under the bell, and from the day after KeepWise asks once whether it was paid. No answer: dropped after a week.
+function yearlyItems(){
+  const out = [];
+  (S.giving || []).filter(g => g.every === "yr" && g.on).forEach(g => out.push({key: "g:" + g.id, name: g.name || giveCause(g.cause), kind: "giving", amount: +g.amount || 0, on: g.on, go: ["plan", `[data-give="${g.id}"]`]}));
+  (S.loans || []).filter(l => !loanDone(l)).forEach(l => {
+    if (l.every === "yr" && l.on) out.push({key: "l:" + l.id, name: l.name || loanKind(l.kind), kind: "loan", amount: +l.pay || 0, on: l.on, go: ["plan", `[data-loan="${l.id}"]`]});
+    if (l.kind === "card" && +l.fee > 0 && l.feeOn) out.push({key: "f:" + l.id, name: `${l.name || l.card || "Card"} yearly fee`, kind: "fee", amount: +l.fee, on: l.feeOn, go: ["plan", `[data-loan="${l.id}"]`]}); });
+  return out;
+}
+const yrMatch = (on, d) => { const [, m, dd] = on.split("-").map(Number); return d.getMonth() === m - 1 && d.getDate() === Math.min(dd, daysInMonth(d.getFullYear(), m - 1)); };
+const yrAns = k => (S.yrAns || {})[k] || "";
+const yearlySoon = days => yearlyItems().map(x => ({x, d: nextAnniv(x.on)})).filter(v => v.d && daysUntil(v.d) <= days && !(yrAns(v.x.key) >= isoOf(v.d))).sort((a, b) => a.d - b.d);
+function yearlyDue(){ const t = todayMid(); return yearlyItems().map(x => { for (let i = 1; i <= 7; i++){ const d = dayPlus(t, -i); if (yrMatch(x.on, d)) return {x, date: d}; } return null; })
+  .filter(v => v && isoOf(v.date) >= v.x.on && !(yrAns(v.x.key) >= isoOf(v.date))); }
+const YR_ASK = {giving: n => `Did you give to ${n}?`, loan: n => `Did you pay ${n}?`, fee: n => `Was the ${n} charged?`};
+OUT.yearlyDue = () => { const list = yearlyDue(); if (!list.length) return "";
+  return `<section class="card" data-yearly-due><h2 style="font-size:1.2rem">Once a year</h2>
+    ${list.map(v => `<div class="inc-row" data-yr-due="${esc(v.x.key)}" data-yr-date="${isoOf(v.date)}"><div class="row-top"><div><h3 class="name" style="font-size:1rem;margin:0">${esc(YR_ASK[v.x.kind](v.x.name))}</h3><div class="muted small">${v.x.kind === "giving" ? "Yearly giving" : v.x.kind === "fee" ? "Yearly card fee" : "Yearly payment"} · was due ${dayMonth(v.date)}</div></div><div class="name tnum">${fmt(v.x.amount)}</div></div>
+      <div class="grid2"><button class="btn small" type="button" data-yr-no>Not yet</button><button class="btn small primary" type="button" data-yr-yes>${v.x.kind === "giving" ? "Yes, given" : "Yes, paid"}</button></div></div>`).join("")}</section>`; };
 OUT.billsDue = () => { const list = billsDue(); if (!list.length) return "";
   return `<section class="card" data-bills-due><h2 style="font-size:1.2rem">Did you pay it?</h2>
     ${list.map(v => `<div class="inc-row" data-bill-due="${v.e.id}" data-bill-date="${isoOf(v.date)}"><div class="row-top"><div><div class="name">${esc(v.e.name)}</div><div class="muted small">Was due ${dayMonth(v.date)}</div></div><div class="name tnum">${fmt(v.e.amount)}</div></div>
@@ -4292,6 +4317,16 @@ const GIVE_CAUSES = [["children","Children"],["orphans","Orphans"],["veterans","
 const GIVE_EVERY = [["mo","Every month"],["wk","Every week"],["2x","Twice a month"],["yr","Every year"]];
 const giveCause = k => (GIVE_CAUSES.find(x => x[0] === k) || GIVE_CAUSES[9])[1], giveEvery = k => GIVE_EVERY.find(x => x[0] === k) || GIVE_EVERY[0];
 // Something paid once a year counts in full in the month it is paid, and not at all in the others. Without a date it is spread, and asks for one.
+// A yearly date is a month and a day; the year follows from when it is set: the next one from the start of this month.
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+function mdPick(name, iso, label){ const [, m, d] = (iso || isoDaysAgo(0)).split("-").map(Number);
+  return `<div class="grid2 md-pick" role="group" aria-label="${esc(label)}"><select name="${name}M" aria-label="${esc(label)}: month">${MONTH_NAMES.map((n, i) => `<option value="${i + 1}" ${i + 1 === m ? "selected" : ""}>${n}</option>`).join("")}</select><select name="${name}D" aria-label="${esc(label)}: day">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${i + 1 === d ? "selected" : ""}>${i + 1}</option>`).join("")}</select></div>`; }
+function mdToIso(fd, name, was){ const m = +fd.get(name + "M"), d = +fd.get(name + "D"); if (!m || !d) return was || isoDaysAgo(0);
+  const t = todayMid(), y = t.getFullYear(), start = new Date(y, t.getMonth(), 1);
+  let dt = new Date(y, m - 1, Math.min(d, daysInMonth(y, m - 1))); if (dt < start) dt = new Date(y + 1, m - 1, Math.min(d, daysInMonth(y + 1, m - 1)));
+  const iso = isoOf(dt);
+  if (was){ const [, wm, wd] = was.split("-").map(Number); if (wm === m && wd === d && was <= iso) return was; }   // same day, already running: keep its history
+  return iso; }
 function annivIn(on, k){ if (!on) return false; const [y, m, d] = on.split("-").map(Number), cy = new Date().getFullYear();
   for (const Y of [cy - 1, cy, cy + 1]) { if (Y < y) continue; if (inMonth(isoOf(new Date(Y, m - 1, Math.min(d, daysInMonth(Y, m - 1)))), k)) return true; } return false; }
 function nextAnniv(on){ if (!on) return null; const [y, m, d] = on.split("-").map(Number), t = todayMid(); let r = new Date(y, m - 1, d); while (r < t) r = new Date(r.getFullYear() + 1, m - 1, Math.min(d, daysInMonth(r.getFullYear() + 1, m - 1))); return r; }
@@ -4306,7 +4341,7 @@ function giveForm(g){
   return `<form class="inc-form" data-form="give"><label class="field"><span>Who it goes to</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Local food bank" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
     <div class="grid2"><label class="field"><span>Cause</span><select name="cause">${opt(GIVE_CAUSES, d.cause)}</select></label><label class="field"><span>How often</span><select name="every">${opt(GIVE_EVERY, d.every)}</select></label></div>
     <label class="field"><span>Amount each time</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.amount)}"></span></label>
-    <label class="field" data-yr-only ${d.every === "yr" ? "" : "hidden"}><span>Date you give it each year</span><input name="on" type="date" value="${esc(d.on || isoDaysAgo(0))}"></label>
+    <div class="field" data-yr-only ${d.every === "yr" ? "" : "hidden"}><span>Every year on</span>${mdPick("on", d.on, "Every year on")}</div>
     ${editBtns(!g, "data-give-del", "Add giving", "data-give-cancel")}</form>`;
 }
 OUT.giving = () => { if (!GIVING_ON) return ""; const list = S.giving || [], tot = givingMonthly(), k = planPeriodNow().key, now = givingIn(k), anyYr = list.some(g => g.every === "yr");
@@ -4371,7 +4406,7 @@ function loanForm(l){
       <label class="field"><span>Name <small class="muted">optional</small></span><input name="name" value="${esc(d.name)}" placeholder="e.g. Bank of America" enterkeyhint="next" autocomplete="off"></label></div>
     <div class="grid2" data-loan-cardrow ${d.kind === "card" ? "" : "hidden"}><label class="field"><span>Card</span>${sel("card", CARD_TYPES.map(c => [c, c]), cardSel)}</label>
       <label class="field"><span>Yearly fee <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="fee" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.fee || "")}"></span></label>
-      <label class="field" style="grid-column:1/-1"><span>Fee is charged on <small class="muted">counts in that month only</small></span><input name="feeOn" type="date" value="${esc(d.feeOn || "")}"></label></div>
+      <div class="field" style="grid-column:1/-1"><span>Fee is charged every year on <small class="muted">counts in that month only</small></span>${mdPick("feeOn", d.feeOn, "Fee is charged every year on")}</div></div>
     <label class="field" data-loan-cardother ${d.kind === "card" && cardSel === "Other" ? "" : "hidden"}><span>Card name</span><input name="cardOther" value="${esc(cardSel === "Other" && d.card !== "Other" ? d.card || "" : "")}" placeholder="e.g. Store card" maxlength="30" enterkeyhint="next" autocomplete="off"></label>
     <div data-loan-ins ${d.kind === "carins" ? "" : "hidden"} style="display:flex;flex-direction:column;gap:12px">
       <div class="grid2"><label class="field"><span>Premium for the policy</span><span class="money-in"><em>${esc(sym())}</em><input name="premium" inputmode="decimal" enterkeyhint="next" placeholder="e.g. 900" value="${esc(d.premium || "")}"></span></label>
@@ -4382,7 +4417,7 @@ function loanForm(l){
     <div data-loan-gen ${d.kind === "carins" ? "hidden" : ""} style="display:flex;flex-direction:column;gap:12px">
     <div class="grid2"><label class="field"><span>Payment</span><span class="money-in"><em>${esc(sym())}</em><input name="pay" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.pay)}"></span></label>
       <label class="field"><span>How often</span>${sel("every", LOAN_EVERY, d.every)}</label></div>
-    <label class="field" data-yr-only ${d.every === "yr" ? "" : "hidden"}><span>Paid on, each year</span><input name="on" type="date" value="${esc(d.on || isoDaysAgo(0))}"></label>
+    <div class="field" data-yr-only ${d.every === "yr" ? "" : "hidden"}><span>Paid every year on</span>${mdPick("on", d.on, "Paid every year on")}</div>
     <div class="grid2"><label class="field"><span>Left to pay <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="total" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.total)}"></span></label>
       <label class="field"><span>Installments left <small class="muted">optional</small></span><input name="left" inputmode="numeric" enterkeyhint="next" placeholder="e.g. 24" value="${esc(d.left || "")}"></label></div>
     <div class="grid2"><label class="field"><span>End date <small class="muted">optional</small></span><input name="end" type="date"${dFrom(d.end)} value="${esc(d.end || "")}"></label>
@@ -5494,6 +5529,10 @@ view.addEventListener("click", async e => {
   const billRow = b.closest("[data-bill-due]");
   if (billRow && (b.hasAttribute("data-bill-yes") || b.hasAttribute("data-bill-no"))){ const e = S.expenses.find(x => x.id === billRow.dataset.billDue); if (!e) return; const u = undoable(), yes = b.hasAttribute("data-bill-yes");
     e.ans = billRow.dataset.billDate; e.ansPaid = yes; save(); refreshOuts(); toast(yes ? `${e.name} marked as paid. Next question after ${dayMonth(billNextDue(e) || todayMid())}.` : `Noted. ${e.name} shows as not paid on the Plan tab, and we will not ask again this month.`, u); return; }
+  const yrRow = b.closest("[data-yr-due]");
+  if (yrRow && (b.hasAttribute("data-yr-yes") || b.hasAttribute("data-yr-no"))){ const u = undoable(), yes = b.hasAttribute("data-yr-yes"), it = yearlyItems().find(x => x.key === yrRow.dataset.yrDue);
+    S.yrAns = S.yrAns || {}; S.yrAns[yrRow.dataset.yrDue] = yrRow.dataset.yrDate; (S.yrPaid = S.yrPaid || {})[yrRow.dataset.yrDue] = yes; save(); refreshOuts();
+    toast(yes ? `Noted. Next one is ${it ? dateWithYear(nextAnniv(it.on) || todayMid(), true) : "next year"}.` : `Noted. It still counts in this month’s plan, and we won’t ask again until next year.`, u); return; }
   if (b.hasAttribute("data-bill-mark")){ const row = b.closest("[data-exp]"), e = row && S.expenses.find(x => x.id === row.dataset.exp); if (e){ const u = undoable(); e.ansPaid = true; save(); refreshOuts(); toast(`${e.name} marked as paid.`, u); } return; }
   if (b.hasAttribute("data-arrive-later")){ S.arriveSnooze = isoOf(todayMid()); save(); refreshOuts(); toast("We’ll ask again tomorrow."); return; }
   const arr = b.closest("[data-arrive]");
@@ -5807,8 +5846,8 @@ view.addEventListener("submit", async e => {
     if (leftRaw && !left){ toast("Installments left should be a whole number."); f.querySelector("[name=left]").focus(); return; }
     const old = UI.loanEdit && loanList().find(x => x.id === UI.loanEdit), old0 = old;
     const rec = {kind: fd.get("kind") || "other", name: String(fd.get("name") || "").trim(), pay, every: fd.get("every") || "mo", total: total || 0, end: end || "", left};
-    if (rec.kind === "card"){ rec.card = String(fd.get("card") || "Visa"); if (rec.card === "Other") rec.card = String(fd.get("cardOther") || "").trim().slice(0, 30) || "Other"; rec.fee = numv(fd.get("fee")) || 0; rec.feeOn = rec.fee ? String(fd.get("feeOn") || "") || isoDaysAgo(0) : ""; } else if (old0) { delete old0.card; delete old0.fee; delete old0.feeOn; }
-    if (rec.every === "yr") rec.on = String(fd.get("on") || "") || isoDaysAgo(0); else if (old0) delete old0.on;
+    if (rec.kind === "card"){ rec.card = String(fd.get("card") || "Visa"); if (rec.card === "Other") rec.card = String(fd.get("cardOther") || "").trim().slice(0, 30) || "Other"; rec.fee = numv(fd.get("fee")) || 0; rec.feeOn = rec.fee ? mdToIso(fd, "feeOn", old0 && old0.feeOn) : ""; } else if (old0) { delete old0.card; delete old0.fee; delete old0.feeOn; }
+    if (rec.every === "yr") rec.on = mdToIso(fd, "on", old0 && old0.on); else if (old0) delete old0.on;
     if (old) Object.assign(old, rec); else loanList().push({id: uid(), ...rec});
     UI.loanAdd = false; UI.loanEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
     (old ? savedToast : toast)(old ? "Loan updated." : rec.every === "yr" ? `Added. ${fmt(rec.pay)} counts in full in the month it is paid.` : `Added. ${fmt(loanMonthly(rec))} a month now counts in Loans & debts.`); return; }
@@ -5876,7 +5915,7 @@ view.addEventListener("submit", async e => {
   if (kind === "pdfLock"){ const pw = String(fd.get("pw") || ""); if (!pw){ toast("Enter the statement password."); return; } const file = UI.pdfLock && UI.pdfLock.file; if (file) openStatement(file, pw); return; }
   if (kind === "give"){ const name = String(fd.get("name") || "").trim().slice(0, 40), amount = numv(fd.get("amount")); if (!(amount > 0)){ toast("Enter the amount you give each time."); f.querySelector("[name=amount]").focus(); return; }
     const rec = {name, cause: String(fd.get("cause") || "other"), amount, every: String(fd.get("every") || "mo")}, old = UI.giveEdit && (S.giving || []).find(x => x.id === UI.giveEdit);
-    if (rec.every === "yr") rec.on = String(fd.get("on") || "") || isoDaysAgo(0); else if (old) delete old.on;
+    if (rec.every === "yr") rec.on = mdToIso(fd, "on", old && old.on); else if (old) delete old.on;
     if (old) Object.assign(old, rec); else (S.giving = S.giving || []).push({id: uid(), ...rec});
     UI.giveAdd = false; UI.giveEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); (old ? savedToast : toast)(old ? "Giving updated." : rec.every === "yr" ? `Added. ${fmt(rec.amount)} counts in full in ${new Date(nextAnniv(rec.on) || Date.now()).toLocaleDateString("en-US", {month: "long"})}, the month you give it.` : `Added. ${fmt(giveMonthly(rec))} a month now counts under Miscellaneous.`); return; }
   if (kind === "exp"){ const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), env = fd.get("env") === "misc" ? "misc" : "needs";
