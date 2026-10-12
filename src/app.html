@@ -525,6 +525,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .grid2.md-pick{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) !important}
 .trip-empty h2{margin:0}
 .bank-rows .line{padding:10px 12px;gap:10px}
+.plus-tap{appearance:none;border:0;font-family:inherit;line-height:normal;min-height:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .biz-mini{display:grid;grid-template-columns:1fr 104px auto;gap:8px;align-items:center}.biz-mini select{grid-column:1/-1}.biz-mini:has(select[name=cycle]) select{grid-column:auto}.biz-mini[data-form=bizSub]{grid-template-columns:1fr 96px 1fr auto}.biz-lines{max-height:360px}[data-biz-list] .rows .line,[data-biz-subs] .rows .line,[data-biz-shares] .rows .line{padding:10px 12px;gap:10px}.biz-lines .move-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
 @media (max-width:430px){.biz-mini[data-form=bizSub]{grid-template-columns:1fr 1fr}.biz-mini[data-form=bizSub] input[name=name]{grid-column:1/-1}}.bank-rows .line .muted{overflow-wrap:anywhere}
 .place-in svg{flex:none;color:var(--muted)}.place-res{margin-top:6px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;box-shadow:var(--lift)}.place-res[hidden]{display:none}
@@ -2229,7 +2230,7 @@ function bizSpace(){
   const taxM = r2(Math.max(0, M.profit) * b.taxPct / 100), taxY = r2(Math.max(0, Y.profit) * b.taxPct / 100), d = UI.bizDraft || {kind: "out"};
   const catOpts = (list, v) => list.map(c => `<option ${c === v ? "selected" : ""}>${c}</option>`).join("");
   const shareable = [...(S.expenses || []).map(e => ["e:" + e.id, e.name]), ...(S.subs || []).filter(v => v.keep !== "drop").map(v => ["s:" + v.id, v.name])].filter(([id]) => !b.shares.some(sh => sh.src === id));
-  return `<section class="hero biz-hero" data-biz-hero><div class="inline" style="justify-content:space-between"><p class="muted small">${esc(C.planMonth)} · Business</p><span class="pill gold" data-plus-tap>Plus preview</span></div>
+  return `<section class="hero biz-hero" data-biz-hero><div class="inline" style="justify-content:space-between"><p class="muted small">${esc(C.planMonth)} · Business</p><button type="button" class="pill gold plus-tap" data-plus-tap>Plus preview</button></div>
     <div class="big tnum" data-biz-profit>${fmt(M.profit)}</div><p class="muted">${fmt(M.inc)} came in, ${fmt(M.out)} went out.</p></section>
   <section class="card" data-biz-tax><h2 class="h-info">Tax set-aside${infoBtn("bizTax", "About the tax set-aside")}</h2>${infoTip("bizTax", "A share of your business profit to keep aside for tax, so tax time is never a surprise. Pick the rate your accountant suggests; KeepWise only does the math, it is not tax advice.")}
     <div class="inline" style="gap:10px;flex-wrap:nowrap"><span class="small">Keep aside</span><span class="money-in" style="max-width:110px"><input data-biz-taxpct inputmode="decimal" value="${b.taxPct}" aria-label="Tax set-aside percent"><em>%</em></span><span class="small">of profit</span></div>
@@ -2270,7 +2271,7 @@ function bizPreview(){
       <section class="card"><h2>Sorted from your statement</h2><p>18 transactions marked as business, 94 as personal.</p><p class="muted small">Export the year for your accountant as a spreadsheet.</p></section>
     </div>
     <section class="biz-panel card" role="dialog" aria-labelledby="biz-h">
-      <span class="pill gold" style="align-self:flex-start" data-plus-tap>KeepWise Plus</span>
+      <button type="button" class="pill gold plus-tap" style="align-self:flex-start" data-plus-tap>KeepWise Plus</button>
       <h2 id="biz-h">Keep business and personal money apart</h2>
       <ul class="biz-feats">
         <li><b>A separate Business Account</b> with its own income, costs and subscriptions.</li>
