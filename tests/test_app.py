@@ -2080,6 +2080,27 @@ async def giving_is_a_line_you_name_yourself(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def an_every_two_weeks_date_moves_on_by_itself(ctx):
+    pg = await open_at(ctx, (2026, 10, 12, 9, 0))
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+      s.extras = [{id: 'bw', name: 'Social Platform', kind: 'creator', when: 'biweekly', next: '2026-10-09', amount: 0, got: [], added: '2026-09-01'}];
+      s.pay = Object.assign(s.pay || {amount: 1000}, {when: 'biweekly', next: '2026-10-02', amount: (s.pay && s.pay.amount) || 1000});
+      localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(500); await tab(pg, "month")
+    # last paid Friday Oct 9, so the next one shown is Friday Oct 23, not the old date
+    await pg.click("[data-inc='bw'] [data-inc-edit]"); f = pg.locator("form[data-form=income]")
+    assert await f.locator("[name=next]").input_value() == "2026-10-23"
+    # saving it as is changes nothing, and the schedule keeps counting from the first date
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    x = (await state(pg))["extras"][0]; assert "No changes to save" in await pg.inner_text("#toast"), (await pg.inner_text("#toast"), x)
+    x = (await state(pg))["extras"][0]; assert x["next"] == "2026-10-09" and x["added"] == "2026-09-01", x
+    # the paycheck form does the same
+    if await pg.locator("[data-payday-edit]").count():
+        await pg.click("[data-payday-edit]"); await pg.wait_for_timeout(150)
+        assert await pg.locator("form[data-form=pay] [name=next]").input_value() == "2026-10-16"
+    assert not pg.errors, pg.errors
+
+@test
 async def yearly_giving_shows_coming_up_reminds_and_asks_after(ctx):
     pg = await open_at(ctx, (2026, 10, 8, 9, 0))
     async def setgive(on):
@@ -2102,6 +2123,18 @@ async def yearly_giving_shows_coming_up_reminds_and_asks_after(ctx):
     # a date set for the first time is never asked about before it begins
     await setgive("2027-10-07")
     assert await pg.locator("[data-yr-due='g:gy']").count() == 0
+    # the yearly total is the sum of what is given, never a rounded monthly share times 12
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
+      s.giving = [{id: 'gy', name: 'Health', cause: 'children', amount: 100, every: 'yr', on: '2026-10-11'}]; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(500); await tab(pg, "plan")
+    card = await text(pg, "[data-giving]"); assert "That is $100 a year." in card and "$99.96" not in card, card
+    # in Month it is a line only in the month it is given; the rest of the year it waits in Plan and Coming up
+    await tab(pg, "month"); await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150)
+    line = await pg.locator("[data-give-line=gy]").inner_text(); assert "given this month" in line and "$100" in line, line
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.giving[0].on = '2027-09-05'; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(500)
+    if await pg.locator("[data-env-open=misc][aria-expanded=true]").count() == 0: await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-env-open=misc][aria-expanded=true]").count() == 1 and await pg.locator("[data-give-line=gy]").count() == 0
     assert not pg.errors, pg.errors
 
 @test
@@ -4996,7 +5029,8 @@ async def a_payday_or_payment_date_follows_the_same_limits(ctx):
     await pg2.clock.install(time=datetime.datetime(2026, 11, 20, 10, 0)); await pg2.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;")
     await pg2.set_viewport_size({"width": 390, "height": 844}); await pg2.goto(URL); await pg2.wait_for_timeout(500)
     await pg2.click("[data-payday-edit]"); await pg2.wait_for_timeout(150); nx2 = pg2.locator("form[data-form=pay] [name=next]")
-    assert await nx2.input_value() == "2026-10-16" and await nx2.get_attribute("min") is None, "an older saved date is not locked out"
+    # weeks later the form shows the next payday counted on from it (Oct 16, 30, Nov 13, 27), and saving keeps the schedule's first date
+    assert await nx2.input_value() == "2026-11-27", "the next payday is counted on from the first one"
     await pg2.locator("form[data-form=pay] button[type=submit]").click(); await pg2.wait_for_timeout(300); assert (await state(pg2))["pay"]["next"] == "2026-10-16" and await pg2.locator("form[data-form=pay]").count() == 0
     assert not pg.errors and not pg2.errors, pg.errors + pg2.errors
 

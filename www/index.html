@@ -1391,6 +1391,9 @@ function parseMoney(s){
   return neg ? -v : v;
 }
 const isoOf = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+// Every-2-weeks money: the date shown is always the next one to come, counted on from the first date given.
+const nextBiweekly = iso => { if (!iso) return isoDaysAgo(0); const [y, m, d] = iso.split("-").map(Number), r = new Date(y, m - 1, d), t = todayMid(); while (r < t) r.setDate(r.getDate() + 14); return isoOf(r); };
+const sameBiweekly = (a, b) => a === b || (!!a && !!b && nextBiweekly(a) === nextBiweekly(b));
 // Words that mark money coming in when a statement gives one unsigned amount and no running balance to check against.
 const CREDIT_WORDS = /\b(CR|CREDIT|DEPOSIT|REFUND|REVERSAL|RECEIVED|FROM|SALARY|PAYROLL|INWARD|CASHBACK|INTEREST|PROFIT)\b/i;
 // A running balance settles the direction of every line: the balance went up or it went down by exactly that amount.
@@ -2431,15 +2434,15 @@ function envDetail(k, C){
     </div>`;
   }
   const exp = S.expenses.filter(e => e.env === k);
-  const subs = C.liveSubs.filter(s => s.env === k);
+  const subs = C.liveSubs.filter(s => s.env === k), subsNow = subs.filter(sb => sb.cycle !== "yr" || subCostIn(sb, C.planKey));
   return `<div class="env-body">
     ${k === "misc" ? spendGroups(C.planKey).map(spendRow).join("") : ""}
-    ${k === "misc" && GIVING_ON ? (S.giving || []).map(g => `<div class="line" data-give-line="${g.id}"><div><div>${esc(g.name || giveCause(g.cause))}</div><div class="muted small">Giving · ${g.every === "yr" ? `yearly, ${fmt(g.amount)} · ${giveCostIn(g, C.planKey) && g.on ? "given this month" : g.on ? `next ${dateWithYear(nextAnniv(g.on), true)}` : "add the date"}` : esc(giveEvery(g.every)[1])}</div></div><div class="inline"><span class="tnum">${fmt(giveCostIn(g, C.planKey))}</span><button class="link plain" type="button" data-go="plan">Edit</button></div></div>`).join("") : ""}
+    ${k === "misc" && GIVING_ON ? (S.giving || []).filter(g => g.every !== "yr" || !g.on || giveCostIn(g, C.planKey)).map(g => `<div class="line" data-give-line="${g.id}"><div><div>${esc(g.name || giveCause(g.cause))}</div><div class="muted small">Giving · ${g.every === "yr" ? `yearly, ${fmt(g.amount)} · ${giveCostIn(g, C.planKey) && g.on ? "given this month" : g.on ? `next ${dateWithYear(nextAnniv(g.on), true)}` : "add the date"}` : esc(giveEvery(g.every)[1])}</div></div><div class="inline"><span class="tnum">${fmt(giveCostIn(g, C.planKey))}</span><button class="link plain" type="button" data-go="plan">Edit</button></div></div>`).join("") : ""}
     ${k === "needs" ? paidSum(exp.map(e => { const w = swapFor("expense", e.id); return ["e:" + e.id, +(w ? w.altCost : e.amount) || 0]; }), C.planKey) : ""}
     ${exp.map(e => { const w = swapFor("expense", e.id), pd = k === "needs" ? paidOn("e:" + e.id, C.planKey) : ""; return `<div class="line${pd ? " paid" : ""}" data-exp="${e.id}">${k === "needs" ? tickBtn("e:" + e.id, e.name, C.planKey) : ""}<div><div>${esc(e.name)}</div><div class="muted small">${pd ? `Paid ${shortDate(pd)}` : w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
-    ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Yearly, ${fmt(sb.price)} · ${subCharged(sb, C.planKey) ? "charged this month" : nextRenewal(sb) ? `next ${shortDate(isoOf(nextRenewal(sb)))}` : "paid for the year"}` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subCostIn(sb, C.planKey))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
+    ${subsNow.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Yearly, ${fmt(sb.price)} · ${subCharged(sb, C.planKey) ? "charged this month" : nextRenewal(sb) ? `next ${shortDate(isoOf(nextRenewal(sb)))}` : "paid for the year"}` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subCostIn(sb, C.planKey))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
     ${k === "misc" ? (S.trips || []).filter(t => t.settled === "counted" && t.countKey === C.planKey).map(t => `<div class="line"><div><div>Trip: ${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))} · counted this month only</div></div><span class="tnum">${fmt(tripTotal(t))}</span></div>`).join("") : ""}
-    ${!exp.length && !subs.length && !(k === "misc" && (C.trips > 0 || C.spends > 0)) ? `<p class="muted">Nothing here yet.</p>` : ""}
+    ${!exp.length && !subsNow.length && !(k === "misc" && (C.trips > 0 || C.spends > 0)) ? `<p class="muted">Nothing here yet.</p>` : ""}
     <div class="inline add-line" data-add-line="${k}"><input data-new-name placeholder="Add a line" aria-label="New line name" enterkeyhint="next" value="${esc((LINE_DRAFT[k]||{}).n||"")}" style="flex:2 1 140px"><input data-new-amt inputmode="decimal" placeholder="0" aria-label="Amount per month" enterkeyhint="done" value="${esc((LINE_DRAFT[k]||{}).a||"")}" style="flex:1 1 80px"><button class="btn" type="button" data-add-line-btn>Add</button></div>
   </div>`;
 }
@@ -2633,7 +2636,7 @@ OUT.subsList = () => {
     const f = C.flags[s.id], d = daysSince(s.last), k = s.keep;
     const nr = nextRenewal(s), nd = nr ? daysUntil(nr) : null;
     const editing = UI.renewEdit === s.id;
-    const renewEditor = !editing ? "" : `<div class="renew-set"><span class="small muted">Renews on</span>${s.cycle === "yr" ? `<input type="date" data-renew-date${dFrom(s.renewDate)} value="${esc(s.renewDate || "")}" aria-label="Next renewal date for ${esc(s.name)}">` : `<select data-renew-day aria-label="Renewal day for ${esc(s.name)}">${dayOptions(s.renewDay)}</select>`}<button class="link plain small" type="button" data-renew-cancel>Done</button></div>`;
+    const renewEditor = !editing ? "" : `<div class="renew-set"><span class="small muted">Renews on</span>${s.cycle === "yr" ? `<input type="date" data-renew-date${dFrom(s.renewDate && isoOf(nextRenewal(s)))} value="${esc(s.renewDate ? isoOf(nextRenewal(s)) : "")}" aria-label="Next renewal date for ${esc(s.name)}">` : `<select data-renew-day aria-label="Renewal day for ${esc(s.name)}">${dayOptions(s.renewDay)}</select>`}<button class="link plain small" type="button" data-renew-cancel>Done</button></div>`;
     const renew = editing ? "" : nr ? `<button class="link plain small renew-btn" type="button" data-renew-open aria-label="Change renewal date for ${esc(s.name)}">Renews ${nd === 0 ? "today" : nd === 1 ? "tomorrow" : dateWithYear(nr, s.cycle === "yr")}</button>`
       : `<button class="link plain small renew-btn add" type="button" data-renew-open aria-label="Add renewal date for ${esc(s.name)}">+ Renewal date</button>`;
     if (UI.subEdit === s.id) return `<div class="row" data-sub="${s.id}"><form class="inc-form" data-form="subEdit">
@@ -3778,7 +3781,7 @@ function incomeForm(x){
     <div class="grid2"><label class="field"><span>When it arrives</span><select name="when" data-inc-when>${INCOME_WHEN.map(([k, n]) => `<option value="${k}" ${d.when === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
     ${d.when === "monthly" || d.when === "twice" ? `<label class="field"><span>${d.when === "twice" ? "First day" : "Day of the month"}</span><select name="day">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+d.day === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label>`
       : d.when === "weekly" ? `<label class="field"><span>Day of the week</span><select name="wd">${WEEKDAYS.map((n, i) => `<option value="${i}" ${+d.wd === i ? "selected" : ""}>${n}</option>`).join("")}</select></label>`
-      : d.when === "biweekly" ? `<label class="field"><span>Next payment</span><input name="next" type="date"${dFrom(d.next)} value="${esc(d.next || isoDaysAgo(0))}"></label>` : `<div></div>`}</div>
+      : d.when === "biweekly" ? `<label class="field"><span>Next payment</span><input name="next" type="date"${dFrom(d.next)} value="${esc(nextBiweekly(d.next))}"></label>` : `<div></div>`}</div>
     ${d.when === "twice" ? `<div class="grid2"><label class="field"><span>Second day</span><select name="day2">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+(d.day2 || 15) === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label><div></div></div>` : ""}
     <label class="field"><span>${d.when === "any" ? "Expected in a typical month" : "Each payment"} <span class="muted small">(optional)</span></span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="No fixed amount" value="${esc(+d.amount ? d.amount : "")}"></span><small class="muted small">${d.when === "any" ? "Payments can land on any day. Log each one when it arrives." : "Use a careful number."} Leave it empty if it varies: your plan then counts only what you log.</small></label>
     ${d.kind === "trading" ? `<p class="note small">Count only money you have actually taken out, not gains on paper. Trading income can fall to zero, so keep this number low.</p>` : ""}
@@ -3888,7 +3891,7 @@ OUT.payBox = () => {
       <div class="grid2"><label class="field"><span>How often</span><select name="when" data-pay-when>${PAY_WHEN.map(([k, n]) => `<option value="${k}" ${d.when === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
       ${d.when === "monthly" ? `<label class="field"><span>Payday</span><select name="day">${dayOpts(d.day, true)}</select></label>`
         : d.when === "weekly" ? `<label class="field"><span>Payday</span><select name="wd">${WEEKDAYS.map((n, i) => `<option value="${i}" ${+d.wd === i ? "selected" : ""}>${n}</option>`).join("")}</select></label>`
-        : d.when === "biweekly" ? `<label class="field"><span>Next payday</span><input name="next" type="date"${dFrom(d.next)} value="${esc(d.next || isoDaysAgo(0))}"></label>` : `<label class="field"><span>First payday</span><select name="day">${dayOpts(d.day)}</select></label>`}</div>
+        : d.when === "biweekly" ? `<label class="field"><span>Next payday</span><input name="next" type="date"${dFrom(d.next)} value="${esc(nextBiweekly(d.next))}"></label>` : `<label class="field"><span>First payday</span><select name="day">${dayOpts(d.day)}</select></label>`}</div>
       ${d.when === "twice" ? `<label class="field"><span>Second payday</span><select name="day2">${dayOpts(d.day2, true)}</select></label>` : ""}
       <label class="field"><span>Each paycheck, after tax</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.amount)}"></span>
         ${d.when === "biweekly" || d.when === "weekly" ? `<small class="muted small">Your plan counts ${PAY_BASE[d.when]} paychecks a month. A month with one more shows it as extra you can save.</small>` : ""}</label>
@@ -4365,6 +4368,8 @@ const giveCostIn = (g, k) => g.every === "yr" ? r2(yearlyIn(+g.amount || 0, g.on
 const givingIn = k => GIVING_ON ? r2((S.giving || []).reduce((a, g) => a + giveCostIn(g, k), 0)) : 0;
 const giveMonthly = g => { const a = +g.amount || 0; return r2(g.every === "wk" ? a * 52 / 12 : g.every === "2x" ? a * 2 : g.every === "yr" ? a / 12 : a); };
 const GIVING_ON = true;
+const giveYearly = g => { const a = +g.amount || 0; return r2(g.every === "wk" ? a * 52 : g.every === "2x" ? a * 24 : g.every === "yr" ? a : a * 12); };
+const givingYearly = () => GIVING_ON ? r2((S.giving || []).reduce((a, g) => a + giveYearly(g), 0)) : 0;
 const givingMonthly = () => GIVING_ON ? r2((S.giving || []).reduce((a, g) => a + giveMonthly(g), 0)) : 0;
 function giveForm(g){
   const d = g || {name: "", cause: "children", amount: "", every: "mo"}, opt = (list, v) => list.map(([k, n]) => `<option value="${k}" ${k === v ? "selected" : ""}>${n}</option>`).join("");
@@ -4380,7 +4385,7 @@ OUT.giving = () => { if (!GIVING_ON) return ""; const list = S.giving || [], tot
     ${list.map(g => UI.giveEdit === g.id ? `<div class="inc-row editing" data-give="${g.id}">${giveForm(g)}</div>` : `<div class="inc-row" data-give="${g.id}"><div class="row-top"><div><div class="name">${esc(g.name || giveCause(g.cause))}</div><div class="muted small">${esc(giveCause(g.cause))} · ${esc(giveEvery(g.every)[1].toLowerCase())}</div></div><div style="text-align:right"><div class="name tnum">${fmt(g.amount)}${g.every === "yr" ? `<span class="muted small">/yr</span>` : ""}</div>${g.every === "mo" ? "" : g.every === "yr" ? `<div class="muted small" data-give-next>${g.on ? (giveCostIn(g, k) ? "Given this month" : `Next ${dateWithYear(nextAnniv(g.on), true)}`) : "Add the date"}</div>` : `<div class="muted small tnum">${fmt(giveMonthly(g))}/mo</div>`}</div></div>
       <button class="link plain small" type="button" data-give-edit aria-label="Edit ${esc(g.name || giveCause(g.cause))}" style="align-self:flex-end">Edit</button></div>`).join("")}
     ${UI.giveAdd ? `<div class="inc-row editing">${giveForm(null)}</div>` : `<button class="btn" type="button" data-give-add>${I.plus}Add giving</button>`}
-    ${list.length ? `<p class="muted small">That is ${fmt(r2(tot * 12))} a year.</p>` : UI.giveAdd ? "" : `<p class="muted small">Charity, family support, your place of worship: anything you give on a regular basis.</p>`}</section>`; };
+    ${list.length ? `<p class="muted small">That is ${fmt(givingYearly())} a year.</p>` : UI.giveAdd ? "" : `<p class="muted small">Charity, family support, your place of worship: anything you give on a regular basis.</p>`}</section>`; };
 const LOAN_KINDS = [["bank","Bank loan"],["personal","Personal loan"],["student","Student debt"],["card","Credit card"],["car","Car loan"],["carins","Car insurance"],["home","Mortgage"],["other","Other debt"]];
 // Car insurance the way it works in the US: a policy runs 6 or 12 months for one premium, paid in full at the start or in
 // monthly installments (often with a small fee each). It renews at the end of the term, which is the time to compare quotes.
@@ -5503,7 +5508,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-w-finish")){ finishWelcome(); render(false); toast("Your month is ready. Add bills on Plan as you go."); return; }
   if (b.hasAttribute("data-w-import")){ finishWelcome(); render(false); $("stmt").click(); return; }
   // ---- how you are paid
-  if (b.hasAttribute("data-payday-edit")){ const p = S.pay || {}; UI.payEdit = true; UI.payDraft = {when: p.when || "monthly", day: p.day || 1, day2: p.day2 || 15, wd: p.wd != null ? p.wd : 5, next: p.next || isoDaysAgo(0), amount: p.amount ? String(p.amount) : (+S.income ? String(S.income) : ""), monthStart: monthStartDay()}; refreshOuts(); return; }
+  if (b.hasAttribute("data-payday-edit")){ const p = S.pay || {}; UI.payEdit = true; UI.payDraft = {when: p.when || "monthly", day: p.day || 1, day2: p.day2 || 15, wd: p.wd != null ? p.wd : 5, next: nextBiweekly(p.next), amount: p.amount ? String(p.amount) : (+S.income ? String(S.income) : ""), monthStart: monthStartDay()}; refreshOuts(); return; }
   if (b.hasAttribute("data-payday-cancel")){ UI.payEdit = false; refreshOuts(); return; }
   if (b.hasAttribute("data-payday-clear")){ S.pay = null; S.monthStart = 1; UI.payEdit = false; save(); render(true); toast("Pay schedule removed. Your month runs from the 1st again."); return; }
   // ---- other income
@@ -5857,7 +5862,8 @@ view.addEventListener("submit", async e => {
     if (!amount){ toast("Enter what each paycheck is, after tax."); f.querySelector("[name=amount]").focus(); return; }
     const prevPay = S.pay;
     S.pay = {when, amount, day: fd.get("day") ? +fd.get("day") : undefined, day2: when === "twice" ? +fd.get("day2") || 15 : undefined, wd: when === "weekly" ? +fd.get("wd") : undefined, next: when === "biweekly" ? String(fd.get("next") || isoDaysAgo(0)) : undefined};
-    S.pay.since = prevPay && prevPay.when === S.pay.when && prevPay.day === S.pay.day && prevPay.day2 === S.pay.day2 && prevPay.wd === S.pay.wd && prevPay.next === S.pay.next && prevPay.since ? prevPay.since : isoDaysAgo(0);
+    if (prevPay && S.pay.next && sameBiweekly(prevPay.next, S.pay.next)) S.pay.next = prevPay.next;   // same schedule: keep the first date it was counted from
+    S.pay.since = prevPay && prevPay.when === S.pay.when && prevPay.day === S.pay.day && prevPay.day2 === S.pay.day2 && prevPay.wd === S.pay.wd && sameBiweekly(prevPay.next, S.pay.next) && prevPay.since ? prevPay.since : isoDaysAgo(0);
     S.income = r2(amount * PAY_BASE[when]); S.monthStart = Math.min(28, Math.max(1, +fd.get("monthStart") || 1));
     UI.payEdit = false; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Saved. Your plan counts ${fmt(S.income)} a month from pay.`); return; }
   if (kind === "loan" && fd.get("kind") === "carins"){
@@ -5888,7 +5894,8 @@ view.addEventListener("submit", async e => {
     if (when === "twice" && +fd.get("day") === +fd.get("day2")){ toast("Pick two different days of the month."); return; }
     const rec = {name, kind: fd.get("kind") || "other", when, amount, day: when === "monthly" || when === "twice" ? +fd.get("day") || 1 : undefined, day2: when === "twice" ? +fd.get("day2") || 15 : undefined, wd: when === "weekly" ? +fd.get("wd") : undefined, next: when === "biweekly" ? String(fd.get("next") || isoDaysAgo(0)) : undefined};
     const old = UI.incEdit && extras().find(x => x.id === UI.incEdit);
-    if (old){ if (old.when !== rec.when || old.day !== rec.day || old.day2 !== rec.day2 || old.wd !== rec.wd || old.next !== rec.next) rec.added = isoDaysAgo(0); Object.assign(old, rec); } else extras().push({id: uid(), got: [], added: isoDaysAgo(0), ...rec});
+    if (old && rec.next && sameBiweekly(old.next, rec.next)) rec.next = old.next;
+    if (old){ if (old.when !== rec.when || old.day !== rec.day || old.day2 !== rec.day2 || old.wd !== rec.wd || !sameBiweekly(old.next, rec.next)) rec.added = isoDaysAgo(0); Object.assign(old, rec); } else extras().push({id: uid(), got: [], added: isoDaysAgo(0), ...rec});
     UI.incAdd = false; UI.incEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); (old ? savedToast : toast)(old ? `${name} updated.` : amount ? `Added ${name}. Your plan now counts it.` : `Added ${name}. It counts each time you log a payment.`); return; }
   if (kind === "incomeLog"){ const x = extras().find(v => v.id === f.closest("[data-inc]").dataset.inc), a = numv(fd.get("amount")); if (!x) return;
     if (!a){ toast("Enter the amount you received."); return; }
