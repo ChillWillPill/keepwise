@@ -420,7 +420,7 @@ details summary::-webkit-details-marker{display:none}
 .review{border-color:color-mix(in srgb,var(--gold) 40%,var(--line))}
 .review-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .review-btns .btn{padding:10px 6px;white-space:nowrap;font-size:.92rem}
-.import-card h3{font-size:1.05rem}
+.import-card h3,.bank-card h3{font-size:1.05rem}
 .people .person,.people .person-wrap{border-bottom:1px solid var(--line)}
 .people > :last-child,.people .person-wrap .person{border-bottom:0}
 .person{display:flex;align-items:center;gap:14px;width:100%;padding:12px 16px;background:none;border:0;font:inherit;color:inherit;text-align:left;-webkit-tap-highlight-color:transparent}
@@ -554,6 +554,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 /* ---- other income, month close ---- */
 .grid2.md-pick{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) !important}
 .trip-empty h2{margin:0}
+.bank-rows .line{padding:10px 12px;gap:10px}.bank-rows .line .muted{overflow-wrap:anywhere}
 .place-in svg{flex:none;color:var(--muted)}.place-res{margin-top:6px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;box-shadow:var(--lift)}.place-res[hidden]{display:none}
 .place-opt{display:flex;gap:10px;align-items:flex-start;width:100%;padding:11px 14px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}.place-opt:first-child{border-top:0}.place-opt svg{flex:none;margin-top:2px;color:var(--green)}.place-opt b{display:block;font-weight:600}.place-opt .muted{display:block}.place-note{margin:0;padding:11px 14px}.place-credit{margin:0;padding:6px 14px 8px;font-size:.72rem;text-align:right;border-top:1px solid var(--line)}
 .place-chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;color:var(--green);font-weight:600;font-size:.86rem;text-decoration:none}.place-chip svg{flex:none}.place-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1246,6 +1247,79 @@ const TABS = [["month","Month"],["subs","Subs"],["cheaper","Cheaper"],["codes","
 const V = {};
 const OUT = {};
 // Big numbers keep their full size, and shrink only when a long amount (PKR 121,256.99) would not fit the screen.
+/* ================= bank sync (US, through SimpleFIN Bridge) =================
+   The phone talks to SimpleFIN directly: KeepWise has no server in between and never sees the data.
+   The person pays SimpleFIN (about $15 a year); KeepWise charges nothing. The access key lives under its own storage key,
+   so backups and "Copy my data" never carry it. Only names and balances of the accounts are kept with the plan. */
+const BANK_KEY = "keepwise-bank-v1", BANK = {busy: false, err: "", cache: null, token: ""};
+const bankAccess = () => { try { return localStorage.getItem(BANK_KEY) || ""; } catch(e){ return ""; } };
+const bankOn = () => !!bankAccess() && !!S.bank;
+const BANK_HELP = "https://beta-bridge.simplefin.org/";
+function bankClaimUrl(token){
+  let u; try { u = atob(String(token).trim().replace(/\s+/g, "")); } catch(e){ return null; }
+  try { const x = new URL(u); return x.protocol === "https:" && /\/claim\//.test(x.pathname) && !x.username ? x.href : null; } catch(e){ return null; }
+}
+function bankAuth(access){ const u = new URL(access), auth = "Basic " + btoa(decodeURIComponent(u.username) + ":" + decodeURIComponent(u.password)); u.username = ""; u.password = ""; return {base: u.href.replace(/\/$/, ""), auth}; }
+async function bankConnect(token){
+  const claim = bankClaimUrl(token); if (!claim){ BANK.err = "That doesn’t look like a SimpleFIN setup token. Copy the whole token from SimpleFIN and paste it again."; return false; }
+  if (navigator.onLine === false){ BANK.err = "Connect to the internet to link your bank."; return false; }
+  let r; try { r = await fetch(claim, {method: "POST"}); } catch(e){ BANK.err = "SimpleFIN can’t be reached right now. Try again in a minute."; return false; }
+  if (r.status === 403){ BANK.err = "That token was already used. Make a new one at SimpleFIN. If you didn’t use it yourself, turn it off there."; return false; }
+  if (!r.ok){ BANK.err = "SimpleFIN didn’t accept that token. Make a new one and try again."; return false; }
+  const access = (await r.text()).trim(); let ok = false; try { const x = new URL(access); ok = x.protocol === "https:" && !!x.username; } catch(e){}
+  if (!ok){ BANK.err = "SimpleFIN sent back something unexpected. Try a new token."; return false; }
+  try { localStorage.setItem(BANK_KEY, access); } catch(e){ BANK.err = "This browser won’t let KeepWise keep the bank link. Try the installed app."; return false; }
+  S.bank = {since: isoDaysAgo(0), accounts: []}; save();
+  return await bankFetch(true);
+}
+async function bankFetch(force){
+  const access = bankAccess(); if (!access) return false;
+  if (!force && BANK.cache && Date.now() - BANK.cache.at < 15 * 60000) return true;   // SimpleFIN allows about 24 updates a day
+  if (navigator.onLine === false){ BANK.err = "You are offline. Showing what was there last time."; return false; }
+  const {base, auth} = bankAuth(access), start = Math.floor(Date.now() / 1000) - 89 * 86400;
+  let r; try { r = await fetch(`${base}/accounts?version=2&start-date=${start}`, {headers: {Authorization: auth}}); } catch(e){ BANK.err = "SimpleFIN can’t be reached right now. Try again in a minute."; return false; }
+  if (r.status === 403){ BANK.err = "SimpleFIN turned this link off. Disconnect, then connect again with a new token."; return false; }
+  if (r.status === 402){ BANK.err = "Your SimpleFIN subscription needs attention before your bank can update."; return false; }
+  if (!r.ok){ BANK.err = "SimpleFIN had a problem. Try again later."; return false; }
+  let j; try { j = await r.json(); } catch(e){ BANK.err = "SimpleFIN sent back something unexpected. Try again later."; return false; }
+  const conns = Object.fromEntries((j.connections || []).map(c => [c.conn_id, c.name]));
+  const accts = (j.accounts || []).map(a => ({id: String(a.id), name: String(a.name || "Account").slice(0, 60), bank: String(conns[a.conn_id] || (a.org && a.org.name) || "").slice(0, 60), cur: /^[A-Z]{3}$/.test(a.currency) ? a.currency : "USD",
+    balance: +a.balance || 0, avail: a["available-balance"] != null ? +a["available-balance"] : null, at: (+a["balance-date"] || 0) * 1000, tx: (a.transactions || []).filter(t => !t.pending && +t.posted > 0)}));
+  BANK.cache = {at: Date.now(), accts};
+  S.bank = Object.assign(S.bank || {}, {updated: Date.now(), accounts: accts.map(({tx, ...a}) => ({...a, n: tx.length}))}); save();
+  const notes = (j.errlist || []).map(e => String(e.msg || "")).filter(Boolean).concat((j.errors || []).map(String));
+  BANK.err = notes.length ? notes.slice(0, 2).join(" ").slice(0, 240) : "";
+  return true;
+}
+const csvCell = v => /[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
+function bankCsv(a){
+  const rows = a.tx.slice().sort((x, y) => x.posted - y.posted).map(t => { const d = new Date(+t.posted * 1000), date = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`;
+    const what = String(t.memo || t.description || t.payee || "").replace(/\s+/g, " ").trim().slice(0, 120) || "Transaction"; return [date, csvCell(what), (+t.amount).toFixed(2)].join(","); });
+  return "Date,Description,Amount\n" + rows.join("\n") + "\n";
+}
+async function bankReview(id){
+  if (!(BANK.cache && BANK.cache.accts.some(a => a.id === id))){ busy("Getting your bank"); await bankFetch(true); busy(false); }
+  const a = BANK.cache && BANK.cache.accts.find(x => x.id === id);
+  if (!a){ toast(BANK.err || "That account can’t be read right now."); render(true); return; }
+  if (!a.tx.length){ toast("No transactions in the last 90 days for this account."); return; }
+  await openStatement(new File([bankCsv(a)], `${a.bank ? a.bank + " · " : ""}${a.name} (last 90 days).csv`, {type: "text/csv"}));
+}
+function bankCard(){
+  if (UI.biz) return "";
+  const on = bankOn(), list = (S.bank && S.bank.accounts) || [], when = S.bank && S.bank.updated ? new Date(S.bank.updated) : null;
+  const head = `<h3 class="h-info">Connect your bank <span class="pill grey" style="font-size:.7rem">US</span>${infoBtn("bank", "About connecting your bank")}</h3>${infoTip("bank", "Through SimpleFIN Bridge, which works with thousands of US banks and credit unions. SimpleFIN charges about $1.50 a month or $15 a year, paid to them; KeepWise charges nothing. Your phone talks to SimpleFIN directly: KeepWise has no server in between and never sees your bank data. The link is kept only on this phone, never in backups.")}`;
+  if (!on) return `<section class="card bank-card" data-bank>${head}
+    ${UI.bankAdd ? `<form data-form="bank" style="display:flex;flex-direction:column;gap:10px"><ol class="small muted" style="margin:0;padding-left:20px"><li>Open <a href="${BANK_HELP}" target="_blank" rel="noopener" style="color:var(--green);font-weight:600">SimpleFIN Bridge</a>, connect your bank there and make a setup token.</li><li>Paste the token here.</li></ol>
+      <label class="field"><span>Setup token</span><input name="token" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste your setup token" aria-label="SimpleFIN setup token"></label>
+      ${BANK.err ? `<p class="err" role="alert" data-bank-err>${esc(BANK.err)}</p>` : ""}
+      <div class="grid2"><button class="btn" type="button" data-bank-cancel>Cancel</button><button class="btn primary" type="submit"${BANK.busy ? " disabled" : ""}>${BANK.busy ? "Connecting…" : "Connect"}</button></div></form>`
+    : `<p class="muted small">Pull in the last 90 days from your bank instead of downloading statements.</p><button class="btn" type="button" data-bank-add>Connect with SimpleFIN</button>`}</section>`;
+  return `<section class="card bank-card" data-bank>${head}
+    ${list.length ? `<div class="rows bank-rows">${list.map(a => `<div class="line" data-bank-acct="${esc(a.id)}"><div style="min-width:0"><div class="name">${esc(a.name)}</div><div class="muted small">${esc(a.bank || "Bank")}${a.n ? ` · ${a.n} in 90 days` : ""}</div></div><div class="inline"><span class="tnum">${a.cur === S.cur ? fmt(a.balance) : `${esc(a.cur)} ${a.balance.toFixed(2)}`}</span><button class="btn small" type="button" data-bank-review="${esc(a.id)}">Review</button></div></div>`).join("")}</div>` : `<p class="muted small">No accounts came back yet. Add your bank at SimpleFIN, then refresh.</p>`}
+    ${BANK.err ? `<p class="err small" role="alert" data-bank-err>${esc(BANK.err)}</p>` : ""}
+    <div class="inline" style="justify-content:space-between"><span class="muted small" data-bank-when>${when ? `Updated ${when.toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})}` : ""}</span><span class="inline"><button class="link small" type="button" data-bank-refresh${BANK.busy ? " disabled" : ""}>${BANK.busy ? "Updating…" : "Refresh"}</button><button class="link plain small" type="button" data-bank-off>Disconnect</button></span></div>
+    <p class="muted small">Review reads an account’s last 90 days like a statement: you choose what to add.</p></section>`;
+}
 function importCard(){
   return `<section class="card import-card"><div><h3 class="h-info">Import a bank statement${infoBtn("import", "About importing a statement")}</h3>${UI.info === "import" || UI.importFail ? `<p class="info-tip" role="note" data-info-tip="import">CSV or PDF from your bank, or a clear photo of a paper statement. KeepWise finds your pay, bills and every subscription. Read on this phone only.</p>` : ""}${S.imported ? `<p class="muted small">Last import: ${esc(S.imported.file)}, ${monthsLabel(S.imported.from)} to ${monthsLabel(S.imported.to)}.</p>` : ""}</div>
     <button class="btn primary" type="button" data-import-open>${S.imported ? "Import another statement" : "Choose a statement"}</button></section>`;
@@ -2227,7 +2301,7 @@ V.month = () => {
   if (!tabs) return `${top}
 ${now}
 ${coming}
-  ${importCard()}
+  ${importCard()}${bankCard()}
 ${fields}
 ${income}
 ${trips}
@@ -2242,7 +2316,7 @@ ${budget}
 ${trips}
 ${tail}`;   // where the money goes: envelopes, trips and events with budgets of their own, and past months
   if (seg === "more") return `${sw}
-  ${importCard()}
+  ${importCard()}${bankCard()}
 ${fields}
 ${income}
 ${spaceSwitch()}`;   // what comes in: pay, other income, and a statement to read it from
@@ -3149,6 +3223,7 @@ const FIND_PLACES = [
   ["Backups", "Menu · Your data & backups", "backup", "download export restore save file", {menu: "data", sel: "[data-set-backup]"}, 1],
   ["Monthly statements", "Month · Budget", "hist", "history past months last month report", {act: "history"}, 1],
   ["Import a bank statement", "Month · Income", "imp", "upload csv pdf photo scan picture", {tab: "month", sel: ".import-card"}, 1],
+  ["Connect your bank", "Month · Income", "imp", "bank sync link account simplefin automatic transactions balance connect", {tab: "month", sel: "[data-bank]"}],
   ["What you keep this month", "Month · Overview", "month", "home overview left over safe to spend balance", {tab: "month", sel: ".hero"}],
   ["Where your month goes", "Month · Overview", "env", "chart breakdown pie donut percent", {tab: "month", sel: "[data-out=donut]"}],
   ["Coming up", "Month · Overview", "bell", "due soon upcoming next week", {tab: "month", sel: "[data-out=comingUp]"}],
@@ -5153,7 +5228,7 @@ function sideNav(){
 // The phone layout is untouched; this only rearranges what was already drawn, and each card keeps its column.
 const WIDE_MQ = matchMedia("(min-width:1024px)");
 const WIDE_TOP = 'h1,.inline,.seg,.space-switch,.note,section.hero,[data-out="monthClose"],[data-out="keepSafe"],[data-out="cheapSummary"]';
-const WIDE_B = {month: '[data-out="comingUp"],.import-card,[data-out="trips"],[data-out="dropCard"],[data-out="historyCard"]', subs: '[data-out="subsSummary"],[data-out="remindBox"],button.btn', plan: '[data-col="b"]', split: '.moments-teaser,section:not(.card)'};
+const WIDE_B = {month: '[data-out="comingUp"],.import-card,.bank-card,[data-out="trips"],[data-out="dropCard"],[data-out="historyCard"]', subs: '[data-out="subsSummary"],[data-out="remindBox"],button.btn', plan: '[data-col="b"]', split: '.moments-teaser,section:not(.card)'};
 const WIDE_TAIL = {subs: 'label.field,[data-out="subsList"],details', cheaper: '[data-out="cheapIdeas"],[data-out="cheapList"],details', codes: 'input,section.card,[data-out="codeList"],details'};
 function layoutWide(){
   const on = WIDE_MQ.matches && !(STMT.result || UI.find || UI.pdfLock || UI.account || UI.welcome != null || UI.plus || UI.inbox || UI.share || UI.stmt || UI.history || UI.settings);
@@ -5696,6 +5771,11 @@ view.addEventListener("click", async e => {
     return; }
   if (b.hasAttribute("data-pdf-cancel")){ UI.pdfLock = null; render(false); return; }
   if (b.hasAttribute("data-import-open")){ $("stmt").click(); return; }
+  if (b.hasAttribute("data-bank-add")){ UI.bankAdd = true; BANK.err = ""; render(true); const i = view.querySelector("[data-form=bank] [name=token]"); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-bank-cancel")){ UI.bankAdd = false; BANK.err = ""; render(true); return; }
+  if (b.hasAttribute("data-bank-refresh")){ if (BANK.busy) return; BANK.busy = true; render(true); await bankFetch(true); BANK.busy = false; render(true); if (!BANK.err) toast("Your bank is up to date."); return; }
+  if (b.hasAttribute("data-bank-review")){ await bankReview(b.dataset.bankReview); return; }
+  if (b.hasAttribute("data-bank-off")){ try { localStorage.removeItem(BANK_KEY); } catch(e){} delete S.bank; BANK.cache = null; BANK.err = ""; save(); render(true); toast("Disconnected. To end it fully, also remove KeepWise in your SimpleFIN account."); return; }
   if (b.hasAttribute("data-import-cancel")){ STMT.result = null; STMT.fx = null; STMT.tx = null; render(false); return; }
   if (b.dataset.stOpen && STMT.result){ const k = b.dataset.stOpen; if (STMT.open.has(k)) STMT.open.delete(k); else STMT.open.add(k); refreshOuts(); return; }
   if (b.dataset.stAll && STMT.result){ const R = STMT.result, list = {income: R.income, subs: R.subs, bills: R.bills, loans: R.loans, giving: R.giving, spending: R.spending, sent: R.moves.sent, received: R.moves.received}[b.dataset.stAll] || [], to = !list.some(x => x.on);
@@ -5968,6 +6048,9 @@ view.addEventListener("submit", async e => {
     if (!lines.length){ toast("Type what you spent, like “uber 20”."); return; }
     const bad = await convertLines(lines); if (bad){ toast(FX_FAIL(bad)); return; }
     tripAddSpend(t, lines); save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(tripSpendReply(t, lines)); return; }
+  if (kind === "bank"){ if (BANK.busy) return; const tok = String(fd.get("token") || ""); BANK.busy = true; BANK.err = ""; render(true);
+    const ok = await bankConnect(tok); BANK.busy = false; if (ok || bankOn()){ UI.bankAdd = false; } render(true);
+    if (ok){ const n = (S.bank.accounts || []).length; toast(n ? `Connected. ${n} account${n === 1 ? "" : "s"} found.` : "Connected."); } else if (!bankOn()) { const i = view.querySelector("[data-form=bank] [name=token]"); if (i){ i.value = tok; } } return; }
   if (kind === "trip"){ const ev = fd.get("kind") === "event", etype = ev ? String(fd.get("etype") || "other") : "", name = String(fd.get("name") || "").trim().slice(0, 40) || (ev ? eventType(etype) : ""), start = String(fd.get("start") || ""), end = String(fd.get("end") || ""), budget = numv(fd.get("budget")), ok = d => /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(isoDate(d).getTime());
     if (!name){ toast("Give the trip a name."); f.querySelector("[name=name]").focus(); return; }
     if (!ok(start) || !ok(end)){ toast("Pick the start and end dates."); return; }

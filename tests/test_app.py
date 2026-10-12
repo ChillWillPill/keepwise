@@ -2093,6 +2093,67 @@ async def giving_is_a_line_you_name_yourself(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def a_us_bank_connects_through_simplefin_on_the_phone(ctx):
+    import base64, time as _t
+    pg = await open_app(ctx, month_tabs=True); calls = {"claim": 0, "acct": 0, "deny": False}
+    host = "https://bridge.test.simplefin.org/simplefin"
+    tok = lambda code: base64.b64encode(f"{host}/claim/{code}".encode()).decode()
+    now = int(_t.time()); day = 86400
+    def tx(i, d, amt, memo, pending=False): return {"id": f"t{i}", "posted": 0 if pending else now - d * day, "amount": f"{amt:.2f}", "description": memo.title(), "memo": memo, "pending": pending}
+    checking = [tx(1, 80, 2100, "ACME CORP PAYROLL"), tx(2, 50, 2100, "ACME CORP PAYROLL"), tx(3, 20, 2100, "ACME CORP PAYROLL"),
+                tx(4, 75, -15.49, "NETFLIX.COM"), tx(5, 45, -15.49, "NETFLIX.COM"), tx(6, 15, -15.49, "NETFLIX.COM"),
+                tx(7, 70, -1450, "RENT OAKVIEW APTS"), tx(8, 40, -1450, "RENT OAKVIEW APTS"), tx(9, 10, -1450, "RENT OAKVIEW APTS"),
+                tx(10, 3, -61.20, "TRADER JOES #552"), tx(11, 0, -9.99, "PENDING SHOP", True)]
+    async def bridge(route):
+        u = route.request.url
+        if "/claim/" in u:
+            calls["claim"] += 1
+            if u.endswith("USED"): await route.fulfill(status=403, body="Forbidden", headers={"access-control-allow-origin": "*"}); return
+            await route.fulfill(body="https://kwuser:kwpass@bridge.test.simplefin.org/simplefin", headers={"access-control-allow-origin": "*"}); return
+        if "/accounts" in u:
+            calls["acct"] += 1
+            if route.request.method == "OPTIONS": await route.fulfill(status=204, headers={"access-control-allow-origin": "*", "access-control-allow-headers": "authorization"}); return
+            assert route.request.headers.get("authorization") == "Basic " + base64.b64encode(b"kwuser:kwpass").decode(), route.request.headers
+            assert "start-date=" in u and "kwpass" not in u, u
+            if calls["deny"]: await route.fulfill(status=403, body="", headers={"access-control-allow-origin": "*"}); return
+            body = {"errlist": [], "connections": [{"conn_id": "c1", "name": "Oakview Credit Union", "org_id": "o1", "sfin_url": host}],
+                    "accounts": [{"id": "chk", "name": "Everyday Checking", "conn_id": "c1", "currency": "USD", "balance": "2481.36", "balance-date": now, "transactions": checking},
+                                 {"id": "sav", "name": "Savings", "conn_id": "c1", "currency": "USD", "balance": "5200.00", "balance-date": now, "transactions": []}]}
+            await route.fulfill(body=json.dumps(body), content_type="application/json", headers={"access-control-allow-origin": "*"}); return
+        await route.abort()
+    await pg.route("https://bridge.test.simplefin.org/**", bridge)
+    await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150)
+    card = await text(pg, "[data-bank]"); assert "Connect your bank" in card and "Connect with SimpleFIN" in card, card
+    await pg.click("[data-bank-add]"); f = pg.locator("form[data-form=bank]")
+    # not a token
+    await f.locator("[name=token]").fill("hello there"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    assert "doesn’t look like a SimpleFIN setup token" in await text(pg, "[data-bank-err]") and calls["claim"] == 0
+    # a token someone already used
+    await f.locator("[name=token]").fill(tok("USED")); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(300)
+    assert "already used" in await text(pg, "[data-bank-err]") and await pg.evaluate("localStorage.getItem('keepwise-bank-v1')") is None
+    # a good one
+    await f.locator("[name=token]").fill(tok("GOOD")); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(500)
+    assert "Connected. 2 accounts found." in await pg.inner_text("#toast")
+    card = await text(pg, "[data-bank]"); assert "Everyday Checking" in card and "Oakview Credit Union" in card and "$2,481.36" in card and "$5,200" in card and "10 in 90 days" in card, card
+    # the access link stays on the phone under its own key: never in the plan, backups or "Copy my data"
+    assert "kwpass" in (await pg.evaluate("localStorage.getItem('keepwise-bank-v1')"))
+    st = await state(pg); assert "kwpass" not in json.dumps(st) and "transactions" not in json.dumps(st["bank"]) and [a["name"] for a in st["bank"]["accounts"]] == ["Everyday Checking", "Savings"], st["bank"]
+    # reviewing an account reads its 90 days like a statement, without the pending line
+    await pg.click("[data-bank-review=chk]"); await pg.wait_for_timeout(1500)
+    v = await pg.inner_text("#view"); assert "Your statement" in v and "Everyday Checking" in v and "Netflix" in v.title() and "PENDING SHOP" not in v.upper(), v[:600]
+    await pg.click("button:has-text('Cancel')"); await pg.wait_for_timeout(300)
+    # refresh asks SimpleFIN again; when the link is turned off there, it says so
+    n = calls["acct"]; await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150)
+    await pg.click("[data-bank-refresh]"); await pg.wait_for_timeout(500); assert calls["acct"] > n and "up to date" in await pg.inner_text("#toast")
+    calls["deny"] = True; await pg.click("[data-bank-refresh]"); await pg.wait_for_timeout(500)
+    assert "turned this link off" in await text(pg, "[data-bank-err]")
+    # disconnect removes the link from the phone
+    await pg.click("[data-bank-off]"); await pg.wait_for_timeout(200)
+    assert await pg.evaluate("localStorage.getItem('keepwise-bank-v1')") is None and "bank" not in (await state(pg)) and "Connect with SimpleFIN" in await text(pg, "[data-bank]")
+    pg.errors[:] = [e for e in pg.errors if "status of 403" not in e]   # the browser logs the refusals this test asks for
+    assert not pg.errors, pg.errors
+
+@test
 async def the_part_switch_stays_in_reach_while_scrolling(ctx):
     for w, h, scheme in [(375, 667, "light"), (320, 568, "dark"), (430, 932, "light")]:
         pg = await open_app(ctx, month_tabs=True, w=w, h=h, scheme=scheme)
