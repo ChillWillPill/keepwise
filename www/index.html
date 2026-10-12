@@ -554,6 +554,9 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 /* ---- other income, month close ---- */
 .grid2.md-pick{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) !important}
 .trip-empty h2{margin:0}
+.place-in svg{flex:none;color:var(--muted)}.place-res{margin-top:6px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;box-shadow:var(--lift)}.place-res[hidden]{display:none}
+.place-opt{display:flex;gap:10px;align-items:flex-start;width:100%;padding:11px 14px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}.place-opt:first-child{border-top:0}.place-opt svg{flex:none;margin-top:2px;color:var(--green)}.place-opt b{display:block;font-weight:600}.place-opt .muted{display:block}.place-note{margin:0;padding:11px 14px}.place-credit{margin:0;padding:6px 14px 8px;font-size:.72rem;text-align:right;border-top:1px solid var(--line)}
+.place-chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;color:var(--green);font-weight:600;font-size:.86rem;text-decoration:none}.place-chip svg{flex:none}.place-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .trip-mini{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .trip-mini-t{flex:1;min-width:0;display:flex;flex-direction:column}.trip-mini-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.trip-mini svg:last-child{flex:none;opacity:.6}.trip-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .trip-tile{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;text-align:left;padding:10px 12px;border-radius:16px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}
@@ -3147,7 +3150,7 @@ const FIND_PLACES = [
   ["Coming up", "Month · Overview", "bell", "due soon upcoming next week", {tab: "month", sel: "[data-out=comingUp]"}],
   ["Bills this month", "Month · Overview", "bill", "paid tick progress", {tab: "month", sel: "[data-out=billsCard]"}],
   ["Envelopes this month", "Month · Budget", "env", "spending expenditures misc miscellaneous spent tick paid again", {tab: "month", sel: "[data-out=envelopes]"}],
-  ["Trips and events", "Month · Budget", "split", "travel holiday vacation wedding party event plan a trip plan an event", {tab: "month", sel: "[data-out=trips]"}],
+  ["Trips and events", "Month · Budget", "split", "travel holiday vacation wedding party event plan a trip plan an event place location map address venue city where", {tab: "month", sel: "[data-out=trips]"}],
   ["Regular pay", "Month · Income", "pay", "salary income wage paycheck payday how am i paid", {tab: "month", sel: "[data-out=payBox]"}],
   ["Other income", "Month · Income", "pay", "extra money in bonus side", {tab: "month", sel: "[data-out=extraIncome]"}],
   ["Envelope shares", "Plan · Monthly", "env", "percent amount flat 50 30 20 envelopes", {tab: "plan", sel: "[data-env-grid]"}],
@@ -4151,15 +4154,50 @@ async function logSpend(text, force){  // returns what to say back, or null when
   return `Added to this month under Miscellaneous, one time: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
 }
 const FX_FAIL = cur => String(cur)[0] === "?" ? (f => `Which ${f}s? Say the code, like “dinner 500 ${CUR_KIN[f].list[0]}” or “dinner 500 ${CUR_KIN[f].list[1]}”, or set your currency on the Plan tab. Nothing was added.`)(String(cur).slice(1)) : `Could not get today’s rate for ${cur}. Check your connection and try again, or type the amount in ${S.cur}.`;
+// Where a trip or an event is: typed, or picked from a map search (OpenStreetMap data through Photon, free, no key).
+// Only what is typed in this one box is sent, and only once at least 3 letters are in; nothing else ever leaves the phone.
+const MAP_PIN = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`;
+const PHOTON = "https://photon.komoot.io/api/", PLACE = {t: 0, ac: null, seq: 0, list: []};
+const placeField = (d, ev) => `<div class="field place-field"><span>${ev ? "Place" : "Where"} <small class="muted">optional</small></span><span class="money-in place-in">${MAP_PIN}<input name="place" data-place-q value="${esc(d.place || "")}" placeholder="${ev ? "Search a venue or address" : "Search a city or place"}" aria-label="${ev ? "Place of the event" : "Where the trip is"}" enterkeyhint="next" autocomplete="off" maxlength="60"></span>
+  <input type="hidden" name="lat" value="${d.geo ? d.geo.lat : ""}"><input type="hidden" name="lon" value="${d.geo ? d.geo.lon : ""}"><input type="hidden" name="geoFor" value="${d.geo ? esc(d.place || "") : ""}"><div class="place-res" data-place-res hidden></div></div>`;
+function placeLabel(p){ const main = p.name || [p.housenumber, p.street].filter(Boolean).join(" ") || p.city || p.county || p.state || p.country || "";
+  const area = [p.city, p.state, p.country].filter((v, i, a) => v && v !== main && a.indexOf(v) === i);
+  const town = ["city", "town", "village", "country", "state", "county", "district", "locality"].includes(p.type) || p.osm_key === "place";   // a city reads best with its country, a venue with its city
+  const near = town ? area.filter(v => v === p.country)[0] || area[area.length - 1] : area[0];
+  return {main, sub: [p.street && p.name && p.street !== main ? p.street : "", ...area].filter(Boolean).join(", "), short: [main, near].filter(Boolean).join(", ").slice(0, 60)}; }
+async function placeSearch(inp){
+  const fld = inp.closest(".place-field"), box = fld.querySelector("[data-place-res]"), q = inp.value.trim(), my = ++PLACE.seq, f = inp.form;
+  if (f.elements.geoFor.value !== inp.value){ f.elements.lat.value = ""; f.elements.lon.value = ""; f.elements.geoFor.value = ""; }   // changed after a pick: no longer that spot
+  if (PLACE.ac) PLACE.ac.abort();
+  if (q.length < 3 || q === f.elements.geoFor.value){ box.hidden = true; box.innerHTML = ""; return; }
+  const manual = `<button class="place-opt" type="button" data-place-manual>${MAP_PIN}<span><b>Use “${esc(q)}”</b><span class="muted small">Keep it as typed</span></span></button>`;
+  if (navigator.onLine === false){ box.innerHTML = `<p class="muted small place-note">You are offline, so the map search is off. What you typed is kept.</p>`; box.hidden = false; return; }
+  box.innerHTML = `<p class="muted small place-note">Searching the map…</p>`; box.hidden = false;
+  try {
+    const ac = PLACE.ac = new AbortController(), tm = setTimeout(() => ac.abort(), 7000);
+    const r = await fetch(`${PHOTON}?q=${encodeURIComponent(q)}&limit=6&lang=en`, {signal: ac.signal}); clearTimeout(tm);
+    if (!r.ok) throw new Error("map " + r.status);
+    const j = await r.json(); if (my !== PLACE.seq) return;
+    const seen = new Set(); PLACE.list = (j.features || []).map(ft => ({...placeLabel(ft.properties || {}), lon: +(ft.geometry || {}).coordinates?.[0], lat: +(ft.geometry || {}).coordinates?.[1]}))
+      .filter(x => x.main && isFinite(x.lat) && isFinite(x.lon) && !seen.has(x.short) && seen.add(x.short)).slice(0, 5);
+    box.innerHTML = (PLACE.list.length ? PLACE.list.map((x, i) => `<button class="place-opt" type="button" data-place-pick="${i}">${MAP_PIN}<span><b>${esc(x.main)}</b>${x.sub ? `<span class="muted small">${esc(x.sub)}</span>` : ""}</span></button>`).join("")
+      : `<p class="muted small place-note">Nothing on the map by that name.</p>`) + manual + `<p class="muted place-credit">Map search: Photon · © OpenStreetMap contributors</p>`;
+    try { box.scrollIntoView({block: "nearest", behavior: "smooth"}); } catch(e){}
+  } catch(err){ if (my !== PLACE.seq) return; box.innerHTML = `<p class="muted small place-note">The map search is not answering right now. What you typed is kept.</p>` + manual; }
+}
+const placeChip = t => !t.place ? "" : t.geo && isFinite(t.geo.lat) && isFinite(t.geo.lon)
+  ? `<a class="place-chip" data-place-chip href="https://www.openstreetmap.org/?mlat=${t.geo.lat}&mlon=${t.geo.lon}#map=13/${t.geo.lat}/${t.geo.lon}" target="_blank" rel="noopener" aria-label="${esc(t.place)}, open on the map">${MAP_PIN}<span>${esc(t.place)}</span></a>`
+  : `<span class="place-chip" data-place-chip>${MAP_PIN}<span>${esc(t.place)}</span></span>`;
 function tripForm(t, draft){
   const today = isoOf(todayMid()), ev = isEvent(t) || (!t && draft && draft.kind === "event");
   const d = t || {name: "", start: today, end: ev ? today : isoOf(dayPlus(todayMid(), 6)), budget: "", cur: "", etype: "wedding", place: "", people: "", ...(draft || {})};
   return `<form class="inc-form" data-form="trip">${ev ? `<input type="hidden" name="kind" value="event">
     <div class="grid2"><label class="field"><span>Event</span><select name="etype">${EVENT_TYPES.map(([k, n]) => `<option value="${k}" ${k === (d.etype || "wedding") ? "selected" : ""}>${n}</option>`).join("")}</select></label>
-      <label class="field"><span>Name <small class="muted">optional</small></span><input name="name" value="${esc(d.name)}" placeholder="e.g. Sara’s wedding" enterkeyhint="next" autocomplete="off" maxlength="40"></label></div>
-    <div class="grid2"><label class="field"><span>Place <small class="muted">optional</small></span><input name="place" value="${esc(d.place || "")}" placeholder="e.g. Pearl Hall" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
-      <label class="field"><span>People <small class="muted">optional</small></span><input name="people" inputmode="numeric" enterkeyhint="next" placeholder="0" value="${esc(d.people || "")}" maxlength="6"></label></div>`
-    : `<label class="field"><span>Trip</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Miami weekend" enterkeyhint="next" autocomplete="off" maxlength="40"></label>`}
+      <label class="field"><span>People <small class="muted">optional</small></span><input name="people" inputmode="numeric" enterkeyhint="next" placeholder="0" value="${esc(d.people || "")}" maxlength="6"></label></div>
+    <label class="field"><span>Name <small class="muted">optional</small></span><input name="name" value="${esc(d.name)}" placeholder="e.g. Sara’s wedding" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
+    ${placeField(d, true)}`
+    : `<label class="field"><span>Trip</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Miami weekend" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
+    ${placeField(d, false)}`}
     <div class="grid2"><label class="field"><span>Starts</span><input name="start" type="date" value="${esc(d.start)}"></label><label class="field"><span>Ends</span><input name="end" type="date" min="${esc(d.start || "")}" value="${esc(d.end)}"></label></div>
     <div class="grid2"><label class="field"><span>${ev ? "Total budget" : "Budget"} <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="budget" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.budget || "")}"></span></label>
       <label class="field"><span>You will pay in</span><select name="cur">${curOptions(d.cur || S.cur)}</select></label></div>
@@ -4169,11 +4207,11 @@ function tripCard(t){
   if (UI.tripEdit === t.id) return `<div class="inc-row editing" data-trip="${t.id}">${tripForm(t)}</div>`;
   const st = tripState(t), tot = tripTotal(t), b = +t.budget || 0, over = b > 0 && tot > b + 0.005, open = UI.tripOpen === t.id, C = compute();
   const dayNo = Math.round((todayMid() - isoDate(t.start)) / DAY) + 1, toGo = daysUntil(isoDate(t.start));
-  const ev = isEvent(t), noun = tripNoun(t), ppl = Math.round(+t.people || 0), about = ev ? [eventType(t.etype), t.place, ppl > 0 ? `${ppl} ${ppl === 1 ? "person" : "people"}` : ""].filter(Boolean).join(" · ") : "";
+  const ev = isEvent(t), noun = tripNoun(t), ppl = Math.round(+t.people || 0), about = ev ? [eventType(t.etype), ppl > 0 ? `${ppl} ${ppl === 1 ? "person" : "people"}` : ""].filter(Boolean).join(" · ") : "";
   const tag = st === "active" ? `<span class="pill ok">${tripDays(t) === 1 ? "Today" : `Day ${dayNo} of ${tripDays(t)}`}</span>` : st === "upcoming" ? `<span class="pill grey">${toGo === 1 ? "Starts tomorrow" : `Starts in ${toGo} days`}</span>`
     : st === "ended" ? `<span class="pill gold">Ended</span>` : st === "counted" ? `<span class="pill grey">Counted in ${esc(keyLabel(t.countKey).split(" ")[0])}</span>` : `<span class="pill grey">Kept separate</span>`;
   const days = {}; (t.items || []).forEach(x => (days[x.date] = days[x.date] || []).push(x));
-  return `<div class="inc-row" data-trip="${t.id}"><div class="row-top"><div><div class="name">${esc(t.name)}</div>${about ? `<div class="small" data-event-about>${esc(about)}</div>` : ""}<div class="muted small">${esc(tripRange(t))}${t.cur && t.cur !== S.cur ? ` · paying in ${esc(t.cur)}` : ""}</div></div><div style="text-align:right">${tag}</div></div>
+  return `<div class="inc-row" data-trip="${t.id}"><div class="row-top"><div style="min-width:0"><div class="name">${esc(t.name)}</div>${t.place ? `<div>${placeChip(t)}</div>` : ""}${about ? `<div class="small" data-event-about>${esc(about)}</div>` : ""}<div class="muted small">${esc(tripRange(t))}${t.cur && t.cur !== S.cur ? ` · paying in ${esc(t.cur)}` : ""}</div></div><div style="text-align:right">${tag}</div></div>
     <div class="row-top"><div class="muted small">${b > 0 ? (over ? `${fmt(r2(tot - b))} over the ${fmt(b)} budget` : `${fmt(r2(b - tot))} left of ${fmt(b)}`) : "No budget set"}</div><div class="name tnum ${over ? "bad" : ""}">${fmt(tot)}<span class="muted small"> spent</span></div></div>
     ${b > 0 ? `<div class="meter"><i class="${over ? "over" : ""}" style="width:${Math.min(100, tot / b * 100)}%"></i></div>` : ""}
     ${ev && ppl > 1 && (tot > 0 || b > 0) ? `<div class="muted small tnum" data-event-each>${tot > 0 ? `${fmt(r2(tot / ppl))} a person so far` : ""}${tot > 0 && b > 0 ? " · " : ""}${b > 0 ? `${fmt(r2(b / ppl))} a person budgeted` : ""}</div>` : ""}
@@ -4192,7 +4230,7 @@ OUT.tripsNow = () => { const all = S.trips || [], on = all.filter(t => tripState
   return `<section class="card inc-card" data-trips-now><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>${on.length ? "Happening now" : "Coming soon"}</h2><span class="muted small">${label}</span></div>${on.map(tripCard).join("")}${soon.map(tripMini).join("")}</section>`; };
 // Before it starts, Overview keeps it to one line; the full card, to log spending, is a tap away on Budget.
 const tripMini = t => { const n = daysUntil(isoDate(t.start)), b = +t.budget || 0;
-  return `<button class="trip-mini" type="button" data-trip-goto="${t.id}"><span class="trip-ic${isEvent(t) ? " ev" : ""}">${isEvent(t) ? EVENT_IC : TRIP_IC}</span><span class="trip-mini-t"><b>${esc(t.name)}</b><span class="muted small">${esc(tripRange(t))} · ${n === 1 ? "starts tomorrow" : `starts in ${n} days`}</span></span><span class="tnum small">${b > 0 ? `${fmt(b)} budget` : ""}</span>${I.chev}</button>`; };
+  return `<button class="trip-mini" type="button" data-trip-goto="${t.id}"><span class="trip-ic${isEvent(t) ? " ev" : ""}">${isEvent(t) ? EVENT_IC : TRIP_IC}</span><span class="trip-mini-t"><b>${esc(t.name)}</b><span class="muted small">${t.place ? `${esc(t.place.split(",")[0])} · ` : ""}${esc(tripRange(t))} · ${n === 1 ? "starts tomorrow" : `starts in ${n} days`}</span></span><span class="tnum small">${b > 0 ? `${fmt(b)} budget` : ""}</span>${I.chev}</button>`; };
 const TRIP_IC = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
 const EVENT_IC = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 13h18M12 8c-1.5-3-5-4-5.5-2S9 8 12 8zm0 0c1.5-3 5-4 5.5-2S15 8 12 8z"/></svg>`;
 OUT.trips = () => {
@@ -5250,6 +5288,11 @@ function menuGo(k){
   if (k === "tour"){ render(false); tourStart(); return; }
   UI.settings = k === "security" || k === "support" || k === "data" || k === "backup" ? k : "settings"; render(false); $("main").scrollTop = 0;
 }
+document.addEventListener("input", e => { const q = e.target.closest && e.target.closest("[data-place-q]"); if (!q) return; clearTimeout(PLACE.t); PLACE.t = setTimeout(() => placeSearch(q), 450); });
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-place-pick], [data-place-manual]"); if (!b) return; e.preventDefault(); e.stopPropagation();
+  const fld = b.closest(".place-field"), f = fld.closest("form"), inp = fld.querySelector("[data-place-q]"), box = fld.querySelector("[data-place-res]");
+  if (b.hasAttribute("data-place-pick")){ const x = PLACE.list[+b.dataset.placePick]; if (x){ inp.value = x.short; f.elements.lat.value = x.lat; f.elements.lon.value = x.lon; f.elements.geoFor.value = x.short; } }
+  PLACE.seq++; box.hidden = true; box.innerHTML = ""; }, true);
 document.addEventListener("input", e => { if (e.target.id !== "find-in") return; UI.findQ = e.target.value; clearTimeout(FIND.t);   // wait for a pause in typing before looking
   FIND.t = setTimeout(() => { const o = view.querySelector('[data-out="findList"]'); if (o) o.innerHTML = OUT.findList(); }, 180); });
 document.addEventListener("keydown", e => { if (e.target.id !== "find-in") return; if (e.key === "Enter"){ e.preventDefault(); clearTimeout(FIND.t); const h = findHits(e.target.value)[0]; if (h) findGo(h); } else if (e.key === "Escape"){ UI.find = false; render(false); } });
@@ -5922,10 +5965,14 @@ view.addEventListener("submit", async e => {
     if (!name){ toast("Give the trip a name."); f.querySelector("[name=name]").focus(); return; }
     if (!ok(start) || !ok(end)){ toast("Pick the start and end dates."); return; }
     if (end < start){ toast(`The ${ev ? "event" : "trip"} cannot end before it starts.`); return; }
-    const more = ev ? {kind: "event", etype, place: String(fd.get("place") || "").trim().slice(0, 40), people: Math.min(999999, Math.max(0, Math.round(numv(fd.get("people")) || 0)))} : {};
+    const place = String(fd.get("place") || "").trim().slice(0, 60), lat = parseFloat(fd.get("lat")), lon = parseFloat(fd.get("lon"));
+    const geo = place && fd.get("geoFor") === fd.get("place") && isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? {lat: Math.round(lat * 1e5) / 1e5, lon: Math.round(lon * 1e5) / 1e5} : null;
+    const more = ev ? {kind: "event", etype, people: Math.min(999999, Math.max(0, Math.round(numv(fd.get("people")) || 0)))} : {};
+    more.place = place; more.geo = geo;
     const old = UI.tripEdit && tripList().find(x => x.id === UI.tripEdit);
     const cur = CURRENCIES.some(c => c[0] === fd.get("cur")) && fd.get("cur") !== S.cur ? String(fd.get("cur")) : "";
-    if (old) Object.assign(old, {name, start, end, budget, cur}, more); else tripList().push({id: uid(), name, start, end, budget, cur, items: [], settled: null, ...more});
+    const tidy = x => { if (!x.place) delete x.place; if (!x.geo) delete x.geo; return x; };
+    if (old) tidy(Object.assign(old, {name, start, end, budget, cur}, more)); else tripList().push(tidy({id: uid(), name, start, end, budget, cur, items: [], settled: null, ...more}));
     UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); (old ? savedToast : toast)(old ? `Updated ${name}.` : `${name} is set. Spending you add on ${start === end ? "that day" : "those days"} goes to the ${ev ? "event" : "trip"}.`); return; }
   if (kind === "ask"){ const q = tidySaid($("ask-in").value); if (!q) return; ASK.go = null;
     // After a command changes something, go to it: the panel closes, the right tab opens, the item is brought into view

@@ -44,6 +44,19 @@ async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False, prev
         if os.path.exists(path): await route.fulfill(path=path, content_type="application/gzip" if path.endswith(".gz") else "application/javascript", headers={"access-control-allow-origin": "*"})
         else: await route.abort()
     await ctx.route(re.compile(r"https://cdn\.jsdelivr\.net/npm/(@tesseract|tesseract)"), serve_ocr)
+    # the map search for a trip's or an event's place: a stand-in for Photon, so tests never reach the internet
+    pg.places = []
+    async def serve_photon(route):
+        from urllib.parse import urlparse, parse_qs
+        q = parse_qs(urlparse(route.request.url).query).get("q", [""])[0]; pg.places.append(q)
+        if "offline" in q.lower(): await route.abort(); return
+        feats = []
+        if "sydn" in q.lower():
+            feats = [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [151.2083, -33.8698]}, "properties": {"name": "Sydney", "state": "New South Wales", "country": "Australia", "type": "city", "osm_key": "place"}},
+                     {"type": "Feature", "geometry": {"type": "Point", "coordinates": [151.2153, -33.8568]}, "properties": {"name": "Sydney Opera House", "street": "Bennelong Point", "city": "Sydney", "state": "New South Wales", "country": "Australia", "type": "house", "osm_key": "tourism"}},
+                     {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-60.19, 46.14]}, "properties": {"name": "Sydney", "state": "Nova Scotia", "country": "Canada", "type": "city", "osm_key": "place"}}]
+        await route.fulfill(body=json.dumps({"type": "FeatureCollection", "features": feats}), content_type="application/json", headers={"access-control-allow-origin": "*"})
+    await pg.route("https://photon.komoot.io/**", serve_photon)
     # On a phone Month is three parts behind a switch. Most tests are about what the parts hold, not about the switch, so
     # they see Month as one page (as a computer shows it, set for every page in main()); the tests of the switch ask for month_tabs=True.
     if month_tabs: await pg.add_init_script("window.KEEPWISE_MONTH_ONE_PAGE = false;")
@@ -2080,6 +2093,50 @@ async def giving_is_a_line_you_name_yourself(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def a_trip_or_an_event_can_be_placed_on_the_map(ctx):
+    pg = await open_app(ctx, month_tabs=True); await pg.click("button:has-text('Budget')"); await pg.wait_for_timeout(150)
+    await pg.click("[data-trip-add]"); f = pg.locator("form[data-form=trip]")
+    await f.locator("[name=name]").fill("Sydney trip")
+    # under 3 letters nothing is looked up
+    await f.locator("[name=place]").press_sequentially("Sy"); await pg.wait_for_timeout(700); assert pg.places == [], pg.places
+    await f.locator("[name=place]").press_sequentially("dn"); await pg.wait_for_timeout(900)
+    res = await text(pg, "[data-place-res]"); assert "Sydney" in res and "New South Wales, Australia" in res and "Opera House" in res and "Nova Scotia" in res and "Use “Sydn”" in res and "OpenStreetMap" in res, res
+    assert pg.places[-1] == "Sydn", pg.places
+    await pg.locator("[data-place-pick='0']").click(); await pg.wait_for_timeout(150)
+    assert await f.locator("[name=place]").input_value() == "Sydney, Australia" and await pg.locator("[data-place-res]").is_hidden()
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    t = (await state(pg))["trips"][0]; assert t["place"] == "Sydney, Australia" and t["geo"] == {"lat": -33.8698, "lon": 151.2083}, t
+    chip = pg.locator("[data-trip] [data-place-chip]").first; assert await chip.inner_text() == "Sydney, Australia"
+    href = await chip.get_attribute("href"); assert href and "openstreetmap.org" in href and "mlat=-33.8698" in href and "mlon=151.2083" in href, href
+    # saving it unchanged keeps the spot and says so
+    await pg.click("[data-trip] [data-trip-edit]"); f = pg.locator("form[data-form=trip]")
+    assert await f.locator("[name=place]").input_value() == "Sydney, Australia"
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200); assert "No changes to save" in await pg.inner_text("#toast")
+    # typing over it by hand keeps the words, and the old map spot goes
+    await pg.click("[data-trip] [data-trip-edit]"); f = pg.locator("form[data-form=trip]")
+    await f.locator("[name=place]").fill("Bondi with friends"); await pg.wait_for_timeout(700)
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    t = (await state(pg))["trips"][0]; assert t["place"] == "Bondi with friends" and "geo" not in t, t
+    assert await pg.locator("[data-trip] a[data-place-chip]").count() == 0 and "Bondi with friends" in await text(pg, "[data-trip] [data-place-chip]")
+    # an event: nothing on the map, so it is kept as typed
+    await pg.click("[data-event-add]"); f = pg.locator("form[data-form=trip]")
+    await f.locator("[name=place]").press_sequentially("Grandma's backyard"); await pg.wait_for_timeout(900)
+    res = await text(pg, "[data-place-res]"); assert "Nothing on the map" in res and "Use “Grandma's backyard”" in res, res
+    await pg.click("[data-place-manual]"); await pg.wait_for_timeout(100); assert await pg.locator("[data-place-res]").is_hidden()
+    await f.locator("[name=budget]").fill("300"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    ev = [x for x in (await state(pg))["trips"] if x.get("kind") == "event"][0]; assert ev["place"] == "Grandma's backyard" and "geo" not in ev, ev
+    # when the map search cannot be reached, the form still works with the words as typed
+    await pg.click("[data-trip-add]"); f = pg.locator("form[data-form=trip]")
+    await f.locator("[name=name]").fill("Road trip"); await f.locator("[name=place]").press_sequentially("offline town"); await pg.wait_for_timeout(900)
+    assert "not answering" in await text(pg, "[data-place-res]")
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    rt = [x for x in (await state(pg))["trips"] if x["name"] == "Road trip"][0]; assert rt["place"] == "offline town" and "geo" not in rt, rt
+    # a trip with no place keeps no place
+    await pg.click("[data-trip-add]"); f = pg.locator("form[data-form=trip]"); await f.locator("[name=name]").fill("Weekend away"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    wa = [x for x in (await state(pg))["trips"] if x["name"] == "Weekend away"][0]; assert "place" not in wa and "geo" not in wa, wa
+    assert not pg.errors, pg.errors
+
+@test
 async def an_every_two_weeks_date_moves_on_by_itself(ctx):
     pg = await open_at(ctx, (2026, 10, 12, 9, 0))
     await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1'));
@@ -2235,7 +2292,7 @@ async def an_event_works_like_a_trip_with_a_place_and_people(ctx):
     await f.locator("[name=etype]").select_option("birthday"); await f.locator("[name=place]").fill("Rooftop Cafe"); await f.locator("[name=people]").fill("12"); await f.locator("[name=budget]").fill("600")
     await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
     ev = (await state(pg))["trips"][0]; assert (ev["kind"], ev["etype"], ev["name"], ev["place"], ev["people"], ev["budget"]) == ("event", "birthday", "Birthday party", "Rooftop Cafe", 12, 600), ev
-    card = await text(pg, "[data-trip]"); assert "Birthday party · Rooftop Cafe · 12 people" in card and "Today" in card and "$50 a person budgeted" in card, card
+    card = await text(pg, "[data-trip]"); assert "Rooftop Cafe" in await text(pg, "[data-trip] [data-place-chip]") and "Birthday party · 12 people" in card and "Today" in card and "$50 a person budgeted" in card, card
     assert "Trips and events" in (await text(pg, "[data-trips] h2")).replace("TRIPS AND EVENTS", "Trips and events") or "TRIPS AND EVENTS" in (await text(pg, "[data-trips]")).upper()
     # spending said today goes to the event, not the month, and the cost per person follows
     await pg.click("#wise"); await pg.wait_for_timeout(150); await ask_type(pg, "cake 60, balloons 24"); await pg.wait_for_timeout(350)
