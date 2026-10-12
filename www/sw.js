@@ -1,8 +1,17 @@
-// KeepWise service worker, build f67fa8fc5e
-const CACHE = "keepwise-f67fa8fc5e";
+// KeepWise service worker, build 16dea4d33a
+const CACHE = "keepwise-16dea4d33a";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+// A nudge from KeepWise: the message carries only a title and a line of text, never anything about money.
+self.addEventListener("push", e => {
+  let d = {}; try { const j = e.data ? e.data.json() : {}; d = j.data || j.notification || j; } catch (x) {}
+  e.waitUntil(self.registration.showNotification(d.title || "KeepWise", {body: d.body || "", icon: "icons/icon-192.png", badge: "icons/icon-192.png", tag: d.tag || "keepwise", data: {url: d.url || "./"}}));
+});
+self.addEventListener("notificationclick", e => {
+  e.notification.close(); const to = new URL((e.notification.data && e.notification.data.url) || "./", self.location.href).href;
+  e.waitUntil(clients.matchAll({type: "window", includeUncontrolled: true}).then(ws => { for (const w of ws) if ("focus" in w) { w.navigate(to).catch(() => {}); return w.focus(); } return clients.openWindow(to); }));
+});
 self.addEventListener("fetch", e => {
   const req = e.request; if (req.method !== "GET") return;
   const url = new URL(req.url);

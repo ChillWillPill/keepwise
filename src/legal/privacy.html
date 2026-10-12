@@ -17,7 +17,7 @@
 </header>
 
 <h1>Privacy Policy</h1>
-<p class="meta">Effective date: 6 October 2026</p>
+<p class="meta">Effective date: 11 October 2026</p>
 
 <section class="summary">
   <h2>Summary</h2>
@@ -128,7 +128,11 @@
 <h3>Notifications</h3>
 <p>In the Android app you can turn on reminders about your subscriptions. In the 10 days before your payday, or before a new month if you have not set a payday, KeepWise can show one notification a day that asks how much you use a subscription, with buttons to answer. The reminders stop for that month when you answer one or open the Subs tab, and they become less frequent if you do not respond.</p>
 <p>With reminders on, KeepWise can also ask about a subscription about a week before its own renewal date, and can remind you once, the morning after your pay or other income was due, if you have not logged it. On every device, the Month tab may ask whether money that was due has arrived. If you give a bill a due day, KeepWise can remind you the day before it is due and ask once, from the day after, whether you paid it, and it does not ask again until the next due day. Your answers are stored on your device only.</p>
-<p>Reminders are off until you turn them on, and your phone asks for your permission first. They are scheduled by the app on your device, using the subscriptions you entered. No push notification service, server or device identifier is used to deliver them, and we do not learn whether you received, opened or answered one. You can turn reminders off at any time on the Subs tab or in your phone's settings.</p>
+<p>Reminders are off until you turn them on, and your phone asks for your permission first. They are scheduled by the app on your device, using the subscriptions you entered. No push notification service, server or device identifier is used to deliver them, and we do not learn whether you received, opened or answered one. You can turn reminders off at any time in Settings or in your phone's settings.</p>
+<h3>Notifications in the web app</h3>
+<p>In the web app, including on iPhone after you add KeepWise to your Home Screen, you can turn on notifications in Settings. KeepWise then sends you one short nudge two days before your payday, or before a new month if you have not set a payday. The nudge is the same for everyone and says nothing about your money.</p>
+<p>To deliver it, your device works out the dates of your next few nudges and sends only those dates, your time zone and a push address created by your browser to our database, run by Google Firebase. Firebase Cloud Messaging delivers the nudge. No names, amounts, bills, subscriptions or account details are sent. The dates are updated when you open the app and your pay schedule has changed.</p>
+<p>Notifications are off until you turn them on, and your browser or phone asks for your permission first. When you turn them off in Settings, the push address and dates are deleted. If your browser stops accepting notifications, we delete them the next time a nudge fails to arrive.</p>
 
 <h2>9. Service providers</h2>
 <p>We use the following service providers. When your device connects to them, they receive standard technical data that any website receives, such as your IP address, browser type, device type and the time of the request. Each provider handles that data under its own privacy policy.</p>
@@ -136,6 +140,8 @@
   <thead><tr><th>Provider</th><th>Purpose</th><th>What it receives</th></tr></thead>
   <tbody>
     <tr><td>Google LLC (Firebase Authentication and Cloud Firestore)</td><td>Account sign-in and storage of account information, acting as our processor</td><td>The account information described in section 5, if you create an account</td></tr>
+    <tr><td>Google LLC (Firebase Cloud Messaging)</td><td>Delivers web app notifications, only if you turn them on, acting as our processor</td><td>A push address created by your browser, your nudge dates and time zone</td></tr>
+    <tr><td>GitHub, Inc. (GitHub Actions)</td><td>Runs the daily job that sends web app notifications</td><td>Reads the push addresses, nudge dates and time zones to send that day's nudges</td></tr>
     <tr><td>GitHub, Inc. (GitHub Pages and Releases)</td><td>Hosts the website and the Android app download</td><td>Technical data when you open the website or download the app</td></tr>
     <tr><td>jsDelivr</td><td>Delivers the Firebase sign-in library and the Tesseract text recognition library</td><td>Technical data when you open the Account screen, when you are signed in, or when you import a scanned statement or a photo</td></tr>
     <tr><td>Google LLC (Google Fonts)</td><td>Delivers the typefaces used by the Service</td><td>Technical data when the app loads fonts</td></tr>

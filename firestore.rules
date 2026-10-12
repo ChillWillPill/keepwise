@@ -1,11 +1,21 @@
 rules_version = '2';
-// Keepwise: each signed-in person can read and change only their own profile. Nothing else is stored.
+// Keepwise: each signed-in person can read and change only their own profile. Web push keeps only a push address and nudge dates.
 service cloud.firestore {
   match /databases/{database}/documents {
     // The owner's Google account can read every profile for the admin dashboard. It cannot change them.
     function isOwner() {
       return request.auth != null && request.auth.token.email == 'notartist04@gmail.com'
         && request.auth.token.email_verified == true && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+    // Web push: a device's push address and the dates of its next nudges. Anyone may add or remove their own;
+    // nobody can read them from the app. Only the sender, with its own key, reads them.
+    match /push/{token} {
+      allow read: if false;
+      allow delete: if true;
+      allow create, update: if request.resource.data.keys().hasOnly(['token','dates','tz','at'])
+        && request.resource.data.token == token && token.size() < 400
+        && request.resource.data.dates is list && request.resource.data.dates.size() <= 6
+        && request.resource.data.tz is string && request.resource.data.tz.size() < 60;
     }
     match /users/{uid} {
       allow read: if (request.auth != null && request.auth.uid == uid) || isOwner();

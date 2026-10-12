@@ -3814,9 +3814,57 @@ async def the_header_lines_up_with_the_page_on_every_phone(ctx):
           const svgOff = btns.map(x => { const s = x.querySelector('svg, img'); if (!s) return 0; const a = b(x), c = b(s); return Math.max(Math.abs((a.left + a.right) / 2 - (c.left + c.right) / 2), Math.abs((a.top + a.bottom) / 2 - (c.top + c.bottom) / 2)); });
           return {left: logo.left - card.left, right: rs[rs.length - 1].right - card.right, sizes: rs.map(x => Math.round(x.width)), tops: rs.map(x => Math.round(x.top)), mid: Math.abs((logo.top + logo.bottom) / 2 - (rs[0].top + rs[0].bottom) / 2), svg: Math.max(...svgOff), overflow: document.documentElement.scrollWidth - innerWidth, n: rs.length}; }""")
         assert abs(r["left"]) <= 1 and abs(r["right"]) <= 1, (w, "edges", r)
-        assert len(set(r["sizes"])) == 1 and len(set(r["tops"])) == 1 and r["mid"] <= 2 and r["svg"] <= 1.5 and r["overflow"] <= 0 and r["n"] >= 3, (w, r)
+        assert len(set(r["sizes"])) == 1 and len(set(r["tops"])) == 1 and r["mid"] <= 2 and r["svg"] <= 0.75 and r["overflow"] <= 0 and r["n"] >= 3, (w, r)
         assert not pg.errors, pg.errors
         await pg.close()
+
+@test
+async def every_switch_in_settings_works_where_it_is_shown(ctx):
+    # in a browser there are no pop-up reminders, so no switch that does nothing: the row says so and opens the bell
+    pg = await open_app(ctx, month_tabs=True, w=375, h=812)
+    for k in ("settings", "security"):
+        await _menu(pg, k)
+        sw = pg.locator("#view .switch")
+        for i in range(await sw.count()):
+            s = sw.nth(i); before = await s.get_attribute("aria-checked"); await s.click(); await pg.wait_for_timeout(250)
+            s = pg.locator("#view .switch").nth(i); assert await s.get_attribute("aria-checked") != before, (k, i, "a switch that does not switch")
+            await s.click(); await pg.wait_for_timeout(250)
+        await pg.click("[data-settings-close]"); await pg.wait_for_timeout(200)
+    await _menu(pg, "settings")
+    row = pg.locator("[data-set-remind]"); assert await row.locator(".switch").count() == 0 and "bell" in await row.inner_text()
+    await row.locator("[data-remind-bell]").click(); await pg.wait_for_timeout(300); assert await pg.locator("[data-close-inbox]").count() >= 1
+    # in the Android app the switch is there and turns reminders on
+    pg2 = await ctx.new_page(); await pg2.set_viewport_size({"width": 390, "height": 844}); pg2.errors = []; pg2.on("pageerror", lambda e: pg2.errors.append(str(e)))
+    await pg2.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;" + NOTIF_MOCK); await pg2.goto(URL); await pg2.wait_for_timeout(300)
+    await _menu(pg2, "settings"); s = pg2.locator("[data-remind-set]"); assert await s.count() == 1
+    if await s.get_attribute("aria-checked") == "true": await s.click(); await pg2.wait_for_timeout(250)
+    await pg2.locator("[data-remind-set]").click(); await pg2.wait_for_timeout(300); assert await pg2.get_attribute("[data-remind-set]", "aria-checked") == "true"
+    assert not pg.errors and not pg2.errors, (pg.errors, pg2.errors)
+
+@test
+async def web_notifications_turn_on_from_settings(ctx):
+    # with the web push key in place, a browser gets a real switch; an iPhone not yet on the Home Screen is told how
+    for ua, standalone, expect in ((None, False, "switch"), ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1", False, "home")):
+        c2 = await ctx.browser.new_context(user_agent=ua) if ua else ctx
+        pg = await c2.new_page(); await pg.set_viewport_size({"width": 390, "height": 844}); pg.errors = []; pg.on("pageerror", lambda e: pg.errors.append(str(e)))
+        await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true; window.KEEPWISE_PUSH_VAPID = 'test-key';")
+        await pg.goto(URL); await pg.wait_for_timeout(400); await _menu(pg, "settings")
+        row = pg.locator("[data-set-remind]"); txt = await row.inner_text()
+        if expect == "switch":
+            assert await row.locator("[data-push-set]").count() == 1 and "Nothing about your money is sent" in txt, txt
+            await pg.click("[data-settings-close]"); await _menu(pg, "security")
+            assert "If you turn on notifications" in await pg.inner_text("#view")
+        else:
+            assert await row.locator(".switch").count() == 0 and "Home Screen" in txt, txt
+        assert not pg.errors, pg.errors
+        await pg.close()
+        if ua: await c2.close()
+    # the service worker shows what a push carries and opens the app when tapped
+    sw = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "www", "sw.js")).read()
+    assert 'addEventListener("push"' in sw and 'addEventListener("notificationclick"' in sw
+    # an app left open on the Home Screen looks for a new version when it comes back, and reloads once when it is ready
+    idx = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "www", "index.html")).read()
+    assert "controllerchange" in idx and "reg.update()" in idx
 
 @test
 async def envelopes_can_be_set_as_amounts(ctx):
