@@ -108,7 +108,7 @@ OVERFLOW = """(()=>{const vw=document.documentElement.clientWidth,bad=[];
 document.querySelectorAll('#view *, .app-header *, #tabbar *').forEach(el=>{
   if(el.closest('svg')||el.closest('.sr'))return; if(el.parentElement&&el.parentElement.closest('[data-scroll-x]'))return; /* a row that scrolls sideways on purpose; the row itself is still checked */ const r=el.getBoundingClientRect(); if(!r.width)return;
   if(r.left<-0.5||r.right>vw+0.5) bad.push((el.className||el.tagName)+':'+Math.round(r.left)+'-'+Math.round(r.right));
-  if(/^(SPAN|B|P|H1|H2|H3|BUTTON|DIV)$/.test(el.tagName)&&el.children.length===0&&getComputedStyle(el).textOverflow!=='ellipsis'&&el.scrollWidth>el.clientWidth+1&&getComputedStyle(el).overflowX!=='visible') bad.push('clipped '+el.textContent.slice(0,20));
+  if(/^(SPAN|B|P|H1|H2|H3|BUTTON|DIV)$/.test(el.tagName)&&el.children.length===0&&!el.classList.contains('sr-only')&&getComputedStyle(el).textOverflow!=='ellipsis'&&el.scrollWidth>el.clientWidth+1&&getComputedStyle(el).overflowX!=='visible') bad.push('clipped '+el.textContent.slice(0,20));
 });
 const labels=[...document.querySelectorAll('#tabbar .tab span:last-child')].filter(s=>s.scrollWidth>s.clientWidth+1).map(s=>s.textContent);
 return {sw:document.documentElement.scrollWidth,vw,bad:bad.slice(0,6),labels}})()"""
@@ -490,7 +490,16 @@ async def plan_reset_confirm_flow(ctx):
 async def split_balances_math(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
     t = await text(pg, "[data-out=splitSum] .summary3")
-    assert "You're owed $83" in t and "You owe $73.50" in t and "$9.50" in t, t
+    assert "You're owed $83" in t and "You owe $73.50" in t and "from 3 people" in t, t
+    hero = await text(pg, "[data-split-hero]"); assert "overall you’re owed" in hero.lower() and "$9.50" in await text(pg, "[data-split-hero] .big"), hero
+    # one card per person: tap to see what makes up the amount, and remind the ones who owe you
+    card = pg.locator(".pb-card", has_text="Alex"); assert "owes you" in await card.inner_text()
+    await card.locator("[data-pb-open]").click(); await pg.wait_for_timeout(150)
+    assert await pg.locator(".pb-card", has_text="Alex").locator(".pb-row").count() >= 1
+    await pg.evaluate("navigator.clipboard.writeText = async t => { window.__copied = t; }; navigator.share = undefined")
+    await pg.locator(".pb-card", has_text="Alex").locator("[data-remind]").click(); await pg.wait_for_timeout(200)
+    copied = await pg.evaluate("window.__copied || ''"); assert copied.startswith("Hi Alex") and "$21.50" in copied, copied
+    assert await pg.locator(".pb-card", has_text="Jordan").locator("[data-remind]").count() == 0, "only people who owe you get a Remind"
 
 @test
 async def split_new_equal_percent_exact_borrow(ctx):
@@ -1993,7 +2002,7 @@ async def split_shows_as_expected_and_counts_only_when_paid(ctx):
     kept = lambda: kept_month(pg)
     # the example month: you owe Jordan 37.50, and someone owes you
     await tab(pg, "split"); rows = await pg.locator("[data-settle]").all_inner_texts()
-    inrow = [r for r in rows if "owes you" in r][0]; who = inrow.split(" owes you")[0].strip(); amt = money(inrow.split("owes you")[1].split()[0])
+    inrow = [ln for r in rows for ln in r.split("\n") if " owes you $" in ln][0]; who = inrow.split(" owes you")[0].strip(); amt = money(inrow.split("owes you")[1].split()[0])
     oid = await pg.locator("[data-settle]", has_text="Jordan").get_attribute("data-settle"); iid = await pg.locator("[data-settle]", has_text=who + " owes you").get_attribute("data-settle")
     n0 = len((await state(pg))["settlements"])
     # Month: both are listed in Coming up as expected, and what you keep has not moved
@@ -3545,7 +3554,7 @@ SPILL_CHECK = r"""() => { const out = [], vw = innerWidth, box = e => e.getBound
       if (b.right > cb.right + 1 || b.left < cb.left - 1) out.push('SPILL-X ' + tag(e) + ' in ' + tag(card).slice(0, 40));
       else if (b.bottom > cb.bottom + 1) out.push('SPILL-Y ' + tag(e) + ' in ' + tag(card).slice(0, 40));
       if (b.right > vw + 1) out.push('OFFSCREEN ' + tag(e)); }); });
-  document.querySelectorAll('#view *, #tabbar *, header *').forEach(e => { if (!vis(e) || e.children.length || !e.textContent.trim()) return; const c = getComputedStyle(e);
+  document.querySelectorAll('#view *, #tabbar *, header *').forEach(e => { if (!vis(e) || e.children.length || !e.textContent.trim() || e.classList.contains('sr-only')) return; const c = getComputedStyle(e);
     if (e.scrollWidth > e.clientWidth + 1 && c.overflowX !== 'visible'){ const num = /\d/.test(e.textContent) && (e.classList.contains('tnum') || /PKR/.test(e.textContent)); if (num || c.textOverflow !== 'ellipsis') out.push((num ? 'CUT-NUMBER ' : 'CUT-TEXT ') + tag(e)); } });
   // amounts whose box is cut by an ancestor that hides overflow
   document.querySelectorAll('#view .tnum, #view b').forEach(e => { if (!vis(e) || !/\d/.test(e.textContent)) return; let p = e.parentElement; const b = box(e);
