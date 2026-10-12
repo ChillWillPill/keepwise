@@ -626,7 +626,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .plus-list li{display:flex;gap:14px;align-items:flex-start}
 .plus-list li div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .plus-ic{flex:none;width:40px;height:40px;border-radius:12px;background:var(--gold-soft);color:var(--gold);display:grid;place-items:center}
-.plus-ic svg{width:22px;height:22px}
+.plus-ic svg{width:22px;height:22px;display:block;margin:0 !important;vertical-align:0 !important}   /* some icons carry a button margin; inside the tile they sit dead centre */
 .plus-prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .plus-price{gap:6px;align-items:flex-start}
 .plus-price.best{border-color:color-mix(in srgb,var(--gold) 55%,var(--line))}

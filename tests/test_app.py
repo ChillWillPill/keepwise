@@ -3926,6 +3926,15 @@ async def web_notifications_turn_on_from_settings(ctx):
     assert "controllerchange" in idx and "reg.update()" in idx
 
 @test
+async def every_icon_tile_is_centred(ctx):
+    pg = await open_app(ctx, month_tabs=True, w=390, h=844)
+    await pg.click("#acct-btn"); await pg.wait_for_timeout(250); await pg.click("#sidenav [data-menu=plus] >> nth=-1") if await pg.locator("#sidenav [data-menu=plus]").count() else await pg.evaluate("document.querySelector('[data-plus-open]') && document.querySelector('[data-plus-open]').click()")
+    await pg.wait_for_timeout(300)
+    off = await pg.evaluate("""[...document.querySelectorAll('.plus-ic')].map(t => { const a = t.getBoundingClientRect(), s = t.querySelector('svg').getBoundingClientRect(); return Math.max(Math.abs((a.left + a.right) / 2 - (s.left + s.right) / 2), Math.abs((a.top + a.bottom) / 2 - (s.top + s.bottom) / 2)); })""")
+    assert off and max(off) <= 1, off
+    assert not pg.errors, pg.errors
+
+@test
 async def envelopes_can_be_set_as_amounts(ctx):
     pg = await open_app(ctx, month_tabs=True, w=375, h=812)
     await tab(pg, "plan")
