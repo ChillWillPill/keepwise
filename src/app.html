@@ -33,7 +33,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .wordmark{color:var(--brand-teal)} .wordmark span{color:var(--brand-gold)}
 .brand small{color:var(--muted);font-size:.75rem}
 .bell{appearance:none;position:relative;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
-.bell[hidden],[data-loan-cardrow][hidden],[data-loan-cardother][hidden],[data-loan-ins][hidden],[data-loan-gen][hidden]{display:none!important}
+.bell[hidden],[data-yr-only][hidden],[data-loan-cardrow][hidden],[data-loan-cardother][hidden],[data-loan-ins][hidden],[data-loan-gen][hidden]{display:none!important}
 .bell:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .pw-rules{list-style:none;margin:4px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:.8rem;color:var(--muted)}
 .pw-rules li{display:flex;gap:6px;align-items:center}
@@ -168,6 +168,10 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-o
 .icon-btn{appearance:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
 .icon-btn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .hdr-actions{display:flex;gap:8px;align-items:center;flex:none}
+/* Older iPhones (iOS 16) do not always honour grid centring inside a button, so the header buttons centre their icon with flex,
+   no padding and a block-level icon: the same on every phone, in the browser and on the Home Screen. */
+.hdr-actions .icon-btn,.hdr-actions .bell{display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:0;-webkit-appearance:none;appearance:none;text-align:center}
+.hdr-actions .icon-btn > svg,.hdr-actions .bell > svg{display:block;flex:none;margin:0}
 /* The buttons on the right never get pushed off a narrow screen: the name on the left gives way first. */
 .home-link{min-width:0;flex:0 1 auto}.home-link>div{min-width:0;overflow:hidden}.home-link .wordmark,.home-link small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:429px){.hdr-actions{gap:6px}.hdr-actions .icon-btn,.hdr-actions .bell{width:40px;height:40px}}
@@ -274,8 +278,8 @@ a.btn{display:block;text-decoration:none}
 .summary3 b{display:block;font:600 1.5rem/1.2 var(--display);font-variant-numeric:tabular-nums;margin-top:4px}
 .balances{border-top:1px solid var(--line)}
 .split-hero{text-align:center;gap:6px;padding-top:18px}.split-hero .label{margin:0}.split-hero .big{margin:0}.split-square{font:600 1.4rem/1.2 var(--display);margin:4px 0}
-.split-hero .summary3.split-mini{grid-template-columns:1fr 1fr !important;gap:10px !important;margin-top:10px;text-align:left}
-.split-hero .split-mini > div{display:flex;flex-direction:column;gap:2px;border:0;padding:10px 12px;border-radius:14px}
+.split-hero .summary3.split-mini{grid-template-columns:1fr 1fr !important;gap:10px !important;margin-top:10px;text-align:center}
+.split-hero .split-mini > div{display:flex;flex-direction:column;align-items:center;gap:2px;border:0;padding:10px 12px;border-radius:14px}
 .split-hero .split-mini .sm-in{background:color-mix(in srgb,var(--green) 9%,transparent)}.split-hero .split-mini .sm-out{background:color-mix(in srgb,var(--rust) 9%,transparent)}
 .split-hero .split-mini b{font:600 1.2rem/1.2 var(--display)}
 [data-out="splitSum"]{display:flex;flex-direction:column;gap:14px}
@@ -525,6 +529,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .trip-tile:hover{border-color:var(--green)}.trip-tile:active{transform:scale(.98)}.trip-tile b{font-size:.95rem;line-height:1.2}.trip-tile .trip-ic{grid-row:1/3}.trip-tile .muted{grid-column:2;line-height:1.25}
 .trip-ic{display:inline-flex;flex:none;width:36px;height:36px;border-radius:12px;align-items:center;justify-content:center;background:color-mix(in srgb,var(--green) 14%,transparent);color:var(--green)}
 .trip-ic.ev{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}
+@media (max-width:420px){.trip-tile .muted{display:none}.trip-tile{padding:10px}.trip-tile b{font-size:.9rem}}
 @media (max-width:330px){.trip-tiles{grid-template-columns:1fr}}
 .link.inc-add{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;color:var(--green);font-weight:600}
 .link.inc-add .muted{font-weight:500;margin-left:6px}
@@ -1052,7 +1057,7 @@ function compute(){
   const pk = planPeriodNow().key;
   liveSubs.forEach(s => { const a = subCostIn(s, pk); if (s.env === "needs") needs += a; else misc += a; });
   const trips = tripsCounted(planPeriodNow().key), spends = spendsTotal(planPeriodNow().key); misc += trips + spends;  // a finished trip you chose to count is a one-off in that month
-  const giving = givingMonthly(); misc += giving;  // what you give regularly counts under Miscellaneous
+  const giving = givingIn(pk); misc += giving;  // what you give regularly counts under Miscellaneous
   const loans = loansMonthly(); needs += loans;  // debt payments are part of what must go out; Month shows them on their own row
   const bonus = payBonus(planPeriodNow());
   const income = (+S.income || 0) + extraExpected() + bonus.extra + insTotal(planPeriodNow().key);  // one-off money in counts in the month it arrived
@@ -2259,8 +2264,8 @@ function donutItems(all){
   if (all){
     C.liveSubs.forEach(x => { const a = subCost(x); if (a > 0.005) items.push({name: x.name, amount: a, kind: x.cycle === "yr" ? "Subscription, yearly" : "Subscription"}); });
     (S.loans || []).filter(l => !loanDone(l)).forEach(l => { const a = loanMonthly(l); if (a > 0.005) items.push({name: l.name || "Loan", amount: r2(a), kind: "Loan or debt"}); });
-    if (GIVING_ON) (S.giving || []).forEach(g => { const a = giveMonthly(g); if (a > 0.005) items.push({name: g.name || "Giving", amount: a, kind: "Giving"}); });
-  } else [["Subscriptions", C.liveSubs.reduce((t, x) => t + subCost(x), 0)], ["Loans and debt", C.loans], ["Giving", givingMonthly()]].forEach(([name, amount]) => { if (amount > 0.005) items.push({name, amount}); });
+    if (GIVING_ON) (S.giving || []).forEach(g => { const a = giveCostIn(g, C.planKey); if (a > 0.005) items.push({name: g.name || "Giving", amount: a, kind: "Giving"}); });
+  } else [["Subscriptions", C.liveSubs.reduce((t, x) => t + subCost(x), 0)], ["Loans and debt", C.loans], ["Giving", givingIn(C.planKey)]].forEach(([name, amount]) => { if (amount > 0.005) items.push({name, amount}); });
   [["Trips and events", C.trips], ["One-off spending", C.spends]].forEach(([name, amount]) => { if (amount > 0.005) items.push({name, amount, kind: "This month only"}); });
   return items.sort((a, b) => b.amount - a.amount);
 }
@@ -2398,7 +2403,7 @@ function envDetail(k, C){
   const subs = C.liveSubs.filter(s => s.env === k);
   return `<div class="env-body">
     ${k === "misc" ? spendGroups(C.planKey).map(spendRow).join("") : ""}
-    ${k === "misc" && GIVING_ON ? (S.giving || []).map(g => `<div class="line" data-give-line="${g.id}"><div><div>${esc(g.name || giveCause(g.cause))}</div><div class="muted small">Giving · ${esc(giveEvery(g.every)[1])}</div></div><div class="inline"><span class="tnum">${fmt(giveMonthly(g))}</span><button class="link plain" type="button" data-go="plan">Edit</button></div></div>`).join("") : ""}
+    ${k === "misc" && GIVING_ON ? (S.giving || []).map(g => `<div class="line" data-give-line="${g.id}"><div><div>${esc(g.name || giveCause(g.cause))}</div><div class="muted small">Giving · ${g.every === "yr" ? `yearly, ${fmt(g.amount)} · ${giveCostIn(g, C.planKey) && g.on ? "given this month" : g.on ? `next ${dateWithYear(nextAnniv(g.on), true)}` : "add the date"}` : esc(giveEvery(g.every)[1])}</div></div><div class="inline"><span class="tnum">${fmt(giveCostIn(g, C.planKey))}</span><button class="link plain" type="button" data-go="plan">Edit</button></div></div>`).join("") : ""}
     ${k === "needs" ? paidSum(exp.map(e => { const w = swapFor("expense", e.id); return ["e:" + e.id, +(w ? w.altCost : e.amount) || 0]; }), C.planKey) : ""}
     ${exp.map(e => { const w = swapFor("expense", e.id), pd = k === "needs" ? paidOn("e:" + e.id, C.planKey) : ""; return `<div class="line${pd ? " paid" : ""}" data-exp="${e.id}">${k === "needs" ? tickBtn("e:" + e.id, e.name, C.planKey) : ""}<div><div>${esc(e.name)}</div><div class="muted small">${pd ? `Paid ${shortDate(pd)}` : w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : "Every month"}</div></div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link danger-link" type="button" data-del-exp>Remove</button></div></div>`; }).join("")}
     ${subs.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Yearly, ${fmt(sb.price)} · ${subCharged(sb, C.planKey) ? "charged this month" : nextRenewal(sb) ? `next ${shortDate(isoOf(nextRenewal(sb)))}` : "paid for the year"}` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subCostIn(sb, C.planKey))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
@@ -4286,6 +4291,13 @@ async function tellSend(text, name){
 const GIVE_CAUSES = [["children","Children"],["orphans","Orphans"],["veterans","Veterans"],["relief","Emergency relief"],["health","Health"],["education","Education"],["faith","Faith"],["family","Family and community"],["animals","Animals"],["other","Other"]];
 const GIVE_EVERY = [["mo","Every month"],["wk","Every week"],["2x","Twice a month"],["yr","Every year"]];
 const giveCause = k => (GIVE_CAUSES.find(x => x[0] === k) || GIVE_CAUSES[9])[1], giveEvery = k => GIVE_EVERY.find(x => x[0] === k) || GIVE_EVERY[0];
+// Something paid once a year counts in full in the month it is paid, and not at all in the others. Without a date it is spread, and asks for one.
+function annivIn(on, k){ if (!on) return false; const [y, m, d] = on.split("-").map(Number), cy = new Date().getFullYear();
+  for (const Y of [cy - 1, cy, cy + 1]) { if (Y < y) continue; if (inMonth(isoOf(new Date(Y, m - 1, Math.min(d, daysInMonth(Y, m - 1)))), k)) return true; } return false; }
+function nextAnniv(on){ if (!on) return null; const [y, m, d] = on.split("-").map(Number), t = todayMid(); let r = new Date(y, m - 1, d); while (r < t) r = new Date(r.getFullYear() + 1, m - 1, Math.min(d, daysInMonth(r.getFullYear() + 1, m - 1))); return r; }
+const yearlyIn = (amt, on, k) => on ? (annivIn(on, k) ? amt : 0) : amt / 12;
+const giveCostIn = (g, k) => g.every === "yr" ? r2(yearlyIn(+g.amount || 0, g.on, k || planPeriodNow().key)) : giveMonthly(g);
+const givingIn = k => GIVING_ON ? r2((S.giving || []).reduce((a, g) => a + giveCostIn(g, k), 0)) : 0;
 const giveMonthly = g => { const a = +g.amount || 0; return r2(g.every === "wk" ? a * 52 / 12 : g.every === "2x" ? a * 2 : g.every === "yr" ? a / 12 : a); };
 const GIVING_ON = true;
 const givingMonthly = () => GIVING_ON ? r2((S.giving || []).reduce((a, g) => a + giveMonthly(g), 0)) : 0;
@@ -4294,12 +4306,13 @@ function giveForm(g){
   return `<form class="inc-form" data-form="give"><label class="field"><span>Who it goes to</span><input name="name" value="${esc(d.name)}" placeholder="e.g. Local food bank" enterkeyhint="next" autocomplete="off" maxlength="40"></label>
     <div class="grid2"><label class="field"><span>Cause</span><select name="cause">${opt(GIVE_CAUSES, d.cause)}</select></label><label class="field"><span>How often</span><select name="every">${opt(GIVE_EVERY, d.every)}</select></label></div>
     <label class="field"><span>Amount each time</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.amount)}"></span></label>
+    <label class="field" data-yr-only ${d.every === "yr" ? "" : "hidden"}><span>Date you give it each year</span><input name="on" type="date" value="${esc(d.on || isoDaysAgo(0))}"></label>
     ${editBtns(!g, "data-give-del", "Add giving", "data-give-cancel")}</form>`;
 }
-OUT.giving = () => { if (!GIVING_ON) return ""; const list = S.giving || [], tot = givingMonthly();
-  return `<section class="card inc-card" data-giving><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Giving${infoBtn("giving", "About Giving")}</h2>${list.length ? `<span class="muted small tnum">${fmt(tot)}/mo</span>` : ""}</div>
-    ${infoTip("giving", "Money you give regularly, to anyone you choose. It counts under Miscellaneous at its monthly cost. KeepWise does not collect or send donations.")}
-    ${list.map(g => UI.giveEdit === g.id ? `<div class="inc-row editing" data-give="${g.id}">${giveForm(g)}</div>` : `<div class="inc-row" data-give="${g.id}"><div class="row-top"><div><div class="name">${esc(g.name || giveCause(g.cause))}</div><div class="muted small">${esc(giveCause(g.cause))} · ${esc(giveEvery(g.every)[1].toLowerCase())}</div></div><div style="text-align:right"><div class="name tnum">${fmt(g.amount)}</div>${g.every === "mo" ? "" : `<div class="muted small tnum">${fmt(giveMonthly(g))}/mo</div>`}</div></div>
+OUT.giving = () => { if (!GIVING_ON) return ""; const list = S.giving || [], tot = givingMonthly(), k = planPeriodNow().key, now = givingIn(k), anyYr = list.some(g => g.every === "yr");
+  return `<section class="card inc-card" data-giving><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Giving${infoBtn("giving", "About Giving")}</h2>${list.length ? `<span class="muted small tnum" data-giving-now>${anyYr ? `${fmt(now)} this month` : `${fmt(tot)}/mo`}</span>` : ""}</div>
+    ${infoTip("giving", "Money you give regularly, to anyone you choose. It counts under Miscellaneous: monthly and weekly giving every month, yearly giving in full in the month you give it. KeepWise does not collect or send donations.")}
+    ${list.map(g => UI.giveEdit === g.id ? `<div class="inc-row editing" data-give="${g.id}">${giveForm(g)}</div>` : `<div class="inc-row" data-give="${g.id}"><div class="row-top"><div><div class="name">${esc(g.name || giveCause(g.cause))}</div><div class="muted small">${esc(giveCause(g.cause))} · ${esc(giveEvery(g.every)[1].toLowerCase())}</div></div><div style="text-align:right"><div class="name tnum">${fmt(g.amount)}${g.every === "yr" ? `<span class="muted small">/yr</span>` : ""}</div>${g.every === "mo" ? "" : g.every === "yr" ? `<div class="muted small" data-give-next>${g.on ? (giveCostIn(g, k) ? "Given this month" : `Next ${dateWithYear(nextAnniv(g.on), true)}`) : "Add the date"}</div>` : `<div class="muted small tnum">${fmt(giveMonthly(g))}/mo</div>`}</div></div>
       <button class="link plain small" type="button" data-give-edit aria-label="Edit ${esc(g.name || giveCause(g.cause))}" style="align-self:flex-end">Edit</button></div>`).join("")}
     ${UI.giveAdd ? `<div class="inc-row editing">${giveForm(null)}</div>` : `<button class="btn" type="button" data-give-add>${I.plus}Add giving</button>`}
     ${list.length ? `<p class="muted small">That is ${fmt(r2(tot * 12))} a year.</p>` : UI.giveAdd ? "" : `<p class="muted small">Charity, family support, your place of worship: anything you give on a regular basis.</p>`}</section>`; };
@@ -4319,7 +4332,8 @@ const LOAN_EVERY = [["mo","Every month","a month"],["wk","Every week","a week"],
 const CARD_TYPES = ["Visa", "Mastercard", "American Express", "Discover", "UnionPay", "Other"];
 const loanKind = k => (LOAN_KINDS.find(x => x[0] === k) || LOAN_KINDS.find(x => x[0] === "other"))[1];
 const loanList = () => S.loans || (S.loans = []);
-const loanMonthly = l => { if (l.kind === "carins") return insThisMonth(l); const a = +l.pay || 0, fee = l.kind === "card" ? (+l.fee || 0) / 12 : 0; return fee + (l.every === "wk" ? a * 52 / 12 : l.every === "2wk" ? a * 26 / 12 : l.every === "yr" ? a / 12 : a); };
+const loanMonthly = l => { if (l.kind === "carins") return insThisMonth(l); const k = planPeriodNow().key, a = +l.pay || 0, fee = l.kind === "card" ? yearlyIn(+l.fee || 0, l.feeOn, k) : 0; return r2(fee + (l.every === "wk" ? a * 52 / 12 : l.every === "2wk" ? a * 26 / 12 : l.every === "yr" ? yearlyIn(a, l.on, k) : a)); };
+const loanYearly = l => l.kind !== "carins" && (l.every === "yr" || (l.kind === "card" && +l.fee > 0));   // has a once-a-year part, so its amount is for this month
 const loanDone = l => l.kind !== "carins" && !!l.end && l.end < isoDaysAgo(0);   // a policy renews: it is never paid off
 const loansMonthly = () => r2((S.loans || []).filter(l => !loanDone(l)).reduce((a, l) => a + loanMonthly(l), 0));
 function loanFinish(l){
@@ -4356,7 +4370,8 @@ function loanForm(l){
   return `<form class="inc-form" data-form="loan"><div class="grid2"><label class="field"><span>Type</span>${sel("kind", LOAN_KINDS, d.kind)}</label>
       <label class="field"><span>Name <small class="muted">optional</small></span><input name="name" value="${esc(d.name)}" placeholder="e.g. Bank of America" enterkeyhint="next" autocomplete="off"></label></div>
     <div class="grid2" data-loan-cardrow ${d.kind === "card" ? "" : "hidden"}><label class="field"><span>Card</span>${sel("card", CARD_TYPES.map(c => [c, c]), cardSel)}</label>
-      <label class="field"><span>Yearly fee <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="fee" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.fee || "")}"></span></label></div>
+      <label class="field"><span>Yearly fee <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="fee" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.fee || "")}"></span></label>
+      <label class="field" style="grid-column:1/-1"><span>Fee is charged on <small class="muted">counts in that month only</small></span><input name="feeOn" type="date" value="${esc(d.feeOn || "")}"></label></div>
     <label class="field" data-loan-cardother ${d.kind === "card" && cardSel === "Other" ? "" : "hidden"}><span>Card name</span><input name="cardOther" value="${esc(cardSel === "Other" && d.card !== "Other" ? d.card || "" : "")}" placeholder="e.g. Store card" maxlength="30" enterkeyhint="next" autocomplete="off"></label>
     <div data-loan-ins ${d.kind === "carins" ? "" : "hidden"} style="display:flex;flex-direction:column;gap:12px">
       <div class="grid2"><label class="field"><span>Premium for the policy</span><span class="money-in"><em>${esc(sym())}</em><input name="premium" inputmode="decimal" enterkeyhint="next" placeholder="e.g. 900" value="${esc(d.premium || "")}"></span></label>
@@ -4367,6 +4382,7 @@ function loanForm(l){
     <div data-loan-gen ${d.kind === "carins" ? "hidden" : ""} style="display:flex;flex-direction:column;gap:12px">
     <div class="grid2"><label class="field"><span>Payment</span><span class="money-in"><em>${esc(sym())}</em><input name="pay" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.pay)}"></span></label>
       <label class="field"><span>How often</span>${sel("every", LOAN_EVERY, d.every)}</label></div>
+    <label class="field" data-yr-only ${d.every === "yr" ? "" : "hidden"}><span>Paid on, each year</span><input name="on" type="date" value="${esc(d.on || isoDaysAgo(0))}"></label>
     <div class="grid2"><label class="field"><span>Left to pay <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="total" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.total)}"></span></label>
       <label class="field"><span>Installments left <small class="muted">optional</small></span><input name="left" inputmode="numeric" enterkeyhint="next" placeholder="e.g. 24" value="${esc(d.left || "")}"></label></div>
     <div class="grid2"><label class="field"><span>End date <small class="muted">optional</small></span><input name="end" type="date"${dFrom(d.end)} value="${esc(d.end || "")}"></label>
@@ -4393,12 +4409,12 @@ OUT.loans = () => {
     if (l.kind === "carins") return insRow(l);
     const f = loanFinish(l), done = loanDone(l), rate = loanRate(l), ev = (LOAN_EVERY.find(x => x[0] === l.every) || LOAN_EVERY[0])[2];
     return `<div class="inc-row" data-loan="${l.id}"><div class="row-top"><div><div class="name">${esc(l.name || loanKind(l.kind))}</div><div class="muted small">${esc(loanKind(l.kind))}${l.kind === "card" && l.card ? " · " + esc(l.card) : ""} · ${fmt(l.pay)} ${ev}${l.kind === "card" && +l.fee > 0 ? ` · ${fmt(l.fee)} yearly fee` : ""}</div></div>
-        <div style="text-align:right">${done ? `<span class="pill ok">Paid off</span>` : `<div class="name tnum">${fmt(loanMonthly(l))}<span class="muted small">/mo</span></div>`}${+l.total > 0 && !done ? `<div class="muted small tnum">${fmt(l.total)} left</div>` : ""}</div></div>
+        <div style="text-align:right">${done ? `<span class="pill ok">Paid off</span>` : `<div class="name tnum">${fmt(loanMonthly(l))}<span class="muted small">${loanYearly(l) ? " this month" : "/mo"}</span></div>`}${+l.total > 0 && !done ? `<div class="muted small tnum">${fmt(l.total)} left</div>` : ""}</div></div>
       ${!done && (+l.left > 0 || (rate && !rate.short)) ? `<p class="small">${[+l.left > 0 ? `${l.left} installment${+l.left === 1 ? "" : "s"} left` : "", rate && !rate.short ? `interest about ${rate.apr}% a year` : ""].filter(Boolean).join(" · ").replace(/^./, c => c.toUpperCase())}</p>` : ""}
       ${done ? `<p class="muted small">Ended ${shortDate(l.end)}. It no longer counts in your plan.</p>` : f ? `<p class="small ${f.est ? "muted" : ""}">${f.est ? `About ${f.months} month${f.months === 1 ? "" : "s"} to go at this pace, around ${monthYear(f.date)}. Interest is not included.` : f.months === 0 ? `Ends ${shortDate(l.end)}.` : `Ends ${monthYear(f.date)}, ${f.months} month${f.months === 1 ? "" : "s"} from now.`}</p>` : ""}
       <button class="link plain small" type="button" data-loan-edit aria-label="Edit ${esc(l.name || loanKind(l.kind))}" style="align-self:flex-end">Edit</button></div>`; }).join("");
-  return `<section class="card inc-card loan-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Loans and debt${infoBtn("loans", "About loans and debt")}</h2>${live.length ? `<span class="muted small tnum">${fmt(loansMonthly())}/mo</span>` : ""}</div>
-    ${infoTip("loans", "Loan and credit card payments come out of what you keep each month until the end date passes, and show as Loans & debts on the Month tab. A card’s yearly fee is spread across the year. Interest is worked out only when the payment, amount left, installments left and end date are all filled in. With an amount left and no end date, the finish is estimated from your payments and does not include interest. Car insurance runs for its policy length: monthly installments count each month, a premium paid in full counts in the month it is paid.")}
+  return `<section class="card inc-card loan-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Loans and debt${infoBtn("loans", "About loans and debt")}</h2>${live.length ? `<span class="muted small tnum">${fmt(loansMonthly())}${live.some(loanYearly) ? " this month" : "/mo"}</span>` : ""}</div>
+    ${infoTip("loans", "Loan and credit card payments come out of what you keep each month until the end date passes, and show as Loans & debts on the Month tab. A card’s yearly fee, and anything paid once a year, counts in full in the month it is charged. Interest is worked out only when the payment, amount left, installments left and end date are all filled in. With an amount left and no end date, the finish is estimated from your payments and does not include interest. Car insurance runs for its policy length: monthly installments count each month, a premium paid in full counts in the month it is paid.")}
     ${rows}${UI.loanAdd ? `<div class="inc-row editing">${loanForm(null)}</div>` : `<button class="btn" type="button" data-loan-add>${I.plus}Add a loan, card or car insurance</button>`}
     ${live.length && owed > 0 ? `<p class="muted small">You owe ${fmt(owed)} in total across ${live.filter(l => +l.total > 0).length} of these.</p>` : !list.length && !UI.loanAdd ? `<p class="muted small">Bank loans, student debt, credit cards and anything else you are paying back.</p>` : ""}</section>`;
 };
@@ -5376,6 +5392,7 @@ view.addEventListener("input", e => {
 view.addEventListener("change", e => {
   const t = e.target;
   if (t.form && t.form.dataset.form === "loan"){ if (t.name && UI.loanDraft && t.name !== "rate") UI.loanDraft[t.name] = t.value; loanCalc(t.form); }
+  if (t.name === "every" && t.form && (t.form.dataset.form === "loan" || t.form.dataset.form === "give")){ const y = t.form.querySelector("[data-yr-only]"); if (y) y.hidden = t.value !== "yr"; }
   if (t.name === "kind" && t.form && t.form.dataset.form === "loan"){ const r = t.form.querySelector("[data-loan-cardrow]"), o = t.form.querySelector("[data-loan-cardother]"); if (r) r.hidden = t.value !== "card"; if (o) o.hidden = t.value !== "card" || t.form.elements.card.value !== "Other";
     const ins = t.form.querySelector("[data-loan-ins]"), gen = t.form.querySelector("[data-loan-gen]"); if (ins) ins.hidden = t.value !== "carins"; if (gen) gen.hidden = t.value === "carins"; return; }
   if (t.name === "card" && t.form && t.form.dataset.form === "loan"){ const o = t.form.querySelector("[data-loan-cardother]"); if (o){ o.hidden = t.value !== "Other"; if (!o.hidden) o.querySelector("input").focus(); } return; }
@@ -5645,7 +5662,7 @@ view.addEventListener("click", async e => {
       const sub = n.sub && S.subs.find(x => x.id === n.sub);
       if (String(n.key).startsWith("L:a:") && S.arriveSnooze) S.arriveSnooze = null;   // asked to see it: show the card even after "ask me tomorrow"
       const loanX = n.loan && loanList().find(l => l.id === n.loan);
-      if (loanX){ UI.loanAdd = false; UI.loanEdit = loanX.id; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || "", premium: loanX.premium || "", term: loanX.term || 6, plan: loanX.plan || "monthly", start: loanX.start || "", insfee: loanX.kind === "carins" ? loanX.fee || "" : ""}; }   // open the loan card ready to fill in
+      if (loanX){ UI.loanAdd = false; UI.loanEdit = loanX.id; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || "", feeOn: loanX.feeOn || "", on: loanX.on || "", premium: loanX.premium || "", term: loanX.term || 6, plan: loanX.plan || "monthly", start: loanX.start || "", insfee: loanX.kind === "carins" ? loanX.fee || "" : ""}; }   // open the loan card ready to fill in
       if (sub && surveyDue(sub)) openSurvey(sub.id); else goTo(n.go, n.sel);
       return; } }
   if (b.hasAttribute("data-close-inbox")){ UI.inbox = false; render(false); return; }
@@ -5681,7 +5698,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-give-edit")){ UI.giveEdit = b.closest("[data-give]").dataset.give; UI.giveAdd = false; render(true); return; }
   if (b.hasAttribute("data-give-del")){ const u = undoable(), g = (S.giving || []).find(x => x.id === UI.giveEdit); S.giving = (S.giving || []).filter(x => x !== g); UI.giveEdit = null; save(); render(true); toast(`Removed ${g ? g.name || giveCause(g.cause) : "it"}.`, u); return; }
   if (b.hasAttribute("data-loan-add")){ UI.loanAdd = true; UI.loanEdit = null; UI.loanDraft = {kind: "bank", name: "", pay: "", every: "mo", total: "", end: "", left: ""}; render(true); const f = view.querySelector('form[data-form="loan"] [name=pay]'); if (f) f.focus(); return; }
-  if (b.hasAttribute("data-loan-edit") && loanX){ UI.loanEdit = loanX.id; UI.loanAdd = false; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || "", premium: loanX.premium || "", term: loanX.term || 6, plan: loanX.plan || "monthly", start: loanX.start || "", insfee: loanX.kind === "carins" ? loanX.fee || "" : ""}; render(true); return; }
+  if (b.hasAttribute("data-loan-edit") && loanX){ UI.loanEdit = loanX.id; UI.loanAdd = false; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || "", feeOn: loanX.feeOn || "", on: loanX.on || "", premium: loanX.premium || "", term: loanX.term || 6, plan: loanX.plan || "monthly", start: loanX.start || "", insfee: loanX.kind === "carins" ? loanX.fee || "" : ""}; render(true); return; }
   if (b.hasAttribute("data-loan-cancel")){ UI.loanAdd = false; UI.loanEdit = null; render(true); return; }
   if (b.hasAttribute("data-loan-del") && loanX){ const u = undoable(); S.loans = loanList().filter(x => x !== loanX); UI.loanEdit = null; save(); render(true); toast(`Removed ${loanX.name || loanKind(loanX.kind)}.`, u); return; }
   if (b.dataset.info){ UI.info = UI.info === b.dataset.info ? null : b.dataset.info; render(true); return; }
@@ -5712,6 +5729,7 @@ view.addEventListener("click", async e => {
     if (b.hasAttribute("data-pay-del")){ UI.editPay = null; if (await shWrite(() => SH.db.doc("payments/" + x.id).update({deleted:true, updatedBy:SH.me, updatedAt:Date.now()}))) toast(backInList(x)); render(true); return; }
     if (b.hasAttribute("data-pay-save")){ const a = numv(pay.querySelector("[data-pay-amt]").value), dt = pay.querySelector("[data-pay-date]").value;
       if (a <= 0){ toast("Enter an amount above zero, or delete the payment."); return; }
+      if (Math.abs(a - x.amount) < 0.005 && (!dt || dt === x.date)){ UI.editPay = null; render(true); toast("No changes to save."); return; }
       UI.editPay = null; await shWrite(() => SH.db.doc("payments/" + x.id).update({amount:a, date: dt || x.date, updatedBy:SH.me, updatedAt:Date.now()}), "Payment updated."); render(true); return; }
     return;
   }
@@ -5721,6 +5739,7 @@ view.addEventListener("click", async e => {
     if (b.hasAttribute("data-pay-del")){ S.settlements = S.settlements.filter(y => y !== x); S.spends = (S.spends || []).filter(y => y.sid !== x.id); /* what it added to the month goes with it */ UI.editPay = null; save(); render(true); toast(backInList(x)); return; }
     if (b.hasAttribute("data-pay-save")){ const a = numv(pay.querySelector("[data-pay-amt]").value), dt = pay.querySelector("[data-pay-date]").value;
       if (a <= 0){ toast("Enter an amount above zero, or delete the payment."); return; }
+      if (Math.abs(a - x.amount) < 0.005 && (!dt || dt === x.date)){ UI.editPay = null; render(true); toast("No changes to save."); return; }
       x.amount = a; if (dt) x.date = dt; UI.editPay = null; save(); render(true); toast("Payment updated."); return; }
   }
   if (sp && b.hasAttribute("data-edit-split")){ const x = CTX().splits.find(y => y.id === sp.dataset.split); if (!x) return;
@@ -5748,9 +5767,13 @@ view.addEventListener("click", async e => {
   }
 });
 
+// Saving an edit that changes nothing says so, and nothing is recorded or sent: no "updated", no message to friends.
+const stateSig = () => { try { const {statements, ...rest} = S; return JSON.stringify(rest); } catch(e){ return Math.random() + ""; } };
+let FORM_SNAP = null;
+const savedToast = (msg, ...more) => toast(FORM_SNAP !== null && stateSig() === FORM_SNAP ? "No changes to save." : msg, ...more);
 view.addEventListener("submit", async e => {
   e.preventDefault();
-  const f = e.target, kind = f.dataset.form, fd = new FormData(f);
+  const f = e.target, kind = f.dataset.form, fd = new FormData(f); FORM_SNAP = stateSig();
   if (kind === "spendEdit"){
     const x = (S.spends || []).find(v => v.id === f.dataset.spend), amount = numv(fd.get("amount")), date = String(fd.get("date") || ""); if (!x) return;
     if (!amount){ toast("Enter the amount."); f.querySelector("[name=amount]").focus(); return; }
@@ -5758,7 +5781,7 @@ view.addEventListener("submit", async e => {
     const u = undoable(), back = x.amount < 0;
     if (Math.abs(Math.abs(x.amount) - amount) > 0.004){ x.amount = back ? -amount : amount; delete x.orig; delete x.ocur; delete x.rate; }
     if (date !== x.date){ x.date = date; delete x.at; x.k = date >= isoDaysAgo(3) ? compute().planKey : periodKeyOfIso(date); }   // a recent one stays in the month the plan is showing
-    UI.spendEdit = null; save(); render(true); toast("Saved.", u); return;
+    UI.spendEdit = null; save(); render(true); savedToast("Saved.", u); return;
   }
   if (kind === "pay"){
     const when = fd.get("when") || "monthly", amount = numv(fd.get("amount"));
@@ -5784,10 +5807,11 @@ view.addEventListener("submit", async e => {
     if (leftRaw && !left){ toast("Installments left should be a whole number."); f.querySelector("[name=left]").focus(); return; }
     const old = UI.loanEdit && loanList().find(x => x.id === UI.loanEdit), old0 = old;
     const rec = {kind: fd.get("kind") || "other", name: String(fd.get("name") || "").trim(), pay, every: fd.get("every") || "mo", total: total || 0, end: end || "", left};
-    if (rec.kind === "card"){ rec.card = String(fd.get("card") || "Visa"); if (rec.card === "Other") rec.card = String(fd.get("cardOther") || "").trim().slice(0, 30) || "Other"; rec.fee = numv(fd.get("fee")) || 0; } else if (old0) { delete old0.card; delete old0.fee; }
+    if (rec.kind === "card"){ rec.card = String(fd.get("card") || "Visa"); if (rec.card === "Other") rec.card = String(fd.get("cardOther") || "").trim().slice(0, 30) || "Other"; rec.fee = numv(fd.get("fee")) || 0; rec.feeOn = rec.fee ? String(fd.get("feeOn") || "") || isoDaysAgo(0) : ""; } else if (old0) { delete old0.card; delete old0.fee; delete old0.feeOn; }
+    if (rec.every === "yr") rec.on = String(fd.get("on") || "") || isoDaysAgo(0); else if (old0) delete old0.on;
     if (old) Object.assign(old, rec); else loanList().push({id: uid(), ...rec});
     UI.loanAdd = false; UI.loanEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
-    toast(old ? "Loan updated." : `Added. ${fmt(loanMonthly(rec))} a month now counts in Loans & debts.`); return; }
+    (old ? savedToast : toast)(old ? "Loan updated." : rec.every === "yr" ? `Added. ${fmt(rec.pay)} counts in full in the month it is paid.` : `Added. ${fmt(loanMonthly(rec))} a month now counts in Loans & debts.`); return; }
   if (kind === "income"){
     const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), when = fd.get("when") || "any";
     if (!name){ toast("Say where the money comes from."); f.querySelector("[name=name]").focus(); return; }
@@ -5796,7 +5820,7 @@ view.addEventListener("submit", async e => {
     const rec = {name, kind: fd.get("kind") || "other", when, amount, day: when === "monthly" || when === "twice" ? +fd.get("day") || 1 : undefined, day2: when === "twice" ? +fd.get("day2") || 15 : undefined, wd: when === "weekly" ? +fd.get("wd") : undefined, next: when === "biweekly" ? String(fd.get("next") || isoDaysAgo(0)) : undefined};
     const old = UI.incEdit && extras().find(x => x.id === UI.incEdit);
     if (old){ if (old.when !== rec.when || old.day !== rec.day || old.day2 !== rec.day2 || old.wd !== rec.wd || old.next !== rec.next) rec.added = isoDaysAgo(0); Object.assign(old, rec); } else extras().push({id: uid(), got: [], added: isoDaysAgo(0), ...rec});
-    UI.incAdd = false; UI.incEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(old ? `${name} updated.` : amount ? `Added ${name}. Your plan now counts it.` : `Added ${name}. It counts each time you log a payment.`); return; }
+    UI.incAdd = false; UI.incEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); (old ? savedToast : toast)(old ? `${name} updated.` : amount ? `Added ${name}. Your plan now counts it.` : `Added ${name}. It counts each time you log a payment.`); return; }
   if (kind === "incomeLog"){ const x = extras().find(v => v.id === f.closest("[data-inc]").dataset.inc), a = numv(fd.get("amount")); if (!x) return;
     if (!a){ toast("Enter the amount you received."); return; }
     (x.got = x.got || []).push({id: uid(), date: String(fd.get("date") || isoDaysAgo(0)), amount: a}); UI.incLog = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Logged ${fmt(a)} from ${x.name}.`); return; }
@@ -5826,7 +5850,7 @@ view.addEventListener("submit", async e => {
     const old = UI.tripEdit && tripList().find(x => x.id === UI.tripEdit);
     const cur = CURRENCIES.some(c => c[0] === fd.get("cur")) && fd.get("cur") !== S.cur ? String(fd.get("cur")) : "";
     if (old) Object.assign(old, {name, start, end, budget, cur}, more); else tripList().push({id: uid(), name, start, end, budget, cur, items: [], settled: null, ...more});
-    UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `${name} is set. Spending you add on ${start === end ? "that day" : "those days"} goes to the ${ev ? "event" : "trip"}.`); return; }
+    UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); (old ? savedToast : toast)(old ? `Updated ${name}.` : `${name} is set. Spending you add on ${start === end ? "that day" : "those days"} goes to the ${ev ? "event" : "trip"}.`); return; }
   if (kind === "ask"){ const q = tidySaid($("ask-in").value); if (!q) return; ASK.go = null;
     // After a command changes something, go to it: the panel closes, the right tab opens, the item is brought into view
     // and marked for a moment, and what was done stays on screen with Undo.
@@ -5852,22 +5876,23 @@ view.addEventListener("submit", async e => {
   if (kind === "pdfLock"){ const pw = String(fd.get("pw") || ""); if (!pw){ toast("Enter the statement password."); return; } const file = UI.pdfLock && UI.pdfLock.file; if (file) openStatement(file, pw); return; }
   if (kind === "give"){ const name = String(fd.get("name") || "").trim().slice(0, 40), amount = numv(fd.get("amount")); if (!(amount > 0)){ toast("Enter the amount you give each time."); f.querySelector("[name=amount]").focus(); return; }
     const rec = {name, cause: String(fd.get("cause") || "other"), amount, every: String(fd.get("every") || "mo")}, old = UI.giveEdit && (S.giving || []).find(x => x.id === UI.giveEdit);
+    if (rec.every === "yr") rec.on = String(fd.get("on") || "") || isoDaysAgo(0); else if (old) delete old.on;
     if (old) Object.assign(old, rec); else (S.giving = S.giving || []).push({id: uid(), ...rec});
-    UI.giveAdd = false; UI.giveEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? "Giving updated." : `Added. ${fmt(giveMonthly(rec))} a month now counts under Miscellaneous.`); return; }
+    UI.giveAdd = false; UI.giveEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); (old ? savedToast : toast)(old ? "Giving updated." : rec.every === "yr" ? `Added. ${fmt(rec.amount)} counts in full in ${new Date(nextAnniv(rec.on) || Date.now()).toLocaleDateString("en-US", {month: "long"})}, the month you give it.` : `Added. ${fmt(giveMonthly(rec))} a month now counts under Miscellaneous.`); return; }
   if (kind === "exp"){ const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), env = fd.get("env") === "misc" ? "misc" : "needs";
     if (!name){ toast("Give the line a name."); f.querySelector("[name=name]").focus(); return; }
     const old = UI.expEdit && S.expenses.find(x => x.id === UI.expEdit);
     const due = Math.min(31, Math.max(0, Math.round(+fd.get("due") || 0))), dueBits = due ? {due, dueSince: old && old.due === due && old.dueSince ? old.dueSince : isoDaysAgo(0)} : {due: 0};
     if (old){ Object.assign(old, {name, amount, env}, dueBits); if (!due){ delete old.dueSince; delete old.ans; delete old.ansPaid; } } else S.expenses.push({id: uid(), name, amount, env, ...dueBits});
-    UI.expAdd = false; UI.expEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(old ? `Updated ${name}.` : `Added ${name}.`); return; }
+    UI.expAdd = false; UI.expEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); (old ? savedToast : toast)(old ? `Updated ${name}.` : `Added ${name}.`); return; }
   if (kind === "subEdit"){ const x = S.subs.find(v => v.id === UI.subEdit), name = String(fd.get("name") || "").trim(), price = numv(fd.get("price")); if (!x) return;
     if (!name || !price){ toast("Add a name and a price."); return; }
     const cycle = fd.get("cycle") === "yr" ? "yr" : "mo"; if (cycle !== x.cycle){ delete x.renewDay; delete x.renewDate; }
     Object.assign(x, {name, price, cycle, last: String(fd.get("last") || "") || x.last, group: String(fd.get("group") || "").trim()});
-    UI.subEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Updated ${name}.`); return; }
+    UI.subEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); savedToast(`Updated ${name}.`); return; }
   if (kind === "codeEdit"){ const x = S.codes.find(v => v.id === UI.codeEdit), store = String(fd.get("store") || "").trim(), code = String(fd.get("code") || "").trim(); if (!x) return;
     if (!store || !code){ toast("Add the store and the code."); return; }
-    Object.assign(x, {store, code, offer: String(fd.get("offer") || "").trim()}); UI.codeEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Updated the ${store} code.`); return; }
+    Object.assign(x, {store, code, offer: String(fd.get("offer") || "").trim()}); UI.codeEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); savedToast(`Updated the ${store} code.`); return; }
   if (kind === "addSub"){ const name = String(fd.get("name")).trim(), price = numv(fd.get("price")); if (!name || !price){ toast("Add a name and a price."); return; }
     const ns = {id:uid(), name, price, cycle:fd.get("cycle"), last:fd.get("last") || isoDaysAgo(0), group:String(fd.get("group")||"").trim(), env:"misc", keep:"auto"};
     const rn = String(fd.get("renew") || ""), rd = +fd.get("renewDay") || 0; if (ns.cycle === "yr" && rn) ns.renewDate = rn; else if (ns.cycle !== "yr" && rd >= 1 && rd <= 31) ns.renewDay = rd; else startCycle(ns);
@@ -5893,6 +5918,8 @@ view.addEventListener("submit", async e => {
         if (d.method === "exact" && Math.abs(sum - amount) > 0.01){ splitErr = `Amounts add up to ${fmt(sum)}, not ${fmt(amount)}.`; render(true); return; } }
     }
     const rec = {title:d.title.trim(), amount, tag:d.tag, paidBy:d.paidBy, method:d.method, parts, icon: d.icon || ""};
+    const was = d.editId && (shared() ? SH.splits : S.splits).find(y => y.id === d.editId);
+    if (was && Object.keys(rec).every(k => JSON.stringify(was[k] ?? "") === JSON.stringify(rec[k] ?? ""))){ splitDraft = null; splitErr = ""; render(true); showSplitCard(was.id); toast("No changes to save."); return; }
     if (shared()){
       const me = SH.me, old = d.editId && SH.splits.find(y => y.id === d.editId);
       const ok = old ? await shWrite(() => { const {id, ...body} = old; return SH.db.doc("splits/" + old.id).set({...body, ...rec, updatedBy:me, updatedAt:Date.now()}); }, "Split updated. Your circle was notified.")

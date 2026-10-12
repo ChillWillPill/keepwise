@@ -574,6 +574,19 @@ async def split_settle_history_undo_edit(ctx):
     assert "No payments recorded yet" in await text(pg, "#history")
 
 @test
+async def saving_an_edit_that_changes_nothing_says_so(ctx):
+    pg = await open_app(ctx); await tab(pg, "split")
+    n0 = json.dumps((await state(pg))["splits"])
+    await pg.locator("[data-split]", has_text="Dominos").locator("[data-edit-split]").click(); await pg.wait_for_timeout(100)
+    await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(200)
+    assert await pg.inner_text("#toast") == "No changes to save." and await pg.locator("[data-tell]").count() == 0, "no update and nothing to tell anyone"
+    assert json.dumps((await state(pg))["splits"]) == n0
+    await pg.locator("[data-settle]", has_text="Jordan").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(100); await pg.click("form[data-form=settle] [type=submit]"); await pg.wait_for_timeout(150)
+    await pg.click("#history [data-pay-edit]"); await pg.wait_for_timeout(80); await pg.click("[data-pay-save]"); await pg.wait_for_timeout(150)
+    assert await pg.inner_text("#toast") == "No changes to save."
+    assert not pg.errors, pg.errors
+
+@test
 async def split_people_add_remove_import(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
     await pg.click("[data-add-person-open]"); await pg.fill("#new-person", "Zoe"); await pg.click("form[data-form=addPerson] button[type=submit]"); await pg.wait_for_timeout(100)
@@ -2043,8 +2056,11 @@ async def giving_is_a_line_you_name_yourself(ctx):
     card = await text(pg, "[data-giving]"); assert "Local food bank" in card and "Emergency relief · every week" in card and "$52/mo" in card and "$624 a year" in card, card
     await pg.click("[data-give-add]"); f = pg.locator("form[data-form=give]"); await f.locator("[name=every]").select_option("yr"); await f.locator("[name=amount]").fill("120"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
     g = (await state(pg))["giving"]; assert [(x["name"], x["cause"], x["every"], x["amount"]) for x in g] == [("Local food bank", "relief", "wk", 12), ("", "children", "yr", 120)], g
-    # it comes out of what you keep at its monthly cost, under Miscellaneous
-    await tab(pg, "month"); assert abs(k0 - money(await kept()) - 62) < 0.01
+    # yearly giving is given once: in full in its month (today, unless another date is picked), never as a monthly share
+    yr = await pg.locator("[data-give]", has_text="$120").inner_text(); assert "/yr" in yr and "Given this month" in yr and "/mo" not in yr, yr
+    assert "this month" in await text(pg, "[data-giving-now]")
+    # weekly giving comes out at its monthly cost, yearly in full this month, both under Miscellaneous
+    await tab(pg, "month"); assert abs(k0 - money(await kept()) - 172) < 0.01, (k0, await kept())
     await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150); d = await text(pg, ".env-body"); assert "Local food bank" in d and "Giving · Every week" in d and "$52" in d and "Children" in d, d
     # edit and remove, with Undo
     await tab(pg, "plan"); await pg.locator("[data-give]", has_text="Local food bank").locator("[data-give-edit]").click(); await pg.wait_for_timeout(100)
@@ -4235,7 +4251,7 @@ async def loans_section_counts_and_finishes(ctx):
     await pg.locator("[data-loan]").last.locator("[data-loan-edit]").click(); await pg.wait_for_timeout(120)
     assert await pg.input_value("form[data-form=loan] [name=left]") == "12" and await pg.input_value("form[data-form=loan] [name=rate]") == "16.4% a year"
     await pg.locator("form[data-form=loan] [data-loan-del]").click(); await pg.wait_for_timeout(150)
-    # a credit card: its type shows, and the yearly fee is spread across the year
+    # a credit card: its type shows, and the yearly fee counts in full in the month it is charged (today unless another date is picked)
     await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
     assert not await f.locator("[data-loan-cardrow]").is_visible(), "card fields stay hidden for other debts"
     await f.locator("[name=kind]").select_option("card"); await pg.wait_for_timeout(80)
@@ -4244,8 +4260,12 @@ async def loans_section_counts_and_finishes(ctx):
     assert await f.locator("[name=kind]").input_value() == "card" and await f.locator("[data-loan-cardrow]").is_visible(), "the chosen type stays chosen"
     await f.locator("[name=card]").select_option("Mastercard"); await f.locator("[name=pay]").fill("100"); await f.locator("[name=fee]").fill("120")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
-    box = await text(pg, "[data-out=loans]"); assert "Credit card · Mastercard · $100 a month · $120 yearly fee" in box and "$110/mo" in box, box
-    card = [l for l in (await state(pg))["loans"] if l["kind"] == "card"][0]; assert card["card"] == "Mastercard" and card["fee"] == 120
+    box = await text(pg, "[data-out=loans]"); assert "Credit card · Mastercard · $100 a month · $120 yearly fee" in box and "$220 this month" in box, box
+    card = [l for l in (await state(pg))["loans"] if l["kind"] == "card"][0]; assert card["card"] == "Mastercard" and card["fee"] == 120 and card["feeOn"]
+    # with the fee charged in another month, only the payment counts now
+    await pg.locator("[data-loan]").last.locator("[data-loan-edit]").click(); await pg.wait_for_timeout(120)
+    await pg.fill("form[data-form=loan] [name=feeOn]", "2026-03-15"); await pg.locator("form[data-form=loan] button[type=submit]").click(); await pg.wait_for_timeout(200)
+    assert "$100 this month" in await text(pg, "[data-out=loans]")
     # Other lets you type the card's own name, and it comes back when you edit
     await pg.locator("[data-loan]").last.locator("[data-loan-edit]").click(); await pg.wait_for_timeout(120); f = pg.locator("form[data-form=loan]")
     assert not await f.locator("[data-loan-cardother]").is_visible()
