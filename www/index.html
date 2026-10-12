@@ -558,6 +558,15 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .plus-tap{appearance:none;border:0;font-family:inherit;line-height:normal;min-height:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .biz-mini{display:grid;grid-template-columns:1fr 104px auto;gap:8px;align-items:center}.biz-mini select{grid-column:1/-1}.biz-mini:has(select[name=cycle]) select{grid-column:auto}.biz-mini[data-form=bizSub]{grid-template-columns:1fr 96px 1fr auto}.biz-lines{max-height:360px}[data-biz-list] .rows .line,[data-biz-subs] .rows .line,[data-biz-shares] .rows .line{padding:10px 12px;gap:10px}.biz-lines .move-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
 @media (max-width:430px){.biz-mini[data-form=bizSub]{grid-template-columns:1fr 1fr}.biz-mini[data-form=bizSub] input[name=name]{grid-column:1/-1}}.bank-rows .line .muted{overflow-wrap:anywhere}
+.seg.sub-seg.biz-seg{grid-template-columns:repeat(4,1fr)}.seg.sub-seg.biz-seg button{font-size:.86rem;padding:0 4px}
+.inv-item{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;align-items:center}.inv-item>input[name=desc]{grid-column:1/-1}.inv-item+.inv-item{padding-top:10px;border-top:1px dashed var(--line)}
+.q-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}.q-right .link{white-space:nowrap}
+[data-inv-form-card],[data-biz-import-card],[data-biz-add]{scroll-margin-top:78px}
+[data-inv-list] .rows .line,[data-miles-list] .rows .line,[data-biz-qtax] .rows .line,[data-biz-report] .rows .line{padding:10px 12px;gap:10px}.inv-row{align-items:flex-start}
+.biz-rcpt-prev{display:flex;align-items:center;gap:12px;padding:8px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.biz-rcpt-prev[hidden]{display:none}.biz-rcpt-prev img{width:56px;height:72px;object-fit:cover;border-radius:8px;flex:none;background:var(--card)}
+.rcpt-view{position:fixed;inset:0;z-index:90;background:rgba(10,14,12,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}.rcpt-view img{max-width:100%;max-height:calc(100% - 64px);object-fit:contain;border-radius:10px;background:#fff}.rcpt-view .btn{align-self:flex-end}
+.biz-stats{margin:4px 0}.biz-stats>div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--chip)}.biz-stats b{font-size:1.15rem}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:4px}.biz-bars{display:block;margin:4px 0 2px}
 .place-in svg{flex:none;color:var(--muted)}.place-res{margin-top:6px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;box-shadow:var(--lift)}.place-res[hidden]{display:none}
 .place-opt{display:flex;gap:10px;align-items:flex-start;width:100%;padding:11px 14px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}.place-opt:first-child{border-top:0}.place-opt svg{flex:none;margin-top:2px;color:var(--green)}.place-opt b{display:block;font-weight:600}.place-opt .muted{display:block}.place-note{margin:0;padding:11px 14px}.place-credit{margin:0;padding:6px 14px 8px;font-size:.72rem;text-align:right;border-top:1px solid var(--line)}
 .place-chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;color:var(--green);font-weight:600;font-size:.86rem;text-decoration:none}.place-chip svg{flex:none}.place-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2219,33 +2228,111 @@ function spaceSwitch(){
 }
 /* ================= KeepWise Plus: Business space (tester preview) =================
    Plus is not on sale yet. A hidden tester switch turns it on: tap the "KeepWise Plus" label 7 times.
-   Business money stays on this phone like everything else. */
+   Business money stays on this phone like everything else. Business runs on calendar months. */
 const plusOn = () => !!S.plusTester;
 const PLUS_TAP = {n: 0, t: 0};
-const BIZ_COST_CATS = ["Software", "Equipment", "Supplies", "Marketing", "Travel", "Meals", "Fees", "Contractors", "Other"], BIZ_IN_CATS = ["Sales", "Services", "Other"];
-const BIZ = {lines: null, pick: new Set(), file: ""};
-const bizData = () => { if (!S.biz) S.biz = {taxPct: 25, entries: [], subs: [], shares: [], imported: []}; const b = S.biz; ["entries", "subs", "shares", "imported"].forEach(k => b[k] = b[k] || []); if (b.taxPct == null) b.taxPct = 25; return b; };
+const BIZ_COST_CATS = ["Supplies", "Office & software", "Advertising & marketing", "Equipment", "Contract labor", "Fees & commissions", "Travel", "Meals", "Car & truck", "Utilities & phone", "Rent", "Insurance", "Other"], BIZ_IN_CATS = ["Sales", "Services", "Other"];
+const BIZ = {lines: null, pick: new Set(), file: "", rcpt: null, view: null};
+const BSEGS = [["money", "Money"], ["invoices", "Invoices"], ["miles", "Mileage"], ["tax", "Tax"]];
+const USA = () => S.cur === "USD";
+const bizData = () => { if (!S.biz) S.biz = {}; const b = S.biz; ["entries", "subs", "shares", "imported", "invoices", "trips"].forEach(k => b[k] = b[k] || []);
+  if (b.taxPct == null) b.taxPct = 25; if (b.mileRate == null) b.mileRate = USA() ? 0.725 : 0; if (!b.qpaid) b.qpaid = {}; if (!b.invNext) b.invNext = 1; return b; };
 const bizShareSrc = id => { const [t, x] = String(id).split(":"); return t === "e" ? (S.expenses || []).find(e => e.id === x) : t === "s" ? (S.subs || []).find(v => v.id === x) : null; };
 const bizShareName = sh => { const it = bizShareSrc(sh.src); return it ? it.name : "Removed item"; };
-const bizShareMonthly = (sh, k) => { const it = bizShareSrc(sh.src); if (!it) return 0; const base = sh.src[0] === "e" ? (+it.amount || 0) : subCostIn(it, k); return r2(base * (+sh.pct || 0) / 100); };
-const bizSubIn = (v, k) => v.cycle === "yr" ? (v.on && annivIn(v.on, k) ? +v.price || 0 : 0) : +v.price || 0;
-function bizMonth(k){ const b = bizData(), es = b.entries.filter(e => inMonth(e.date, k));
-  const inc = r2(es.filter(e => e.kind === "in").reduce((a, e) => a + e.amount, 0)), outE = r2(es.filter(e => e.kind === "out").reduce((a, e) => a + e.amount, 0));
-  const subs = r2(b.subs.reduce((a, v) => a + bizSubIn(v, k), 0)), shares = r2(b.shares.reduce((a, sh) => a + bizShareMonthly(sh, k), 0)), out = r2(outE + subs + shares);
-  return {es, inc, out, subs, shares, outE, profit: r2(inc - out)}; }
-function bizYear(){ const b = bizData(), y = new Date().getFullYear(), nowM = new Date().getMonth(), k = planPeriodNow().key;
-  const es = b.entries.filter(e => e.date && +e.date.slice(0, 4) === y);
-  const inc = r2(es.filter(e => e.kind === "in").reduce((a, e) => a + e.amount, 0)), outE = es.filter(e => e.kind === "out").reduce((a, e) => a + e.amount, 0);
-  const months = nowM + 1, from = x => x.since && +x.since.slice(0, 4) === y ? +x.since.slice(5, 7) - 1 : x.since && +x.since.slice(0, 4) > y ? 99 : 0, live = x => Math.max(0, nowM - from(x) + 1);   // counted only from the month it was added
-  const subs = b.subs.reduce((a, v) => a + (v.cycle === "yr" ? (v.on && +v.on.slice(0, 4) <= y && +v.on.slice(5, 7) - 1 <= nowM && +v.on.slice(5, 7) - 1 >= from(v) ? +v.price || 0 : 0) : (+v.price || 0) * live(v)), 0);
-  const shares = b.shares.reduce((a, sh) => a + bizShareMonthly(sh, k) * live(sh), 0), out = r2(outE + subs + shares);
-  return {inc, out, profit: r2(inc - out), months, es, from}; }
-function bizCsv(){ const b = bizData(), y = new Date().getFullYear(), Y = bizYear(), rows = [["Date", "Type", "Name", "Category", "Amount"]];
-  Y.es.slice().sort((a, c) => a.date.localeCompare(c.date)).forEach(e => rows.push([e.date, e.kind === "in" ? "Income" : "Cost", e.name, e.cat || "", (e.kind === "in" ? e.amount : -e.amount).toFixed(2)]));
-  for (let m = 0; m < Y.months; m++){ const d = `${y}-${String(m + 1).padStart(2, "0")}-01`;
-    b.subs.forEach(v => { if (m < Y.from(v)) return; if (v.cycle === "yr"){ if (v.on && +v.on.slice(5, 7) - 1 === m) rows.push([`${y}-${v.on.slice(5)}`, "Cost", v.name, "Subscription (yearly)", (-(+v.price || 0)).toFixed(2)]); } else rows.push([d, "Cost", v.name, "Subscription (monthly)", (-(+v.price || 0)).toFixed(2)]); });
-    b.shares.forEach(sh => m >= Y.from(sh) && rows.push([d, "Cost", `${bizShareName(sh)} (${sh.pct}% business)`, "Business share", (-bizShareMonthly(sh, planPeriodNow().key)).toFixed(2)])); }
-  rows.push([], ["", "", "Total income", "", Y.inc.toFixed(2)], ["", "", "Total costs", "", (-Y.out).toFixed(2)], ["", "", "Profit", "", Y.profit.toFixed(2)], ["", "", `Tax set-aside at ${b.taxPct}%`, "", r2(Math.max(0, Y.profit) * b.taxPct / 100).toFixed(2)]);
+const bizShareMonthly = sh => { const it = bizShareSrc(sh.src); if (!it) return 0; const base = sh.src[0] === "e" ? (+it.amount || 0) : subCostIn(it, planPeriodNow().key); return r2(base * (+sh.pct || 0) / 100); };
+const ymOf = iso => iso ? [+iso.slice(0, 4), +iso.slice(5, 7) - 1] : [0, 0];
+const startedBy = (x, y, m) => { if (!x.since) return true; const [sy, sm] = ymOf(x.since); return sy < y || (sy === y && sm <= m); };
+const mileUnit = () => USA() ? "mile" : "km";
+// One calendar month of business money: entries, subscriptions, business shares and mileage.
+function bizCal(y, m){ const b = bizData(), inM = iso => { const [a, c] = ymOf(iso); return a === y && c === m; };
+  const es = b.entries.filter(e => inM(e.date)), inc = r2(es.filter(e => e.kind === "in").reduce((a, e) => a + e.amount, 0)), outE = r2(es.filter(e => e.kind === "out").reduce((a, e) => a + e.amount, 0));
+  const subs = r2(b.subs.filter(v => startedBy(v, y, m)).reduce((a, v) => a + (v.cycle === "yr" ? (v.on && +v.on.slice(5, 7) - 1 === m ? +v.price || 0 : 0) : +v.price || 0), 0));
+  const shares = r2(b.shares.filter(sh => startedBy(sh, y, m)).reduce((a, sh) => a + bizShareMonthly(sh), 0));
+  const trips = b.trips.filter(t => inM(t.date)), dist = r2(trips.reduce((a, t) => a + (+t.dist || 0), 0)), miles = r2(dist * (+b.mileRate || 0));
+  const out = r2(outE + subs + shares + miles);
+  return {es, inc, outE, subs, shares, trips, dist, miles, out, profit: r2(inc - out)}; }
+function bizRange(y, m0, m1){ const t = {inc: 0, out: 0, profit: 0, outE: 0, subs: 0, shares: 0, miles: 0, dist: 0, es: [], trips: []};
+  for (let m = m0; m <= m1; m++){ const c = bizCal(y, m); ["inc", "out", "profit", "outE", "subs", "shares", "miles", "dist"].forEach(k => t[k] = r2(t[k] + c[k])); t.es.push(...c.es); t.trips.push(...c.trips); } return t; }
+const bizNow = () => { const d = new Date(); return [d.getFullYear(), d.getMonth()]; };
+const bizYear = () => { const [y, m] = bizNow(); return bizRange(y, 0, m); };
+const taxOf = profit => r2(Math.max(0, profit) * (+bizData().taxPct || 0) / 100);
+// US estimated tax: four payments a year, each for its own stretch of months.
+const QTRS = [[0, 2, 3, 15, 0], [3, 4, 5, 15, 0], [5, 7, 8, 15, 0], [8, 11, 0, 15, 1]];   // from month, to month, due month, due day, due next year
+function quarters(y){ return QTRS.map(([a, z, dm, dd, nx], i) => { let due = new Date(y + nx, dm, dd); while (due.getDay() === 0 || due.getDay() === 6) due.setDate(due.getDate() + 1);
+  const r = bizRange(y, a, Math.min(z, y === bizNow()[0] ? bizNow()[1] : 11)); return {n: i + 1, key: `${y}Q${i + 1}`, from: new Date(y, a, 1), to: new Date(y, z + 1, 0), due, profit: r.profit, amount: taxOf(r.profit), paid: bizData().qpaid[`${y}Q${i + 1}`]}; }); }
+function nextQuarter(){ const [y] = bizNow(), t = todayMid(); const all = [...quarters(y - 1), ...quarters(y)]; return all.find(q => q.due >= t && !q.paid && q.from <= t) || all.find(q => q.due >= t && !q.paid); }
+const invTotal = inv => r2((inv.items || []).reduce((a, it) => a + (+it.qty || 0) * (+it.price || 0), 0));
+const invLate = inv => inv.status !== "paid" && inv.due && inv.due < isoDaysAgo(0);
+const invNo = n => `INV-${String(n).padStart(4, "0")}`;
+const invItemsOf = f => [...f.querySelectorAll("[data-inv-item]")].map(r => ({desc: r.querySelector("[name=desc]").value, qty: r.querySelector("[name=qty]").value, price: r.querySelector("[name=price]").value}));
+// ---- receipt photos: kept on this phone in IndexedDB (too big for the plan's storage) ----
+const RDB = () => new Promise((res, rej) => { try { const r = indexedDB.open("keepwise-receipts", 1); r.onupgradeneeded = () => r.result.createObjectStore("r"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch(e){ rej(e); } });
+const rcptDo = (mode, fn) => RDB().then(db => new Promise((res, rej) => { const tx = db.transaction("r", mode), st = tx.objectStore("r"), q = fn(st); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); }));
+const rcptPut = (id, blob) => rcptDo("readwrite", st => st.put(blob, id));
+const rcptGet = id => rcptDo("readonly", st => st.get(id));
+const rcptDel = id => rcptDo("readwrite", st => st.delete(id)).catch(() => {});
+async function receiptPhoto(file){ const bmp = await createImageBitmap(file), f = Math.min(1, 1400 / Math.max(bmp.width, bmp.height)), c = document.createElement("canvas"); c.width = Math.round(bmp.width * f); c.height = Math.round(bmp.height * f);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close(); return await new Promise(r => c.toBlob(r, "image/jpeg", .72)); }
+function receiptGuess(lines){
+  const amt = s => { const m = String(s).match(/(\d{1,3}(?:[,.]\d{3})*[.,]\d{2})(?!\d)/g); return m ? m.map(x => parseFloat(x.replace(/,(?=\d{3})/g, "").replace(/\.(?=\d{3}[.,])/g, "").replace(",", "."))).filter(v => v > 0 && v < 1e6) : []; };
+  let total = 0; for (const l of lines) if (/\b(grand\s*total|total|amount\s*due|balance\s*due|to\s*pay)\b/i.test(l) && !/sub\s*total/i.test(l)){ const a = amt(l); if (a.length) total = a[a.length - 1]; }
+  if (!total){ const all = lines.flatMap(amt); total = all.length ? Math.max(...all) : 0; }
+  let date = ""; for (const l of lines){ const m = l.match(/\b(\d{4})-(\d{2})-(\d{2})\b/) || l.match(/\b(\d{1,2})[\/.](\d{1,2})[\/.](\d{2,4})\b/); if (m){
+    let y, mo, d; if (m[1].length === 4){ y = +m[1]; mo = +m[2]; d = +m[3]; } else { mo = +m[1]; d = +m[2]; y = +m[3]; if (y < 100) y += 2000; if (mo > 12){ [mo, d] = [d, mo]; } }
+    const dt = new Date(y, mo - 1, d); if (!isNaN(dt) && dt <= new Date() && y > 2000){ date = isoOf(dt); break; } } }
+  const name = (lines.find(l => /[A-Za-z]{3,}/.test(l) && !/receipt|invoice|tel|phone|www|http|date|time/i.test(l)) || "").replace(/[^A-Za-z0-9&'.\- ]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40);
+  return {total: r2(total), date, name}; }
+async function bizReceipt(file, form){
+  busy("Reading the receipt");
+  try { const blob = await receiptPhoto(file); BIZ.rcpt = blob; let g = {total: 0, date: "", name: ""};
+    try { const rows = await imageRows(file); g = receiptGuess(rows.map(rowText).filter(Boolean)); } catch(e){}
+    if (ocrW){ try { ocrW.terminate(); } catch(e){} ocrW = null; }
+    busy(false);
+    const f = form && document.body.contains(form) ? form : view.querySelector("form[data-form=bizEntry]"); if (!f) return;
+    if (g.name && !f.elements.name.value) f.elements.name.value = g.name;
+    if (g.total && !f.elements.amount.value) f.elements.amount.value = g.total.toFixed(2);
+    if (g.date) f.elements.date.value = g.date;
+    const p = f.querySelector("[data-biz-rcpt-preview]"); if (p){ p.hidden = false; p.querySelector("img").src = URL.createObjectURL(blob); p.querySelector("span").textContent = g.total ? `Read ${fmt(g.total)}. Check it, then add the cost.` : "Photo saved. Type the amount, then add the cost."; }
+  } catch(err){ busy(false); BIZ.rcpt = null; toast(err && err.message ? err.message : "That photo can't be read."); }
+}
+async function shareBlob(blob, name, title){
+  const file = new File([blob], name, {type: blob.type});
+  try { if (navigator.canShare && navigator.canShare({files: [file]})){ await navigator.share({files: [file], title}); return true; } } catch(e){ if (e && e.name === "AbortError") return false; }
+  return await saveFile(blob, name);
+}
+// An invoice as a picture, ready to send in any chat or email.
+async function invoiceImage(inv){
+  const b = bizData(), W = 1240, H = 1754, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  try { await document.fonts.ready; } catch(e){}
+  const serif = "Fraunces, Georgia, serif", sans = "Figtree, system-ui, sans-serif", money = v => new Intl.NumberFormat("en-US", {style: "currency", currency: S.cur || "USD"}).format(v);
+  g.fillStyle = "#fbf8f2"; g.fillRect(0, 0, W, H); g.fillStyle = "#1b6843"; g.fillRect(0, 0, W, 18);
+  g.fillStyle = "#1c2420"; g.font = `700 64px ${serif}`; g.fillText(b.name || "Invoice", 90, 150);
+  g.font = `600 30px ${sans}`; g.fillStyle = "#4d564e"; g.fillText(`${invNo(inv.no)}`, 90, 205);
+  g.textAlign = "right"; g.fillStyle = "#1b6843"; g.font = `700 44px ${sans}`; g.fillText("INVOICE", W - 90, 150); g.font = `500 28px ${sans}`; g.fillStyle = "#4d564e";
+  g.fillText(`Issued ${dateWithYear(isoDate(inv.date), true)}`, W - 90, 200); if (inv.due) g.fillText(`Due ${dateWithYear(isoDate(inv.due), true)}`, W - 90, 240); g.textAlign = "left";
+  g.font = `600 26px ${sans}`; g.fillStyle = "#8a8f87"; g.fillText("BILL TO", 90, 320); g.font = `600 38px ${sans}`; g.fillStyle = "#1c2420"; g.fillText(inv.client || "", 90, 370);
+  let y = 470; g.fillStyle = "#efe4d4"; g.fillRect(90, y - 44, W - 180, 64); g.fillStyle = "#4d564e"; g.font = `600 26px ${sans}`; g.fillText("Description", 116, y); g.textAlign = "right"; g.fillText("Qty", 820, y); g.fillText("Price", 980, y); g.fillText("Amount", W - 116, y); g.textAlign = "left";
+  y += 76; g.font = `500 30px ${sans}`;
+  for (const it of inv.items || []){ g.fillStyle = "#1c2420"; let d = String(it.desc || ""); while (g.measureText(d).width > 560 && d.length > 3) d = d.slice(0, -2); g.fillText(d, 116, y); g.textAlign = "right";
+    g.fillText(String(+it.qty || 0), 820, y); g.fillText(money(+it.price || 0), 980, y); g.fillText(money((+it.qty || 0) * (+it.price || 0)), W - 116, y); g.textAlign = "left"; g.strokeStyle = "#e0d5c5"; g.lineWidth = 2; g.beginPath(); g.moveTo(90, y + 28); g.lineTo(W - 90, y + 28); g.stroke(); y += 72; }
+  y += 40; g.textAlign = "right"; g.font = `700 52px ${serif}`; const tw = g.measureText(money(invTotal(inv))).width; g.fillStyle = "#1b6843"; g.fillText(money(invTotal(inv)), W - 116, y + 6);
+  g.font = `600 28px ${sans}`; g.fillStyle = "#4d564e"; g.fillText(inv.status === "paid" ? "Total" : "Total due", W - 116 - tw - 28, y); g.textAlign = "left";
+  if (inv.status === "paid"){ g.save(); g.translate(W - 300, y + 140); g.rotate(-.18); g.strokeStyle = "#1b6843"; g.lineWidth = 6; g.strokeRect(-140, -50, 280, 100); g.fillStyle = "#1b6843"; g.font = `800 56px ${sans}`; g.textAlign = "center"; g.fillText("PAID", 0, 20); g.restore(); }
+  if (inv.note){ y += 150; g.font = `600 24px ${sans}`; g.fillStyle = "#8a8f87"; g.fillText("NOTES", 90, y); g.font = `500 28px ${sans}`; g.fillStyle = "#1c2420"; let line = "", ly = y + 46; for (const w of String(inv.note).split(/\s+/)){ if (g.measureText(line + w).width > W - 180){ g.fillText(line, 90, ly); line = ""; ly += 40; } line += w + " "; } g.fillText(line, 90, ly); }
+  g.font = `500 22px ${sans}`; g.fillStyle = "#8a8f87"; g.textAlign = "center"; g.fillText("Made with KeepWise · mykeepwise.com", W / 2, H - 60);
+  return await new Promise(r => c.toBlob(r, "image/png"));
+}
+function bizCsv(){ const b = bizData(), [y, nowM] = bizNow(), rows = [["Date", "Type", "Name", "Category", "Amount", "Receipt"]], cats = {};
+  const add = (d, t, n, c, a, r) => { rows.push([d, t, n, c, a.toFixed(2), r || ""]); if (a < 0) cats[c] = r2((cats[c] || 0) - a); };
+  for (let m = 0; m <= nowM; m++){ const C = bizCal(y, m), d1 = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+    C.es.slice().sort((a, c) => a.date.localeCompare(c.date)).forEach(e => add(e.date, e.kind === "in" ? "Income" : "Cost", e.name, e.cat || (e.kind === "in" ? "Sales" : "Other"), e.kind === "in" ? e.amount : -e.amount, e.rcpt ? "on phone" : ""));
+    b.subs.filter(v => startedBy(v, y, m)).forEach(v => { if (v.cycle === "yr"){ if (v.on && +v.on.slice(5, 7) - 1 === m) add(`${y}-${v.on.slice(5)}`, "Cost", v.name, "Office & software", -(+v.price || 0)); } else add(d1, "Cost", v.name, "Office & software", -(+v.price || 0)); });
+    b.shares.filter(sh => startedBy(sh, y, m)).forEach(sh => add(d1, "Cost", `${bizShareName(sh)} (${sh.pct}% business)`, "Utilities & phone", -bizShareMonthly(sh)));
+    C.trips.forEach(t => add(t.date, "Cost", `${t.purpose} (${t.dist} ${mileUnit()}s at ${t.rate != null ? t.rate : b.mileRate}/${mileUnit()})`, "Car & truck (mileage)", -r2((+t.dist || 0) * (+b.mileRate || 0)))); }
+  const Y = bizYear();
+  rows.push([], ["", "", "Costs by category", "", "", ""]); Object.entries(cats).sort((a, c) => c[1] - a[1]).forEach(([c, v]) => rows.push(["", "", c, "", (-v).toFixed(2), ""]));
+  rows.push([], ["", "", "Total income", "", Y.inc.toFixed(2), ""], ["", "", "Total costs", "", (-Y.out).toFixed(2), ""], ["", "", "Profit", "", Y.profit.toFixed(2), ""], ["", "", `Tax set-aside at ${b.taxPct}%`, "", taxOf(Y.profit).toFixed(2), ""]);
+  if (USA()) quarters(y).forEach(q => rows.push(["", "", `Estimated tax Q${q.n} (due ${isoOf(q.due)})`, q.paid ? `paid ${q.paid}` : "", q.amount.toFixed(2), ""]));
   return rows.map(r => r.map(c => csvCell(c == null ? "" : String(c))).join(",")).join("\n") + "\n"; }
 async function bizRead(file){
   busy("Reading your statement");
@@ -2255,40 +2342,91 @@ async function bizRead(file){
     const box = view.querySelector("[data-biz-import-card]"); if (box) box.scrollIntoView({block: "start"}); }
   catch(err){ busy(false); toast(err && err.message ? err.message : "Couldn't read that file."); }
 }
+function bizBars(){ const [y, m] = bizNow(), mons = []; for (let i = 5; i >= 0; i--){ const d = new Date(y, m - i, 1), C = bizCal(d.getFullYear(), d.getMonth()); mons.push({l: d.toLocaleString("en-US", {month: "short"}), inc: C.inc, out: C.out}); }
+  const top = Math.max(1, ...mons.map(x => Math.max(x.inc, x.out))), H = 120, bw = 18;
+  return `<svg viewBox="0 0 330 ${H + 34}" width="100%" role="img" aria-label="Money in and costs for the last six months" class="biz-bars">${mons.map((x, i) => { const cx = 30 + i * 52, hi = Math.round(x.inc / top * H), ho = Math.round(x.out / top * H);
+    return `<rect x="${cx - bw}" y="${H - hi + 4}" width="${bw}" height="${Math.max(hi, 1)}" rx="4" fill="var(--green)"/><rect x="${cx + 2}" y="${H - ho + 4}" width="${bw}" height="${Math.max(ho, 1)}" rx="4" fill="var(--rust,#c4553f)" opacity=".85"/><text x="${cx}" y="${H + 26}" text-anchor="middle" font-size="12" fill="var(--muted)">${x.l}</text>`; }).join("")}</svg>
+    <div class="inline small muted" style="gap:14px"><span><i class="dot" style="background:var(--green)"></i> Money in</span><span><i class="dot" style="background:var(--rust,#c4553f)"></i> Costs</span></div>`; }
+let RCPT_SWEPT = false;
+function rcptSweep(){ if (RCPT_SWEPT || typeof indexedDB === "undefined") return; RCPT_SWEPT = true; const keep = new Set(bizData().entries.map(e => e.rcpt).filter(Boolean));
+  rcptDo("readonly", st => st.getAllKeys()).then(keys => (keys || []).filter(k => !keep.has(k)).forEach(rcptDel)).catch(() => {}); }   // photos whose cost was removed
 function bizSpace(){
-  const b = bizData(), k = planPeriodNow().key, M = bizMonth(k), Y = bizYear(), C = compute();
-  const taxM = r2(Math.max(0, M.profit) * b.taxPct / 100), taxY = r2(Math.max(0, Y.profit) * b.taxPct / 100), d = UI.bizDraft || {kind: "out"};
-  const catOpts = (list, v) => list.map(c => `<option ${c === v ? "selected" : ""}>${c}</option>`).join("");
-  const shareable = [...(S.expenses || []).map(e => ["e:" + e.id, e.name]), ...(S.subs || []).filter(v => v.keep !== "drop").map(v => ["s:" + v.id, v.name])].filter(([id]) => !b.shares.some(sh => sh.src === id));
-  return `<section class="hero biz-hero" data-biz-hero><div class="inline" style="justify-content:space-between"><p class="muted small">${esc(C.planMonth)} · Business</p><button type="button" class="pill gold plus-tap" data-plus-tap>Plus preview</button></div>
-    <div class="big tnum" data-biz-profit>${fmt(M.profit)}</div><p class="muted">${fmt(M.inc)} came in, ${fmt(M.out)} went out.</p></section>
-  <section class="card" data-biz-tax><h2 class="h-info">Tax set-aside${infoBtn("bizTax", "About the tax set-aside")}</h2>${infoTip("bizTax", "A share of your business profit to keep aside for tax, so tax time is never a surprise. Pick the rate your accountant suggests; KeepWise only does the math, it is not tax advice.")}
-    <div class="inline" style="gap:10px;flex-wrap:nowrap"><span class="small">Keep aside</span><span class="money-in" style="max-width:110px"><input data-biz-taxpct inputmode="decimal" value="${b.taxPct}" aria-label="Tax set-aside percent"><em>%</em></span><span class="small">of profit</span></div>
-    <p data-biz-taxline>That is <b>${fmt(taxM)}</b> this month and <b>${fmt(taxY)}</b> so far this year.</p>
-    <div class="biz-bar"><span style="width:${Y.inc > 0 ? Math.min(100, Math.round(Math.max(0, Y.profit) / Y.inc * 100)) : 0}%"></span></div><p class="muted small">Profit so far this year: ${fmt(Y.profit)} from ${fmt(Y.inc)} in.</p></section>
-  <section class="card" data-biz-add><h2>Add business money</h2>
+  rcptSweep();
+  const b = bizData(), seg = UI.bseg || "money", [y, m] = bizNow(), M = bizCal(y, m), Y = bizYear(), d = UI.bizDraft || {kind: "out"};
+  const monthName = new Date(y, m, 1).toLocaleString("en-US", {month: "long"}), catOpts = (list, v) => list.map(c => `<option ${c === v ? "selected" : ""}>${c}</option>`).join("");
+  const segs = `<div class="seg sub-seg biz-seg" role="group" aria-label="Parts of your business" data-bseg-switch>${BSEGS.map(([k, n]) => `<button type="button" data-bseg="${k}" aria-pressed="${seg === k}">${n}</button>`).join("")}</div>`;
+  const hero = `<section class="hero biz-hero" data-biz-hero><div class="inline" style="justify-content:space-between"><p class="muted small">${monthName} · ${esc(b.name || "Business")}</p><button type="button" class="pill gold plus-tap" data-plus-tap>Plus preview</button></div>
+    <div class="big tnum" data-biz-profit>${fmt(M.profit)}</div><p class="muted">${fmt(M.inc)} came in, ${fmt(M.out)} went out.</p></section>`;
+  let body = "";
+  if (seg === "money"){
+    const shareable = [...(S.expenses || []).map(e => ["e:" + e.id, e.name]), ...(S.subs || []).filter(v => v.keep !== "drop").map(v => ["s:" + v.id, v.name])].filter(([id]) => !b.shares.some(sh => sh.src === id));
+    body = hero + `<section class="card" data-biz-add><h2>Add business money</h2>
     <form data-form="bizEntry" style="display:flex;flex-direction:column;gap:10px">
       <div class="seg sub-seg biz-kind" role="group" aria-label="Money in or a cost" style="grid-template-columns:1fr 1fr"><button type="button" data-biz-kind="out" aria-pressed="${d.kind !== "in"}">A cost</button><button type="button" data-biz-kind="in" aria-pressed="${d.kind === "in"}">Money in</button></div>
+      ${d.kind !== "in" ? `<button class="btn" type="button" data-biz-rcpt-add>${I.camera || ""}Snap a receipt</button><div class="biz-rcpt-prev" data-biz-rcpt-preview hidden><img alt="Receipt photo"><span class="small muted"></span></div>` : ""}
       <label class="field"><span>${d.kind === "in" ? "From" : "What for"}</span><input name="name" maxlength="60" autocomplete="off" placeholder="${d.kind === "in" ? "e.g. Etsy payout" : "e.g. Candle jars"}" enterkeyhint="next"></label>
       <div class="grid2"><label class="field"><span>Amount</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" placeholder="0" enterkeyhint="done"></span></label>
         <label class="field"><span>Category</span><select name="cat">${catOpts(d.kind === "in" ? BIZ_IN_CATS : BIZ_COST_CATS, d.kind === "in" ? "Sales" : "Supplies")}</select></label></div>
       <label class="field"><span>Date</span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}"></label>
       <input type="hidden" name="kind" value="${d.kind === "in" ? "in" : "out"}"><button class="btn primary" type="submit">${d.kind === "in" ? "Add money in" : "Add cost"}</button></form></section>
   <section class="card" data-biz-list><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>This month</h2><span class="muted small tnum">${M.es.length} entr${M.es.length === 1 ? "y" : "ies"}</span></div>
-    ${M.es.length ? `<div class="rows">${M.es.slice().sort((a, c) => c.date.localeCompare(a.date)).map(e => `<div class="line" data-biz-entry="${e.id}"><div style="min-width:0"><div>${esc(e.name)}</div><div class="muted small">${shortDate(e.date)} · ${esc(e.cat || "")}</div></div><div class="inline"><span class="tnum ${e.kind === "in" ? "good" : ""}">${e.kind === "in" ? "+" : ""}${fmt(e.amount)}</span><button class="link danger-link small" type="button" data-biz-del aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Nothing yet this month. Add a sale or a cost above, or sort a statement below.</p>`}
-    ${M.subs || M.shares ? `<p class="muted small">Also counted: ${M.subs ? `${fmt(M.subs)} in subscriptions` : ""}${M.subs && M.shares ? " and " : ""}${M.shares ? `${fmt(M.shares)} as the business share of personal bills` : ""}.</p>` : ""}</section>
+    ${M.es.length ? `<div class="rows">${M.es.slice().sort((a, c) => c.date.localeCompare(a.date)).map(e => `<div class="line" data-biz-entry="${e.id}"><div style="min-width:0"><div>${esc(e.name)}</div><div class="muted small">${shortDate(e.date)} · ${esc(e.cat || "")}${e.rcpt ? ` · <button class="link small" type="button" data-biz-rcpt-view>Receipt</button>` : ""}</div></div><div class="inline"><span class="tnum ${e.kind === "in" ? "good" : ""}">${e.kind === "in" ? "+" : ""}${fmt(e.amount)}</span><button class="link danger-link small" type="button" data-biz-del aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Nothing yet this month. Add a sale or a cost above, or sort a statement below.</p>`}
+    ${M.subs || M.shares || M.miles ? `<p class="muted small">Also counted: ${[M.subs ? `${fmt(M.subs)} in subscriptions` : "", M.shares ? `${fmt(M.shares)} as the business share of personal bills` : "", M.miles ? `${fmt(M.miles)} for ${M.dist} ${mileUnit()}s driven` : ""].filter(Boolean).join(", ")}.</p>` : ""}</section>
   <section class="card" data-biz-subs><h2>Business subscriptions</h2>
     ${b.subs.length ? `<div class="rows">${b.subs.map(v => `<div class="line" data-biz-sub="${v.id}"><div><div>${esc(v.name)}</div><div class="muted small">${v.cycle === "yr" ? `Yearly${v.on ? `, ${dayMonth(isoDate(v.on))}` : ""}` : "Monthly"}</div></div><div class="inline"><span class="tnum">${fmt(v.price)}${v.cycle === "yr" ? "/yr" : "/mo"}</span><button class="link danger-link small" type="button" data-biz-sub-del aria-label="Remove ${esc(v.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Software, hosting, tools: anything the business pays for on a schedule.</p>`}
     <form data-form="bizSub" class="biz-mini"><input name="name" maxlength="40" placeholder="e.g. Canva Pro" aria-label="Subscription name" autocomplete="off"><span class="money-in"><em>${esc(sym())}</em><input name="price" inputmode="decimal" placeholder="0" aria-label="Price"></span><select name="cycle" aria-label="How often"><option value="mo">Monthly</option><option value="yr">Yearly</option></select><button class="btn small" type="submit">Add</button></form></section>
   <section class="card" data-biz-shares><h2 class="h-info">Business share of personal bills${infoBtn("bizShare", "About business shares")}</h2>${infoTip("bizShare", "If you use your phone, internet or a subscription partly for the business, count that share as a business cost. Your personal month is not changed.")}
-    ${b.shares.length ? `<div class="rows">${b.shares.map(sh => `<div class="line" data-biz-share="${sh.id}"><div><div>${esc(bizShareName(sh))}</div><div class="muted small">${sh.pct}% business</div></div><div class="inline"><span class="tnum">${fmt(bizShareMonthly(sh, k))}/mo</span><button class="link danger-link small" type="button" data-biz-share-del aria-label="Remove ${esc(bizShareName(sh))}">Remove</button></div></div>`).join("")}</div>` : ""}
+    ${b.shares.length ? `<div class="rows">${b.shares.map(sh => `<div class="line" data-biz-share="${sh.id}"><div><div>${esc(bizShareName(sh))}</div><div class="muted small">${sh.pct}% business</div></div><div class="inline"><span class="tnum">${fmt(bizShareMonthly(sh))}/mo</span><button class="link danger-link small" type="button" data-biz-share-del aria-label="Remove ${esc(bizShareName(sh))}">Remove</button></div></div>`).join("")}</div>` : ""}
     ${shareable.length ? `<form data-form="bizShare" class="biz-mini"><select name="src" aria-label="Personal bill">${shareable.map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join("")}</select><span class="money-in"><input name="pct" inputmode="numeric" placeholder="50" aria-label="Business percent"><em>%</em></span><button class="btn small" type="submit">Add</button></form>` : `<p class="muted small">Add bills and subscriptions to your personal plan first; then you can count part of them here.</p>`}</section>
   <section class="card" data-biz-import-card><h2 class="h-info">Sort a statement${infoBtn("bizImport", "About sorting a statement")}</h2>${infoTip("bizImport", "Choose a CSV, PDF or photo of a statement. Tick the lines that were business: money in becomes business income, money out a business cost. Read on this phone only.")}
     ${BIZ.lines ? (BIZ.lines.length ? `<p class="muted small">${esc(BIZ.file)}: tick what was business.</p><div class="st-tx biz-lines">${BIZ.lines.map((l, i) => `<label class="move-row"><input type="checkbox" data-biz-pick="${i}" ${BIZ.pick.has(i) ? "checked" : ""}><span style="flex:1;min-width:0"><span>${esc(l.desc)}</span><span class="muted small" style="display:block">${shortDate(l.date)}</span></span><span class="tnum ${l.amt > 0 ? "good" : ""}">${l.amt > 0 ? "+" : ""}${fmt(Math.abs(l.amt))}</span></label>`).join("")}</div>
       <div class="grid2"><button class="btn" type="button" data-biz-import-cancel>Cancel</button><button class="btn primary" type="button" data-biz-import-add ${BIZ.pick.size ? "" : "disabled"}>Add ${BIZ.pick.size} to Business</button></div>` : `<p class="muted small">Every line in that statement is already in Business.</p><button class="btn" type="button" data-biz-import-cancel>Done</button>`)
       : `<button class="btn" type="button" data-biz-import>Choose a statement</button>`}</section>
-  <section class="card" data-biz-export-card><h2>For your accountant</h2><p class="muted small">Everything for ${new Date().getFullYear()} so far: income, costs, subscriptions, business shares and the totals, as a spreadsheet file.</p><button class="btn" type="button" data-biz-export>Export ${new Date().getFullYear()} as CSV</button></section>
-  <p class="muted small" style="text-align:center">You are testing KeepWise Plus. <button class="link small" type="button" data-plus-off>Turn off the preview</button></p>`;
+  <section class="card" data-biz-settings><h2>Your business</h2><label class="field"><span>Business name <small class="muted">shown on invoices</small></span><input data-biz-name maxlength="50" value="${esc(b.name || "")}" placeholder="e.g. Sofia's Candles" autocomplete="organization"></label></section>`;
+  } else if (seg === "invoices"){
+    const list = b.invoices.slice().sort((a, c) => (c.date || "").localeCompare(a.date || "")), owed = r2(list.filter(i => i.status !== "paid").reduce((a, i) => a + invTotal(i), 0)), late = list.filter(invLate);
+    const ed = UI.invEdit ? b.invoices.find(i => i.id === UI.invEdit) : null, draft = UI.invAdd || ed;
+    const it = draft ? (ed ? ed.items : (UI.invItems || [{desc: "", qty: 1, price: ""}])) : [];
+    body = `<section class="hero biz-hero" data-inv-hero><p class="muted small">Invoices</p><div class="big tnum">${fmt(owed)}</div><p class="muted">${owed > 0 ? `still to be paid${late.length ? ` · <b class="bad">${late.length} late</b>` : ""}` : "Nobody owes you right now."}</p></section>
+    ${draft ? `<section class="card" data-inv-form-card><h2>${ed ? `Edit ${invNo(ed.no)}` : "New invoice"}</h2><form data-form="invoice" style="display:flex;flex-direction:column;gap:10px">
+      <label class="field"><span>Bill to</span><input name="client" maxlength="60" value="${esc(ed ? ed.client : "")}" placeholder="Client or company" autocomplete="off"></label>
+      <div data-inv-items style="display:flex;flex-direction:column;gap:8px">${it.map((x, i) => `<div class="inv-item" data-inv-item="${i}"><input name="desc" maxlength="80" value="${esc(x.desc || "")}" placeholder="What you did or sold" aria-label="Item ${i + 1}"><span class="money-in"><em>Qty</em><input name="qty" inputmode="decimal" value="${esc(x.qty != null ? x.qty : 1)}" aria-label="Quantity"></span><span class="money-in"><em>${esc(sym())}</em><input name="price" inputmode="decimal" value="${esc(x.price != null ? x.price : "")}" placeholder="0" aria-label="Price"></span></div>`).join("")}</div>
+      <button class="link small" type="button" data-inv-line style="align-self:flex-start">+ Add a line</button>
+      <div class="grid2"><label class="field"><span>Date</span><input name="date" type="date" value="${esc(ed ? ed.date : isoDaysAgo(0))}"></label><label class="field"><span>Due</span><input name="due" type="date" value="${esc(ed ? ed.due || "" : isoOf(dayPlus(todayMid(), 14)))}"></label></div>
+      <label class="field"><span>Note <small class="muted">optional</small></span><input name="note" maxlength="160" value="${esc(ed ? ed.note || "" : "")}" placeholder="e.g. Pay by bank transfer to …"></label>
+      <div class="grid2"><button class="btn" type="button" data-inv-cancel>Cancel</button><button class="btn primary" type="submit">${ed ? "Save" : "Create invoice"}</button></div></form></section>`
+      : `<button class="btn primary" type="button" data-inv-add>${I.plus}New invoice</button>`}
+    <section class="card" data-inv-list><h2>All invoices</h2>${list.length ? `<div class="rows">${list.map(i => `<div class="line inv-row" data-inv="${i.id}"><div style="min-width:0"><div>${esc(i.client || "No name")} <span class="muted small">${invNo(i.no)}</span></div>
+        <div class="small ${i.status === "paid" ? "good" : invLate(i) ? "bad" : "muted"}">${i.status === "paid" ? `Paid ${shortDate(i.paidOn)}` : invLate(i) ? `Late · was due ${shortDate(i.due)}` : i.due ? `Due ${shortDate(i.due)}` : "Open"}</div>
+        <div class="inline" style="gap:12px;margin-top:4px"><button class="link small" type="button" data-inv-share>Share</button>${i.status === "paid" ? `<button class="link plain small" type="button" data-inv-unpaid>Mark unpaid</button>` : `<button class="link small" type="button" data-inv-paid>Mark paid</button><button class="link plain small" type="button" data-inv-edit>Edit</button>`}<button class="link danger-link small" type="button" data-inv-del>Delete</button></div></div>
+        <span class="tnum name">${fmt(invTotal(i))}</span></div>`).join("")}</div>` : `<p class="muted small">Make an invoice, share it as a picture in any chat or email, and mark it paid when the money arrives. Paid invoices count as business income.</p>`}</section>`;
+  } else if (seg === "miles"){
+    const trips = b.trips.filter(t => +t.date.slice(0, 4) === y).sort((a, c) => c.date.localeCompare(a.date)), dist = r2(trips.reduce((a, t) => a + (+t.dist || 0), 0)), ded = r2(dist * (+b.mileRate || 0)), u = mileUnit(), rateTxt = USA() && b.mileRate < 1 ? `${+(b.mileRate * 100).toFixed(1)}¢` : fmt(+b.mileRate || 0);
+    body = `<section class="hero biz-hero" data-miles-hero><p class="muted small">Driving for the business · ${y}</p><div class="big tnum">${fmt(ded)}</div><p class="muted">${dist} ${u}s so far at ${rateTxt} a ${u}.</p></section>
+    <section class="card" data-miles-add><h2 class="h-info">Log a drive${infoBtn("miles", "About mileage")}</h2>${infoTip("miles", USA() ? "The IRS standard rate for business driving in 2026 is 72.5 cents a mile. Use either mileage or your actual car costs, not both. KeepWise only does the math, it is not tax advice." : "Set the rate per km your tax office allows. Use either mileage or your actual car costs, not both. KeepWise only does the math, it is not tax advice.")}
+      <form data-form="trip2" style="display:flex;flex-direction:column;gap:10px"><label class="field"><span>Where to, and why</span><input name="purpose" maxlength="60" placeholder="e.g. Client meeting downtown" autocomplete="off"></label>
+        <div class="grid2"><label class="field"><span>${u === "mile" ? "Miles" : "Kilometres"}</span><input name="dist" inputmode="decimal" placeholder="0"></label><label class="field"><span>Date</span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}"></label></div>
+        <button class="btn primary" type="submit">Log drive</button></form>
+      <div class="inline" style="gap:10px;flex-wrap:nowrap;margin-top:6px"><span class="small">Rate</span><span class="money-in" style="max-width:130px"><em>${esc(sym())}</em><input data-biz-milerate inputmode="decimal" value="${b.mileRate}" aria-label="Rate per ${u}"></span><span class="small">a ${u}</span></div></section>
+    <section class="card" data-miles-list><h2>This year</h2>${trips.length ? `<div class="rows">${trips.map(t => `<div class="line" data-trip2="${t.id}"><div style="min-width:0"><div>${esc(t.purpose)}</div><div class="muted small">${shortDate(t.date)} · ${t.dist} ${u}s</div></div><div class="inline"><span class="tnum">${fmt(r2(t.dist * (+b.mileRate || 0)))}</span><button class="link danger-link small" type="button" data-trip2-del aria-label="Remove ${esc(t.purpose)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Every business drive you log counts as a business cost at the rate above.</p>`}</section>`;
+  } else {
+    const taxM = taxOf(M.profit), taxY = taxOf(Y.profit), qs = USA() ? quarters(y) : [], nq = USA() ? nextQuarter() : null;
+    const cats = {}; Y.es.filter(e => e.kind === "out").forEach(e => cats[e.cat || "Other"] = r2((cats[e.cat || "Other"] || 0) + e.amount)); if (Y.subs) cats["Office & software"] = r2((cats["Office & software"] || 0) + Y.subs); if (Y.shares) cats["Utilities & phone"] = r2((cats["Utilities & phone"] || 0) + Y.shares); if (Y.miles) cats["Car & truck (mileage)"] = Y.miles;
+    const topCats = Object.entries(cats).sort((a, c) => c[1] - a[1]).slice(0, 5), sales = Y.es.filter(e => e.kind === "in"), avg = sales.length ? r2(sales.reduce((a, e) => a + e.amount, 0) / sales.length) : 0;
+    body = `<section class="card" data-biz-tax><h2 class="h-info">Tax set-aside${infoBtn("bizTax", "About the tax set-aside")}</h2>${infoTip("bizTax", "A share of your business profit to keep aside for tax, so tax time is never a surprise. Pick the rate your accountant suggests; KeepWise only does the math, it is not tax advice.")}
+    <div class="inline" style="gap:10px;flex-wrap:nowrap"><span class="small">Keep aside</span><span class="money-in" style="max-width:110px"><input data-biz-taxpct inputmode="decimal" value="${b.taxPct}" aria-label="Tax set-aside percent"><em>%</em></span><span class="small">of profit</span></div>
+    <p data-biz-taxline>That is <b>${fmt(taxM)}</b> this month and <b>${fmt(taxY)}</b> so far this year.</p>
+    <div class="biz-bar"><span style="width:${Y.inc > 0 ? Math.min(100, Math.round(Math.max(0, Y.profit) / Y.inc * 100)) : 0}%"></span></div><p class="muted small">Profit so far this year: ${fmt(Y.profit)} from ${fmt(Y.inc)} in.</p></section>
+    ${USA() ? `<section class="card" data-biz-qtax><h2 class="h-info">Estimated tax payments${infoBtn("bizQ", "About estimated tax")}</h2>${infoTip("bizQ", "In the US, self-employed people usually pay tax four times a year. Each amount here is your set-aside for that stretch of months. Check with your accountant or the IRS what you actually owe.")}
+      ${nq ? `<p data-biz-qnext>Next: <b>${fmt(nq.amount)}</b> for Q${nq.n}, due <b>${dateWithYear(nq.due, true)}</b>${daysUntil(nq.due) <= 14 ? ` · <span class="bad">in ${daysUntil(nq.due)} day${daysUntil(nq.due) === 1 ? "" : "s"}</span>` : ""}.</p>` : ""}
+      <div class="rows">${qs.map(q => `<div class="line" data-biz-q="${q.key}"><div><div>Q${q.n} · ${q.from.toLocaleString("en-US", {month: "short"})}–${q.to.toLocaleString("en-US", {month: "short"})}</div><div class="muted small">Due ${dateWithYear(q.due, true)}</div></div><div class="q-right"><span class="tnum">${fmt(q.amount)}</span>${q.paid ? `<button class="link plain small good" type="button" data-biz-qunpaid>Paid ✓</button>` : q.amount > 0 ? `<button class="link small" type="button" data-biz-qpaid>Mark paid</button>` : `<span class="muted small">Nothing due</span>`}</div></div>`).join("")}</div></section>` : ""}
+    <section class="card" data-biz-report><h2>Reports</h2>${bizBars()}
+      <div class="grid2 biz-stats"><div><span class="muted small">Average sale</span><b class="tnum">${fmt(avg)}</b></div><div><span class="muted small">Sales this year</span><b class="tnum">${sales.length}</b></div></div>
+      ${topCats.length ? `<h3 class="small" style="margin-top:6px">Biggest costs this year</h3><div class="rows">${topCats.map(([c, v]) => `<div class="line"><span>${esc(c)}</span><span class="tnum">${fmt(v)}</span></div>`).join("")}</div>` : ""}</section>
+    <section class="card" data-biz-export-card><h2>For your accountant</h2><p class="muted small">Everything for ${y} so far: income, costs by tax category, subscriptions, business shares, mileage${USA() ? ", estimated tax" : ""} and the totals, as a spreadsheet file.</p><button class="btn" type="button" data-biz-export>Export ${y} as CSV</button></section>`;
+  }
+  const viewer = BIZ.view ? `<div class="rcpt-view" role="dialog" aria-label="Receipt photo" data-rcpt-viewer><button class="btn small" type="button" data-rcpt-close>Close</button><img alt="Receipt" src="${BIZ.view}"></div>` : "";
+  return segs + body + `<p class="muted small" style="text-align:center">You are testing KeepWise Plus. <button class="link small" type="button" data-plus-off>Turn off the preview</button></p>` + viewer;
 }
 function bizPreview(){
   const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
@@ -3560,6 +3698,11 @@ OUT.comingUp = () => {
         <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">${extraFixed(x) ? "+" + fmt(x.amount) : `<span class="small">amount varies</span>`}</div></div>`}));
   (S.trips || []).filter(t => tripSoon(t) && daysUntil(isoDate(t.start)) <= 7).forEach(t => { const d = isoDate(t.start), b = +t.budget || 0; items.push({d, o: 4, html: `<div class="up-row" data-up-trip="${t.id}">${dateCell(d)}
         <div class="up-main"><div class="name">${esc(t.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · ${isEvent(t) ? "event" : "trip"} starts, its own budget</div></div><div class="tnum name">${b > 0 ? fmt(b) : ""}</div></div>`}); });
+  if (plusOn() && S.biz){   // KeepWise Plus: business money due soon
+    if (USA()){ const q = nextQuarter(); if (q && q.amount > 0 && daysUntil(q.due) <= 7) items.push({d: q.due, o: 5, html: `<div class="up-row" data-up-biz="tax">${dateCell(q.due)}
+        <div class="up-main"><div class="name">Estimated tax Q${q.n}</div><div class="small muted">${whenLabel(daysUntil(q.due))} · business set-aside</div></div><div class="tnum name">${fmt(q.amount)}</div></div>`}); }
+    (S.biz.invoices || []).filter(i => i.status !== "paid" && i.due && daysUntil(isoDate(i.due)) <= 7).forEach(i => { const d = isoDate(i.due), n = daysUntil(d); items.push({d, o: 6, html: `<div class="up-row in" data-up-biz="invoices">${dateCell(d)}
+        <div class="up-main"><div class="name">${esc(i.client || "Invoice")} · ${invNo(i.no)}</div><div class="small ${n < 0 ? "bad" : "good"}">${n < 0 ? `Late by ${-n} day${n === -1 ? "" : "s"}` : whenLabel(n)} · invoice to be paid</div></div><div class="tnum name good">+${fmt(invTotal(i))}</div></div>`}); }); }
   items.sort((a, b) => a.d - b.d || a.o - b.o);
   let bal = []; try { bal = myBalances(); } catch(e){}
   const splitRows = bal.slice(0, 4).map(x => `<div class="up-row${x.net > 0 ? " in" : ""}" data-up-split="${esc(x.p.id)}"><div class="up-date"><b style="font-size:.8rem">Split</b><span>open</span></div>
@@ -5592,6 +5735,8 @@ document.addEventListener("click", e => { const t = e.target.closest && e.target
   if (PLUS_TAP.n >= 7){ PLUS_TAP.n = 0; S.plusTester = !S.plusTester; save(); render(false); toast(S.plusTester ? "Plus preview is on. Business is ready to try." : "Plus preview is off."); } });
 document.addEventListener("change", e => { const t = e.target;
   if (t.matches && t.matches("[data-biz-taxpct]")){ const v = Math.max(0, Math.min(60, Math.round(numv(t.value) * 10) / 10 || 0)); bizData().taxPct = v; save(); render(true); return; }
+  if (t.matches && t.matches("[data-biz-name]")){ bizData().name = String(t.value || "").trim().slice(0, 50); save(); render(true); return; }
+  if (t.matches && t.matches("[data-biz-milerate]")){ const v = Math.max(0, Math.min(10, Math.round(numv(t.value) * 1000) / 1000 || 0)); bizData().mileRate = v; save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-pick]")){ const i = +t.dataset.bizPick; if (t.checked) BIZ.pick.add(i); else BIZ.pick.delete(i); const btn = document.querySelector("[data-biz-import-add]"); if (btn){ btn.disabled = !BIZ.pick.size; btn.textContent = `Add ${BIZ.pick.size} to Business`; } } });
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
 $("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
@@ -5987,7 +6132,27 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-biz-import-add")){ const bd = bizData(), u = undoable(), picked = [...BIZ.pick].map(i => BIZ.lines[i]).filter(Boolean);
     picked.forEach(l => { bd.entries.push({id: uid(), kind: l.amt > 0 ? "in" : "out", name: l.desc.slice(0, 60), amount: r2(Math.abs(l.amt)), date: l.date, cat: l.amt > 0 ? "Sales" : "From statement"}); bd.imported.push(l.key); });
     bd.imported = bd.imported.slice(-3000); BIZ.lines = null; BIZ.pick = new Set(); save(); render(true); toast(`Added ${picked.length} to Business.`, u); return; }
-  if (b.hasAttribute("data-biz-export")){ const ok = await saveFile(new Blob([bizCsv()], {type: "text/csv"}), `keepwise-business-${new Date().getFullYear()}.csv`); if (ok) toast("Saved. Send the file to your accountant."); return; }
+  if (b.hasAttribute("data-biz-export")){ const ok = await saveFile(new Blob([bizCsv()], {type: "text/csv"}), `keepwise-business-${bizNow()[0]}.csv`); if (ok) toast("Saved. Send the file to your accountant."); return; }
+  if (b.dataset.bseg){ UI.bseg = b.dataset.bseg; UI.invAdd = false; UI.invEdit = null; render(false); const m = $("main"); if (m) m.scrollTop = 0; return; }
+  if (b.hasAttribute("data-biz-rcpt-add")){ const form = b.closest("form"), inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.setAttribute("capture", "environment"); inp.hidden = true;
+    inp.addEventListener("change", () => { const file = inp.files && inp.files[0]; inp.remove(); if (file) bizReceipt(file, form); }); document.body.appendChild(inp); inp.click(); return; }
+  if (b.hasAttribute("data-biz-rcpt-view")){ const id = b.closest("[data-biz-entry]").dataset.bizEntry, e = bizData().entries.find(x => x.id === id); if (!e || !e.rcpt) return;
+    try { const blob = await rcptGet(e.rcpt); if (!blob){ toast("That receipt photo isn't on this phone anymore."); return; } BIZ.view = URL.createObjectURL(blob); render(true); } catch(err){ toast("That receipt photo can't be opened."); } return; }
+  if (b.hasAttribute("data-rcpt-close")){ if (BIZ.view) URL.revokeObjectURL(BIZ.view); BIZ.view = null; render(true); return; }
+  if (b.hasAttribute("data-inv-add")){ UI.invAdd = true; UI.invEdit = null; UI.invItems = null; render(true); const f = view.querySelector("[data-inv-form-card]"); if (f){ f.scrollIntoView({block: "start"}); const c = f.querySelector("[name=client]"); if (c) c.focus({preventScroll: true}); } return; }
+  if (b.hasAttribute("data-inv-line")){ const f = b.closest("form"), items = invItemsOf(f); items.push({desc: "", qty: 1, price: ""});
+    const ed = UI.invEdit && bizData().invoices.find(i => i.id === UI.invEdit), keep = {client: f.elements.client.value, date: f.elements.date.value, due: f.elements.due.value, note: f.elements.note.value};
+    if (ed) ed.items = items; else UI.invItems = items; render(true); const f2 = view.querySelector("form[data-form=invoice]"); if (f2){ Object.entries(keep).forEach(([k, v]) => f2.elements[k].value = v); const last = f2.querySelectorAll("[data-inv-item]"); const d = last[last.length - 1]; if (d) d.querySelector("[name=desc]").focus(); } return; }
+  if (b.hasAttribute("data-inv-cancel")){ if (UI.invEdit && UI.invSnap){ const bd = bizData(), i = bd.invoices.findIndex(x => x.id === UI.invEdit); if (i >= 0) bd.invoices[i] = JSON.parse(UI.invSnap); } UI.invAdd = false; UI.invEdit = null; UI.invItems = null; UI.invSnap = null; render(true); return; }
+  if (b.closest("[data-inv]") && (b.hasAttribute("data-inv-share") || b.hasAttribute("data-inv-paid") || b.hasAttribute("data-inv-unpaid") || b.hasAttribute("data-inv-edit") || b.hasAttribute("data-inv-del"))){
+    const bd = bizData(), id = b.closest("[data-inv]").dataset.inv, inv = bd.invoices.find(i => i.id === id); if (!inv) return;
+    if (b.hasAttribute("data-inv-share")){ busy("Making the invoice"); try { const blob = await invoiceImage(inv); busy(false); const ok = await shareBlob(blob, `${invNo(inv.no)}${inv.client ? "-" + inv.client.replace(/[^A-Za-z0-9]+/g, "-").slice(0, 30) : ""}.png`, `Invoice ${invNo(inv.no)}`); if (ok) toast("Invoice ready to send."); } catch(err){ busy(false); toast("That invoice can't be made right now."); } return; }
+    if (b.hasAttribute("data-inv-paid")){ const u = undoable(), amt = invTotal(inv); inv.status = "paid"; inv.paidOn = isoDaysAgo(0); bd.entries.push({id: uid(), kind: "in", name: `${inv.client || "Invoice"} · ${invNo(inv.no)}`.slice(0, 60), amount: amt, date: inv.paidOn, cat: "Services", inv: inv.id}); save(); render(true); toast(`Paid. ${fmt(amt)} counts as business income.`, u); return; }
+    if (b.hasAttribute("data-inv-unpaid")){ const u = undoable(); inv.status = "open"; delete inv.paidOn; bd.entries = bd.entries.filter(e => e.inv !== inv.id); save(); render(true); toast("Marked unpaid.", u); return; }
+    if (b.hasAttribute("data-inv-edit")){ UI.invEdit = inv.id; UI.invAdd = false; UI.invSnap = JSON.stringify(inv); render(true); const f = view.querySelector("[data-inv-form-card]"); if (f) f.scrollIntoView({block: "start"}); return; }
+    if (b.hasAttribute("data-inv-del")){ const u = undoable(); bd.invoices = bd.invoices.filter(i => i.id !== inv.id); bd.entries = bd.entries.filter(e => e.inv !== inv.id); save(); render(true); toast(`Deleted ${invNo(inv.no)}.`, u); return; } }
+  if (b.hasAttribute("data-trip2-del")){ const id = b.closest("[data-trip2]").dataset.trip2, u = undoable(); bizData().trips = bizData().trips.filter(t => t.id !== id); save(); render(true); toast("Removed.", u); return; }
+  if (b.hasAttribute("data-biz-qpaid") || b.hasAttribute("data-biz-qunpaid")){ const key = b.closest("[data-biz-q]").dataset.bizQ, bd = bizData(); if (b.hasAttribute("data-biz-qpaid")) bd.qpaid[key] = isoDaysAgo(0); else delete bd.qpaid[key]; save(); render(true); return; }
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
   if (b.hasAttribute("data-receipt-close")){ UI.receiptInfo = false; render(true); return; }
   const loanRow = b.closest("[data-loan]"), loanX = loanRow && loanList().find(x => x.id === loanRow.dataset.loan);
@@ -6145,8 +6310,22 @@ view.addEventListener("submit", async e => {
   if (kind === "bizEntry"){ const name = String(fd.get("name") || "").trim().slice(0, 60), amount = numv(fd.get("amount")), date = String(fd.get("date") || isoDaysAgo(0)), k2 = fd.get("kind") === "in" ? "in" : "out";
     if (!name){ toast(k2 === "in" ? "Say where the money came from." : "Say what the cost was for."); f.querySelector("[name=name]").focus(); return; }
     if (!(amount > 0)){ toast("Enter the amount."); f.querySelector("[name=amount]").focus(); return; }
-    const u = undoable(); bizData().entries.push({id: uid(), kind: k2, name, amount: r2(amount), date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0), cat: String(fd.get("cat") || "Other")});
-    save(); render(true); toast(k2 === "in" ? `Added ${fmt(amount)} in.` : `Added a ${fmt(amount)} cost.`, u); return; }
+    const u = undoable(), e = {id: uid(), kind: k2, name, amount: r2(amount), date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0), cat: String(fd.get("cat") || "Other")};
+    if (BIZ.rcpt && k2 === "out"){ const blob = BIZ.rcpt; BIZ.rcpt = null; try { await rcptPut(e.id, blob); e.rcpt = e.id; } catch(err){ toast("The receipt photo couldn't be kept on this phone."); } }
+    bizData().entries.push(e); save(); render(true); toast(k2 === "in" ? `Added ${fmt(amount)} in.` : `Added a ${fmt(amount)} cost.`, u); return; }
+  if (kind === "invoice"){ const bd = bizData(), items = invItemsOf(f).filter(x => x.desc.trim() || numv(x.price) > 0).map(x => ({desc: x.desc.trim().slice(0, 80) || "Item", qty: numv(x.qty) > 0 ? r2(numv(x.qty)) : 1, price: r2(numv(x.price))}));
+    const client = String(fd.get("client") || "").trim().slice(0, 60), date = String(fd.get("date") || ""), due = String(fd.get("due") || ""), note = String(fd.get("note") || "").trim().slice(0, 160), ok = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
+    if (!client){ toast("Say who the invoice is for."); f.elements.client.focus(); return; }
+    if (!items.length || !(items.reduce((a, x) => a + x.qty * x.price, 0) > 0)){ toast("Add what you did and the price."); const p = f.querySelector("[data-inv-item] [name=desc]"); if (p) p.focus(); return; }
+    const u = undoable(), ed = UI.invEdit && bd.invoices.find(i => i.id === UI.invEdit), base = {client, items, date: ok(date) ? date : isoDaysAgo(0), due: ok(due) ? due : "", note};
+    let inv; if (ed){ Object.assign(ed, base); inv = ed; } else { inv = {id: uid(), no: bd.invNext++, status: "open", ...base}; bd.invoices.push(inv); }
+    UI.invAdd = false; UI.invEdit = null; UI.invItems = null; UI.invSnap = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
+    toast(ed ? `Saved ${invNo(inv.no)}.` : `${invNo(inv.no)} for ${fmt(invTotal(inv))} is ready. Tap Share to send it.`, u); return; }
+  if (kind === "trip2"){ const purpose = String(fd.get("purpose") || "").trim().slice(0, 60), dist = r2(numv(fd.get("dist"))), date = String(fd.get("date") || "");
+    if (!purpose){ toast("Say where you drove and why."); f.elements.purpose.focus(); return; }
+    if (!(dist > 0 && dist < 5000)){ toast(`Enter the ${mileUnit()}s driven.`); f.elements.dist.focus(); return; }
+    const u = undoable(), bd = bizData(); bd.trips.push({id: uid(), purpose, dist, date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0)}); save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
+    toast(`Logged ${dist} ${mileUnit()}s: ${fmt(r2(dist * (+bd.mileRate || 0)))} as a business cost.`, u); return; }
   if (kind === "bizSub"){ const name = String(fd.get("name") || "").trim().slice(0, 40), price = numv(fd.get("price")), cycle = fd.get("cycle") === "yr" ? "yr" : "mo";
     if (!name || !(price > 0)){ toast("Enter the name and the price."); return; }
     const u = undoable(); bizData().subs.push({id: uid(), name, price: r2(price), cycle, since: isoDaysAgo(0), ...(cycle === "yr" ? {on: isoDaysAgo(0)} : {})}); save(); render(true); toast(`Added ${name}.`, u); return; }
