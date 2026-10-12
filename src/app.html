@@ -274,15 +274,20 @@ a.btn{display:block;text-decoration:none}
 .summary3 b{display:block;font:600 1.5rem/1.2 var(--display);font-variant-numeric:tabular-nums;margin-top:4px}
 .balances{border-top:1px solid var(--line)}
 .split-hero{text-align:center;gap:6px;padding-top:18px}.split-hero .label{margin:0}.split-hero .big{margin:0}.split-square{font:600 1.4rem/1.2 var(--display);margin:4px 0}
-.split-hero .summary3.split-mini{grid-template-columns:1fr 1fr !important;gap:10px !important;margin-top:8px;padding-top:12px;border-top:1px solid var(--line);text-align:left}
-.split-hero .split-mini > div{display:flex;flex-direction:column;gap:2px;border:0;padding:0}.split-mini b{font-size:1.15rem}.split-mini .split-net{display:none}
-.pb-cards{display:flex;flex-direction:column;gap:10px}
-.pb-card{border:1px solid var(--line);border-radius:18px;background:var(--card);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.split-hero .summary3.split-mini{grid-template-columns:1fr 1fr !important;gap:10px !important;margin-top:10px;text-align:left}
+.split-hero .split-mini > div{display:flex;flex-direction:column;gap:2px;border:0;padding:10px 12px;border-radius:14px}
+.split-hero .split-mini .sm-in{background:color-mix(in srgb,var(--green) 9%,transparent)}.split-hero .split-mini .sm-out{background:color-mix(in srgb,var(--rust) 9%,transparent)}
+.split-hero .split-mini b{font:600 1.2rem/1.2 var(--display)}
+[data-out="splitSum"]{display:flex;flex-direction:column;gap:14px}
+.pb-group{gap:4px}.pb-group-h{justify-content:space-between;align-items:baseline}.pb-group-h h2{margin:0}
+.pb-cards{display:flex;flex-direction:column}
+.pb-card{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--line)}.pb-cards > :first-child{border-top:0}
 .pb-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;position:relative}
-.pb-txt{display:flex;flex-direction:column;min-width:0}.pb-txt b{font-size:1.05rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pb-amt{display:flex;flex-direction:column;align-items:flex-end}.pb-amt small{font-size:.78rem}.pb-amt b{font:600 1.25rem/1.15 var(--display)}
-.pb-acts{display:flex;gap:8px;justify-content:flex-end}.pb-acts .btn{width:auto;min-width:96px;flex:none}
-.pb-list{border-top:1px solid var(--line);padding-top:6px;display:flex;flex-direction:column}
+.pb-txt{display:flex;flex-direction:column;min-width:0}.pb-txt b{font-size:1.02rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pb-amt{display:flex;flex-direction:column;align-items:flex-end}.pb-amt small{font-size:.76rem}.pb-amt b{font:600 1.2rem/1.15 var(--display)}
+.pb-acts{display:flex;gap:8px;padding-left:54px}
+.pb-acts .btn{width:auto;flex:none;min-height:32px;padding:5px 14px;border-radius:999px;font-size:.84rem}
+.pb-list{margin-left:54px;border-top:1px dashed var(--line);padding-top:4px;display:flex;flex-direction:column}
 .pb-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 0}.pb-row > span:first-child{display:flex;flex-direction:column;min-width:0}.pb-row b{font-weight:600;font-size:.95rem}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .act-head{justify-content:space-between;align-items:baseline;margin-top:4px}.act-head h2{margin:0}
@@ -2910,9 +2915,8 @@ OUT.splitSum = () => {
   const hero = `<section class="card split-hero" data-split-hero>
     ${b.length ? `<p class="label">${net >= 0 ? "Overall you’re owed" : "Overall you owe"}</p><div class="big tnum ${net >= 0 ? "good" : "bad"}" style="${fitSize(fmt(Math.abs(net)), 2.6, 90)}">${fmt(Math.abs(net))}</div>`
       : `<p class="label">All square</p><p class="split-square">Everyone is square.</p>`}
-    <div class="summary3 split-mini"><div><span class="muted small">You're owed</span><b class="good tnum">${fmt(owed)}</b><small class="muted">${owedL.length ? `from ${pp(owedL.length)}` : "by no one"}</small></div>
-      <div><span class="muted small">You owe</span><b class="bad tnum">${fmt(owe)}</b><small class="muted">${oweL.length ? `to ${pp(oweL.length)}` : "to no one"}</small></div>
-      <div class="split-net"><span class="muted small">${net >= 0 ? "Net you're owed" : "Net you owe"}</span><b class="${net >= 0 ? "good" : "bad"}">${fmt(Math.abs(net))}</b></div></div></section>`;
+    <div class="summary3 split-mini"><div class="sm-in"><span class="small">You're owed</span><b class="good tnum">${fmt(owed)}</b><small class="muted">${owedL.length ? `from ${pp(owedL.length)}` : "by no one"}</small></div>
+      <div class="sm-out"><span class="small">You owe</span><b class="bad tnum">${fmt(owe)}</b><small class="muted">${oweL.length ? `to ${pp(oweL.length)}` : "to no one"}</small></div></div></section>`;
   const card = x => {
     const they = x.net > 0, id = x.p.id, sl = personSplits(id, c), open = UI.pbOpen === id, sentence = they ? `${x.p.name} owes you ${fmt(x.net)}` : `You owe ${x.p.name} ${fmt(-x.net)}`;
     if (UI.settle === id) return `<form class="settle-form" data-form="settle" data-settle="${esc(x.p.id)}" data-amt="${Math.abs(x.net)}"><span class="${x.net > 0 ? "good" : "bad"}">${x.net > 0 ? `${esc(x.p.name)} owes you ${fmt(x.net)}` : `You owe ${esc(x.p.name)} ${fmt(-x.net)}`}</span>
@@ -2928,7 +2932,7 @@ OUT.splitSum = () => {
       ${open ? `<div class="pb-list">${sl.length ? sl.slice(0, 8).map(y => { const sh = shares(y), part = y.paidBy === c.me ? sh[id] : sh[c.me];
           return `<div class="pb-row"><span><b>${esc(y.title)}</b><small class="muted">${y.date ? shortDate(y.date) + " · " : ""}${y.paidBy === c.me ? "you paid" : `${esc(firstWord(x.p.name))} paid`} ${fmt(y.amount)}</small></span><span class="tnum ${y.paidBy === c.me ? "good" : "bad"}">${y.paidBy === c.me ? "+" : "−"}${fmt(part || 0)}</span></div>`; }).join("") : `<p class="muted small">No splits left, only payments.</p>`}</div>` : ""}</div>`;
   };
-  return `${hero}${b.length ? `<div class="pb-cards">${b.map(card).join("")}</div>` : ""}`;
+  return `${hero}${b.length ? `<section class="card pb-group"><div class="inline pb-group-h"><h2>People</h2><span class="muted small">${pp(b.length)} not square yet</span></div><div class="pb-cards">${b.map(card).join("")}</div></section>` : ""}`;
 };
 // A small "i" next to a heading opens a short explanation, so screens stay clean and help is one tap away.
 const INFO_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg>';
