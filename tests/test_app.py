@@ -2240,7 +2240,7 @@ async def plus_connects_a_bank_through_plaid(ctx):
     assert await pg.locator("[data-plaid]").count() == 0, "Plaid is a Plus feature"
     await pg.click("[data-banks-close]"); await biz_on(pg); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150)
     await pg.click("[data-banks-open]"); await pg.wait_for_timeout(150)
-    card = await text(pg, "[data-bank]"); assert "Connect with Plaid" in card and "Connect with SimpleFIN" in card, card
+    card = await text(pg, "[data-bank]"); assert "Connect with Plaid" in card and "SimpleFIN" not in card, "Plus pays for Plaid, so it does not offer a SimpleFIN plan you would pay for: " + card
     await pg.click("[data-plaid-add]"); await pg.wait_for_timeout(800)
     # right after connecting: which accounts to use. Loans start unticked.
     pick = pg.locator("[data-bank-pick]"); assert await pick.count() == 1
@@ -2622,19 +2622,14 @@ async def a_us_bank_connects_through_simplefin_on_the_phone(ctx):
         await route.abort()
     await pg.route("https://bridge.test.simplefin.org/**", bridge)
     await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150)
-    assert "Import a statement or connect your bank" in await text(pg, "[data-banks-open]") and await pg.locator("#view [data-bank]").count() == 0, "banks live on their own screen"
+    assert "Import a bank statement" in await text(pg, "[data-banks-open]") and await pg.locator("#view [data-bank]").count() == 0, "banks live on their own screen"
     await pg.click("[data-banks-open]"); await pg.wait_for_timeout(150); assert await pg.inner_text("#view h1") == "Banks & statements"
-    card = await text(pg, "[data-bank]"); assert "Connect your bank" in card and "Connect with SimpleFIN" in card, card
-    await pg.click("[data-bank-add]"); f = pg.locator("form[data-form=bank]")
-    # not a token
-    await f.locator("[name=token]").fill("hello there"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
-    assert "doesn’t look like a SimpleFIN setup token" in await text(pg, "[data-bank-err]") and calls["claim"] == 0
-    # a token someone already used
-    await f.locator("[name=token]").fill(tok("USED")); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(300)
-    assert "already used" in await text(pg, "[data-bank-err]") and await pg.evaluate("localStorage.getItem('keepwise-bank-v1')") is None
-    # a good one
-    await f.locator("[name=token]").fill(tok("GOOD")); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(500)
-    assert "Connected. 2 accounts found." in await pg.inner_text("#toast")
+    assert await pg.locator("[data-bank]").count() == 0 and "SimpleFIN" not in await pg.inner_text("#view"), "free users are not offered a SimpleFIN plan to pay for"
+    # a link made in an earlier version keeps working until it is disconnected
+    await pg.evaluate("""() => { window.__kwErasing = true; localStorage.setItem('keepwise-bank-v1', 'https://kwuser:kwpass@bridge.test.simplefin.org/simplefin');
+      const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.bank = {since: '2026-01-01', accounts: []}; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(600); await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150)
+    await pg.click("[data-banks-open]"); await pg.wait_for_timeout(150); await pg.click("[data-bank-refresh]"); await pg.wait_for_timeout(500)
     v = await pg.inner_text("#view"); assert "Everyday Checking" in v and "Oakview Credit Union" in v and "10 in 90 days" in v and "$2,481.36" not in v and "$•••" in v, "balances start hidden"
     await pg.click("[data-bank-eye]"); await pg.wait_for_timeout(100)
     v = await pg.inner_text("#view"); assert "$2,481.36" in v and "$5,200" in v, v
@@ -2652,7 +2647,7 @@ async def a_us_bank_connects_through_simplefin_on_the_phone(ctx):
     assert "turned this link off" in await text(pg, "[data-bank-err]")
     # disconnect removes the link from the phone
     await pg.click("[data-bank-off]"); await pg.wait_for_timeout(200)
-    assert await pg.evaluate("localStorage.getItem('keepwise-bank-v1')") is None and "bank" not in (await state(pg)) and "Connect with SimpleFIN" in await text(pg, "[data-bank]")
+    assert await pg.evaluate("localStorage.getItem('keepwise-bank-v1')") is None and "bank" not in (await state(pg)) and await pg.locator("[data-bank]").count() == 0
     # the side menu and search open the same screen
     await pg.click("[data-banks-close]"); await menu_to(pg, "banks"); assert await pg.inner_text("#view h1") == "Banks & statements"
     await pg.click("[data-banks-close]"); await pg.click("#find-btn"); await pg.fill("#find-in", "connect your bank"); await pg.wait_for_timeout(400)

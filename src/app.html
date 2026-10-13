@@ -55,7 +55,6 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .lockscreen{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));text-align:center;overflow:auto}
 .lockscreen[hidden]{display:none}
 .app.locked{visibility:hidden}
-.lock-face{min-width:220px}
 .lock-dots{display:flex;gap:14px;justify-content:center;min-height:16px}
 .lock-dots i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--muted)}
 .lock-dots i.on{background:var(--green);border-color:var(--green)}
@@ -1244,36 +1243,19 @@ const OUT = {};
 // Big numbers keep their full size, and shrink only when a long amount (PKR 121,256.99) would not fit the screen.
 /* ================= bank sync (US, through SimpleFIN Bridge) =================
    The phone talks to SimpleFIN directly: KeepWise has no server in between and never sees the data.
-   The person pays SimpleFIN (about $15 a year); KeepWise charges nothing. The access key lives under its own storage key,
+   New links are no longer offered (Plus includes Plaid); a link made before keeps working until it is disconnected. The access key lives under its own storage key,
    so backups and "Copy my data" never carry it. Only names and balances of the accounts are kept with the plan. */
 const BANK_KEY = "keepwise-bank-v1", BANK = {busy: false, err: "", cache: null, token: ""};
 const bankAccess = () => { try { return localStorage.getItem(BANK_KEY) || ""; } catch(e){ return ""; } };
 const bankOn = () => !!bankAccess() && !!S.bank;
-const BANK_HELP = "https://beta-bridge.simplefin.org/";
-function bankClaimUrl(token){
-  let u; try { u = atob(String(token).trim().replace(/\s+/g, "")); } catch(e){ return null; }
-  try { const x = new URL(u); return x.protocol === "https:" && /\/claim\//.test(x.pathname) && !x.username ? x.href : null; } catch(e){ return null; }
-}
 function bankAuth(access){ const u = new URL(access), auth = "Basic " + btoa(decodeURIComponent(u.username) + ":" + decodeURIComponent(u.password)); u.username = ""; u.password = ""; return {base: u.href.replace(/\/$/, ""), auth}; }
-async function bankConnect(token){
-  const claim = bankClaimUrl(token); if (!claim){ BANK.err = "That doesn’t look like a SimpleFIN setup token. Copy the whole token from SimpleFIN and paste it again."; return false; }
-  if (navigator.onLine === false){ BANK.err = "Connect to the internet to link your bank."; return false; }
-  let r; try { r = await fetch(claim, {method: "POST"}); } catch(e){ BANK.err = "SimpleFIN can’t be reached right now. Try again in a minute."; return false; }
-  if (r.status === 403){ BANK.err = "That token was already used. Make a new one at SimpleFIN. If you didn’t use it yourself, turn it off there."; return false; }
-  if (!r.ok){ BANK.err = "SimpleFIN didn’t accept that token. Make a new one and try again."; return false; }
-  const access = (await r.text()).trim(); let ok = false; try { const x = new URL(access); ok = x.protocol === "https:" && !!x.username; } catch(e){}
-  if (!ok){ BANK.err = "SimpleFIN sent back something unexpected. Try a new token."; return false; }
-  try { localStorage.setItem(BANK_KEY, access); } catch(e){ BANK.err = "This browser won’t let KeepWise keep the bank link. Try the installed app."; return false; }
-  S.bank = {since: isoDaysAgo(0), accounts: []}; save();
-  return await bankFetch(true);
-}
 async function bankFetch(force){
   const access = bankAccess(); if (!access) return false;
   if (!force && BANK.cache && Date.now() - BANK.cache.at < 15 * 60000) return true;   // SimpleFIN allows about 24 updates a day
   if (navigator.onLine === false){ BANK.err = "You are offline. Showing what was there last time."; return false; }
   const {base, auth} = bankAuth(access), start = Math.floor(Date.now() / 1000) - 89 * 86400;
   let r; try { r = await fetch(`${base}/accounts?version=2&start-date=${start}`, {headers: {Authorization: auth}}); } catch(e){ BANK.err = "SimpleFIN can’t be reached right now. Try again in a minute."; return false; }
-  if (r.status === 403){ BANK.err = "SimpleFIN turned this link off. Disconnect, then connect again with a new token."; return false; }
+  if (r.status === 403){ BANK.err = "SimpleFIN turned this link off. Disconnect it here. New bank connections come with KeepWise Plus."; return false; }
   if (r.status === 402){ BANK.err = "Your SimpleFIN subscription needs attention before your bank can update."; return false; }
   if (!r.ok){ BANK.err = "SimpleFIN had a problem. Try again later."; return false; }
   let j; try { j = await r.json(); } catch(e){ BANK.err = "SimpleFIN sent back something unexpected. Try again later."; return false; }
@@ -1362,15 +1344,12 @@ function plaidSection(){
       : `<p class="muted small">Connect in a few taps with your bank login. Included with KeepWise Plus, no extra fee.</p><button class="btn" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "link" ? "Opening…" : "Connect with Plaid"}</button>`}</div>`;
 }
 function bankCard(){
-  if (UI.biz) return "";
+  if (UI.biz || (!plusOn() && !bankOn())) return "";
   const on = bankOn(), list = (S.bank && S.bank.accounts) || [], when = S.bank && S.bank.updated ? new Date(S.bank.updated) : null;
-  const head = `<h3 class="h-info">Connect your bank <span class="pill grey" style="font-size:.7rem">US</span>${infoBtn("bank", "About connecting your bank")}</h3>${infoTip("bank", plusOn() ? "With KeepWise Plus, connect through Plaid in a few taps, at no extra cost. Or use SimpleFIN Bridge, which you pay SimpleFIN for directly (about $1.50 a month); your phone talks to SimpleFIN with no KeepWise server in between. Either way, your bank data is kept only on this phone, never in backups." : "Through SimpleFIN Bridge, which works with thousands of US banks and credit unions. SimpleFIN charges about $1.50 a month or $15 a year, paid to them; KeepWise charges nothing. Your phone talks to SimpleFIN directly: KeepWise has no server in between and never sees your bank data. The link is kept only on this phone, never in backups.")}`;
-  const plaid = plusOn() ? plaidSection() + `<p class="small muted plaid-or">Or with SimpleFIN</p>` : "";
-  const simple = !on ? (UI.bankAdd ? `<form data-form="bank" style="display:flex;flex-direction:column;gap:10px"><ol class="small muted" style="margin:0;padding-left:20px"><li>Open <a href="${BANK_HELP}" target="_blank" rel="noopener" style="color:var(--green);font-weight:600">SimpleFIN Bridge</a>, connect your bank there and make a setup token.</li><li>Paste the token here.</li></ol>
-      <label class="field"><span>Setup token</span><input name="token" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste your setup token" aria-label="SimpleFIN setup token"></label>
-      ${BANK.err ? `<p class="err" role="alert" data-bank-err>${esc(BANK.err)}</p>` : ""}
-      <div class="grid2"><button class="btn" type="button" data-bank-cancel>Cancel</button><button class="btn primary" type="submit"${BANK.busy ? " disabled" : ""}>${BANK.busy ? "Connecting…" : "Connect"}</button></div></form>`
-    : `<p class="muted small">Pull in the last 90 days from your bank instead of downloading statements.</p><button class="btn" type="button" data-bank-add>Connect with SimpleFIN</button>`)
+  const head = `<h3 class="h-info">Connect your bank <span class="pill grey" style="font-size:.7rem">US</span>${infoBtn("bank", "About connecting your bank")}</h3>${infoTip("bank", plusOn() ? (bankOn() ? "With KeepWise Plus, connect through Plaid in a few taps, included at no extra cost. Your SimpleFIN connection keeps working too. Either way, your bank data is kept only on this phone, never in backups." : "With KeepWise Plus, connect through Plaid in a few taps, included at no extra cost. Your bank data is kept only on this phone, never in backups.") : "Your SimpleFIN link from before keeps working until you disconnect it. Your phone talks to SimpleFIN directly, and the link is kept only on this phone, never in backups. New bank connections come with KeepWise Plus.")}`;
+  // Plus pays for Plaid, so Plus only offers Plaid. A SimpleFIN link made before keeps working until it is disconnected.
+  const plaid = plusOn() ? plaidSection() + (on ? `<p class="small muted plaid-or">Also connected with SimpleFIN</p>` : "") : "";
+  const simple = !on ? ""
     : `<div class="rows bank-rows"><div class="line" data-simplefin><div style="min-width:0"><div class="name">SimpleFIN</div><div class="muted small" data-bank-when>${list.length} account${list.length === 1 ? "" : "s"}${when ? ` · Updated ${when.toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})}` : ""}</div></div><button class="link plain small" type="button" data-bank-off>Disconnect</button></div></div>
     ${BANK.err ? `<p class="err small" role="alert" data-bank-err>${esc(BANK.err)}</p>` : ""}
     <div class="inline" style="gap:16px"><button class="link small" type="button" data-bank-refresh${BANK.busy ? " disabled" : ""}>${BANK.busy ? "Updating…" : "Refresh"}</button></div>`;
@@ -1408,7 +1387,7 @@ function openBanks(){ if (LOCK.cfg && lockCan()){ LOCK.gate = true; lockNow(); r
 function banksRow(){
   const list = bankList(), used = list.filter(acctInUse), insts = [...new Set(list.map(a => a.inst))];
   const title = list.length ? insts.slice(0, 2).join(", ") + (insts.length > 2 ? ` +${insts.length - 2}` : "") : "Banks & statements";
-  const sub = list.length ? `${used.length} account${used.length === 1 ? "" : "s"} in use` : "Import a statement or connect your bank";
+  const sub = list.length ? `${used.length} account${used.length === 1 ? "" : "s"} in use` : plusOn() ? "Import a statement or connect your bank" : "Import a bank statement";
   return `<button type="button" class="card banks-row" data-banks-open><span class="banks-ic" aria-hidden="true">${I.bank}</span><span class="banks-txt"><b>${esc(title)}</b><span class="muted small">${sub}</span></span><span class="banks-go" aria-hidden="true">${I.chev}</span></button>`;
 }
 function bankPickCard(){
@@ -3821,7 +3800,7 @@ const FIND_PLACES = [
   ["Backups", "Menu · Your data & backups", "backup", "download export restore save file", {menu: "data", sel: "[data-set-backup]"}, 1],
   ["Monthly statements", "Month · Budget", "hist", "history past months last month report", {act: "history"}, 1],
   ["Import a bank statement", "Banks & statements", "imp", "upload csv pdf photo scan picture", {menu: "banks", sel: ".import-card"}, 1],
-  ["Connect your bank", "Banks & statements", "imp", "bank sync link account simplefin plaid automatic transactions balance connect accounts hide rename", {menu: "banks", sel: "[data-bank]"}],
+  ["Connect your bank", "Banks & statements", "imp", "bank sync link account plaid automatic transactions balance connect accounts hide rename", {menu: "banks", sel: "[data-bank], .import-card"}],
   ["What you keep this month", "Month · Overview", "month", "home overview left over safe to spend balance", {tab: "month", sel: ".hero"}],
   ["Where your month goes", "Month · Overview", "env", "chart breakdown pie donut percent", {tab: "month", sel: "[data-out=donut]"}],
   ["Coming up", "Month · Overview", "bell", "due soon upcoming next week", {tab: "month", sel: "[data-out=comingUp]"}],
@@ -5285,7 +5264,7 @@ const PLUS_REASONS = () => [
   [I.users, "Your money on every device", "Sign in and your month follows you to your phone, tablet and computer, up to date on each.", "Coming next"],
   [I.heart, "Live splits and Moments", "Friends see the same split on their own phones the moment it changes, and a trip's splits become a private album.", "Coming later"],
 ];
-const PLUS_FREE = ["Your month-end number and plan", "Subscriptions, with reminders before payday", "Ideas to pay less, and your promo codes", "Splits on this phone, with ready-made messages to send", "Statement import, monthly statements and backups", "Connect a US bank through SimpleFIN (paid to SimpleFIN)", "App lock with Face ID or fingerprint"];
+const PLUS_FREE = ["Your month-end number and plan", "Subscriptions, with reminders before payday", "Ideas to pay less, and your promo codes", "Splits on this phone, with ready-made messages to send", "Statement import, monthly statements and backups", "App lock with Face ID or fingerprint"];
 function plusCta(){
   const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
   return joined ? `<p class="plus-joined"><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus opens.</p><button class="link small" type="button" data-acc-plus-off style="align-self:center">Leave the waitlist</button>`
@@ -5590,17 +5569,13 @@ function lockDraw(){
     <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px"><button class="btn danger" type="button" data-lock-erase>${LOCK.forgot === 2 ? "Tap again to erase everything" : "Erase KeepWise on this phone"}</button><button class="btn" type="button" data-lock-back>Back</button></div>`; return; }
   el.innerHTML = `<img src="${document.querySelector(".logo").src}" alt="" width="64" height="64" style="border-radius:50%">
     <h1 style="font-size:1.6rem" id="lock-h">${LOCK.gate ? "Unlock your banks" : "Enter your passcode"}</h1>
-    ${c.bio && IS_IOS ? `<button class="btn primary lock-face" type="button" data-lock-bio>Unlock with Face ID</button>` : ""}
     <div class="lock-dots" data-lock-dots role="status" aria-label="${LOCK.entry.length} of ${c.len} digits entered">${Array.from({length: c.len}, (_, i) => `<i class="${i < LOCK.entry.length ? "on" : ""}"></i>`).join("")}</div>
     <p class="small ${wait ? "err" : "muted"}" data-lock-msg style="min-height:1.4em">${wait ? `Too many tries. Wait ${wait} seconds.` : LOCK.fails ? "That passcode is not right." : ""}</p>
     <div class="lock-pad" role="group" aria-labelledby="lock-h">${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" data-lock-key="${n}">${n}</button>`).join("")}
-      ${c.bio && !IS_IOS ? `<button type="button" class="ghost" data-lock-bio aria-label="Unlock with fingerprint">Fingerprint</button>` : `<span></span>`}<button type="button" data-lock-key="0">0</button><button type="button" class="ghost" data-lock-del aria-label="Delete">Delete</button></div>
+      ${c.bio ? `<button type="button" class="ghost" data-lock-bio aria-label="Unlock with ${IS_IOS ? "Face ID" : "fingerprint"}">${IS_IOS ? "Face ID" : "Fingerprint"}</button>` : `<span></span>`}<button type="button" data-lock-key="0">0</button><button type="button" class="ghost" data-lock-del aria-label="Delete">Delete</button></div>
     ${LOCK.gate ? `<button class="link small" type="button" data-lock-cancel>Cancel</button>` : `<button class="link plain small" type="button" data-lock-forgot>Forgot passcode?</button>`}`;
 }
-// On iPhone a Face ID call without a tap first shows Apple's "Sign in with passkey" sheet, then Face ID: two steps.
-// So there it waits for a tap on the Face ID button, which goes straight to Face ID. A tap that opened the lock (Banks) counts.
-const bioNeedsTap = () => IS_IOS && !(navigator.userActivation && navigator.userActivation.isActive);
-function lockNow(){ if (!LOCK.cfg || LOCK.on) return; LOCK.on = true; LOCK.entry = ""; LOCK.forgot = false; if (isField(document.activeElement)) document.activeElement.blur(); lockDraw(); if (LOCK.cfg.bio && !bioNeedsTap()) lockBio(); }
+function lockNow(){ if (!LOCK.cfg || LOCK.on) return; LOCK.on = true; LOCK.entry = ""; LOCK.forgot = false; if (isField(document.activeElement)) document.activeElement.blur(); lockDraw(); if (LOCK.cfg.bio) lockBio(); }
 function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; LOCK.openedAt = Date.now(); LOCK.hiddenAt = 0; lockDraw(); if (LOCK.gate){ LOCK.gate = false; UI.banks = true; render(false); } }
 async function lockBio(){ if (LOCK.busy || !LOCK.on) return; LOCK.busy = true; const ok = await bioCheck(); LOCK.busy = false; if (ok && LOCK.on) lockOpen(); }
 async function lockKey(d){
@@ -6467,8 +6442,6 @@ view.addEventListener("click", async e => {
     return; }
   if (b.hasAttribute("data-pdf-cancel")){ UI.pdfLock = null; render(false); return; }
   if (b.hasAttribute("data-import-open")){ UI.bizPickFile = false; $("stmt").click(); return; }
-  if (b.hasAttribute("data-bank-add")){ UI.bankAdd = true; BANK.err = ""; render(true); const i = view.querySelector("[data-form=bank] [name=token]"); if (i) i.focus(); return; }
-  if (b.hasAttribute("data-bank-cancel")){ UI.bankAdd = false; BANK.err = ""; render(true); return; }
   if (b.hasAttribute("data-bank-refresh")){ if (BANK.busy) return; BANK.busy = true; render(true); await bankFetch(true); BANK.busy = false; render(true); if (!BANK.err) toast("Your bank is up to date."); return; }
   if (b.hasAttribute("data-auto-refresh")){ autoRun(true); refreshOuts(); return; }
   if (b.hasAttribute("data-auto-all")){ UI.autoAll = true; refreshOuts(); return; }
@@ -6848,9 +6821,6 @@ view.addEventListener("submit", async e => {
   if (kind === "bizShare"){ const src = String(fd.get("src") || ""), pct = Math.round(numv(fd.get("pct")));
     if (!bizShareSrc(src)){ toast("Pick a bill."); return; } if (!(pct > 0 && pct <= 100)){ toast("Enter a share between 1 and 100%."); return; }
     const u = undoable(); bizData().shares.push({id: uid(), src, pct, since: isoDaysAgo(0)}); save(); render(true); toast(`${pct}% of ${bizShareName({src})} now counts for the business.`, u); return; }
-  if (kind === "bank"){ if (BANK.busy) return; const tok = String(fd.get("token") || ""); BANK.busy = true; BANK.err = ""; render(true);
-    const ok = await bankConnect(tok); BANK.busy = false; if (ok || bankOn()){ UI.bankAdd = false; } render(true);
-    if (ok){ const n = (S.bank.accounts || []).length; toast(n ? `Connected. ${n} account${n === 1 ? "" : "s"} found.` : "Connected."); } else if (!bankOn()) { const i = view.querySelector("[data-form=bank] [name=token]"); if (i){ i.value = tok; } } return; }
   if (kind === "trip"){ const ev = fd.get("kind") === "event", etype = ev ? String(fd.get("etype") || "other") : "", name = String(fd.get("name") || "").trim().slice(0, 40) || (ev ? eventType(etype) : ""), start = String(fd.get("start") || ""), end = String(fd.get("end") || ""), budget = numv(fd.get("budget")), ok = d => /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(isoDate(d).getTime());
     if (!name){ toast("Give the trip a name."); f.querySelector("[name=name]").focus(); return; }
     if (!ok(start) || !ok(end)){ toast("Pick the start and end dates."); return; }
