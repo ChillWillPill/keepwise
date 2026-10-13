@@ -2101,6 +2101,10 @@ async def plus_testers_get_a_working_business_space(ctx):
     # the hidden tester switch: 7 taps on the Plus label
     for _ in range(7): await pg.click("[data-plus-tap]", force=True)
     await pg.wait_for_timeout(200); assert "Plus preview is on" in await pg.inner_text("#toast") and await pg.locator("[data-biz-hero]").count() == 1
+    # the header says Plus in full under the name, never cut to "KeepWise …"
+    hb = await pg.evaluate("""() => { const b = document.getElementById('plus-badge'), w = document.querySelector('.home-link .wordmark'), r = b.getBoundingClientRect(), box = b.parentElement.getBoundingClientRect();
+      return {shown: !b.hidden && r.width > 0, inside: r.right <= box.right + 1, full: w.scrollWidth <= w.clientWidth + 1, tag: document.getElementById('brand-tag').hidden}; }""")
+    assert hb == {"shown": True, "inside": True, "full": True, "tag": True}, hb
     # a cost, then money in
     f = pg.locator("form[data-form=bizEntry]"); await f.locator("[name=name]").fill("Candle jars"); await f.locator("[name=amount]").fill("120"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     assert money(await text(pg, "[data-biz-profit]")) == -120
