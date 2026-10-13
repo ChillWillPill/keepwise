@@ -531,6 +531,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 button.card.banks-row{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit}.banks-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--green-soft);color:var(--green);flex:none}.banks-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.banks-txt b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.banks-go{color:var(--muted);flex:none;display:grid}
 .accts{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.acct+.acct{border-top:1px solid var(--line)}.acct .line{padding:10px 12px;gap:10px;border:0}.acct-more{width:34px;height:34px}.acct-more svg{transform:rotate(90deg);transition:transform .15s}.acct-more[aria-expanded=true] svg{transform:rotate(-90deg)}.acct-acts,.acct-rename{display:flex;gap:8px;padding:0 12px 12px;flex-wrap:wrap}.acct-rename input{flex:1;min-width:0}.masked{letter-spacing:2px;color:var(--muted)}.pick-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.pick-list .move-row{display:flex;align-items:center;gap:10px;padding:10px 12px}.pick-list .move-row+.move-row{border-top:1px solid var(--line)}.pay-card .grid2{margin:0}
 .plus-list li.soon .plus-ic{opacity:.55}
+.biz-logo-row{display:flex;align-items:center;gap:14px}.biz-logo{width:64px;height:64px;border-radius:14px;object-fit:contain;background:#fff;border:1px solid var(--line);flex:none}.biz-logo.empty{display:grid;place-items:center;color:var(--muted);background:var(--chip)}.biz-logo-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}[data-biz-settings] textarea{width:100%;resize:vertical;font:inherit}
 .tell-mails{display:flex;flex-direction:column;gap:8px}.tell-mail{display:flex;gap:8px}.tell-mail input{flex:1;min-width:0}
 .auto-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.auto-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px}.auto-row+.auto-row{border-top:1px solid var(--line)}.auto-row.up .name{color:var(--rust)}.auto-acts{gap:12px;flex:none;flex-wrap:nowrap;align-items:center}.auto-acts .btn{width:auto;min-height:36px;padding:0 14px}@media (max-width:360px){.auto-row{flex-direction:column;align-items:stretch;gap:6px}.auto-acts{justify-content:flex-end}}
 .plaid-part{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.plaid-or{margin:2px 0 -4px}.biz-banks{display:flex;flex-direction:column;gap:8px;margin-top:8px}
@@ -538,7 +539,7 @@ button.card.banks-row{display:flex;flex-direction:row;align-items:center;justify
 .seg.sub-seg.biz-seg{grid-template-columns:repeat(4,1fr)}.seg.sub-seg.biz-seg button{font-size:.86rem;padding:0 4px}
 .inv-item{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;align-items:center}.inv-item>input[name=desc]{grid-column:1/-1}.inv-item+.inv-item{padding-top:10px;border-top:1px dashed var(--line)}
 .q-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}.q-right .link{white-space:nowrap}
-[data-inv-form-card],[data-biz-import-card],[data-biz-add]{scroll-margin-top:78px}
+[data-inv-form-card],[data-biz-import-card],[data-biz-add],[data-biz-settings]{scroll-margin-top:78px}
 [data-inv-list] .rows .line,[data-miles-list] .rows .line,[data-biz-qtax] .rows .line,[data-biz-report] .rows .line{padding:10px 12px;gap:10px}.inv-row{align-items:flex-start}
 .biz-rcpt-prev{display:flex;align-items:center;gap:12px;padding:8px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.biz-rcpt-prev[hidden]{display:none}.biz-rcpt-prev img{width:56px;height:72px;object-fit:cover;border-radius:8px;flex:none;background:var(--card)}
 .rcpt-view{position:fixed;inset:0;z-index:90;background:rgba(10,14,12,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}.rcpt-view img{max-width:100%;max-height:calc(100% - 64px);object-fit:contain;border-radius:10px;background:#fff}.rcpt-view .btn{align-self:flex-end}
@@ -2467,10 +2468,12 @@ async function bizReceipt(file, form){
     const p = f.querySelector("[data-biz-rcpt-preview]"); if (p){ p.hidden = false; p.querySelector("img").src = URL.createObjectURL(blob); p.querySelector("span").textContent = g.total ? `Read ${fmt(g.total)}. Check it, then add the cost.` : "Photo saved. Type the amount, then add the cost."; }
   } catch(err){ busy(false); BIZ.rcpt = null; toast(err && err.message ? err.message : "That photo can't be read."); }
 }
-async function shareBlob(blob, name, title){
+async function shareBlob(blob, name, title, text){
   const file = new File([blob], name, {type: blob.type});
-  try { if (navigator.canShare && navigator.canShare({files: [file]})){ await navigator.share({files: [file], title}); return true; } } catch(e){ if (e && e.name === "AbortError") return false; }
-  return await saveFile(blob, name);
+  try { if (navigator.canShare && navigator.canShare({files: [file]})){ await navigator.share(text ? {files: [file], title, text} : {files: [file], title}); return true; } } catch(e){ if (e && e.name === "AbortError") return false; }
+  const ok = await saveFile(blob, name);
+  if (ok && text){ try { await navigator.clipboard.writeText(text); toast("Invoice saved. The Pay now link is copied, ready to paste with it."); } catch(e){} }
+  return ok;
 }
 // An invoice as a picture, ready to send in any chat or email.
 async function invoiceImage(inv){
@@ -2478,8 +2481,12 @@ async function invoiceImage(inv){
   try { await document.fonts.ready; } catch(e){}
   const serif = "Fraunces, Georgia, serif", sans = "Figtree, system-ui, sans-serif", money = v => new Intl.NumberFormat("en-US", {style: "currency", currency: S.cur || "USD"}).format(v);
   g.fillStyle = "#fbf8f2"; g.fillRect(0, 0, W, H); g.fillStyle = "#1b6843"; g.fillRect(0, 0, W, 18);
-  g.fillStyle = "#1c2420"; g.font = `700 64px ${serif}`; g.fillText(b.name || "Invoice", 90, 150);
-  g.font = `600 30px ${sans}`; g.fillStyle = "#4d564e"; g.fillText(`${invNo(inv.no)}`, 90, 205);
+  let lx = 90;
+  if (b.logo){ try { const im = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = b.logo; }); const hh = 120, ww = Math.min(260, im.naturalWidth * hh / im.naturalHeight); g.drawImage(im, 90, 70, ww, hh); lx = 90 + ww + 28; } catch(e){} }
+  g.fillStyle = "#1c2420"; g.font = `700 ${b.logo ? 52 : 64}px ${serif}`; let bn = b.name || "Invoice"; while (g.measureText(bn).width > 640 - (lx - 90) && bn.length > 3) bn = bn.slice(0, -2); g.fillText(bn, lx, b.logo ? 128 : 150);
+  g.font = `600 30px ${sans}`; g.fillStyle = "#4d564e"; g.fillText(`${invNo(inv.no)}`, lx, b.logo ? 178 : 205);
+  const contact = [b.website && b.website.replace(/^https?:\/\//, ""), b.email, b.phone].filter(Boolean).join("  ·  ");
+  g.font = `500 22px ${sans}`; g.fillStyle = "#6b736b"; if (contact) g.fillText(contact.slice(0, 80), 90, 236); if (b.address) g.fillText(String(b.address).replace(/\s*\n\s*/g, ", ").slice(0, 80), 90, 266);
   g.textAlign = "right"; g.fillStyle = "#1b6843"; g.font = `700 44px ${sans}`; g.fillText("INVOICE", W - 90, 150); g.font = `500 28px ${sans}`; g.fillStyle = "#4d564e";
   g.fillText(`Issued ${dateWithYear(isoDate(inv.date), true)}`, W - 90, 200); if (inv.due) g.fillText(`Due ${dateWithYear(isoDate(inv.due), true)}`, W - 90, 240); g.textAlign = "left";
   g.font = `600 26px ${sans}`; g.fillStyle = "#8a8f87"; g.fillText("BILL TO", 90, 320); g.font = `600 38px ${sans}`; g.fillStyle = "#1c2420"; g.fillText(inv.client || "", 90, 370);
@@ -2490,6 +2497,10 @@ async function invoiceImage(inv){
   y += 40; g.textAlign = "right"; g.font = `700 52px ${serif}`; const tw = g.measureText(money(invTotal(inv))).width; g.fillStyle = "#1b6843"; g.fillText(money(invTotal(inv)), W - 116, y + 6);
   g.font = `600 28px ${sans}`; g.fillStyle = "#4d564e"; g.fillText(inv.status === "paid" ? "Total" : "Total due", W - 116 - tw - 28, y); g.textAlign = "left";
   if (inv.status === "paid"){ g.save(); g.translate(W - 300, y + 140); g.rotate(-.18); g.strokeStyle = "#1b6843"; g.lineWidth = 6; g.strokeRect(-140, -50, 280, 100); g.fillStyle = "#1b6843"; g.font = `800 56px ${sans}`; g.textAlign = "center"; g.fillText("PAID", 0, 20); g.restore(); }
+  const link = inv.status !== "paid" ? payLink(invTotal(inv)) : "";
+  if (link || b.payNote){ y += inv.status === "paid" ? 230 : 130; g.font = `600 24px ${sans}`; g.fillStyle = "#8a8f87"; g.fillText("HOW TO PAY", 90, y); g.font = `500 28px ${sans}`; g.fillStyle = "#1c2420";
+    if (link){ y += 46; g.fillStyle = "#1b6843"; g.font = `700 28px ${sans}`; g.fillText(`Pay online: ${link.replace(/^https:\/\//, "")}`, 90, y); g.fillStyle = "#1c2420"; g.font = `500 28px ${sans}`; }
+    if (b.payNote){ let line = "", ly = y + 46; for (const w of String(b.payNote).split(/\s+/)){ if (g.measureText(line + w).width > W - 180){ g.fillText(line, 90, ly); line = ""; ly += 40; } line += w + " "; } g.fillText(line, 90, ly); y = ly; } }
   if (inv.note){ y += 150; g.font = `600 24px ${sans}`; g.fillStyle = "#8a8f87"; g.fillText("NOTES", 90, y); g.font = `500 28px ${sans}`; g.fillStyle = "#1c2420"; let line = "", ly = y + 46; for (const w of String(inv.note).split(/\s+/)){ if (g.measureText(line + w).width > W - 180){ g.fillText(line, 90, ly); line = ""; ly += 40; } line += w + " "; } g.fillText(line, 90, ly); }
   g.font = `500 22px ${sans}`; g.fillStyle = "#8a8f87"; g.textAlign = "center"; g.fillText("Made with KeepWise · mykeepwise.com", W / 2, H - 60);
   return await new Promise(r => c.toBlob(r, "image/png"));
@@ -2513,6 +2524,50 @@ async function bizRead(file){
     BIZ.pick = new Set(); BIZ.file = file.name || "statement"; busy(false); render(true);
     const box = view.querySelector("[data-biz-import-card]"); if (box) box.scrollIntoView({block: "start"}); }
   catch(err){ busy(false); toast(err && err.message ? err.message : "Couldn't read that file."); }
+}
+// ---- business profile: what clients see on an invoice ----
+const PAY_KINDS = {paypal: "PayPal.me", venmo: "Venmo", cashapp: "Cash App"};
+function payLink(amount){ const b = bizData(), h = String(b.payHandle || "").replace(/^[@$]/, "").trim(); if (!b.payKind || !/^[A-Za-z0-9._-]{1,40}$/.test(h)) return "";
+  const a = (+amount || 0).toFixed(2);
+  return b.payKind === "paypal" ? `https://paypal.me/${h}/${a}${S.cur || "USD"}` : b.payKind === "venmo" ? `https://venmo.com/u/${h}` : b.payKind === "cashapp" ? `https://cash.app/$${h}/${a}` : ""; }
+async function logoFrom(blob){   // any picture becomes a small square-safe PNG kept with the business details
+  const url = URL.createObjectURL(blob);
+  try { const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("That picture can't be used. Try a PNG or JPG.")); i.src = url; });
+    const f = Math.min(1, 256 / Math.max(img.naturalWidth || 1, img.naturalHeight || 1)), c = document.createElement("canvas"); c.width = Math.max(1, Math.round(img.naturalWidth * f)); c.height = Math.max(1, Math.round(img.naturalHeight * f));
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); return c.toDataURL("image/png"); }
+  finally { URL.revokeObjectURL(url); }
+}
+function bizProfileCard(b){
+  const field = (k, label, ph, type = "text", max = 80) => `<label class="field"><span>${label}</span><input data-biz-prof="${k}" type="${type}" maxlength="${max}" value="${esc(b[k] || "")}" placeholder="${ph}" autocomplete="off"></label>`;
+  return `<section class="card" data-biz-settings><h2 class="h-info">Business profile${infoBtn("bizProf", "About the business profile")}</h2>${infoTip("bizProf", "Shown on your invoices, so clients know who it's from and how to pay. Kept on this phone with your other business money.")}
+    <div class="biz-logo-row">${b.logo ? `<img class="biz-logo" src="${esc(b.logo)}" alt="Your logo" data-biz-logo-img>` : `<span class="biz-logo empty" aria-hidden="true">${I.work}</span>`}
+      <div class="biz-logo-acts"><button class="btn small" type="button" data-biz-logo-up>${b.logo ? "Change logo" : "Upload logo"}</button>${b.website ? `<button class="btn small" type="button" data-biz-logo-site>From my website</button>` : ""}${b.logo ? `<button class="link danger-link small" type="button" data-biz-logo-del>Remove</button>` : ""}</div></div>
+    <label class="field"><span>Business name <small class="muted">shown on invoices</small></span><input data-biz-name maxlength="50" value="${esc(b.name || "")}" placeholder="e.g. Sofia's Candles" autocomplete="organization"></label>
+    ${field("website", "Website", "e.g. sofiascandles.com", "url", 100)}
+    <div class="grid2">${field("email", "Email", "you@business.com", "email", 100)}${field("phone", "Phone", "(555) 123-4567", "tel", 30)}</div>
+    <label class="field"><span>Address <small class="muted">optional</small></span><textarea data-biz-prof="address" rows="2" maxlength="160" placeholder="Street, city, state">${esc(b.address || "")}</textarea></label>
+    <div class="grid2"><label class="field"><span>Get paid with</span><select data-biz-prof="payKind"><option value="">Choose</option>${Object.entries(PAY_KINDS).map(([k, n]) => `<option value="${k}" ${b.payKind === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>${field("payHandle", "Your username", b.payKind === "cashapp" ? "$cashtag" : "username", "text", 40)}</div>
+    ${b.payKind && payLink(1) ? `<p class="muted small" data-biz-paylink>Invoices get a Pay now link, like ${esc(payLink(25).replace(/^https:\/\//, ""))}</p>` : ""}
+    <label class="field"><span>Other ways to pay <small class="muted">optional, printed on invoices</small></span><textarea data-biz-prof="payNote" rows="2" maxlength="200" placeholder="e.g. Zelle to you@business.com, or bank transfer">${esc(b.payNote || "")}</textarea></label></section>`;
+}
+// ---- emailing invoices (Plus, signed in): the invoice picture goes to the client, replies come to you ----
+const mailOk = () => plusOn() && typeof ACC !== "undefined" && !!ACC.user;
+const blobB64 = blob => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = no; r.readAsDataURL(blob); });
+async function invoiceMail(inv, kind){
+  const b = bizData(), total = fmt(invTotal(inv)), late = kind === "remind", link = payLink(invTotal(inv)), biz = b.name || "Your supplier";
+  const text = late ? `This is a friendly reminder that invoice ${invNo(inv.no)} for ${total} was due on ${shortDate(inv.due)} and hasn't been paid yet.${link ? `\n\nPay online: ${link}` : ""}${b.payNote ? `\n\nOther ways to pay: ${b.payNote}` : ""}\n\nIf you've already paid, thank you, and please ignore this email.`
+    : `Please find invoice ${invNo(inv.no)} for ${total} attached${inv.due ? `, due ${shortDate(inv.due)}` : ""}.${link ? `\n\nPay online: ${link}` : ""}${b.payNote ? `\n\nOther ways to pay: ${b.payNote}` : ""}`;
+  const blob = await invoiceImage(inv), idToken = await ACC.user.getIdToken();
+  await salesCall("/invoice/email", {idToken, to: inv.email, business: biz, client: inv.client, subject: late ? `Reminder: ${invNo(inv.no)} from ${biz} (${total})` : `Invoice ${invNo(inv.no)} from ${biz} (${total})`, text, file: await blobB64(blob), filename: `${invNo(inv.no)}.png`});
+}
+// Late invoices get a polite reminder by themselves: 3 days after the due date, and again after 10. Never more than two.
+async function invReminders(){
+  if (!mailOk() || !S.biz || S.biz.remindOff) return; const b = bizData(), today = isoDaysAgo(0);
+  for (const inv of b.invoices){ if (inv.status === "paid" || !inv.email || !inv.due) continue;
+    const late = Math.round((todayMid() - isoDate(inv.due)) / DAY), n = (inv.reminded || []).length;
+    if ((n === 0 && late >= 3) || (n === 1 && late >= 10)){ if ((inv.reminded || []).includes(today)) continue;
+      try { await invoiceMail(inv, "remind"); inv.reminded = [...(inv.reminded || []), today]; save(); toast(`Sent a payment reminder for ${invNo(inv.no)} to ${inv.client}.`); } catch(e){ return; } } }
+  refreshOuts(); if (UI.biz) render(true);
 }
 function bizBars(){ const [y, m] = bizNow(), mons = []; for (let i = 5; i >= 0; i--){ const d = new Date(y, m - i, 1), C = bizCal(d.getFullYear(), d.getMonth()); mons.push({l: d.toLocaleString("en-US", {month: "short"}), inc: C.inc, out: C.out}); }
   const top = Math.max(1, ...mons.map(x => Math.max(x.inc, x.out))), H = 120, bw = 18;
@@ -2541,8 +2596,13 @@ function salesAdd(src, rows){
     const add = (ext, kind, name, amount, cat) => { if (!(amount > 0) || have.has(ext)) return; have.add(ext); b.entries.push({id: uid(), kind, name: String(name).slice(0, 60), amount: r2(amount), date: x.date, cat, ext, src}); if (kind === "in") n++; };
     if (x.kind === "sale"){ add(`${src}:${x.id}`, "in", x.name, x.amount, "Sales"); add(`${src}-fee:${x.id}`, "out", `${SALES_SRC[src]} fee`, x.fee, "Fees & commissions"); }
     else if (x.kind === "refund"){ add(`${src}:${x.id}`, "out", `Refund · ${x.name}`, x.amount, "Returns & refunds"); add(`${src}-fee:${x.id}`, "out", `${SALES_SRC[src]} fee`, x.fee, "Fees & commissions"); } });
-  return {n, other};
+  const matched = invMatch(src); return {n, other, matched};
 }
+// A payment that comes in for exactly what an open invoice asks marks that invoice paid, using that same payment (no double count).
+function invMatch(src){ const b = bizData(), open = b.invoices.filter(i => i.status !== "paid").sort((x, y) => (x.date || "").localeCompare(y.date || "")), used = new Set(b.entries.map(e => e.inv).filter(Boolean)), out = [];
+  b.entries.filter(e => e.src === src && e.kind === "in" && !e.inv).forEach(e => { const i = open.find(v => !used.has(v.id) && Math.abs(invTotal(v) - e.amount) < 0.01 && (v.date || "") <= e.date);
+    if (!i) return; i.status = "paid"; i.paidOn = e.date; i.paidBy = src; e.inv = i.id; used.add(i.id); out.push(invNo(i.no)); });
+  return out; }
 const yearStart = () => new Date(new Date().getFullYear(), 0, 1);
 async function stripeRows(key, sinceSec){
   const out = []; let after = "";
@@ -2581,7 +2641,7 @@ async function salesSync(src, quiet){
     const rows = src === "stripe" ? await stripeRows(c.key, Math.floor(since.getTime() / 1000)) : await paypalRows(c, since);
     const r = salesAdd(src, rows); s.at = Date.now(); s.since = new Date(Date.now() - 3 * 864e5).toISOString();   // the last few days are read again: late sales are caught, and nothing is added twice
     save(); SALES.busy = ""; render(true);
-    if (!quiet || r.n) toast(r.n ? `${r.n} new ${SALES_SRC[src]} sale${r.n === 1 ? "" : "s"} added.${r.other ? ` ${r.other} in another currency left out.` : ""}` : `${SALES_SRC[src]} is up to date.`);
+    if (!quiet || r.n) toast((r.n ? `${r.n} new ${SALES_SRC[src]} sale${r.n === 1 ? "" : "s"} added.${r.other ? ` ${r.other} in another currency left out.` : ""}` : `${SALES_SRC[src]} is up to date.`) + (r.matched.length ? ` ${r.matched.join(", ")} marked paid.` : ""));
   } catch(err){ SALES.busy = ""; SALES.err = `${SALES_SRC[src]}: ${err.message}`; render(true); }
 }
 function salesAutoSync(){ if (SALES.busy || !navigator.onLine || Date.now() - SALES.auto < 6e4) return; SALES.auto = Date.now();
@@ -2655,23 +2715,27 @@ function bizSpace(){
     ${BIZ.lines ? (BIZ.lines.length ? `<p class="muted small">${esc(BIZ.file)}: tick what was business.</p><div class="st-tx biz-lines">${BIZ.lines.map((l, i) => `<label class="move-row"><input type="checkbox" data-biz-pick="${i}" ${BIZ.pick.has(i) ? "checked" : ""}><span style="flex:1;min-width:0"><span>${esc(l.desc)}</span><span class="muted small" style="display:block">${shortDate(l.date)}</span></span><span class="tnum ${l.amt > 0 ? "good" : ""}">${l.amt > 0 ? "+" : ""}${fmt(Math.abs(l.amt))}</span></label>`).join("")}</div>
       <div class="grid2"><button class="btn" type="button" data-biz-import-cancel>Cancel</button><button class="btn primary" type="button" data-biz-import-add ${BIZ.pick.size ? "" : "disabled"}>Add ${BIZ.pick.size} to Business</button></div>` : `<p class="muted small">Every line in that statement is already in Business.</p><button class="btn" type="button" data-biz-import-cancel>Done</button>`)
       : `<button class="btn" type="button" data-biz-import>Choose a statement</button>${plaidOn() ? `<div class="biz-banks">${bankList().filter(a => a.src === "plaid" && acctInUse(a)).map(a => `<button class="btn" type="button" data-biz-bank="${esc(a.id)}">From ${esc(acctName(a))}${a.mask ? " ••" + esc(a.mask) : ""}</button>`).join("")}</div>` : ""}`}</section>
-  <section class="card" data-biz-settings><h2>Your business</h2><label class="field"><span>Business name <small class="muted">shown on invoices</small></span><input data-biz-name maxlength="50" value="${esc(b.name || "")}" placeholder="e.g. Sofia's Candles" autocomplete="organization"></label></section>`;
+  ${bizProfileCard(b)}`;
   } else if (seg === "invoices"){
     const list = b.invoices.slice().sort((a, c) => (c.date || "").localeCompare(a.date || "")), owed = r2(list.filter(i => i.status !== "paid").reduce((a, i) => a + invTotal(i), 0)), late = list.filter(invLate);
     const ed = UI.invEdit ? b.invoices.find(i => i.id === UI.invEdit) : null, draft = UI.invAdd || ed;
     const it = draft ? (ed ? ed.items : (UI.invItems || [{desc: "", qty: 1, price: ""}])) : [];
     body = `<section class="hero biz-hero" data-inv-hero><p class="muted small">Invoices</p><div class="big tnum">${fmt(owed)}</div><p class="muted">${owed > 0 ? `still to be paid${late.length ? ` · <b class="bad">${late.length} late</b>` : ""}` : "Nobody owes you right now."}</p></section>
+    ${!b.logo || !b.payKind ? `<p class="small muted" data-inv-prof-hint>Add your logo and how you get paid, and every invoice carries them with a Pay now link. <button class="link small" type="button" data-goto-prof>Business profile</button></p>` : ""}
     ${draft ? `<section class="card" data-inv-form-card><h2>${ed ? `Edit ${invNo(ed.no)}` : "New invoice"}</h2><form data-form="invoice" style="display:flex;flex-direction:column;gap:10px">
       <label class="field"><span>Bill to</span><input name="client" maxlength="60" value="${esc(ed ? ed.client : "")}" placeholder="Client or company" autocomplete="off"></label>
+      <label class="field"><span>Client’s email <small class="muted">optional, to email it and send reminders</small></span><input name="email" type="email" inputmode="email" maxlength="120" value="${esc(ed ? ed.email || "" : "")}" placeholder="name@company.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
       <div data-inv-items style="display:flex;flex-direction:column;gap:8px">${it.map((x, i) => `<div class="inv-item" data-inv-item="${i}"><input name="desc" maxlength="80" value="${esc(x.desc || "")}" placeholder="What you did or sold" aria-label="Item ${i + 1}"><span class="money-in"><em>Qty</em><input name="qty" inputmode="decimal" value="${esc(x.qty != null ? x.qty : 1)}" aria-label="Quantity"></span><span class="money-in"><em>${esc(sym())}</em><input name="price" inputmode="decimal" value="${esc(x.price != null ? x.price : "")}" placeholder="0" aria-label="Price"></span></div>`).join("")}</div>
       <button class="link small" type="button" data-inv-line style="align-self:flex-start">+ Add a line</button>
       <div class="grid2"><label class="field"><span>Date</span><input name="date" type="date" value="${esc(ed ? ed.date : isoDaysAgo(0))}"></label><label class="field"><span>Due</span><input name="due" type="date" value="${esc(ed ? ed.due || "" : isoOf(dayPlus(todayMid(), 14)))}"></label></div>
       <label class="field"><span>Note <small class="muted">optional</small></span><input name="note" maxlength="160" value="${esc(ed ? ed.note || "" : "")}" placeholder="e.g. Pay by bank transfer to …"></label>
       <div class="grid2"><button class="btn" type="button" data-inv-cancel>Cancel</button><button class="btn primary" type="submit">${ed ? "Save" : "Create invoice"}</button></div></form></section>`
       : `<button class="btn primary" type="button" data-inv-add>${I.plus}New invoice</button>`}
+    ${mailOk() && b.invoices.some(i => i.email) ? `<p class="small muted" data-inv-remind>${b.remindOff ? `Late invoice reminders are off. <button class="link small" type="button" data-inv-remind="on">Turn on</button>` : `Late invoices get a polite email reminder by themselves, 3 and 10 days after they're due. <button class="link plain small" type="button" data-inv-remind="off">Turn off</button>`}</p>` : ""}
     <section class="card" data-inv-list><h2>All invoices</h2>${list.length ? `<div class="rows">${list.map(i => `<div class="line inv-row" data-inv="${i.id}"><div style="min-width:0"><div>${esc(i.client || "No name")} <span class="muted small">${invNo(i.no)}</span></div>
-        <div class="small ${i.status === "paid" ? "good" : invLate(i) ? "bad" : "muted"}">${i.status === "paid" ? `Paid ${shortDate(i.paidOn)}` : invLate(i) ? `Late · was due ${shortDate(i.due)}` : i.due ? `Due ${shortDate(i.due)}` : "Open"}</div>
-        <div class="inline" style="gap:12px;margin-top:4px"><button class="link small" type="button" data-inv-share>Share</button>${i.status === "paid" ? `<button class="link plain small" type="button" data-inv-unpaid>Mark unpaid</button>` : `<button class="link small" type="button" data-inv-paid>Mark paid</button><button class="link plain small" type="button" data-inv-edit>Edit</button>`}<button class="link danger-link small" type="button" data-inv-del>Delete</button></div></div>
+        <div class="small ${i.status === "paid" ? "good" : invLate(i) ? "bad" : "muted"}">${i.status === "paid" ? `Paid ${shortDate(i.paidOn)}${i.paidBy ? ` · via ${SALES_SRC[i.paidBy] || i.paidBy}` : ""}` : invLate(i) ? `Late · was due ${shortDate(i.due)}` : i.due ? `Due ${shortDate(i.due)}` : "Open"}</div>
+        ${i.status !== "paid" && (i.sentAt || (i.reminded || []).length) ? `<div class="muted small" data-inv-sent>${(i.reminded || []).length ? `Reminder sent ${shortDate(i.reminded[i.reminded.length - 1])}` : `Emailed ${shortDate(i.sentAt)}`}</div>` : ""}
+        <div class="inline" style="gap:12px;margin-top:4px;flex-wrap:wrap">${i.email && mailOk() && i.status !== "paid" ? `<button class="link small" type="button" data-inv-email>${i.sentAt ? "Email again" : "Email"}</button>` : ""}<button class="link small" type="button" data-inv-share>Share</button>${i.status === "paid" ? `<button class="link plain small" type="button" data-inv-unpaid>Mark unpaid</button>` : `<button class="link small" type="button" data-inv-paid>Mark paid</button><button class="link plain small" type="button" data-inv-edit>Edit</button>`}<button class="link danger-link small" type="button" data-inv-del>Delete</button></div></div>
         <span class="tnum name">${fmt(invTotal(i))}</span></div>`).join("")}</div>` : `<p class="muted small">Make an invoice, share it as a picture in any chat or email, and mark it paid when the money arrives. Paid invoices count as business income.</p>`}</section>`;
   } else if (seg === "miles"){
     const trips = b.trips.filter(t => +t.date.slice(0, 4) === y).sort((a, c) => c.date.localeCompare(a.date)), dist = r2(trips.reduce((a, t) => a + (+t.dist || 0), 0)), ded = r2(dist * (+b.mileRate || 0)), u = mileUnit(), rateTxt = USA() && b.mileRate < 1 ? `${+(b.mileRate * 100).toFixed(1)}¢` : fmt(+b.mileRate || 0);
@@ -5652,6 +5716,7 @@ function accInit(){
           S.acctOn = !!u; if (u && (!LOCK.on || !S.acct)) S.acct = {uid: u.uid, email: u.email || "", prov: (u.providerData && u.providerData[0] && u.providerData[0].providerId) || "password"};
           save(); ACC.state = "ready"; renderAcctBtn();
           if (u) setTimeout(mailMonthly, 2500);   // Plus: this month's balance emails, once a month
+          if (u) setTimeout(invReminders, 4000);   // Plus: late invoices get a polite reminder
           if (UI.account) render(true);
           if (first){ first = false; done(); }
         });
@@ -6084,6 +6149,12 @@ document.addEventListener("click", e => { const t = e.target.closest && e.target
 document.addEventListener("change", e => { const t = e.target;
   if (t.matches && t.matches("[data-biz-taxpct]")){ const v = Math.max(0, Math.min(60, Math.round(numv(t.value) * 10) / 10 || 0)); bizData().taxPct = v; save(); render(true); return; }
   if (t.matches && t.matches("[data-bank-use]")){ setBankPref(t.dataset.bankUse, {use: t.checked}); save(); render(true); return; }
+  if (t.matches && t.matches("[data-biz-prof]")){ const k = t.dataset.bizProf, v = String(t.value || "").trim(); let val = v.slice(0, k === "payNote" ? 200 : k === "address" ? 160 : 100);
+    if (k === "website" && val && !/^https?:\/\//i.test(val)) val = "https://" + val;
+    if (k === "website" && val){ try { const u = new URL(val); if (!/\./.test(u.hostname)) throw 0; val = u.origin + (u.pathname === "/" ? "" : u.pathname); } catch(e){ toast("Check the website address."); return; } }
+    if (k === "email" && val && !/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(val)){ toast("Check the email address."); return; }
+    if (k === "payHandle") val = val.replace(/^[@$]/, "").replace(/^https?:\/\/[^/]+\//, "");
+    bizData()[k] = val; save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-name]")){ bizData().name = String(t.value || "").trim().slice(0, 50); save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-milerate]")){ const v = Math.max(0, Math.min(10, Math.round(numv(t.value) * 1000) / 1000 || 0)); bizData().mileRate = v; save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-pick]")){ const i = +t.dataset.bizPick; if (t.checked) BIZ.pick.add(i); else BIZ.pick.delete(i); const btn = document.querySelector("[data-biz-import-add]"); if (btn){ btn.disabled = !BIZ.pick.size; btn.textContent = `Add ${BIZ.pick.size} to Business`; } } });
@@ -6511,6 +6582,15 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-sales-sync")){ salesSync(b.closest("[data-sales-src]").dataset.salesSrc); return; }
   if (b.hasAttribute("data-sales-off")){ const src = b.closest("[data-sales-src]").dataset.salesSrc, c = salesCreds(); delete c[src]; salesSaveCreds(c); delete salesState()[src]; SALES.err = ""; save(); render(true);
     toast(`${SALES_SRC[src]} disconnected. Sales already brought in stay. To end it fully, also delete the key in ${SALES_SRC[src]}.`); return; }
+  if (b.dataset.invRemind){ bizData().remindOff = b.dataset.invRemind === "off"; save(); render(true); if (!bizData().remindOff) invReminders(); return; }
+  if (b.hasAttribute("data-goto-prof")){ UI.bseg = "money"; render(false); const c = view.querySelector("[data-biz-settings]"); if (c) c.scrollIntoView({block: "start"}); return; }
+  if (b.hasAttribute("data-biz-logo-up")){ const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.hidden = true;
+    inp.addEventListener("change", async () => { const file = inp.files && inp.files[0]; inp.remove(); if (!file) return; try { bizData().logo = await logoFrom(file); save(); render(true); toast("Logo added. It shows on your invoices."); } catch(err){ toast(err.message); } });
+    document.body.appendChild(inp); inp.click(); return; }
+  if (b.hasAttribute("data-biz-logo-del")){ const u = undoable(); delete bizData().logo; save(); render(true); toast("Logo removed.", u); return; }
+  if (b.hasAttribute("data-biz-logo-site")){ busy("Looking for your logo");
+    try { const d = await salesCall("/site/logo", {url: bizData().website}); const bin = Uint8Array.from(atob(d.data), c => c.charCodeAt(0)); bizData().logo = await logoFrom(new Blob([bin], {type: d.type})); save(); busy(false); render(true); toast("Found your logo. Check it looks right."); }
+    catch(err){ busy(false); toast(err.message && !/load/.test(err.message) ? err.message : "No logo found on that website. You can upload one instead."); } return; }
   if (b.dataset.bseg){ UI.bseg = b.dataset.bseg; UI.invAdd = false; UI.invEdit = null; render(false); const m = $("main"); if (m) m.scrollTop = 0; return; }
   if (b.hasAttribute("data-biz-rcpt-add")){ const form = b.closest("form"), inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.setAttribute("capture", "environment"); inp.hidden = true;
     inp.addEventListener("change", () => { const file = inp.files && inp.files[0]; inp.remove(); if (file) bizReceipt(file, form); }); document.body.appendChild(inp); inp.click(); return; }
@@ -6522,13 +6602,15 @@ view.addEventListener("click", async e => {
     const ed = UI.invEdit && bizData().invoices.find(i => i.id === UI.invEdit), keep = {client: f.elements.client.value, date: f.elements.date.value, due: f.elements.due.value, note: f.elements.note.value};
     if (ed) ed.items = items; else UI.invItems = items; render(true); const f2 = view.querySelector("form[data-form=invoice]"); if (f2){ Object.entries(keep).forEach(([k, v]) => f2.elements[k].value = v); const last = f2.querySelectorAll("[data-inv-item]"); const d = last[last.length - 1]; if (d) d.querySelector("[name=desc]").focus(); } return; }
   if (b.hasAttribute("data-inv-cancel")){ if (UI.invEdit && UI.invSnap){ const bd = bizData(), i = bd.invoices.findIndex(x => x.id === UI.invEdit); if (i >= 0) bd.invoices[i] = JSON.parse(UI.invSnap); } UI.invAdd = false; UI.invEdit = null; UI.invItems = null; UI.invSnap = null; render(true); return; }
-  if (b.closest("[data-inv]") && (b.hasAttribute("data-inv-share") || b.hasAttribute("data-inv-paid") || b.hasAttribute("data-inv-unpaid") || b.hasAttribute("data-inv-edit") || b.hasAttribute("data-inv-del"))){
+  if (b.closest("[data-inv]") && (b.hasAttribute("data-inv-share") || b.hasAttribute("data-inv-email") || b.hasAttribute("data-inv-paid") || b.hasAttribute("data-inv-unpaid") || b.hasAttribute("data-inv-edit") || b.hasAttribute("data-inv-del"))){
     const bd = bizData(), id = b.closest("[data-inv]").dataset.inv, inv = bd.invoices.find(i => i.id === id); if (!inv) return;
-    if (b.hasAttribute("data-inv-share")){ busy("Making the invoice"); try { const blob = await invoiceImage(inv); busy(false); const ok = await shareBlob(blob, `${invNo(inv.no)}${inv.client ? "-" + inv.client.replace(/[^A-Za-z0-9]+/g, "-").slice(0, 30) : ""}.png`, `Invoice ${invNo(inv.no)}`); if (ok) toast("Invoice ready to send."); } catch(err){ busy(false); toast("That invoice can't be made right now."); } return; }
+    if (b.hasAttribute("data-inv-share")){ busy("Making the invoice"); try { const blob = await invoiceImage(inv); busy(false); const link = inv.status !== "paid" ? payLink(invTotal(inv)) : "", msg = `${bizData().name || "Invoice"} ${invNo(inv.no)}: ${fmt(invTotal(inv))}${inv.due && inv.status !== "paid" ? `, due ${shortDate(inv.due)}` : ""}.${link ? ` Pay now: ${link}` : ""}`;
+      const ok = await shareBlob(blob, `${invNo(inv.no)}${inv.client ? "-" + inv.client.replace(/[^A-Za-z0-9]+/g, "-").slice(0, 30) : ""}.png`, `Invoice ${invNo(inv.no)}`, msg); if (ok && !(link && !navigator.canShare)) toast("Invoice ready to send."); } catch(err){ busy(false); toast("That invoice can't be made right now."); } return; }
+    if (b.hasAttribute("data-inv-email")){ busy("Emailing the invoice"); try { await invoiceMail(inv, "send"); inv.sentAt = isoDaysAgo(0); save(); busy(false); render(true); toast(`Emailed ${invNo(inv.no)} to ${inv.email}.`); } catch(err){ busy(false); toast(err.message); } return; }
     if (b.hasAttribute("data-inv-paid")){ const u = undoable(), amt = invTotal(inv); inv.status = "paid"; inv.paidOn = isoDaysAgo(0); bd.entries.push({id: uid(), kind: "in", name: `${inv.client || "Invoice"} · ${invNo(inv.no)}`.slice(0, 60), amount: amt, date: inv.paidOn, cat: "Services", inv: inv.id}); save(); render(true); toast(`Paid. ${fmt(amt)} counts as business income.`, u); return; }
-    if (b.hasAttribute("data-inv-unpaid")){ const u = undoable(); inv.status = "open"; delete inv.paidOn; bd.entries = bd.entries.filter(e => e.inv !== inv.id); save(); render(true); toast("Marked unpaid.", u); return; }
+    if (b.hasAttribute("data-inv-unpaid")){ const u = undoable(); inv.status = "open"; delete inv.paidOn; delete inv.paidBy; bd.entries.forEach(e => { if (e.inv === inv.id && e.ext) delete e.inv; }); bd.entries = bd.entries.filter(e => e.inv !== inv.id); save(); render(true); toast("Marked unpaid.", u); return; }
     if (b.hasAttribute("data-inv-edit")){ UI.invEdit = inv.id; UI.invAdd = false; UI.invSnap = JSON.stringify(inv); render(true); const f = view.querySelector("[data-inv-form-card]"); if (f) f.scrollIntoView({block: "start"}); return; }
-    if (b.hasAttribute("data-inv-del")){ const u = undoable(); bd.invoices = bd.invoices.filter(i => i.id !== inv.id); bd.entries = bd.entries.filter(e => e.inv !== inv.id); save(); render(true); toast(`Deleted ${invNo(inv.no)}.`, u); return; } }
+    if (b.hasAttribute("data-inv-del")){ const u = undoable(); bd.invoices = bd.invoices.filter(i => i.id !== inv.id); bd.entries.forEach(e => { if (e.inv === inv.id && e.ext) delete e.inv; }); bd.entries = bd.entries.filter(e => e.inv !== inv.id); save(); render(true); toast(`Deleted ${invNo(inv.no)}.`, u); return; } }
   if (b.hasAttribute("data-trip2-del")){ const id = b.closest("[data-trip2]").dataset.trip2, u = undoable(); bizData().trips = bizData().trips.filter(t => t.id !== id); save(); render(true); toast("Removed.", u); return; }
   if (b.hasAttribute("data-biz-qpaid") || b.hasAttribute("data-biz-qunpaid")){ const key = b.closest("[data-biz-q]").dataset.bizQ, bd = bizData(); if (b.hasAttribute("data-biz-qpaid")) bd.qpaid[key] = isoDaysAgo(0); else delete bd.qpaid[key]; save(); render(true); return; }
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
@@ -6699,13 +6781,14 @@ view.addEventListener("submit", async e => {
   if (kind === "bankRename"){ const key = UI.bankRename, name = String(fd.get("name") || "").trim().slice(0, 40); if (!key) return; setBankPref(key, {name: name || null}); UI.bankRename = null; UI.bankMenu = null; save(); render(true); toast(name ? "Renamed." : "Name reset."); return; }
   if (kind === "salesStripe" || kind === "salesPaypal"){ if (!SALES.busy) await salesConnect(kind === "salesStripe" ? "stripe" : "paypal", f); return; }
   if (kind === "invoice"){ const bd = bizData(), items = invItemsOf(f).filter(x => x.desc.trim() || numv(x.price) > 0).map(x => ({desc: x.desc.trim().slice(0, 80) || "Item", qty: numv(x.qty) > 0 ? r2(numv(x.qty)) : 1, price: r2(numv(x.price))}));
-    const client = String(fd.get("client") || "").trim().slice(0, 60), date = String(fd.get("date") || ""), due = String(fd.get("due") || ""), note = String(fd.get("note") || "").trim().slice(0, 160), ok = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
+    const client = String(fd.get("client") || "").trim().slice(0, 60), date = String(fd.get("date") || ""), due = String(fd.get("due") || ""), note = String(fd.get("note") || "").trim().slice(0, 160), ok = v => /^\d{4}-\d{2}-\d{2}$/.test(v), email = String(fd.get("email") || "").trim().slice(0, 120);
+    if (email && !/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(email)){ toast("Check the client’s email address."); f.elements.email.focus(); return; }
     if (!client){ toast("Say who the invoice is for."); f.elements.client.focus(); return; }
     if (!items.length || !(items.reduce((a, x) => a + x.qty * x.price, 0) > 0)){ toast("Add what you did and the price."); const p = f.querySelector("[data-inv-item] [name=desc]"); if (p) p.focus(); return; }
-    const u = undoable(), ed = UI.invEdit && bd.invoices.find(i => i.id === UI.invEdit), base = {client, items, date: ok(date) ? date : isoDaysAgo(0), due: ok(due) ? due : "", note};
+    const u = undoable(), ed = UI.invEdit && bd.invoices.find(i => i.id === UI.invEdit), base = {client, email, items, date: ok(date) ? date : isoDaysAgo(0), due: ok(due) ? due : "", note};
     let inv; if (ed){ Object.assign(ed, base); inv = ed; } else { inv = {id: uid(), no: bd.invNext++, status: "open", ...base}; bd.invoices.push(inv); }
     UI.invAdd = false; UI.invEdit = null; UI.invItems = null; UI.invSnap = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
-    toast(ed ? `Saved ${invNo(inv.no)}.` : `${invNo(inv.no)} for ${fmt(invTotal(inv))} is ready. Tap Share to send it.`, u); return; }
+    toast(ed ? `Saved ${invNo(inv.no)}.` : `${invNo(inv.no)} for ${fmt(invTotal(inv))} is ready. Tap ${email && mailOk() ? "Email" : "Share"} to send it.`, u); return; }
   if (kind === "trip2"){ const purpose = String(fd.get("purpose") || "").trim().slice(0, 60), dist = r2(numv(fd.get("dist"))), date = String(fd.get("date") || "");
     if (!purpose){ toast("Say where you drove and why."); f.elements.purpose.focus(); return; }
     if (!(dist > 0 && dist < 5000)){ toast(`Enter the ${mileUnit()}s driven.`); f.elements.dist.focus(); return; }

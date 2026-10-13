@@ -16,8 +16,8 @@ const cors = origin => ({
 const reply = (origin, status, body) => new Response(JSON.stringify(body), {status, headers: {"Content-Type": "application/json", "Cache-Control": "no-store", ...cors(origin)}});
 const fail = (origin, status, msg) => reply(origin, status, {error: msg});
 
-async function readJson(req){
-  const text = await req.text(); if (text.length > MAX_BODY) throw new Error("too big");
+async function readJson(req, max = MAX_BODY){
+  const text = await req.text(); if (text.length > max) throw new Error("too big");
   return JSON.parse(text || "{}");
 }
 
@@ -162,6 +162,58 @@ async function splitEmail(origin, env, b){
   return reply(origin, 200, {sent: items.length});
 }
 
+// ---- KeepWise Plus: a business's logo from its own website ----
+// Reads the site's home page for its icon or share image and hands the picture back. Nothing is kept.
+const PRIVATE_HOST = /^(localhost|.*\.local|.*\.internal|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|\[|::)/i;
+async function getLimited(url, max, accept){
+  const r = await fetch(url, {headers: {"User-Agent": "KeepWise logo finder (+https://mykeepwise.com)", Accept: accept}, redirect: "follow", signal: AbortSignal.timeout(7000)});
+  if (!r.ok || !r.body) throw new Error("bad");
+  const reader = r.body.getReader(), chunks = []; let n = 0;
+  for (;;){ const {done, value} = await reader.read(); if (done) break; n += value.length; if (n > max){ try { reader.cancel(); } catch(e){} throw new Error("big"); } chunks.push(value); }
+  const out = new Uint8Array(n); let o = 0; for (const c of chunks){ out.set(c, o); o += c.length; }
+  return {bytes: out, type: (r.headers.get("content-type") || "").split(";")[0].trim().toLowerCase(), url: r.url};
+}
+async function siteLogo(origin, b){
+  let site; try { site = new URL(String(b.url || "")); } catch(e){ return fail(origin, 400, "Check the website address."); }
+  if (!/^https?:$/.test(site.protocol) || PRIVATE_HOST.test(site.hostname) || !site.hostname.includes(".")) return fail(origin, 400, "Check the website address.");
+  let page; try { page = await getLimited(site.origin + "/", 600000, "text/html"); } catch(e){ return fail(origin, 404, "That website couldn't be opened."); }
+  const html = new TextDecoder().decode(page.bytes), base = page.url || site.origin + "/", found = [];
+  for (const m of html.matchAll(/<link\b[^>]*>/gi)){ const tag = m[0], rel = (tag.match(/\brel=["']?([^"'>]+)/i) || [])[1] || "", href = (tag.match(/\bhref=["']?([^"'\s>]+)/i) || [])[1];
+    if (!href || !/icon/i.test(rel) || /mask-icon/i.test(rel) || /\.svg(\?|$)/i.test(href)) continue; const size = +((tag.match(/\bsizes=["']?(\d+)/i) || [])[1] || (/apple-touch/i.test(rel) ? 180 : 32)); found.push({href, size}); }
+  const og = html.match(/<meta\b[^>]*property=["']og:image["'][^>]*content=["']([^"']+)/i) || html.match(/<meta\b[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
+  found.sort((x, y) => y.size - x.size); const tries = [...found.map(f => f.href), "/apple-touch-icon.png", ...(og ? [og[1]] : []), "/favicon.ico"];
+  for (const h of tries){ let u; try { u = new URL(h, base); } catch(e){ continue; } if (!/^https?:$/.test(u.protocol) || PRIVATE_HOST.test(u.hostname)) continue;
+    try { const img = await getLimited(u.href, 400000, "image/*"); if (!/^image\/(png|jpeg|jpg|gif|webp|x-icon|vnd\.microsoft\.icon)$/.test(img.type) || img.bytes.length < 100) continue;
+      let bin = ""; for (let i = 0; i < img.bytes.length; i += 8192) bin += String.fromCharCode(...img.bytes.subarray(i, i + 8192));
+      return reply(origin, 200, {type: img.type, data: btoa(bin)}); } catch(e){}
+  }
+  return fail(origin, 404, "No logo found on that website. You can upload one instead.");
+}
+
+// ---- KeepWise Plus: email an invoice (or a reminder) to a client, with the invoice picture attached ----
+async function invoiceEmail(origin, env, b){
+  if (!env.RESEND_API_KEY) return fail(origin, 503, "Email isn't switched on yet.");
+  let user; try { user = await firebaseUser(b.idToken); } catch(e){ return fail(origin, 401, "Sign in again to send emails."); }
+  if (!user.email || !user.email_verified) return fail(origin, 403, "Verify your account email first, then try again.");
+  const to = String(b.to || "").trim(); if (!EMAIL_RE.test(to)) return fail(origin, 400, "Check the client's email address.");
+  const clean = (v, n) => String(v || "").replace(/[\r\n<>"]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
+  const biz = clean(b.business, 50) || "Your supplier", client = clean(b.client, 60) || "there", subject = clean(b.subject, 120) || `Invoice from ${biz}`, text = String(b.text || "").trim().slice(0, 2000);
+  const file = String(b.file || ""); if (!/^[A-Za-z0-9+/=]{100,850000}$/.test(file)) return fail(origin, 400, "The invoice picture is missing.");
+  const html = `<!doctype html><html><body style="margin:0;background:#f6f1e7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c2420">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f1e7;padding:24px 12px"><tr><td align="center">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:18px;padding:28px">
+  <tr><td style="font-size:20px;font-weight:700">${escH(biz)}</td></tr>
+  <tr><td style="padding-top:14px;font-size:15px;color:#4d564e">Hi ${escH(client)},</td></tr>
+  <tr><td style="padding-top:10px;font-size:16px;line-height:1.6;white-space:pre-wrap">${escH(text).replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" style="color:#1b6843;font-weight:600">$1</a>')}</td></tr>
+  <tr><td style="padding-top:16px;font-size:14px;color:#4d564e">The invoice is attached. Reply to this email to reach ${escH(biz)}.</td></tr>
+  <tr><td style="padding-top:22px;font-size:12px;color:#8a8f87">Sent with KeepWise · mykeepwise.com</td></tr>
+  </table></td></tr></table></body></html>`;
+  const r = await fetch("https://api.resend.com/emails", {method: "POST", headers: {Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json"},
+    body: JSON.stringify({from: `${biz} via KeepWise <invoices@notify.mykeepwise.com>`, to: [to], reply_to: user.email, subject, html, text: `Hi ${client},\n\n${text}\n\nThe invoice is attached. Reply to this email to reach ${biz}.\n\nSent with KeepWise · mykeepwise.com`, attachments: [{filename: clean(b.filename, 40).replace(/[^A-Za-z0-9._-]/g, "") || "invoice.png", content: file}]})});
+  if (!r.ok){ const d = await r.json().catch(() => ({})); return fail(origin, 502, r.status === 429 ? "Too many emails today. Try again tomorrow." : (d.message || "The email service didn't answer.")); }
+  return reply(origin, 200, {sent: 1});
+}
+
 export default {
   async fetch(req, env = {}){
     const origin = req.headers.get("Origin"), url = new URL(req.url);
@@ -169,12 +221,14 @@ export default {
     if (req.method === "GET" && url.pathname === "/") return new Response("KeepWise API", {headers: {"Content-Type": "text/plain", ...cors(origin)}});
     if (req.method !== "POST") return fail(origin, 405, "Not allowed.");
     if (origin && !ORIGINS.some(r => r.test(origin))) return fail(origin, 403, "Not allowed.");
-    let b; try { b = await readJson(req); } catch(e){ return fail(origin, 400, "Bad request."); }
+    let b; try { b = await readJson(req, url.pathname === "/invoice/email" ? 900000 : MAX_BODY); } catch(e){ return fail(origin, 400, "Bad request."); }
     try {
       if (url.pathname === "/stripe") return await stripe(origin, b);
       if (url.pathname === "/paypal") return await paypal(origin, b);
       if (url.pathname.startsWith("/plaid/")) return await plaid(origin, env, url.pathname, b);
       if (url.pathname === "/split/email") return await splitEmail(origin, env, b);
+      if (url.pathname === "/site/logo") return await siteLogo(origin, b);
+      if (url.pathname === "/invoice/email") return await invoiceEmail(origin, env, b);
     } catch(e){ return fail(origin, 502, "That service didn't answer. Try again in a minute."); }
     return fail(origin, 404, "Not found.");
   },

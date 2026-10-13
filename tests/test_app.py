@@ -2371,6 +2371,98 @@ async def plus_emails_the_people_in_a_split(ctx):
     await pg.reload(); await pg.wait_for_timeout(3500); assert len([x for x in sent if x["kind"] == "self"]) == 1, "once a month"
     assert not pg.errors, pg.errors
 
+
+@test
+async def business_profile_logo_and_pay_now_links(ctx):
+    pg = await open_app(ctx, month_tabs=True); await biz_on(pg)
+    import base64
+    PNG = base64.b64encode(open(os.path.join(HERE, "fixtures", "receipt-photo.png"), "rb").read()).decode()
+    now = int(datetime.datetime.now().timestamp())
+    async def api(route):
+        path = route.request.url.split("workers.dev", 1)[1]; body = json.loads(route.request.post_data or "{}")
+        if path == "/site/logo":
+            assert body["url"] == "https://sofiascandles.com", body
+            return await route.fulfill(status=200, content_type="application/json", body=json.dumps({"type": "image/png", "data": PNG}))
+        if body.get("path") == "balance": return await route.fulfill(status=200, content_type="application/json", body="{}")
+        data = [{"id": "txn_9", "type": "charge", "amount": 23100, "fee": 700, "currency": "usd", "created": now - 60, "description": "Blue Door Cafe"}]
+        await route.fulfill(status=200, content_type="application/json", body=json.dumps({"data": data, "has_more": False}))
+    await pg.route(re.compile(r"keepwise-api\."), api)
+    card = pg.locator("[data-biz-settings]"); assert "Business profile" in await card.inner_text()
+    async def prof(k, v):
+        sel = f"[data-biz-prof={k}]"
+        if k == "payKind": await pg.select_option(sel, v)
+        else: await pg.fill(sel, v); await pg.press(sel, "Tab")
+        await pg.wait_for_timeout(150)
+    await pg.fill("[data-biz-name]", "Sofia's Candles"); await pg.press("[data-biz-name]", "Tab"); await pg.wait_for_timeout(100)
+    await prof("website", "sofiascandles.com"); await prof("email", "not-an-email")
+    assert "Check the email" in await pg.inner_text("#toast")
+    await prof("email", "hello@sofiascandles.com"); await prof("phone", "(555) 123-4567"); await prof("address", "12 Elm St, Austin TX")
+    await prof("payKind", "paypal"); await prof("payHandle", "@sofiacandles"); await prof("payNote", "Zelle to hello@sofiascandles.com")
+    b = (await state(pg))["biz"]
+    assert b["website"] == "https://sofiascandles.com" and b["email"] == "hello@sofiascandles.com" and b["payHandle"] == "sofiacandles" and b["payKind"] == "paypal", b
+    assert "paypal.me/sofiacandles/25.00USD" in await text(pg, "[data-biz-paylink]")
+    # a logo: uploaded, or found on the website
+    async with pg.expect_file_chooser() as fc: await pg.click("[data-biz-logo-up]")
+    await (await fc.value).set_files(os.path.join(HERE, "fixtures", "receipt-photo.png")); await pg.wait_for_timeout(500)
+    logo = (await state(pg))["biz"].get("logo", ""); assert logo.startswith("data:image/png") and await pg.locator("[data-biz-logo-img]").count() == 1
+    await pg.click("[data-biz-logo-del]"); await pg.wait_for_timeout(150); assert "logo" not in (await state(pg))["biz"]
+    await pg.click("[data-biz-logo-site]"); await pg.wait_for_timeout(800)
+    assert (await state(pg))["biz"].get("logo", "").startswith("data:image/png") and "Found your logo" in await pg.inner_text("#toast")
+    # an invoice carries it all, and the share message has the Pay now link
+    await pg.click("[data-bseg=invoices]"); await pg.wait_for_timeout(150); assert await pg.locator("[data-inv-prof-hint]").count() == 0
+    await pg.click("[data-inv-add]"); f = pg.locator("form[data-form=invoice]"); await f.locator("[name=client]").fill("Blue Door Cafe")
+    r0 = f.locator("[data-inv-item]").nth(0); await r0.locator("[name=desc]").fill("Soy candles"); await r0.locator("[name=qty]").fill("12"); await r0.locator("[name=price]").fill("19.25")
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    await pg.evaluate("Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: async t => { window.__clip = t; }}})")
+    async with pg.expect_download() as dl: await pg.click("[data-inv-share]")
+    d = await dl.value; data = open(await d.path(), "rb").read(); assert data[:4] == b"\x89PNG" and len(data) > 30000
+    await pg.wait_for_timeout(200); clip = await pg.evaluate("window.__clip || ''")
+    assert "INV-0001: $231" in clip and "Pay now: https://paypal.me/sofiacandles/231.00USD" in clip, clip
+    # Stripe brings in a payment for exactly that amount: the invoice is marked paid with it, counted once
+    await pg.click("[data-bseg=money]"); await pg.click("[data-sales-add=stripe]")
+    await pg.fill("form[data-form=salesStripe] [name=key]", "rk_test_" + "a" * 24); await pg.click("form[data-form=salesStripe] [type=submit]"); await pg.wait_for_timeout(700)
+    assert "INV-0001 marked paid" in await pg.inner_text("#toast"), await pg.inner_text("#toast")
+    st = (await state(pg))["biz"]; inv = st["invoices"][0]
+    assert inv["status"] == "paid" and inv["paidBy"] == "stripe" and len([e for e in st["entries"] if e["kind"] == "in"]) == 1
+    await pg.click("[data-bseg=invoices]"); await pg.wait_for_timeout(150); assert "via Stripe" in await text(pg, "[data-inv-list]")
+    await pg.click("[data-inv-unpaid]"); await pg.wait_for_timeout(150)
+    st = (await state(pg))["biz"]; assert st["invoices"][0]["status"] == "open" and len([e for e in st["entries"] if e["kind"] == "in"]) == 1, "the Stripe sale itself stays"
+    assert not pg.errors, pg.errors
+
+
+@test
+async def plus_emails_invoices_and_reminds_when_late(ctx):
+    pg = await open_app(ctx, fb=True, month_tabs=True); sent = []
+    async def api(route):
+        body = json.loads(route.request.post_data or "{}"); sent.append(body)
+        await route.fulfill(status=200, content_type="application/json", body=json.dumps({"sent": 1}))
+    await pg.route(re.compile(r"keepwise-api\..*/invoice/email"), api)
+    await open_account(pg); await pg.click("[data-acc-google]"); await pg.wait_for_timeout(5000)
+    await tab(pg, "month"); await biz_on(pg)
+    await pg.fill("[data-biz-name]", "Sofia's Candles"); await pg.press("[data-biz-name]", "Tab"); await pg.wait_for_timeout(100)
+    await pg.select_option("[data-biz-prof=payKind]", "cashapp"); await pg.fill("[data-biz-prof=payHandle]", "$sofia"); await pg.press("[data-biz-prof=payHandle]", "Tab"); await pg.wait_for_timeout(150)
+    await pg.click("[data-bseg=invoices]"); await pg.click("[data-inv-add]"); f = pg.locator("form[data-form=invoice]")
+    await f.locator("[name=client]").fill("Blue Door Cafe"); await f.locator("[name=email]").fill("cafe@example")
+    r0 = f.locator("[data-inv-item]").nth(0); await r0.locator("[name=desc]").fill("Candles"); await r0.locator("[name=price]").fill("120")
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(150)
+    assert await pg.locator("form[data-form=invoice]").count() == 1, "a bad email is not saved"
+    await f.locator("[name=email]").fill("cafe@example.com"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    assert "Tap Email to send it" in await pg.inner_text("#toast")
+    await pg.click("[data-inv-email]"); await pg.wait_for_timeout(2500)
+    assert len(sent) == 1 and "Emailed INV-0001 to cafe@example.com" in await pg.inner_text("#toast"), sent and sent[-1].get("to")
+    m = sent[0]; assert m["to"] == "cafe@example.com" and m["business"] == "Sofia's Candles" and m["subject"] == "Invoice INV-0001 from Sofia's Candles ($120)" and "https://cash.app/$sofia/120.00" in m["text"] and len(m["file"]) > 20000, {k: (v[:80] if isinstance(v, str) else v) for k, v in m.items()}
+    assert "Emailed" in await text(pg, "[data-inv-list]") and "Late invoices get a polite email reminder" in await text(pg, "[data-inv-remind]")
+    # a late invoice: one reminder after 3 days, by itself, and not again the same day
+    await pg.evaluate("(() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); const d = new Date(Date.now() - 5 * 864e5); s.biz.invoices[0].due = d.toISOString().slice(0, 10); s.biz.invoices[0].date = new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 10); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); })()")
+    await pg.reload(); await pg.wait_for_timeout(7000)
+    rem = [x for x in sent if x["subject"].startswith("Reminder:")]; assert len(rem) == 1 and "was due on" in rem[0]["text"] and "https://cash.app/$sofia/120.00" in rem[0]["text"], [x["subject"] for x in sent]
+    assert len((await state(pg))["biz"]["invoices"][0]["reminded"]) == 1
+    await pg.reload(); await pg.wait_for_timeout(6000); assert len([x for x in sent if x["subject"].startswith("Reminder:")]) == 1, "never twice for the same step"
+    # turning reminders off stops them
+    await tab(pg, "month"); await pg.click("[data-mseg=more]"); await pg.click("[data-space=business]"); await pg.click("[data-bseg=invoices]"); await pg.click("[data-inv-remind=off]"); await pg.wait_for_timeout(150)
+    assert (await state(pg))["biz"]["remindOff"] is True
+    assert not pg.errors, pg.errors
+
 @test
 async def business_invoices_are_made_shared_and_paid(ctx):
     pg = await open_app(ctx, month_tabs=True); await biz_on(pg)
