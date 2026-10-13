@@ -2215,40 +2215,68 @@ async def business_live_sales_come_in_from_stripe_and_paypal(ctx):
 async def plus_connects_a_bank_through_plaid(ctx):
     pg = await open_app(ctx, month_tabs=True)
     today = datetime.date.today(); d = lambda n: (today - datetime.timedelta(days=n)).isoformat(); calls = []
-    PLAID_JS = """window.Plaid = {create: o => ({open: () => setTimeout(() => o.onSuccess('public-sandbox-1234abcd-12ab-34cd-56ef-1234567890ab', {institution: {name: 'First Platypus Bank'}}), 60)})};"""
+    PLAID_JS = """window.Plaid = {create: o => ({open: () => setTimeout(() => o.onSuccess('public-sandbox-1234abcd-12ab-34cd-56ef-1234567890ab', {institution: {name: 'First Platypus Bank', institution_id: 'ins_109508'}}), 60)})};"""
     await pg.route("https://cdn.plaid.com/**", lambda r: r.fulfill(status=200, content_type="text/javascript", body=PLAID_JS))
     tx = [{"id": "p1", "acct": "a1", "amount": -2100, "date": d(20), "name": "ACME CORP PAYROLL", "cur": "USD", "pending": False},
           {"id": "p2", "acct": "a1", "amount": 15.49, "date": d(15), "name": "Netflix", "cur": "USD", "pending": False},
           {"id": "p3", "acct": "a1", "amount": 61.2, "date": d(3), "name": "Craft Warehouse", "cur": "USD", "pending": False},
           {"id": "p4", "acct": "a1", "amount": 9.99, "date": d(0), "name": "Pending Shop", "cur": "USD", "pending": True},
           {"id": "p5", "acct": "a1", "amount": 40, "date": d(200), "name": "Old thing", "cur": "USD", "pending": False}]
+    accts = [{"id": "a1", "name": "Plaid Checking", "mask": "0000", "type": "checking", "kind": "depository", "balance": 1100.5, "cur": "USD"},
+             {"id": "a2", "name": "Plaid Credit Card", "mask": "3333", "type": "credit card", "kind": "credit", "balance": 410, "cur": "USD"},
+             {"id": "a3", "name": "Plaid Student", "mask": "4000", "type": "student", "kind": "loan", "balance": 25000, "cur": "USD"}]
     async def api(route):
         path = "/" + route.request.url.split("workers.dev/", 1)[1]; body = json.loads(route.request.post_data or "{}"); calls.append((path, body))
         r = {"/plaid/link": {"link_token": "link-sandbox-x", "env": "sandbox"}, "/plaid/exchange": {"item": "SEALED-BLOB"}, "/plaid/remove": {"removed": True},
              "/plaid/sync": {"added": tx if not body.get("cursor") else [], "modified": [], "removed": [], "next_cursor": "c1", "has_more": False,
-                             "accounts": [{"id": "a1", "name": "Plaid Checking", "mask": "0000", "type": "checking", "balance": 1100.5, "cur": "USD"}]}}[path]
+                             "accounts": accts}}[path]
         await route.fulfill(status=200, content_type="application/json", body=json.dumps(r))
     await pg.route(re.compile(r"keepwise-api\."), api)
-    await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150)
+    await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150); await pg.click("[data-banks-open]"); await pg.wait_for_timeout(150)
     assert await pg.locator("[data-plaid]").count() == 0, "Plaid is a Plus feature"
-    await biz_on(pg); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150)
+    await pg.click("[data-banks-close]"); await biz_on(pg); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150)
+    await pg.click("[data-banks-open]"); await pg.wait_for_timeout(150)
     card = await text(pg, "[data-bank]"); assert "Connect with Plaid" in card and "Connect with SimpleFIN" in card, card
     await pg.click("[data-plaid-add]"); await pg.wait_for_timeout(800)
-    card = await text(pg, "[data-bank]"); assert "Plaid Checking" in card and "••0000" in card and "First Platypus Bank" in card and "$1,100.50" in card, card
-    assert [c[0] for c in calls] == ["/plaid/link", "/plaid/exchange", "/plaid/sync"] and calls[2][1]["item"] == "SEALED-BLOB"
+    # right after connecting: which accounts to use. Loans start unticked.
+    pick = pg.locator("[data-bank-pick]"); assert await pick.count() == 1
+    assert [await pick.locator(f"[data-bank-use='p:{i}']").is_checked() for i in ("a1", "a2", "a3")] == [True, True, False]
+    await pg.click("[data-bank-pick-done]"); await pg.wait_for_timeout(100)
+    v = await pg.inner_text("#view"); assert "Plaid Checking" in v and "••0000" in v and "First Platypus Bank" in v and "Plaid Student" not in v and "Hidden (1)" in v, v
+    assert "$1,100.50" not in v and "$•••" in v, "balances start hidden"
+    await pg.click("[data-bank-eye]"); await pg.wait_for_timeout(100)
+    owed = await text(pg, "[data-acct-group=owed]"); assert "$410" in owed and "owed" in owed and "$1,100.50" in await text(pg, "[data-acct-group=cash]"), owed
+    # rename and hide
+    await pg.click("[data-acct='p:a1'] [data-acct-menu]"); await pg.click("[data-acct='p:a1'] [data-acct-rename]")
+    await pg.fill("form[data-form=bankRename] input", "Everyday checking"); await pg.press("form[data-form=bankRename] input", "Enter"); await pg.wait_for_timeout(150)
+    assert "Everyday checking" in await text(pg, "[data-acct-group=cash]") and (await state(pg))["bankPrefs"]["p:a1"]["name"] == "Everyday checking"
+    await pg.click("[data-acct='p:a2'] [data-acct-menu]"); await pg.click("[data-acct='p:a2'] [data-acct-hide]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-acct-group=owed]").count() == 0 and "Hidden (2)" in await pg.inner_text("#view")
+    await pg.click("[data-acct-hidden-toggle]"); await pg.click("[data-acct='p:a2'] [data-acct-show]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-acct-group=owed]").count() == 1
+    # the same bank twice is refused, so nothing is counted twice
+    n = len(calls); await pg.click("[data-plaid-add]"); await pg.wait_for_timeout(800)
+    assert "already connected" in await pg.inner_text("#toast") and calls[-1][0] == "/plaid/remove" and await pg.locator("[data-plaid-item]").count() == 1
+    # balances hide again after leaving, and the Income row never shows money
+    await pg.click("[data-banks-close]"); await pg.wait_for_timeout(150)
+    row = await text(pg, "[data-banks-open]"); assert "First Platypus Bank" in row and "2 accounts in use" in row and "$" not in row, row
+    await pg.click("[data-banks-open]"); await pg.wait_for_timeout(150); assert "$1,100.50" not in await pg.inner_text("#view")
+    assert [c[0] for c in calls[:3]] == ["/plaid/link", "/plaid/exchange", "/plaid/sync"] and calls[2][1]["item"] == "SEALED-BLOB"
     store = await pg.evaluate("localStorage.getItem('keepwise-plaid-v1')"); assert "SEALED-BLOB" in store and "Old thing" not in store, "only 90 days stay"
     assert "SEALED-BLOB" not in json.dumps(await state(pg)), "never in the plan or backups"
     # review reads the account like a statement, without the pending line
-    await pg.click("[data-plaid-review]"); await pg.wait_for_timeout(1500)
+    await pg.click("[data-acct='p:a1'] [data-acct-menu]"); await pg.click("[data-acct='p:a1'] [data-acct-review]"); await pg.wait_for_timeout(1500)
     v = await pg.inner_text("#view"); assert "Your statement" in v and "Netflix" in v and "Pending Shop" not in v, v[:500]
     await pg.click("button:has-text('Cancel')"); await pg.wait_for_timeout(300)
     # refresh asks again with the cursor
-    await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150); await pg.click("[data-plaid-refresh]"); await pg.wait_for_timeout(400)
+    await pg.click("[data-plaid-refresh]"); await pg.wait_for_timeout(400)
     assert calls[-1] == ("/plaid/sync", {"item": "SEALED-BLOB", "cursor": "c1"})
     # Business can sort the same account
-    await pg.click("[data-space=business]"); await pg.wait_for_timeout(150); await pg.click("[data-biz-bank=a1]"); await pg.wait_for_timeout(800)
+    await pg.click("[data-banks-close]"); await pg.click("[data-space=business]"); await pg.wait_for_timeout(150)
+    assert "From Everyday checking" in await text(pg, "[data-biz-import-card]")
+    await pg.click("[data-biz-bank=a1]"); await pg.wait_for_timeout(800)
     lines = await text(pg, "[data-biz-import-card]"); assert "Craft Warehouse" in lines and await pg.locator("[data-biz-pick]").count() == 3, lines
-    await pg.click("[data-biz-import-cancel]"); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150)
+    await pg.click("[data-biz-import-cancel]"); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150); await pg.click("[data-banks-open]"); await pg.wait_for_timeout(150)
     # disconnect removes it at Plaid and on the phone
     await pg.click("[data-plaid-off]"); await pg.wait_for_timeout(300)
     assert calls[-1][0] == "/plaid/remove" and "SEALED-BLOB" not in (await pg.evaluate("localStorage.getItem('keepwise-plaid-v1')") or "")
@@ -2375,6 +2403,8 @@ async def a_us_bank_connects_through_simplefin_on_the_phone(ctx):
         await route.abort()
     await pg.route("https://bridge.test.simplefin.org/**", bridge)
     await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150)
+    assert "Import a statement or connect your bank" in await text(pg, "[data-banks-open]") and await pg.locator("#view [data-bank]").count() == 0, "banks live on their own screen"
+    await pg.click("[data-banks-open]"); await pg.wait_for_timeout(150); assert await pg.inner_text("#view h1") == "Banks & statements"
     card = await text(pg, "[data-bank]"); assert "Connect your bank" in card and "Connect with SimpleFIN" in card, card
     await pg.click("[data-bank-add]"); f = pg.locator("form[data-form=bank]")
     # not a token
@@ -2386,22 +2416,28 @@ async def a_us_bank_connects_through_simplefin_on_the_phone(ctx):
     # a good one
     await f.locator("[name=token]").fill(tok("GOOD")); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(500)
     assert "Connected. 2 accounts found." in await pg.inner_text("#toast")
-    card = await text(pg, "[data-bank]"); assert "Everyday Checking" in card and "Oakview Credit Union" in card and "$2,481.36" in card and "$5,200" in card and "10 in 90 days" in card, card
+    v = await pg.inner_text("#view"); assert "Everyday Checking" in v and "Oakview Credit Union" in v and "10 in 90 days" in v and "$2,481.36" not in v and "$•••" in v, "balances start hidden"
+    await pg.click("[data-bank-eye]"); await pg.wait_for_timeout(100)
+    v = await pg.inner_text("#view"); assert "$2,481.36" in v and "$5,200" in v, v
     # the access link stays on the phone under its own key: never in the plan, backups or "Copy my data"
     assert "kwpass" in (await pg.evaluate("localStorage.getItem('keepwise-bank-v1')"))
     st = await state(pg); assert "kwpass" not in json.dumps(st) and "transactions" not in json.dumps(st["bank"]) and [a["name"] for a in st["bank"]["accounts"]] == ["Everyday Checking", "Savings"], st["bank"]
     # reviewing an account reads its 90 days like a statement, without the pending line
-    await pg.click("[data-bank-review=chk]"); await pg.wait_for_timeout(1500)
+    await pg.click("[data-acct='s:chk'] [data-acct-menu]"); await pg.click("[data-acct='s:chk'] [data-acct-review]"); await pg.wait_for_timeout(1500)
     v = await pg.inner_text("#view"); assert "Your statement" in v and "Everyday Checking" in v and "Netflix" in v.title() and "PENDING SHOP" not in v.upper(), v[:600]
     await pg.click("button:has-text('Cancel')"); await pg.wait_for_timeout(300)
     # refresh asks SimpleFIN again; when the link is turned off there, it says so
-    n = calls["acct"]; await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150)
+    n = calls["acct"]; assert await pg.inner_text("#view h1") == "Banks & statements", "Cancel goes back to the Banks screen"
     await pg.click("[data-bank-refresh]"); await pg.wait_for_timeout(500); assert calls["acct"] > n and "up to date" in await pg.inner_text("#toast")
     calls["deny"] = True; await pg.click("[data-bank-refresh]"); await pg.wait_for_timeout(500)
     assert "turned this link off" in await text(pg, "[data-bank-err]")
     # disconnect removes the link from the phone
     await pg.click("[data-bank-off]"); await pg.wait_for_timeout(200)
     assert await pg.evaluate("localStorage.getItem('keepwise-bank-v1')") is None and "bank" not in (await state(pg)) and "Connect with SimpleFIN" in await text(pg, "[data-bank]")
+    # the side menu and search open the same screen
+    await pg.click("[data-banks-close]"); await menu_to(pg, "banks"); assert await pg.inner_text("#view h1") == "Banks & statements"
+    await pg.click("[data-banks-close]"); await pg.click("#find-btn"); await pg.fill("#find-in", "connect your bank"); await pg.wait_for_timeout(400)
+    await pg.locator(".find-row", has_text="Connect your bank").first.click(); await pg.wait_for_timeout(250); assert await pg.inner_text("#view h1") == "Banks & statements"
     pg.errors[:] = [e for e in pg.errors if "status of 403" not in e]   # the browser logs the refusals this test asks for
     assert not pg.errors, pg.errors
 
@@ -2771,6 +2807,13 @@ async def app_lock_with_passcode_and_biometrics(ctx):
     await tap("1111"); assert await locked() and "not right" in await pg.inner_text("#lockscreen") and await pg.locator(".lock-dots i.on").count() == 0
     await tap("24"); await pg.click("[data-lock-del]"); await pg.wait_for_timeout(60); assert await pg.locator(".lock-dots i.on").count() == 1
     await tap("468"); assert not await locked() and await pg.evaluate("getComputedStyle(document.getElementById('app')).visibility") == "visible"
+    # the Banks screen asks for the passcode again, and can be cancelled
+    await tab(pg, "month"); await pg.click("[data-banks-open]"); await pg.wait_for_timeout(200)
+    assert await locked() and "Unlock your banks" in await pg.inner_text("#lockscreen")
+    await pg.click("[data-lock-cancel]"); await pg.wait_for_timeout(150); assert not await locked() and await pg.locator("#view [data-bank]").count() == 0
+    await pg.click("[data-banks-open]"); await pg.wait_for_timeout(200); await tap("2468")
+    assert not await locked() and await pg.inner_text("#view h1") == "Banks & statements"
+    await pg.click("[data-banks-close]"); await pg.wait_for_timeout(150)
     # five wrong tries make you wait
     await pg.reload(); await pg.wait_for_timeout(500)
     for _ in range(5): await tap("0000")
@@ -3993,16 +4036,18 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight * 2; })()"); assert fit <= 0, ("Budget is no more than one scroll", fit)
     assert await has("[data-out=trips]") == 1 and await has("[data-out=historyCard]") == 1, "trips and past months sit with the budget"
     await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200); assert await has("[data-env-open=needs] + .env-body .tick") >= 3
-    # Income: pay, other income and a statement to read it from
+    # Income: pay first, other income, and one quiet row to banks and statements
     await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(250)
-    assert await has(".import-card") == 1 and await has("#m-income") == 1 and await has("[data-out=trips]") == 0 and await has(".space-switch") == 1
-    first = await pg.evaluate("(() => { const k = [...document.querySelectorAll('#view > *')].filter(e => !e.matches('[data-mseg-switch]') && e.offsetHeight); return k[0] && k[0].matches('.import-card'); })()"); assert first, "statement import leads the Income part"
+    assert await has(".import-card") == 0 and await has("[data-bank]") == 0 and await has("#m-income") == 1 and await has("[data-out=trips]") == 0 and await has(".space-switch") == 1 and await has("[data-banks-open]") == 1
+    first = await pg.evaluate("(() => { const k = [...document.querySelectorAll('#view > *')].filter(e => !e.matches('[data-mseg-switch]') && e.offsetHeight); return k[0] && k[0].matches('.pay-card') && !!k[0].querySelector('#m-income'); })()"); assert first, "pay leads the Income part, in its own card"
+    await pg.click("[data-banks-open]"); await pg.wait_for_timeout(200); assert await pg.inner_text("#view h1") == "Banks & statements"
     tip = pg.locator(".import-card [data-info-tip=import]"); assert await tip.count() == 0 and "clear photo" not in await pg.inner_text(".import-card"), "the how-to waits behind the (i)"
     await pg.click(".import-card [data-info=import]"); await pg.wait_for_timeout(150); assert "clear photo of a paper statement" in await tip.inner_text()
     await pg.click(".import-card [data-info=import]"); await pg.wait_for_timeout(150); assert await tip.count() == 0
     await pg.set_input_files("#stmt", {"name": "holiday.txt", "mimeType": "text/plain", "buffer": b"not a statement at all"}); await pg.wait_for_timeout(900)
     assert await tip.count() == 1 and "CSV or PDF" in await tip.inner_text(), "a file that cannot be read brings the how-to up by itself"
     await pg.evaluate("document.getElementById('toast').hidden = true")
+    await pg.click("[data-banks-close]"); await pg.wait_for_timeout(200)
     assert await has("[data-out=envelopes]") == 0
     # a jump by name finds its part: the owl logs spending and lands on its row in Budget
     await ask_type(pg, "coffee 4"); await pg.wait_for_timeout(600)
@@ -4028,7 +4073,7 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     assert not pg.errors, pg.errors
     # a computer has the room: one page, no switch
     wide = await open_app(ctx, month_tabs=True, w=1280, h=800)
-    assert await wide.locator("[data-mseg-switch]").count() == 0 and await wide.locator("[data-out=envelopes]").count() == 1 and await wide.locator(".import-card").count() == 1 and await wide.locator("[data-donut]").count() == 1
+    assert await wide.locator("[data-mseg-switch]").count() == 0 and await wide.locator("[data-out=envelopes]").count() == 1 and await wide.locator("[data-banks-open]").count() == 1 and await wide.locator("[data-donut]").count() == 1
     assert not wide.errors, wide.errors
 
 SPILL_CHECK = r"""() => { const out = [], vw = innerWidth, box = e => e.getBoundingClientRect(), vis = e => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility !== 'hidden' && !e.closest('[hidden]') && !e.closest('.sr') && box(e).width > 0; };
@@ -5138,7 +5183,7 @@ async def the_side_menu_opens_each_place(ctx):
     assert await pg.locator("#sidenav").is_hidden()
     await pg.click("#acct-btn"); await pg.wait_for_timeout(300)
     rows = await pg.locator("#sidenav .sn-row span").all_inner_texts()
-    assert rows == ["Sign in or create account", "Settings", "Security & privacy", "Your data & backups", "Replay the tour", "Support"], rows
+    assert rows == ["Sign in or create account", "Settings", "Security & privacy", "Banks & statements", "Your data & backups", "Replay the tour", "Support"], rows
     assert "Delete" not in await pg.inner_text("#sidenav"), "delete is not offered in the menu"
     box = await pg.locator("#sidenav .sn").bounding_box(); assert box["x"] > 0 and abs(box["x"] + box["width"] - 360) < 1 and box["height"] >= 759, "a panel on the right, full height"
     # tapping outside closes it and changes nothing

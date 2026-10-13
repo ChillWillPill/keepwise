@@ -88,7 +88,7 @@ async function plaid(origin, env, path, b){
     if (!ok) return fail(origin, data.error_code === "ITEM_LOGIN_REQUIRED" ? 409 : 502, plaidErr(data));
     const tx = t => ({id: t.transaction_id, acct: t.account_id, amount: t.amount, date: t.date, name: t.merchant_name || t.name, cur: t.iso_currency_code, pending: !!t.pending});
     return reply(origin, 200, {added: (data.added || []).map(tx), modified: (data.modified || []).map(tx), removed: (data.removed || []).map(t => t.transaction_id), next_cursor: data.next_cursor, has_more: !!data.has_more,
-      accounts: (data.accounts || []).map(a => ({id: a.account_id, name: a.official_name || a.name, mask: a.mask, type: a.subtype || a.type, balance: a.balances && a.balances.current, cur: a.balances && a.balances.iso_currency_code}))});
+      accounts: (data.accounts || []).map(a => ({id: a.account_id, name: a.official_name || a.name, mask: a.mask, type: a.subtype || a.type, kind: a.type, balance: a.balances && a.balances.current, cur: a.balances && a.balances.iso_currency_code}))});
   }
   if (path === "/plaid/institution"){
     const {ok, data} = await plaidCall(env, "/item/get", {access_token: access});

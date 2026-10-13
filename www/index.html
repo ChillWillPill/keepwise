@@ -558,6 +558,8 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .plus-tap{appearance:none;border:0;font-family:inherit;line-height:normal;min-height:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .biz-mini{display:grid;grid-template-columns:1fr 104px auto;gap:8px;align-items:center}.biz-mini select{grid-column:1/-1}.biz-mini:has(select[name=cycle]) select{grid-column:auto}.biz-mini[data-form=bizSub]{grid-template-columns:1fr 96px 1fr auto}.biz-lines{max-height:360px}[data-biz-list] .rows .line,[data-biz-subs] .rows .line,[data-biz-shares] .rows .line{padding:10px 12px;gap:10px}.biz-lines .move-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
 @media (max-width:430px){.biz-mini[data-form=bizSub]{grid-template-columns:1fr 1fr}.biz-mini[data-form=bizSub] input[name=name]{grid-column:1/-1}}.bank-rows .line .muted{overflow-wrap:anywhere}
+button.card.banks-row{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit}.banks-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--green-soft);color:var(--green);flex:none}.banks-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.banks-txt b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.banks-go{color:var(--muted);flex:none;display:grid}
+.accts{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.acct+.acct{border-top:1px solid var(--line)}.acct .line{padding:10px 12px;gap:10px;border:0}.acct-more{width:34px;height:34px}.acct-more svg{transform:rotate(90deg);transition:transform .15s}.acct-more[aria-expanded=true] svg{transform:rotate(-90deg)}.acct-acts,.acct-rename{display:flex;gap:8px;padding:0 12px 12px;flex-wrap:wrap}.acct-rename input{flex:1;min-width:0}.masked{letter-spacing:2px;color:var(--muted)}.pick-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.pick-list .move-row{display:flex;align-items:center;gap:10px;padding:10px 12px}.pick-list .move-row+.move-row{border-top:1px solid var(--line)}.pay-card .grid2{margin:0}
 .plaid-part{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.plaid-or{margin:2px 0 -4px}.biz-banks{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .sales-form{display:flex;flex-direction:column;gap:10px}.sales-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}.sales-steps code{font-size:.85em;padding:1px 5px;border-radius:6px;background:var(--chip)}[data-sales-card] .rows .line{padding:10px 12px;gap:10px}
 .seg.sub-seg.biz-seg{grid-template-columns:repeat(4,1fr)}.seg.sub-seg.biz-seg button{font-size:.86rem;padding:0 4px}
@@ -1235,6 +1237,9 @@ I.health = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 I.phone = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 17.5h2"/></svg>';
 I.smoke = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="14" width="14" height="4" rx="1"/><path d="M13 14v4"/><path d="M20 14v4"/><path d="M17 6c2 1 3 2.2 3 4.5"/><path d="M13.500 6.500c1.500.5 2.500 1.700 2.500 3.500"/></svg>';
 I.fun = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8h10a4 4 0 0 1 4 4.500L20.500 16a2.500 2.500 0 0 1-4.500 1l-1-2H9l-1 2a2.500 2.500 0 0 1-4.500-1L3 12.500A4 4 0 0 1 7 8z"/><path d="M8 11v3M6.500 12.500h3"/><path d="M16 11.500h.01M18 13.500h.01"/></svg>';
+I.eye = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+I.eyeOff = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.8 9.8 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+I.bank = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v7M9.5 10v7M14.5 10v7M19 10v7"/><path d="M3 20h18"/></svg>';
 I.family = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.500" cy="8" r="3"/><circle cx="17" cy="9.500" r="2.300"/><path d="M3 19c0-3 2.500-5 5.500-5s5.500 2 5.500 5"/><path d="M15.500 14.200c3 0 5.500 1.600 5.500 4.800"/></svg>';
 // One-off spending wears a small icon so a glance says what it was. KeepWise picks one from the name; the person can
 // choose another, and that choice is remembered for the name.
@@ -1332,7 +1337,7 @@ async function plaidSync(it, s){
     const d = await salesCall("/plaid/sync", {item: it.item, cursor});
     [...(d.added || []), ...(d.modified || [])].forEach(t => { if (t && t.id) tx[t.id] = {a: t.acct, n: String(t.name || "Transaction").slice(0, 80), v: +t.amount || 0, d: t.date, c: t.cur, p: t.pending ? 1 : 0}; });
     (d.removed || []).forEach(id => delete tx[id]);
-    if (d.accounts && d.accounts.length) it.accounts = d.accounts.map(a => ({id: a.id, name: String(a.name || "Account").slice(0, 60), mask: a.mask || "", type: a.type || "", balance: a.balance, cur: a.cur || "USD"}));
+    if (d.accounts && d.accounts.length) it.accounts = d.accounts.map(a => ({id: a.id, name: String(a.name || "Account").slice(0, 60), mask: a.mask || "", type: a.type || "", kind: a.kind || "", balance: a.balance, cur: a.cur || "USD"}));
     cursor = d.next_cursor || cursor; if (!d.has_more) break;
   }
   const cut = isoOf(dayPlus(todayMid(), -92)); Object.keys(tx).forEach(id => { if (tx[id].d < cut) delete tx[id]; });   // only the last 90 days stay on the phone
@@ -1351,10 +1356,12 @@ async function plaidConnect(){
     const [{link_token}] = await Promise.all([salesCall("/plaid/link", {uid: s.uid}), window.Plaid ? null : loadScript("https://cdn.plaid.com/link/v2/stable/link-initialize.js")]);
     if (!window.Plaid) throw new Error("The bank connection couldn't load. Check your connection and try again.");
     await new Promise((done, stop) => { const h = window.Plaid.create({token: link_token,
-      onSuccess: async (public_token, meta) => { try { busy("Connecting your bank"); const {item} = await salesCall("/plaid/exchange", {public_token}); const s2 = plaidStore();
-          const it = {id: uid(), item, inst: String((meta && meta.institution && meta.institution.name) || "Your bank").slice(0, 60), cursor: "", tx: {}, accounts: []}; s2.items.push(it);
+      onSuccess: async (public_token, meta) => { try { busy("Connecting your bank"); const {item} = await salesCall("/plaid/exchange", {public_token}); const s2 = plaidStore(), inst = (meta && meta.institution) || {};
+          const dup = inst.institution_id && s2.items.find(x => x.instId === inst.institution_id);
+          if (dup){ salesCall("/plaid/remove", {item}).catch(() => {}); busy(false); toast(`${dup.inst} is already connected. Tap Refresh to update it.`); UI.banks = true; done(); return; }   // one connection per bank, so nothing is counted twice
+          const it = {id: uid(), item, instId: inst.institution_id || "", inst: String(inst.name || "Your bank").slice(0, 60), cursor: "", tx: {}, accounts: []}; s2.items.push(it);
           if (!plaidKeep(s2)) throw new Error("This browser won't let KeepWise keep the bank link. Try the installed app.");
-          await plaidSync(it, s2); busy(false); done(); } catch(err){ busy(false); stop(err); } },
+          await plaidSync(it, s2); busy(false); UI.banks = true; UI.bankPick = it.id; done(); } catch(err){ busy(false); stop(err); } },
       onExit: err => err ? stop(new Error(err.display_message || "The bank connection was closed before it finished.")) : done()}); h.open(); });
   } catch(err){ PLAID.err = err.message; }
   PLAID.busy = ""; render(true);
@@ -1371,30 +1378,82 @@ function plaidCsv(acctId){
   return rows.length ? new File(["Date,Description,Amount\n" + rows.join("\n") + "\n"], `${a.inst} · ${a.name}${a.mask ? " ••" + a.mask : ""} (last 90 days).csv`, {type: "text/csv"}) : null;
 }
 function plaidSection(){
-  const s = plaidStore(), accts = plaidAccounts(), last = Math.max(0, ...s.items.map(i => i.at || 0));
-  return `<div class="plaid-part" data-plaid><div class="inline" style="justify-content:space-between;align-items:baseline"><b class="small">Plaid <span class="pill gold" style="font-size:.66rem">Plus</span></b>${s.items.length ? `<span class="muted small">${last ? `Updated ${new Date(last).toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})}` : ""}</span>` : ""}</div>
-    ${accts.length ? `<div class="rows bank-rows">${accts.map(a => `<div class="line" data-plaid-acct="${esc(a.id)}"><div style="min-width:0"><div class="name">${esc(a.name)}${a.mask ? ` <span class="muted small">••${esc(a.mask)}</span>` : ""}</div><div class="muted small">${esc(a.inst)}</div></div><div class="inline">${a.balance != null ? `<span class="tnum">${a.cur === S.cur ? fmt(a.balance) : `${esc(a.cur)} ${(+a.balance).toFixed(2)}`}</span>` : ""}<button class="link small" type="button" data-plaid-review>Review</button></div></div>`).join("")}</div>` : ""}
+  const s = plaidStore(), when = t => t ? new Date(t).toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"}) : "";
+  return `<div class="plaid-part" data-plaid><div class="inline" style="justify-content:space-between;align-items:baseline"><b class="small">Plaid <span class="pill gold" style="font-size:.66rem">Plus</span></b></div>
+    ${s.items.length ? `<div class="rows bank-rows">${s.items.map(it => `<div class="line" data-plaid-item="${esc(it.id)}"><div style="min-width:0"><div class="name">${esc(it.inst)}</div><div class="muted small">${(it.accounts || []).length} account${(it.accounts || []).length === 1 ? "" : "s"}${it.at ? ` · Updated ${when(it.at)}` : ""}</div></div><button class="link danger-link small" type="button" data-plaid-off="${esc(it.id)}">Disconnect</button></div>`).join("")}</div>` : ""}
     ${PLAID.err ? `<p class="err small" role="alert" data-plaid-err>${esc(PLAID.err)}</p>` : ""}
-    ${s.items.length ? `<div class="inline" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><span class="inline" style="gap:12px">${s.items.map(it => `<button class="link danger-link small" type="button" data-plaid-off="${esc(it.id)}">Disconnect ${esc(it.inst)}</button>`).join("")}</span><span class="inline" style="gap:12px"><button class="link small" type="button" data-plaid-refresh ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "sync" ? "Updating…" : "Refresh"}</button><button class="link small" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>Add a bank</button></span></div>`
+    ${s.items.length ? `<div class="inline" style="gap:16px"><button class="link small" type="button" data-plaid-refresh ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "sync" ? "Updating…" : "Refresh"}</button><button class="link small" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>Add a bank</button></div>`
       : `<p class="muted small">Connect in a few taps with your bank login. Included with KeepWise Plus, no extra fee.</p><button class="btn" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "link" ? "Opening…" : "Connect with Plaid"}</button>`}</div>`;
 }
 function bankCard(){
   if (UI.biz) return "";
   const on = bankOn(), list = (S.bank && S.bank.accounts) || [], when = S.bank && S.bank.updated ? new Date(S.bank.updated) : null;
-  const head = `<h3 class="h-info">Connect your bank <span class="pill grey" style="font-size:.7rem">US</span>${infoBtn("bank", "About connecting your bank")}</h3>${infoTip("bank", "Through SimpleFIN Bridge, which works with thousands of US banks and credit unions. SimpleFIN charges about $1.50 a month or $15 a year, paid to them; KeepWise charges nothing. Your phone talks to SimpleFIN directly: KeepWise has no server in between and never sees your bank data. The link is kept only on this phone, never in backups.")}`;
+  const head = `<h3 class="h-info">Connect your bank <span class="pill grey" style="font-size:.7rem">US</span>${infoBtn("bank", "About connecting your bank")}</h3>${infoTip("bank", plusOn() ? "With KeepWise Plus, connect through Plaid in a few taps, at no extra cost. Or use SimpleFIN Bridge, which you pay SimpleFIN for directly (about $1.50 a month); your phone talks to SimpleFIN with no KeepWise server in between. Either way, your bank data is kept only on this phone, never in backups." : "Through SimpleFIN Bridge, which works with thousands of US banks and credit unions. SimpleFIN charges about $1.50 a month or $15 a year, paid to them; KeepWise charges nothing. Your phone talks to SimpleFIN directly: KeepWise has no server in between and never sees your bank data. The link is kept only on this phone, never in backups.")}`;
   const plaid = plusOn() ? plaidSection() + `<p class="small muted plaid-or">Or with SimpleFIN</p>` : "";
-  if (!on) return `<section class="card bank-card" data-bank>${head}${plaid}
-    ${UI.bankAdd ? `<form data-form="bank" style="display:flex;flex-direction:column;gap:10px"><ol class="small muted" style="margin:0;padding-left:20px"><li>Open <a href="${BANK_HELP}" target="_blank" rel="noopener" style="color:var(--green);font-weight:600">SimpleFIN Bridge</a>, connect your bank there and make a setup token.</li><li>Paste the token here.</li></ol>
+  const simple = !on ? (UI.bankAdd ? `<form data-form="bank" style="display:flex;flex-direction:column;gap:10px"><ol class="small muted" style="margin:0;padding-left:20px"><li>Open <a href="${BANK_HELP}" target="_blank" rel="noopener" style="color:var(--green);font-weight:600">SimpleFIN Bridge</a>, connect your bank there and make a setup token.</li><li>Paste the token here.</li></ol>
       <label class="field"><span>Setup token</span><input name="token" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste your setup token" aria-label="SimpleFIN setup token"></label>
       ${BANK.err ? `<p class="err" role="alert" data-bank-err>${esc(BANK.err)}</p>` : ""}
       <div class="grid2"><button class="btn" type="button" data-bank-cancel>Cancel</button><button class="btn primary" type="submit"${BANK.busy ? " disabled" : ""}>${BANK.busy ? "Connecting…" : "Connect"}</button></div></form>`
-    : `<p class="muted small">Pull in the last 90 days from your bank instead of downloading statements.</p><button class="btn" type="button" data-bank-add>Connect with SimpleFIN</button>`}</section>`;
-  return `<section class="card bank-card" data-bank>${head}${plaid}
-    ${list.length ? `<div class="rows bank-rows">${list.map(a => `<div class="line" data-bank-acct="${esc(a.id)}"><div style="min-width:0"><div class="name">${esc(a.name)}</div><div class="muted small">${esc(a.bank || "Bank")}${a.n ? ` · ${a.n} in 90 days` : ""}</div></div><div class="inline"><span class="tnum">${a.cur === S.cur ? fmt(a.balance) : `${esc(a.cur)} ${a.balance.toFixed(2)}`}</span><button class="btn small" type="button" data-bank-review="${esc(a.id)}">Review</button></div></div>`).join("")}</div>` : `<p class="muted small">No accounts came back yet. Add your bank at SimpleFIN, then refresh.</p>`}
+    : `<p class="muted small">Pull in the last 90 days from your bank instead of downloading statements.</p><button class="btn" type="button" data-bank-add>Connect with SimpleFIN</button>`)
+    : `<div class="rows bank-rows"><div class="line" data-simplefin><div style="min-width:0"><div class="name">SimpleFIN</div><div class="muted small" data-bank-when>${list.length} account${list.length === 1 ? "" : "s"}${when ? ` · Updated ${when.toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})}` : ""}</div></div><button class="link plain small" type="button" data-bank-off>Disconnect</button></div></div>
     ${BANK.err ? `<p class="err small" role="alert" data-bank-err>${esc(BANK.err)}</p>` : ""}
-    <div class="inline" style="justify-content:space-between"><span class="muted small" data-bank-when>${when ? `Updated ${when.toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})}` : ""}</span><span class="inline"><button class="link small" type="button" data-bank-refresh${BANK.busy ? " disabled" : ""}>${BANK.busy ? "Updating…" : "Refresh"}</button><button class="link plain small" type="button" data-bank-off>Disconnect</button></span></div>
-    <p class="muted small">Review reads an account’s last 90 days like a statement: you choose what to add.</p></section>`;
+    <div class="inline" style="gap:16px"><button class="link small" type="button" data-bank-refresh${BANK.busy ? " disabled" : ""}>${BANK.busy ? "Updating…" : "Refresh"}</button></div>`;
+  return `<section class="card bank-card" data-bank>${head}${plaid}${simple}</section>`;
 }
+/* ---- Banks & statements: one place for connected banks and statement files ----
+   Balances stay hidden until the eye is tapped, and hide again when the screen closes. Each account can be renamed,
+   hidden, or left out; loans start out hidden. With App lock on, the screen asks for the passcode again. */
+const OWED_RE = /credit|mortgage|student|auto|loan|line of credit|consumer|home equity|heloc|card|visa|mastercard|amex/i, LOAN_RE = /mortgage|student|auto|loan|line of credit|consumer|home equity|heloc/i;
+function bankList(){
+  const out = [];
+  if (plusOn()) plaidAccounts().forEach(a => out.push({key: "p:" + a.id, src: "plaid", id: a.id, name: a.name, mask: a.mask, inst: a.inst, kind: a.kind || "", type: a.type || "", balance: a.balance, cur: a.cur || "USD", itemId: a.itemId}));
+  if (bankOn()) ((S.bank && S.bank.accounts) || []).forEach(a => out.push({key: "s:" + a.id, src: "simplefin", id: a.id, name: a.name, mask: "", inst: a.bank || "Bank", kind: "", type: "", balance: a.balance, cur: a.cur || "USD", n: a.n}));
+  return out;
+}
+const acctOwed = a => a.kind === "credit" || a.kind === "loan" || (a.kind !== "depository" && OWED_RE.test(`${a.type} ${a.kind ? "" : a.name}`));
+const acctLoan = a => a.kind === "loan" || (a.kind !== "depository" && a.kind !== "credit" && LOAN_RE.test(`${a.type} ${a.kind ? "" : a.name}`));
+const bankPref = key => (S.bankPrefs && S.bankPrefs[key]) || {};
+const acctInUse = a => { const p = bankPref(a.key); return p.use != null ? !!p.use : !acctLoan(a); };
+const acctName = a => bankPref(a.key).name || a.name;
+const setBankPref = (key, patch) => { S.bankPrefs = S.bankPrefs || {}; S.bankPrefs[key] = Object.assign({}, S.bankPrefs[key], patch); };
+const MASK_HTML = () => `<span class="masked" aria-label="Hidden">${esc(sym())}•••</span>`;
+function acctMoney(a){ if (a.balance == null || isNaN(+a.balance)) return "";
+  const v = acctOwed(a) ? Math.abs(+a.balance) : +a.balance, m = a.cur === S.cur ? fmt(v) : `${a.cur} ${v.toFixed(2)}`;
+  return UI.bankEye ? `${m}${acctOwed(a) ? ` <span class="muted small">owed</span>` : ""}` : MASK_HTML(); }
+function acctRow(a){
+  const open = UI.bankMenu === a.key, ren = UI.bankRename === a.key;
+  return `<div class="acct" data-acct="${esc(a.key)}"><div class="line"><div style="min-width:0"><div class="name">${esc(acctName(a))}${a.mask ? ` <span class="muted small">••${esc(a.mask)}</span>` : ""}</div><div class="muted small">${esc(a.inst)}${a.n ? ` · ${a.n} in 90 days` : ""}</div></div>
+    <div class="inline"><span class="tnum">${acctMoney(a)}</span><button class="icon-btn acct-more" type="button" data-acct-menu aria-expanded="${open}" aria-label="Options for ${esc(acctName(a))}">${I.chev}</button></div></div>
+    ${ren ? `<form data-form="bankRename" class="acct-rename"><input name="name" maxlength="40" value="${esc(acctName(a))}" aria-label="Account name" autocomplete="off"><button class="btn small primary" type="submit">Save</button><button class="btn small" type="button" data-acct-rename-cancel>Cancel</button></form>`
+      : open ? `<div class="acct-acts"><button class="btn small" type="button" data-acct-review>Review</button><button class="btn small" type="button" data-acct-rename>Rename</button><button class="btn small" type="button" data-acct-hide>Hide</button></div>` : ""}</div>`;
+}
+// Every way in (Income, the side menu, search) asks for the passcode first when App lock is on.
+function openBanks(){ if (LOCK.cfg && lockCan()){ LOCK.gate = true; lockNow(); render(true); return; } UI.banks = true; render(false); }
+function banksRow(){
+  const list = bankList(), used = list.filter(acctInUse), insts = [...new Set(list.map(a => a.inst))];
+  const title = list.length ? insts.slice(0, 2).join(", ") + (insts.length > 2 ? ` +${insts.length - 2}` : "") : "Banks & statements";
+  const sub = list.length ? `${used.length} account${used.length === 1 ? "" : "s"} in use` : "Import a statement or connect your bank";
+  return `<button type="button" class="card banks-row" data-banks-open><span class="banks-ic" aria-hidden="true">${I.bank}</span><span class="banks-txt"><b>${esc(title)}</b><span class="muted small">${sub}</span></span><span class="banks-go" aria-hidden="true">${I.chev}</span></button>`;
+}
+function bankPickCard(){
+  const list = bankList().filter(a => a.src === "plaid" && a.itemId === UI.bankPick); if (!list.length) return "";
+  return `<section class="card" data-bank-pick><h2>Which accounts should KeepWise use?</h2><p class="muted small">Ticked accounts show here and can be reviewed. You can change this any time.</p>
+    <div class="pick-list">${list.map(a => `<label class="move-row"><input type="checkbox" data-bank-use="${esc(a.key)}" ${acctInUse(a) ? "checked" : ""}><span style="flex:1;min-width:0"><span>${esc(acctName(a))}${a.mask ? ` ••${esc(a.mask)}` : ""}</span><span class="muted small" style="display:block">${acctOwed(a) ? (acctLoan(a) ? "Loan" : "Credit") : "Cash"}</span></span></label>`).join("")}</div>
+    <button class="btn primary" type="button" data-bank-pick-done>Done</button></section>`;
+}
+V.banks = () => {
+  const list = bankList(), used = list.filter(acctInUse), hidden = list.filter(a => !acctInUse(a)), cash = used.filter(a => !acctOwed(a)), owed = used.filter(acctOwed);
+  const total = arr => { const t = arr.filter(a => a.cur === S.cur && a.balance != null).reduce((s, a) => s + Math.abs(+a.balance || 0), 0); return UI.bankEye ? fmt(t) : MASK_HTML(); };
+  const group = (title, arr, note) => arr.length ? `<section class="card acct-group" data-acct-group="${title.toLowerCase()}"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>${title}</h2><span class="tnum muted">${total(arr)}${note && UI.bankEye ? ` ${note}` : ""}</span></div><div class="accts">${arr.map(acctRow).join("")}</div></section>` : "";
+  return `<div class="inline" style="justify-content:space-between"><h1>Banks &amp; statements</h1><span class="inline" style="gap:8px">${list.length ? `<button class="icon-btn" type="button" data-bank-eye aria-pressed="${!!UI.bankEye}" aria-label="${UI.bankEye ? "Hide balances" : "Show balances"}">${UI.bankEye ? I.eyeOff : I.eye}</button>` : ""}<button class="btn small" type="button" data-banks-close>Done</button></span></div>
+  ${UI.bankPick ? bankPickCard() : ""}
+  ${group("Cash", cash)}${group("Owed", owed, "owed")}
+  ${hidden.length ? `<section class="card" data-acct-hidden><button class="link plain" type="button" data-acct-hidden-toggle aria-expanded="${!!UI.bankHidden}">Hidden (${hidden.length}) ${UI.bankHidden ? "▴" : "▾"}</button>
+    ${UI.bankHidden ? `<div class="rows bank-rows">${hidden.map(a => `<div class="line" data-acct="${esc(a.key)}"><div style="min-width:0"><div class="name">${esc(acctName(a))}${a.mask ? ` <span class="muted small">••${esc(a.mask)}</span>` : ""}</div><div class="muted small">${esc(a.inst)}</div></div><button class="link small" type="button" data-acct-show>Show</button></div>`).join("")}</div>` : ""}</section>` : ""}
+  ${bankCard()}
+  ${importCard()}
+  <p class="muted small" style="text-align:center">Everything here stays on this phone.</p>`;
+};
 function importCard(){
   return `<section class="card import-card"><div><h3 class="h-info">Import a bank statement${infoBtn("import", "About importing a statement")}</h3>${UI.info === "import" || UI.importFail ? `<p class="info-tip" role="note" data-info-tip="import">CSV or PDF from your bank, or a clear photo of a paper statement. KeepWise finds your pay, bills and every subscription. Read on this phone only.</p>` : ""}${S.imported ? `<p class="muted small">Last import: ${esc(S.imported.file)}, ${monthsLabel(S.imported.from)} to ${monthsLabel(S.imported.to)}.</p>` : ""}</div>
     <button class="btn primary" type="button" data-import-open>${S.imported ? "Import another statement" : "Choose a statement"}</button></section>`;
@@ -2545,7 +2604,7 @@ function bizSpace(){
   <section class="card" data-biz-import-card><h2 class="h-info">Sort a statement${infoBtn("bizImport", "About sorting a statement")}</h2>${infoTip("bizImport", "Choose a CSV, PDF or photo of a statement. Tick the lines that were business: money in becomes business income, money out a business cost. Read on this phone only.")}
     ${BIZ.lines ? (BIZ.lines.length ? `<p class="muted small">${esc(BIZ.file)}: tick what was business.</p><div class="st-tx biz-lines">${BIZ.lines.map((l, i) => `<label class="move-row"><input type="checkbox" data-biz-pick="${i}" ${BIZ.pick.has(i) ? "checked" : ""}><span style="flex:1;min-width:0"><span>${esc(l.desc)}</span><span class="muted small" style="display:block">${shortDate(l.date)}</span></span><span class="tnum ${l.amt > 0 ? "good" : ""}">${l.amt > 0 ? "+" : ""}${fmt(Math.abs(l.amt))}</span></label>`).join("")}</div>
       <div class="grid2"><button class="btn" type="button" data-biz-import-cancel>Cancel</button><button class="btn primary" type="button" data-biz-import-add ${BIZ.pick.size ? "" : "disabled"}>Add ${BIZ.pick.size} to Business</button></div>` : `<p class="muted small">Every line in that statement is already in Business.</p><button class="btn" type="button" data-biz-import-cancel>Done</button>`)
-      : `<button class="btn" type="button" data-biz-import>Choose a statement</button>${plaidOn() ? `<div class="biz-banks">${plaidAccounts().map(a => `<button class="btn" type="button" data-biz-bank="${esc(a.id)}">From ${esc(a.name)}${a.mask ? " ••" + esc(a.mask) : ""}</button>`).join("")}</div>` : ""}`}</section>
+      : `<button class="btn" type="button" data-biz-import>Choose a statement</button>${plaidOn() ? `<div class="biz-banks">${bankList().filter(a => a.src === "plaid" && acctInUse(a)).map(a => `<button class="btn" type="button" data-biz-bank="${esc(a.id)}">From ${esc(acctName(a))}${a.mask ? " ••" + esc(a.mask) : ""}</button>`).join("")}</div>` : ""}`}</section>
   <section class="card" data-biz-settings><h2>Your business</h2><label class="field"><span>Business name <small class="muted">shown on invoices</small></span><input data-biz-name maxlength="50" value="${esc(b.name || "")}" placeholder="e.g. Sofia's Candles" autocomplete="organization"></label></section>`;
   } else if (seg === "invoices"){
     const list = b.invoices.slice().sort((a, c) => (c.date || "").localeCompare(a.date || "")), owed = r2(list.filter(i => i.status !== "paid").reduce((a, i) => a + invTotal(i), 0)), late = list.filter(invLate);
@@ -2679,9 +2738,9 @@ V.month = () => {
   if (!tabs) return `${top}
 ${now}
 ${coming}
-  ${importCard()}${bankCard()}
-${fields}
+  <section class="card pay-card">${fields}</section>
 ${income}
+  ${banksRow()}
 ${trips}
 ${budget}
 ${donut}
@@ -2694,9 +2753,9 @@ ${budget}
 ${trips}
 ${tail}`;   // where the money goes: envelopes, trips and events with budgets of their own, and past months
   if (seg === "more") return `${sw}
-  ${importCard()}${bankCard()}
-${fields}
+  <section class="card pay-card">${fields}</section>
 ${income}
+  ${banksRow()}
 ${spaceSwitch()}`;   // what comes in: pay, other income, and a statement to read it from
   return `${sw}${top.slice(spaceSwitch().length)}
 ${now}
@@ -3551,7 +3610,7 @@ const surveyDue = x => x.keep !== "drop" && !isOurs(x) && !(x.reviewedAt && x.re
 // Take someone to the exact card a note or a notification is about, and mark it for a moment so the eye finds it.
 function goTo(tabName, sel){
   if (sel && tabName === "month") UI.needKind = /data-arrive/.test(sel) ? "arrived" : /data-bill-due/.test(sel) ? "bills" : /data-yr-due/.test(sel) ? "yearly" : UI.needKind;   // bring the right question to the front
-  UI.find = false; UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; S.tab = tabName; save(); render(false);
+  UI.find = false; UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; S.tab = tabName; save(); render(false);
   const el = sel && (monthFind(sel) || planFind(sel) || view.querySelector(sel)), m = $("main"); if (!el) return false;
   m.scrollTop += el.getBoundingClientRect().top - m.getBoundingClientRect().top - 16;
   UI.flashSel = sel; clearTimeout(UI.flashSelT); UI.flashSelT = setTimeout(() => { UI.flashSel = null; }, 1500);
@@ -3600,8 +3659,8 @@ const FIND_PLACES = [
   ["Loans and debt", "Plan · Debt & savings", "loan", "credit card mortgage installments owe borrowed repayments car insurance", {tab: "plan", sel: "[data-out=loans]"}, 1],
   ["Backups", "Menu · Your data & backups", "backup", "download export restore save file", {menu: "data", sel: "[data-set-backup]"}, 1],
   ["Monthly statements", "Month · Budget", "hist", "history past months last month report", {act: "history"}, 1],
-  ["Import a bank statement", "Month · Income", "imp", "upload csv pdf photo scan picture", {tab: "month", sel: ".import-card"}, 1],
-  ["Connect your bank", "Month · Income", "imp", "bank sync link account simplefin automatic transactions balance connect", {tab: "month", sel: "[data-bank]"}],
+  ["Import a bank statement", "Banks & statements", "imp", "upload csv pdf photo scan picture", {menu: "banks", sel: ".import-card"}, 1],
+  ["Connect your bank", "Banks & statements", "imp", "bank sync link account simplefin plaid automatic transactions balance connect accounts hide rename", {menu: "banks", sel: "[data-bank]"}],
   ["What you keep this month", "Month · Overview", "month", "home overview left over safe to spend balance", {tab: "month", sel: ".hero"}],
   ["Where your month goes", "Month · Overview", "env", "chart breakdown pie donut percent", {tab: "month", sel: "[data-out=donut]"}],
   ["Coming up", "Month · Overview", "bell", "due soon upcoming next week", {tab: "month", sel: "[data-out=comingUp]"}],
@@ -5209,7 +5268,7 @@ const TOUR_STEPS = [
   ["month", '[data-out="comingUp"]', "Coming up", "Bills, subscriptions and money due in the next 7 days. In a quiet week it names what comes next."],
   ["month", '[data-out="billsCard"]', "Bills and savings", "How many of this month’s bills are paid, and how your emergency fund and goal are building. Tap either to go to it."],
   ["month", '[data-out="envelopes"]', "Month · Budget", "Your three envelopes: Expenditures, Miscellaneous and Savings, each against its share. Open one to tick a bill once it is paid or tap Again to log the same spending. Loans have their own row. Plan a trip or an event at the bottom: from a week before, it shows on Overview."],
-  ["month", '[data-out="payBox"]', "Month · Income", "Your pay and how you are paid, other money that comes in, and bank statements. Import a statement and KeepWise finds your pay, bills and subscriptions."],
+  ["month", '[data-out="payBox"]', "Month · Income", "Your pay and how you are paid, and other money that comes in. At the bottom, Banks & statements: import a statement or connect your bank, and KeepWise finds your pay, bills and subscriptions."],
   ["subs", '[data-out="subsList"]', "Subs", "Everything you pay for on repeat. KeepWise flags what looks unused, and asks about each one a few days before it renews."],
   ["cheaper", "#view .sub-seg", "Subs · Cheaper", "Ways to pay less for things already on your list, with what each one keeps per month and per year."],
   ["codes", "#view .sub-seg", "Subs · Code", "Promo codes you find, kept in one place and ready at checkout."],
@@ -5225,7 +5284,7 @@ function tourStart(){
   if (TOUR.on) return;
   window.__kwTour = true; TOUR.on = true; TOUR.i = 0; TOUR.welcome = UI.welcome; TOUR.saved = UI.welcome != null ? null : S; TOUR.tab = S.tab;
   if (TOUR.saved){ window.__kwTour = false; save(); window.__kwTour = true; S = example(); }   // the person's month is saved first, then set aside
-  UI.welcome = null; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.stmt = null; UI.biz = false; UI.share = false;
+  UI.welcome = null; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.biz = false; UI.share = false;
   appEl.classList.add("touring"); tourShow();
 }
 // On the step about asking, the owl itself is shown, lifted just above the tour card, then put back where it was.
@@ -5306,15 +5365,15 @@ function lockDraw(){
     : `<p class="muted" style="max-width:340px">A passcode cannot be recovered, because it never leaves this phone. You can erase KeepWise on this phone and start again. If you saved a backup file, you can restore it afterwards.</p>`}
     <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px"><button class="btn danger" type="button" data-lock-erase>${LOCK.forgot === 2 ? "Tap again to erase everything" : "Erase KeepWise on this phone"}</button><button class="btn" type="button" data-lock-back>Back</button></div>`; return; }
   el.innerHTML = `<img src="${document.querySelector(".logo").src}" alt="" width="64" height="64" style="border-radius:50%">
-    <h1 style="font-size:1.6rem" id="lock-h">Enter your passcode</h1>
+    <h1 style="font-size:1.6rem" id="lock-h">${LOCK.gate ? "Unlock your banks" : "Enter your passcode"}</h1>
     <div class="lock-dots" data-lock-dots role="status" aria-label="${LOCK.entry.length} of ${c.len} digits entered">${Array.from({length: c.len}, (_, i) => `<i class="${i < LOCK.entry.length ? "on" : ""}"></i>`).join("")}</div>
     <p class="small ${wait ? "err" : "muted"}" data-lock-msg style="min-height:1.4em">${wait ? `Too many tries. Wait ${wait} seconds.` : LOCK.fails ? "That passcode is not right." : ""}</p>
     <div class="lock-pad" role="group" aria-labelledby="lock-h">${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" data-lock-key="${n}">${n}</button>`).join("")}
       ${c.bio ? `<button type="button" class="ghost" data-lock-bio aria-label="Unlock with ${IS_IOS ? "Face ID" : "fingerprint"}">${IS_IOS ? "Face ID" : "Fingerprint"}</button>` : `<span></span>`}<button type="button" data-lock-key="0">0</button><button type="button" class="ghost" data-lock-del aria-label="Delete">Delete</button></div>
-    <button class="link plain small" type="button" data-lock-forgot>Forgot passcode?</button>`;
+    ${LOCK.gate ? `<button class="link small" type="button" data-lock-cancel>Cancel</button>` : `<button class="link plain small" type="button" data-lock-forgot>Forgot passcode?</button>`}`;
 }
 function lockNow(){ if (!LOCK.cfg || LOCK.on) return; LOCK.on = true; LOCK.entry = ""; LOCK.forgot = false; if (isField(document.activeElement)) document.activeElement.blur(); lockDraw(); if (LOCK.cfg.bio) lockBio(); }
-function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; lockDraw(); }
+function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; lockDraw(); if (LOCK.gate){ LOCK.gate = false; UI.banks = true; render(false); } }
 async function lockBio(){ if (LOCK.busy || !LOCK.on) return; LOCK.busy = true; const ok = await bioCheck(); LOCK.busy = false; if (ok && LOCK.on) lockOpen(); }
 async function lockKey(d){
   if (!LOCK.on || LOCK.busy || Date.now() < LOCK.until || LOCK.forgot) return;
@@ -5331,6 +5390,7 @@ $("lockscreen").addEventListener("click", e => { const b = e.target.closest("but
   if (b.dataset.lockKey) lockKey(b.dataset.lockKey);
   else if (b.hasAttribute("data-lock-del")) lockKey("del");
   else if (b.hasAttribute("data-lock-bio")) lockBio();
+  else if (b.hasAttribute("data-lock-cancel")){ LOCK.gate = false; LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; lockDraw(); }
   else if (b.hasAttribute("data-lock-forgot")){ LOCK.forgot = 1; LOCK.rmsg = ""; lockDraw(); }
   else if (b.hasAttribute("data-lock-back")){ LOCK.forgot = false; LOCK.rmsg = ""; lockDraw(); }
   else if (b.hasAttribute("data-lock-google")) lockRecover("", true);
@@ -5393,7 +5453,7 @@ function segStick(){ const m = $("main"), g = m && m.querySelector(".view>.seg.s
   g.classList.toggle("stuck", m.scrollTop > 2 && g.getBoundingClientRect().top - m.getBoundingClientRect().top <= 9); }
 function render(keepScroll){
   const main = $("main"), top = main.scrollTop, back = keepScroll ? innerScrollKeep(document.getElementById("app") || document.body) : () => {};
-  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.find ? V.find() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : UI.settings ? V.settings() : V[S.tab]();
+  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.find ? V.find() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : UI.banks ? V.banks() : UI.settings ? V.settings() : V[S.tab]();
   const askOk = !STMT.result && !UI.pdfLock && !UI.account && UI.welcome == null && !UI.biz; if (!askOk) UI.askOpen = false;
   const sheet = $("asksheet"); if (sheet){ sheet.innerHTML = UI.askOpen ? askSheet() : ""; sheet.hidden = !UI.askOpen; }
   const fab = $("wise"); if (fab) fab.hidden = !askOk || !!UI.askOpen;
@@ -5600,6 +5660,7 @@ function sideNav(){
       ${row("profile", "M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM4 21c0-4 3.6-6 8-6s8 2 8 6", on ? "Edit profile" : "Sign in or create account")}
       ${row("settings", "M4 7h10M18 7h2M4 17h2M10 17h10M16 5v4M8 15v4", "Settings")}
       ${row("security", "M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z", "Security & privacy")}
+      ${row("banks", "M3 9.5 12 4l9 5.5M5 10v7M9.5 10v7M14.5 10v7M19 10v7M3 20h18", "Banks & statements")}
       ${row("data", "M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zM5 7v10c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3", "Your data & backups")}
       ${row("tour", "M4 12a8 8 0 1 0 3-6.2M4 4v4h4", "Replay the tour")}
       ${row("support", "M5 5h14v10H10l-5 4zM9 10h6", "Support")}
@@ -5614,7 +5675,7 @@ const WIDE_TOP = 'h1,.inline,.seg,.space-switch,.note,section.hero,[data-out="mo
 const WIDE_B = {month: '[data-out="comingUp"],.import-card,.bank-card,[data-out="trips"],[data-out="dropCard"],[data-out="historyCard"]', subs: '[data-out="subsSummary"],[data-out="remindBox"],button.btn', plan: '[data-col="b"]', split: '.moments-teaser,section:not(.card)'};
 const WIDE_TAIL = {subs: 'label.field,[data-out="subsList"],details', cheaper: '[data-out="cheapIdeas"],[data-out="cheapList"],details', codes: 'input,section.card,[data-out="codeList"],details'};
 function layoutWide(){
-  const on = WIDE_MQ.matches && !(STMT.result || UI.find || UI.pdfLock || UI.account || UI.welcome != null || UI.plus || UI.inbox || UI.share || UI.stmt || UI.history || UI.settings);
+  const on = WIDE_MQ.matches && !(STMT.result || UI.find || UI.pdfLock || UI.account || UI.welcome != null || UI.plus || UI.inbox || UI.share || UI.stmt || UI.history || UI.banks || UI.settings);
   view.classList.toggle("wide", !!on); if (!on || view.querySelector(":scope > .cols")) return;
   const kids = [...view.children], cols = document.createElement("div"), a = document.createElement("div"), b = document.createElement("div");
   cols.className = "cols"; a.className = "col"; b.className = "col"; cols.append(a, b);
@@ -5745,11 +5806,12 @@ $("find-btn").addEventListener("click", () => { UI.find = !UI.find; UI.findQ = "
 function menuGo(k){
   if (k === "theme"){ $("theme-btn").click(); render(true); return; }
   UI.menu = false; if (k === "close"){ render(true); return; }
-  UI.find = false; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.stmt = null; UI.share = false; UI.settings = false; UI.delOpen = false;
+  UI.find = false; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.settings = false; UI.delOpen = false;
   if (k === "profile"){ UI.account = true; ACC.err = ""; accInit(); render(false); return; }
   if (k === "plus"){ UI.plus = true; render(false); return; }
   if (k === "biz" || k === "personal"){ UI.biz = k === "biz"; S.tab = "month"; save(); render(false); return; }
   if (k === "tour"){ render(false); tourStart(); return; }
+  if (k === "banks"){ UI.biz = false; openBanks(); return; }
   UI.settings = k === "security" || k === "support" || k === "data" || k === "backup" ? k : "settings"; render(false); $("main").scrollTop = 0;
 }
 document.addEventListener("input", e => { const q = e.target.closest && e.target.closest("[data-place-q]"); if (!q) return; clearTimeout(PLACE.t); PLACE.t = setTimeout(() => placeSearch(q), 450); });
@@ -5899,11 +5961,12 @@ document.addEventListener("click", e => { const t = e.target.closest && e.target
   if (PLUS_TAP.n >= 7){ PLUS_TAP.n = 0; S.plusTester = !S.plusTester; save(); render(false); toast(S.plusTester ? "Plus preview is on. Business is ready to try." : "Plus preview is off."); } });
 document.addEventListener("change", e => { const t = e.target;
   if (t.matches && t.matches("[data-biz-taxpct]")){ const v = Math.max(0, Math.min(60, Math.round(numv(t.value) * 10) / 10 || 0)); bizData().taxPct = v; save(); render(true); return; }
+  if (t.matches && t.matches("[data-bank-use]")){ setBankPref(t.dataset.bankUse, {use: t.checked}); save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-name]")){ bizData().name = String(t.value || "").trim().slice(0, 50); save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-milerate]")){ const v = Math.max(0, Math.min(10, Math.round(numv(t.value) * 1000) / 1000 || 0)); bizData().mileRate = v; save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-pick]")){ const i = +t.dataset.bizPick; if (t.checked) BIZ.pick.add(i); else BIZ.pick.delete(i); const btn = document.querySelector("[data-biz-import-add]"); if (btn){ btn.disabled = !BIZ.pick.size; btn.textContent = `Add ${BIZ.pick.size} to Business`; } } });
-$("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
+$("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 // The owl button: tap to ask or log from any tab. Hold it for a moment and it lifts, then it can be dragged anywhere on
 // the screen; where it is left is remembered on this device.
@@ -6012,7 +6075,7 @@ view.addEventListener("keydown", e => {  // Enter in "Add a line" adds it, like 
 view.addEventListener("click", async e => {
   const t = e.target, b = t.closest("button, a");
   if (!b) return;
-  if (b.dataset.go){ UI.settings = false; S.tab = b.dataset.go; UI.history = false; UI.stmt = null; save(); render(false); return; }
+  if (b.dataset.go){ UI.settings = false; S.tab = b.dataset.go; UI.history = false; UI.banks = false; UI.stmt = null; save(); render(false); return; }
   // ---- first-run setup
   if (b.hasAttribute("data-w-start")){ UI.settings = false; DRAFT.cur = S.cur; DRAFT.income = ""; DRAFT.home = ""; DRAFT.pay = "monthly"; UI.welcome = 1; render(false); return; }
   if (b.hasAttribute("data-tour-start")){ tourStart(); return; }
@@ -6117,7 +6180,7 @@ view.addEventListener("click", async e => {
   }
   // ---- statements
   if (b.hasAttribute("data-history")){ UI.history = true; UI.stmt = null; render(false); return; }
-  if (b.hasAttribute("data-history-close")){ UI.history = false; UI.stmt = null; render(false); return; }
+  if (b.hasAttribute("data-history-close")){ UI.history = false; UI.banks = false; UI.stmt = null; render(false); return; }
   if (b.dataset.stmt){ UI.stmt = b.dataset.stmt; UI.history = true; render(false); return; }
   if (b.hasAttribute("data-stmt-back")){ UI.stmt = null; render(false); return; }
   if (b.hasAttribute("data-stmt-print")){ if (IN_APP) statementFile(); else window.print(); return; }
@@ -6166,6 +6229,20 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-bank-add")){ UI.bankAdd = true; BANK.err = ""; render(true); const i = view.querySelector("[data-form=bank] [name=token]"); if (i) i.focus(); return; }
   if (b.hasAttribute("data-bank-cancel")){ UI.bankAdd = false; BANK.err = ""; render(true); return; }
   if (b.hasAttribute("data-bank-refresh")){ if (BANK.busy) return; BANK.busy = true; render(true); await bankFetch(true); BANK.busy = false; render(true); if (!BANK.err) toast("Your bank is up to date."); return; }
+  if (b.hasAttribute("data-banks-open")){ openBanks(); return; }
+  if (b.hasAttribute("data-banks-close")){ UI.banks = false; UI.bankEye = false; UI.bankMenu = null; UI.bankRename = null; UI.bankPick = null; UI.bankHidden = false; render(false); return; }
+  if (b.hasAttribute("data-bank-eye")){ UI.bankEye = !UI.bankEye; render(true); return; }
+  if (b.hasAttribute("data-acct-hidden-toggle")){ UI.bankHidden = !UI.bankHidden; render(true); return; }
+  if (b.hasAttribute("data-bank-pick-done")){ UI.bankPick = null; render(true); toast("Done. Change it any time from an account’s menu or Hidden."); return; }
+  if (b.closest("[data-acct]") && (b.hasAttribute("data-acct-menu") || b.hasAttribute("data-acct-review") || b.hasAttribute("data-acct-rename") || b.hasAttribute("data-acct-rename-cancel") || b.hasAttribute("data-acct-hide") || b.hasAttribute("data-acct-show"))){
+    const key = b.closest("[data-acct]").dataset.acct, a = bankList().find(x => x.key === key); if (!a) return;
+    if (b.hasAttribute("data-acct-menu")){ UI.bankMenu = UI.bankMenu === key ? null : key; UI.bankRename = null; render(true); return; }
+    if (b.hasAttribute("data-acct-rename")){ UI.bankRename = key; render(true); const i = view.querySelector("form[data-form=bankRename] input"); if (i){ i.focus(); i.select(); } return; }
+    if (b.hasAttribute("data-acct-rename-cancel")){ UI.bankRename = null; render(true); return; }
+    if (b.hasAttribute("data-acct-hide")){ setBankPref(key, {use: false}); UI.bankMenu = null; save(); render(true); toast(`${acctName(a)} is hidden. It’s under Hidden at the bottom.`); return; }
+    if (b.hasAttribute("data-acct-show")){ setBankPref(key, {use: true}); save(); render(true); toast(`${acctName(a)} is back.`); return; }
+    if (a.src === "plaid"){ const f = plaidCsv(a.id); if (!f){ toast("No transactions in the last 90 days for this account yet."); return; } await openStatement(f); } else await bankReview(a.id);
+    return; }
   if (b.hasAttribute("data-plaid-add")){ await plaidConnect(); return; }
   if (b.hasAttribute("data-plaid-refresh")){ await plaidRefresh(); return; }
   if (b.dataset.plaidOff){ await plaidRemove(b.dataset.plaidOff); return; }
@@ -6347,7 +6424,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-tell-all") && UI.tell){ const t = UI.tell; if (await tellSend(t.group) && UI.tell === t){ t.groupSent = true; render(true); } return; }
   if (b.hasAttribute("data-tell-send") && UI.tell){ const t = UI.tell, r = t.rows.find(y => y.id === b.closest("[data-tell-id]").dataset.tellId); if (!r) return;
     if (await tellSend(r.text, firstWord(r.name)) && UI.tell === t){ r.sent = true; render(true); } return; }
-  if (b.hasAttribute("data-plus-open")){ UI.plus = true; UI.account = false; UI.inbox = false; UI.biz = false; UI.moments = false; UI.history = false; UI.stmt = null; UI.share = false; render(false); return; }
+  if (b.hasAttribute("data-plus-open")){ UI.plus = true; UI.account = false; UI.inbox = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; render(false); return; }
   if (b.hasAttribute("data-plus-close")){ UI.plus = false; render(false); return; }
   if (b.hasAttribute("data-open-account")){ UI.account = true; UI.inbox = false; if (typeof accInit === "function") accInit(); render(false); return; }
   const sp = b.closest("[data-split]");
@@ -6487,6 +6564,7 @@ view.addEventListener("submit", async e => {
     const u = undoable(), e = {id: uid(), kind: k2, name, amount: r2(amount), date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0), cat: String(fd.get("cat") || "Other")};
     if (BIZ.rcpt && k2 === "out"){ const blob = BIZ.rcpt; BIZ.rcpt = null; try { await rcptPut(e.id, blob); e.rcpt = e.id; } catch(err){ toast("The receipt photo couldn't be kept on this phone."); } }
     bizData().entries.push(e); save(); render(true); toast(k2 === "in" ? `Added ${fmt(amount)} in.` : `Added a ${fmt(amount)} cost.`, u); return; }
+  if (kind === "bankRename"){ const key = UI.bankRename, name = String(fd.get("name") || "").trim().slice(0, 40); if (!key) return; setBankPref(key, {name: name || null}); UI.bankRename = null; UI.bankMenu = null; save(); render(true); toast(name ? "Renamed." : "Name reset."); return; }
   if (kind === "salesStripe" || kind === "salesPaypal"){ if (!SALES.busy) await salesConnect(kind === "salesStripe" ? "stripe" : "paypal", f); return; }
   if (kind === "invoice"){ const bd = bizData(), items = invItemsOf(f).filter(x => x.desc.trim() || numv(x.price) > 0).map(x => ({desc: x.desc.trim().slice(0, 80) || "Item", qty: numv(x.qty) > 0 ? r2(numv(x.qty)) : 1, price: r2(numv(x.price))}));
     const client = String(fd.get("client") || "").trim().slice(0, 60), date = String(fd.get("date") || ""), due = String(fd.get("due") || ""), note = String(fd.get("note") || "").trim().slice(0, 160), ok = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -6640,7 +6718,7 @@ V.pdfLock = () => `<div class="inline" style="justify-content:space-between"><h1
     <p class="muted small">The password is used once, on this phone, to open the file. KeepWise does not save it or send it anywhere.</p></section>`;
 $("restore-in").addEventListener("change", async e => {
   const file = e.target.files[0]; e.target.value = ""; if (!file) return;
-  try { UI.restore = readBackup(await file.text()); UI.history = false; UI.stmt = null; UI.account = false; UI.inbox = false; S.tab = "plan"; render(false);
+  try { UI.restore = readBackup(await file.text()); UI.history = false; UI.banks = false; UI.stmt = null; UI.account = false; UI.inbox = false; S.tab = "plan"; render(false);
     const box = view.querySelector('[data-out="backupBox"]'); if (box) box.scrollIntoView({block: "center"}); }
   catch(err){ toast(err.message || "Couldn’t read that file."); }
 });
