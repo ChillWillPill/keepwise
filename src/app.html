@@ -530,6 +530,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 @media (max-width:430px){.biz-mini[data-form=bizSub]{grid-template-columns:1fr 1fr}.biz-mini[data-form=bizSub] input[name=name]{grid-column:1/-1}}.bank-rows .line .muted{overflow-wrap:anywhere}
 button.card.banks-row{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit}.banks-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--green-soft);color:var(--green);flex:none}.banks-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.banks-txt b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.banks-go{color:var(--muted);flex:none;display:grid}
 .accts{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.acct+.acct{border-top:1px solid var(--line)}.acct .line{padding:10px 12px;gap:10px;border:0}.acct-more{width:34px;height:34px}.acct-more svg{transform:rotate(90deg);transition:transform .15s}.acct-more[aria-expanded=true] svg{transform:rotate(-90deg)}.acct-acts,.acct-rename{display:flex;gap:8px;padding:0 12px 12px;flex-wrap:wrap}.acct-rename input{flex:1;min-width:0}.masked{letter-spacing:2px;color:var(--muted)}.pick-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.pick-list .move-row{display:flex;align-items:center;gap:10px;padding:10px 12px}.pick-list .move-row+.move-row{border-top:1px solid var(--line)}.pay-card .grid2{margin:0}
+.plus-list li.soon .plus-ic{opacity:.55}
 .tell-mails{display:flex;flex-direction:column;gap:8px}.tell-mail{display:flex;gap:8px}.tell-mail input{flex:1;min-width:0}
 .auto-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.auto-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px}.auto-row+.auto-row{border-top:1px solid var(--line)}.auto-row.up .name{color:var(--rust)}.auto-acts{gap:12px;flex:none;flex-wrap:nowrap;align-items:center}.auto-acts .btn{width:auto;min-height:36px;padding:0 14px}@media (max-width:360px){.auto-row{flex-direction:column;align-items:stretch;gap:6px}.auto-acts{justify-content:flex-end}}
 .plaid-part{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.plaid-or{margin:2px 0 -4px}.biz-banks{display:flex;flex-direction:column;gap:8px;margin-top:8px}
@@ -1417,14 +1418,14 @@ V.banks = () => {
   const list = bankList(), used = list.filter(acctInUse), hidden = list.filter(a => !acctInUse(a)), cash = used.filter(a => !acctOwed(a)), owed = used.filter(acctOwed);
   const total = arr => { const t = arr.filter(a => a.cur === S.cur && a.balance != null).reduce((s, a) => s + Math.abs(+a.balance || 0), 0); return UI.bankEye ? fmt(t) : MASK_HTML(); };
   const group = (title, arr, note) => arr.length ? `<section class="card acct-group" data-acct-group="${title.toLowerCase()}"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>${title}</h2><span class="tnum muted">${total(arr)}${note && UI.bankEye ? ` ${note}` : ""}</span></div><div class="accts">${arr.map(acctRow).join("")}</div></section>` : "";
-  return `<div class="inline" style="justify-content:space-between"><h1>Banks &amp; statements</h1><span class="inline" style="gap:8px">${list.length ? `<button class="icon-btn" type="button" data-bank-eye aria-pressed="${!!UI.bankEye}" aria-label="${UI.bankEye ? "Hide balances" : "Show balances"}">${UI.bankEye ? I.eyeOff : I.eye}</button>` : ""}<button class="btn small" type="button" data-banks-close>Done</button></span></div>
+  return `<div class="inline" style="justify-content:space-between"><h1>Banks &amp; statements</h1><span class="inline" style="gap:8px">${list.length ? `<button class="icon-btn" type="button" data-bank-eye aria-pressed="${!!UI.bankEye}" aria-label="${UI.bankEye ? "Hide balances" : "Show balances"}">${UI.bankEye ? I.eye : I.eyeOff}</button>` : ""}<button class="btn small" type="button" data-banks-close>Done</button></span></div>
   ${UI.bankPick ? bankPickCard() : ""}
   ${group("Cash", cash)}${group("Owed", owed, "owed")}
   ${hidden.length ? `<section class="card" data-acct-hidden><button class="link plain" type="button" data-acct-hidden-toggle aria-expanded="${!!UI.bankHidden}">Hidden (${hidden.length}) ${UI.bankHidden ? "▴" : "▾"}</button>
     ${UI.bankHidden ? `<div class="rows bank-rows">${hidden.map(a => `<div class="line" data-acct="${esc(a.key)}"><div style="min-width:0"><div class="name">${esc(acctName(a))}${a.mask ? ` <span class="muted small">••${esc(a.mask)}</span>` : ""}</div><div class="muted small">${esc(a.inst)}</div></div><button class="link small" type="button" data-acct-show>Show</button></div>`).join("")}</div>` : ""}</section>` : ""}
   ${bankCard()}
   ${importCard()}
-  <p class="muted small" style="text-align:center">Everything here stays on this phone.</p>`;
+  <p class="muted small" style="text-align:center">Your bank details and transactions are kept only on this phone, never in backups.${plusOn() && plaidOn() ? " Plaid updates pass through the KeepWise server, which doesn’t store them." : ""}</p>`;
 };
 /* ---- KeepWise Plus: Autopilot ----
    With a bank connected, KeepWise reads the accounts in use by itself, runs the same reading a statement gets, and shows
@@ -2714,11 +2715,12 @@ function bizPreview(){
       <button type="button" class="pill gold plus-tap" style="align-self:flex-start" data-plus-tap>KeepWise Plus</button>
       <h2 id="biz-h">Keep business and personal money apart</h2>
       <ul class="biz-feats">
-        <li><b>A separate Business Account</b> with its own income, costs and subscriptions.</li>
-        <li><b>Tax set-aside</b> that keeps a running total, so tax time is never a surprise.</li>
-        <li><b>Business costs tagged</b>, including the business share of your phone and software.</li>
-        <li><b>Statement import that sorts</b> each transaction into personal or business.</li>
-        <li><b>One-tap export</b> of the year’s business money for your accountant.</li>
+        <li><b>Its own books</b>: income, costs and subscriptions apart from your personal money.</li>
+        <li><b>Live sales</b> from Stripe and PayPal, with fees and refunds counted.</li>
+        <li><b>Invoices</b> you can share as a picture, counted as income once paid.</li>
+        <li><b>Receipt photos</b> read for you, and <b>mileage</b> at the IRS rate.</li>
+        <li><b>Tax set-aside and quarterly estimates</b>, so tax time is never a surprise.</li>
+        <li><b>One-tap export</b> of the year for your accountant.</li>
       </ul>
       ${joined ? `<p><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p>`
         : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`
@@ -3358,7 +3360,7 @@ function planFind(sel){
   UI.expAll = true; for (const [k] of PSEGS){ UI.pseg = k; render(false); el = view.querySelector(sel); if (el) return el; }
   UI.pseg = was; UI.expAll = all; render(false); return null;
 }
-const dataCard = () => `<section class="card" data-your-data><p class="muted small">Your money data stays on this device and is never uploaded. KeepWise gives estimates, not financial advice.</p>
+const dataCard = () => `<section class="card" data-your-data><p class="muted small">${plusOn() ? "Your money data is kept on this device. Plus features that reach your bank, Stripe, PayPal or email pass only what they need through the KeepWise server, which doesn’t store it." : "Your money data stays on this device and is never uploaded."} KeepWise gives estimates, not financial advice.</p>
     <button class="btn" type="button" data-history>Monthly statements</button>
     <button class="btn primary" type="button" data-import-open>Import a bank statement (CSV, PDF or photo)</button>
     ${S.example ? `<button class="btn primary" type="button" data-w-start>Set up my month</button>` : ""}
@@ -3449,6 +3451,7 @@ function momentsPreview(){
     </div>
     <section class="biz-panel card" role="dialog" aria-labelledby="mom-h">
       <span class="pill gold" style="align-self:flex-start">KeepWise Plus</span>
+      <span class="pill grey" style="align-self:flex-start">Coming later</span>
       <h2 id="mom-h">Moments over money</h2>
       <p class="muted">Turn the splits from a wedding, birthday, trip or pilgrimage into a private album that everyone who was there can add to.</p>
       <ul class="biz-feats">
@@ -3577,7 +3580,7 @@ function historySection(c){
 function receiptBlock(){
   if (!UI.receiptInfo) return `<button class="btn receipt-btn" type="button" data-receipt-plus>${I.camera}Add receipt photo <span class="pill gold">Plus</span></button>`;
   const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
-  return `<div class="note receipt-note"><p><b>Receipt photos come with KeepWise Plus.</b> Snap the receipt, attach it to the split, and everyone in it can see what was paid. Plus is coming soon.</p>
+  return `<div class="note receipt-note"><p><b>Receipt photos on splits are coming to KeepWise Plus.</b> Snap the receipt and attach it to the split, so everyone in it can see what was paid. It isn’t available yet.</p>
     <div class="inline">${joined ? `<span class="pill ok">You’re on the waitlist</span>` : signedIn ? `<button class="btn small" type="button" data-acc-plus>Join the Plus waitlist</button>` : `<button class="btn small" type="button" data-open-account>Sign in to join the waitlist</button>`}
     <button class="link small" type="button" data-receipt-close>Not now</button></div></div>`;
 }
@@ -4904,6 +4907,24 @@ function tellGroup(x, kind){
   const sh = shares(x), who = id => id === "me" ? "Me" : tellName(id);
   return `${x.title}${kind === "edit" ? " (updated)" : ""}: ${fmt(x.amount)}, paid by ${x.paidBy === "me" ? "me" : tellName(x.paidBy)}.\n${Object.keys(sh).map(id => `${who(id)}: ${fmt(sh[id])}`).join("\n")}`;
 }
+// The emails speak as KeepWise, to the person reading: what the split is, who paid, and who owes whom.
+const mailMe = () => (typeof ACC !== "undefined" && accName() ? accName().split(/\s+/)[0] : "Your friend");
+function mailPosition(x, id){
+  const S1 = mailMe(), sh = shares(x), mine = sh.me || 0, theirs = sh[id] || 0, nm = pid => pid === "me" ? S1 : pid === id ? "you" : tellName(pid);
+  if (x.method === "borrow"){ const who = Object.keys(x.parts)[0]; return x.paidBy === id ? `You lent ${nm(who)} ${fmt(x.amount)}, so ${nm(who)} owes you ${fmt(x.amount)}.` : who === id ? `${nm(x.paidBy)} lent you ${fmt(x.amount)}, so you owe ${nm(x.paidBy)} ${fmt(x.amount)}.` : `${nm(x.paidBy)} lent ${nm(who)} ${fmt(x.amount)}.`; }
+  if (x.paidBy === id) return mine > 0 ? `You paid. ${S1}'s share is ${fmt(mine)}, so ${S1} owes you ${fmt(mine)}.` : "You paid.";
+  return `${nm(x.paidBy)} paid. Your share is ${fmt(theirs)}, so you owe ${nm(x.paidBy)} ${fmt(theirs)}.`;
+}
+function mailOwesLine(x, id){ const sh = shares(x), mine = sh.me || 0, theirs = sh[id] || 0, S1 = mailMe(), nm = pid => pid === "me" ? S1 : tellName(pid);
+  if (x.method === "borrow"){ const who = Object.keys(x.parts)[0]; return x.paidBy === id ? `${nm(who)} owes you ${fmt(x.amount)}` : who === id ? `you owe ${nm(x.paidBy)} ${fmt(x.amount)}` : "updated"; }
+  return x.paidBy === id ? (mine > 0 ? `${S1} owes you ${fmt(mine)}` : "you paid") : `you owe ${nm(x.paidBy)} ${fmt(theirs)}`; }
+function mailFor(kind, x, id, old){
+  const S1 = mailMe();
+  if (kind === "removed") return {subject: `${old.title}: you're no longer in it`, text: `${S1} removed you from the split ${old.title}. It no longer counts for you.`};
+  if (kind === "delete") return {subject: `${x.title} was deleted`, text: `${S1} deleted the split ${x.title} (${fmt(x.amount)}). It no longer counts for anyone.`};
+  const was = kind === "edit" && old && tellOthers(old).includes(id) ? (shares(old)[id] || 0) : null, is = shares(x)[id] || 0;
+  return {subject: `${x.title}: ${mailOwesLine(x, id)}`, text: `${S1} ${kind === "edit" ? "updated" : "added"} a split: ${x.title}, ${fmt(x.amount)}.\n${mailPosition(x, id)}${was != null && Math.abs(was - is) > 0.005 && x.method !== "borrow" ? `\nBefore, your share was ${fmt(was)}.` : ""}`};
+}
 function tellAbout(kind, x, old){  // kind: add, edit, delete
   if (shared() || !x) { UI.tell = null; return; }
   const now = tellOthers(x), before = old ? tellOthers(old) : [], rows = [];
@@ -4913,9 +4934,9 @@ function tellAbout(kind, x, old){  // kind: add, edit, delete
     else if (kind === "edit"){ const was = before.includes(id) ? (shares(old)[id] || 0) : null, is = shares(x)[id] || 0;
       text = `${x.title} was updated: ${tellLine(x, id)}.${was != null && Math.abs(was - is) > 0.005 && x.method !== "borrow" ? ` Before, your share was ${fmt(was)}.` : ""}`; }
     else text = `${x.title}: ${tellLine(x, id)}.`;
-    rows.push({id, name: tellName(id), text});
+    rows.push({id, name: tellName(id), text, mail: mailFor(kind, x, id, old)});
   });
-  before.filter(id => !now.includes(id)).forEach(id => rows.push({id, name: tellName(id), text: `You are no longer part of ${old.title}. It no longer counts between us.`}));
+  before.filter(id => !now.includes(id)).forEach(id => rows.push({id, name: tellName(id), text: `You are no longer part of ${old.title}. It no longer counts between us.`, mail: mailFor("removed", x, id, old)}));
   if (!rows.length){ UI.tell = null; return; }
   UI.tell = {kind, title: x.title, at: kind === "edit" ? x.id : null, rows, group: now.length >= 2 && x.method !== "borrow" ? tellGroup(x, kind) : null, each: false};
 }
@@ -4924,7 +4945,9 @@ function tellSettled(pid, amount, gotPaid, left){
   const name = tellName(pid);
   UI.tell = {kind: "settle", title: name, at: null, group: null, each: false,
     rows: [{id: pid, name, text: left > 0.005 ? (gotPaid ? `Got your ${fmt(amount)}, thank you. ${fmt(left)} is still to come.` : `I paid you ${fmt(amount)}. I still owe you ${fmt(left)}.`)
-      : gotPaid ? `Got your ${fmt(amount)}, thank you. We are all square.` : `I paid you ${fmt(amount)}. We are all square.`}]};
+      : gotPaid ? `Got your ${fmt(amount)}, thank you. We are all square.` : `I paid you ${fmt(amount)}. We are all square.`,
+      mail: (() => { const S1 = mailMe(); return gotPaid ? {subject: left > 0.005 ? `Payment recorded: you still owe ${S1} ${fmt(left)}` : `Payment recorded: you're all settled with ${S1}`, text: `${S1} recorded your payment of ${fmt(amount)}.\n${left > 0.005 ? `You still owe ${S1} ${fmt(left)}.` : `You're all settled up with ${S1}.`}`}
+        : {subject: left > 0.005 ? `Payment recorded: ${S1} still owes you ${fmt(left)}` : `Payment recorded: you're all settled with ${S1}`, text: `${S1} recorded paying you ${fmt(amount)}.\n${left > 0.005 ? `${S1} still owes you ${fmt(left)}.` : `You're all settled up with ${S1}.`}`}; })()}]};
 }
 const TELL_HEAD = {add: (t, who) => who ? `Let ${who} know about ${t}` : `Let everyone in ${t} know`, edit: (t, who) => `${t} changed. Let ${who || "them"} know`, delete: (t, who) => `${t} was deleted. Let ${who || "them"} know`, settle: t => `Let ${t} know`};
 function tellCard(){
@@ -4938,7 +4961,7 @@ function tellCard(){
     : one ? `<div class="tell-msg">${esc(t.rows[0].text)}${tellFootHtml}</div><div data-tell-id="${esc(t.rows[0].id)}"><button class="btn primary" type="button" data-tell-send>${I.share}${t.rows[0].sent ? "Sent. Send again" : `Send to ${esc(firstWord(t.rows[0].name))}`}</button></div>`
     : `<div class="tell-rows">${t.rows.map(row).join("")}</div>`}
     ${tellEmailPart(t)}
-    <p class="muted small">${plusOn() ? "Share sends it from your own apps. Email is sent by KeepWise for you, and replies come straight to you." : "KeepWise does not message anyone. You send this yourself, from your own apps."}</p></section>`;
+    <p class="muted small">${plusOn() ? "Share sends it from your own apps. Emails are sent by KeepWise from splits@notify.mykeepwise.com, and replies come straight to you." : "KeepWise does not message anyone. You send this yourself, from your own apps."}</p></section>`;
 }
 // KeepWise Plus: one tap emails each person their own message. Only people with an email address, and only when tapped.
 const tellPerson = id => S.people.find(p => p.id === id) || {};
@@ -4948,17 +4971,37 @@ function tellEmailPart(t){
   const add = missing.length ? `<div class="tell-mails">${missing.map(r => `<form data-form="tellMail" data-pid="${esc(r.id)}" class="tell-mail"><input name="email" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc(firstWord(r.name))}’s email" aria-label="${esc(r.name)}’s email"><button class="btn small" type="submit">Save</button></form>`).join("")}</div>` : "";
   if (!n) return `<p class="small" data-tell-noemail><b>Email them with KeepWise Plus.</b> <span class="muted">Add an email and KeepWise sends each person their message.</span></p>${add}`;
   const signed = typeof ACC !== "undefined" && ACC.user;
-  return `${add}<button class="btn" type="button" data-tell-email ${t.emailBusy ? "disabled" : ""}>${signed ? (t.emailBusy ? "Sending…" : t.emailed ? `✓ Emailed. Send again` : `Email ${n === t.rows.length ? (n === 1 ? firstWord(withMail[0].name) : "everyone") : `${n} of ${t.rows.length}`}`) : "Sign in to email them"}</button>`;
+  if (signed && !S.splitMailOff) return `${add}<p class="small tell-auto" data-tell-auto>${t.emailBusy ? "Emailing everyone…" : t.emailed ? `✓ Emailed ${n === t.rows.length ? "everyone" : `${n} of ${t.rows.length}`} automatically.` : `Emails go to everyone with an email, automatically.`} <button class="link plain small" type="button" data-mail-auto="off">Stop automatic emails</button></p>`;
+  return `${add}${signed ? `<p class="small muted" data-mail-off-note>Automatic emails are off. <button class="link small" type="button" data-mail-auto="on">Turn on</button></p>` : ""}<button class="btn" type="button" data-tell-email ${t.emailBusy ? "disabled" : ""}>${signed ? (t.emailBusy ? "Sending…" : t.emailed ? `✓ Emailed. Send again` : `Email ${n === t.rows.length ? (n === 1 ? firstWord(withMail[0].name) : "everyone") : `${n} of ${t.rows.length}`}`) : "Sign in to email them"}</button>`;
 }
-async function tellEmail(){
+// Automatic split emails (Plus, signed in): sent to everyone in the split when it is added, changed, deleted or settled,
+// and a balance summary at the start of each month. They can be turned off on the Tell them card.
+const mailAuto = () => plusOn() && typeof ACC !== "undefined" && !!ACC.user && !S.splitMailOff;
+async function mailSend(title, rows, kind){
+  const items = rows.filter(r => tellPerson(r.id).email).map(r => ({to: tellPerson(r.id).email, name: firstWord(r.name), text: r.mail ? r.mail.text : r.text, subject: r.mail ? r.mail.subject : ""})); if (!items.length) return 0;
+  const idToken = await ACC.user.getIdToken(), d = await salesCall("/split/email", {idToken, from: (accName() || "A friend").split(/\s+/)[0], title, items, kind: kind || "split"});
+  return d.sent || 0;
+}
+async function tellEmail(auto){
   const t = UI.tell; if (!t || t.emailBusy) return;
   if (!(typeof ACC !== "undefined" && ACC.user)){ UI.account = true; ACC.err = ""; accInit(); render(false); return; }
-  const items = t.rows.filter(r => tellPerson(r.id).email).map(r => ({to: tellPerson(r.id).email, name: firstWord(r.name), text: r.text}));
   t.emailBusy = true; render(true);
-  try { const idToken = await ACC.user.getIdToken(), d = await salesCall("/split/email", {idToken, from: (accName() || "A friend").split(/\s+/)[0], title: t.title, items});
-    t.emailed = true; toast(`Emailed ${d.sent} ${d.sent === 1 ? "person" : "people"}.`); }
-  catch(err){ toast(err.message); }
+  try { const n = await mailSend(t.title, t.rows); t.emailed = true; t.autoMailed = !!auto; if (n) toast(auto ? `Emailed everyone in ${t.title}.` : `Emailed ${n} ${n === 1 ? "person" : "people"}.`); }
+  catch(err){ toast(auto ? `Couldn’t email them: ${err.message}` : err.message); }
   t.emailBusy = false; if (UI.tell === t) render(true);
+}
+function mailAfterTell(){ const t = UI.tell; if (t && mailAuto() && t.rows.some(r => tellPerson(r.id).email)) setTimeout(() => { if (UI.tell === t) tellEmail(true); }, 300); }
+// At the start of each month, KeepWise emails you (only you, at your account email) where your splits stand.
+async function mailMonthly(){
+  if (!mailAuto() || shared()) return; const key = currentKey(); if ((S.splitMailMonth || "") === key) return;
+  if (new Date().getDate() > 7){ S.splitMailMonth = key; save(); return; }   // only in the first week: someone joining mid-month starts next month
+  let bal = []; try { bal = myBalances(); } catch(e){ return; }
+  S.splitMailMonth = key; save(); if (!bal.length) return;
+  const month = new Date().toLocaleString("en-US", {month: "long"}), owedMe = bal.filter(x => x.net > 0), iOwe = bal.filter(x => x.net < 0);
+  const sum = l => r2(l.reduce((a, x) => a + Math.abs(x.net), 0));
+  const lines = [owedMe.length ? `Owed to you: ${fmt(sum(owedMe))}` : "", ...owedMe.map(x => `  ${x.p.name} owes you ${fmt(x.net)}`), iOwe.length ? `You owe: ${fmt(sum(iOwe))}` : "", ...iOwe.map(x => `  You owe ${x.p.name} ${fmt(-x.net)}`)].filter(Boolean);
+  try { const idToken = await ACC.user.getIdToken(); await salesCall("/split/email", {idToken, from: (accName() || "").split(/\s+/)[0], title: `${month} balance`, kind: "self", items: [{to: "self", name: (accName() || "there").split(/\s+/)[0], text: lines.join("\n")}]}); }
+  catch(e){ S.splitMailMonth = ""; save(); }
 }
 const firstWord = n => String(n || "").trim().split(/\s+/)[0] || "them";
 async function tellSend(text, name){
@@ -5125,14 +5168,16 @@ const PLUS_PRICE = {monthly: 15, monthlyEarly: 12, earlyMonths: 6, yearly: 180, 
 const usd = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
 const HOME_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>';
 const PIN_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.500-5.700-6.500-10.500a6.500 6.500 0 0 1 13 0C18.500 15.300 12 21 12 21z"/><circle cx="12" cy="10.500" r="2.300"/></svg>';
+// What Plus gives, kept honest: what is built first, then what is still being made, marked so.
 const PLUS_REASONS = () => [
-  [I.users, "Live splits with friends", "Add friends straight from your contacts. Everyone sees the same split on their own phone, and knows the moment it changes."],
-  [I.redo, "Your money on every device", "Sign in once and your month follows you to your phone, tablet and computer. It is backed up to your account and private to you."],
-  [I.work, "Business Account", "Give your work money its own books. Income, costs and subscriptions stay separate from personal, with a running tax set-aside and a year-end export ready for your accountant."],
-  [I.camera, "Receipt photos", "Attach the receipt to a split, so nobody has to ask what was paid."],
-  [I.heart, "Moments", "Turn the splits from a trip or a wedding into a private album worth keeping."],
+  [I.bank, "Connect your bank", "Link a US bank in a few taps through Plaid, with no extra fee. Balances stay hidden until you tap the eye, and you choose which accounts KeepWise uses."],
+  [I.redo, "Since last time", "KeepWise reads the accounts you connected and shows only what changed: a new subscription, a price that went up, a new bill, pay that arrived. Add it or ignore it in one tap."],
+  [I.share, "Split emails, sent for you", "Everyone in a split gets an email from KeepWise when it is added, changed or settled, with who owes whom. At the start of each month you get your own balance summary."],
+  [I.work, "Business Account", "Its own books: invoices you can share, receipt photos read for you, mileage at the IRS rate, quarterly tax estimates, live sales from Stripe and PayPal, and a year-end export for your accountant."],
+  [I.users, "Your money on every device", "Sign in and your month follows you to your phone, tablet and computer, up to date on each.", "Coming next"],
+  [I.heart, "Live splits and Moments", "Friends see the same split on their own phones the moment it changes, and a trip's splits become a private album.", "Coming later"],
 ];
-const PLUS_FREE = ["Your month-end number and plan", "Subscriptions, with reminders before payday", "Ideas to pay less, and your promo codes", "Splits on this phone, with ready-made messages", "Statement import, monthly statements and backups"];
+const PLUS_FREE = ["Your month-end number and plan", "Subscriptions, with reminders before payday", "Ideas to pay less, and your promo codes", "Splits on this phone, with ready-made messages to send", "Statement import, monthly statements and backups", "Connect a US bank through SimpleFIN (paid to SimpleFIN)", "App lock with Face ID or fingerprint"];
 function plusCta(){
   const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
   return joined ? `<p class="plus-joined"><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus opens.</p><button class="link small" type="button" data-acc-plus-off style="align-self:center">Leave the waitlist</button>`
@@ -5143,7 +5188,7 @@ V.plus = () => { const P = PLUS_PRICE, perMonth = P.yearlyEarly / 12;
   return `<div class="inline" style="justify-content:space-between"><span class="pill gold">KeepWise Plus</span><button class="btn small" type="button" data-plus-close>Done</button></div>
   <h1 class="plus-h">Everything free stays free.</h1>
   <p class="plus-sub">Plus adds what one phone cannot do alone.</p>
-  <section class="card"><ul class="plus-list">${PLUS_REASONS().map(([ic, t, d]) => `<li><span class="plus-ic">${ic}</span><div><b>${t}</b><span class="muted small">${d}</span></div></li>`).join("")}</ul></section>
+  <section class="card"><ul class="plus-list">${PLUS_REASONS().map(([ic, t, d, soon]) => `<li${soon ? ' class="soon"' : ""}><span class="plus-ic">${ic}</span><div><b>${t}${soon ? ` <span class="pill grey" style="font-size:.68rem">${soon}</span>` : ""}</b><span class="muted small">${d}</span></div></li>`).join("")}</ul></section>
   <section class="plus-prices" aria-label="Prices">
     <div class="card plus-price best"><span class="pill gold">Early user price</span><span class="label">Yearly</span>
       <div class="plus-amt"><s>${usd(P.yearly)}</s><b>${usd(P.yearlyEarly)}</b><span>a year</span></div>
@@ -5345,10 +5390,10 @@ const TOUR_STEPS = [
   ["codes", "#view .sub-seg", "Subs · Code", "Promo codes you find, kept in one place and ready at checkout."],
   ["plan", '[data-out="expList"]', "Plan · Monthly", "Set it up once: your pay, how it is shared between the envelopes (as percentages or amounts), and the bills that go out every month."],
   ["plan", '[data-out="loans"]', "Plan · Debt & savings", "Loans and cards you are paying back, your emergency fund, a goal to save for, and what you give."],
-  ["split", "#view", "Split", "Split a bill with friends or family. KeepWise works out who owes what and writes the message for you to send."],
+  ["split", "#view", "Split", "Split a bill with friends or family. KeepWise works out who owes what and writes the message for you to send. With KeepWise Plus, it emails everyone in the split for you."],
   ["month", "#find-btn", "Search", "Type a few letters to find any part of the app, or one of your bills, subscriptions or loans, and go straight to it."],
   ["month", "#bell", "Notifications", "What needs a look: money to confirm, charges this week and subscriptions that look unused."],
-  ["month", "#acct-btn", "Menu", "Your profile, your data and statement import, backups, the app lock, appearance and support."],
+  ["month", "#acct-btn", "Menu", "Your profile, Banks & statements, your data and backups, the app lock, appearance, KeepWise Plus and support."],
 ];
 const tourSeen = () => { try { return !!localStorage.getItem(TOUR_KEY); } catch(e){ return true; } };
 function tourStart(){
@@ -5444,7 +5489,7 @@ function lockDraw(){
     ${LOCK.gate ? `<button class="link small" type="button" data-lock-cancel>Cancel</button>` : `<button class="link plain small" type="button" data-lock-forgot>Forgot passcode?</button>`}`;
 }
 function lockNow(){ if (!LOCK.cfg || LOCK.on) return; LOCK.on = true; LOCK.entry = ""; LOCK.forgot = false; if (isField(document.activeElement)) document.activeElement.blur(); lockDraw(); if (LOCK.cfg.bio) lockBio(); }
-function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; lockDraw(); if (LOCK.gate){ LOCK.gate = false; UI.banks = true; render(false); } }
+function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; LOCK.openedAt = Date.now(); LOCK.hiddenAt = 0; lockDraw(); if (LOCK.gate){ LOCK.gate = false; UI.banks = true; render(false); } }
 async function lockBio(){ if (LOCK.busy || !LOCK.on) return; LOCK.busy = true; const ok = await bioCheck(); LOCK.busy = false; if (ok && LOCK.on) lockOpen(); }
 async function lockKey(d){
   if (!LOCK.on || LOCK.busy || Date.now() < LOCK.until || LOCK.forgot) return;
@@ -5489,7 +5534,11 @@ async function lockRecover(pw, viaGoogle){
 }
 $("lockscreen").addEventListener("submit", e => { const f = e.target.closest("[data-lock-recover]"); if (!f) return; e.preventDefault(); const pw = String(new FormData(f).get("pw") || ""); if (pw) lockRecover(pw, false); });
 document.addEventListener("keydown", e => { if (!LOCK.on || LOCK.forgot || isField(e.target)) return; if (/^\d$/.test(e.key)) lockKey(e.key); else if (e.key === "Backspace") lockKey("del"); });
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") LOCK.hiddenAt = Date.now(); else if (LOCK.cfg && LOCK.hiddenAt && Date.now() - LOCK.hiddenAt >= LOCK_AWAY) lockNow(); });
+// Away for a minute or more locks it again. The time away is used once: iPhones can report "visible" twice on the way
+// back (once on return, again when the Face ID sheet closes), and that second report must not lock it a second time.
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden"){ if (!LOCK.on && !LOCK.busy) LOCK.hiddenAt = Date.now(); return; }
+  const away = LOCK.hiddenAt ? Date.now() - LOCK.hiddenAt : 0; LOCK.hiddenAt = 0;
+  if (LOCK.cfg && away >= LOCK_AWAY && Date.now() - (LOCK.openedAt || 0) > 5000) lockNow(); });
 // ---- the setting, on Plan ----
 OUT.lockBox = () => {
   if (!lockCan()) return "";
@@ -5602,6 +5651,7 @@ function accInit(){
           if (u) await accLoadProfile();
           S.acctOn = !!u; if (u && (!LOCK.on || !S.acct)) S.acct = {uid: u.uid, email: u.email || "", prov: (u.providerData && u.providerData[0] && u.providerData[0].providerId) || "password"};
           save(); ACC.state = "ready"; renderAcctBtn();
+          if (u) setTimeout(mailMonthly, 2500);   // Plus: this month's balance emails, once a month
           if (UI.account) render(true);
           if (first){ first = false; done(); }
         });
@@ -5690,7 +5740,7 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")
   <div data-out="lockBox">${OUT.lockBox()}</div>
   <section class="card" data-set-privacy><h2>Privacy</h2>
     ${setRow("Hide the big number", "The amount on Month stays hidden until you tap the eye.", setToggle(S.hideBal, "data-hide-bal", "Hide the big number"), "data-set-hidebal")}
-    ${setRow("Where your money data lives", "On this phone only. It is never uploaded or sold, and KeepWise shows no ads.", "")}
+    ${setRow("Where your money data lives", plusOn() ? "On this phone. Plus features pass only what they need through the KeepWise server, which doesn’t store it. Never sold, and no ads." : "On this phone only. It is never uploaded or sold, and KeepWise shows no ads.", "")}
     ${setRow("If you sign in", "Only your profile is kept online: your name, email and the choices you make there.", "")}
     ${pushCan() ? setRow("If you turn on notifications", "Only a push address, your time zone and the dates of your nudges are kept online, so the nudge can reach you.", "") : ""}
     <p class="small legal-links"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`
@@ -6498,6 +6548,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-remind-hide")){ S.remind = {on: false, hide: true}; save(); render(true); return; }
   if (b.hasAttribute("data-tell-close")){ UI.tell = null; render(true); return; }
   if (b.hasAttribute("data-tell-email")){ await tellEmail(); return; }
+  if (b.dataset.mailAuto){ S.splitMailOff = b.dataset.mailAuto === "off"; save(); render(true); toast(S.splitMailOff ? "Automatic emails are off. You can still send them yourself." : "Automatic emails are on."); if (!S.splitMailOff) mailAfterTell(); return; }
   if (b.hasAttribute("data-tell-each")){ if (UI.tell) UI.tell.each = true; render(true); return; }
   if (b.hasAttribute("data-tell-all") && UI.tell){ const t = UI.tell; if (await tellSend(t.group) && UI.tell === t){ t.groupSent = true; render(true); } return; }
   if (b.hasAttribute("data-tell-send") && UI.tell){ const t = UI.tell, r = t.rows.find(y => y.id === b.closest("[data-tell-id]").dataset.tellId); if (!r) return;
@@ -6510,7 +6561,7 @@ view.addEventListener("click", async e => {
     if (shared()){ const x = SH.splits.find(y => y.id === sp.dataset.split); if (!x) return;
       await shWrite(() => SH.db.doc("splits/" + x.id).update({deleted:true, updatedBy:SH.me, updatedAt:Date.now()}), `Deleted ${x.title}. Your circle was notified.`); return; }
     const x = S.splits.find(y => y.id === sp.dataset.split), u = undoable();
-    S.splits = S.splits.filter(y => y !== x); tellAbout("delete", x); save(); render(true); toast(`Deleted ${x ? x.title : "split"}.`, () => { UI.tell = null; u(); }); return; }
+    S.splits = S.splits.filter(y => y !== x); tellAbout("delete", x); save(); render(true); mailAfterTell(); toast(`Deleted ${x ? x.title : "split"}.`, () => { UI.tell = null; u(); }); return; }
   const st = b.closest("[data-settle]");
   if (st && b.hasAttribute("data-settle-btn")){ UI.settle = st.dataset.settle; render(true); const i = view.querySelector('form[data-form="settle"] input'); if (i){ i.focus(); i.select(); } return; }
   if (b.hasAttribute("data-settle-cancel")){ UI.settle = null; render(true); return; }
@@ -6631,7 +6682,7 @@ view.addEventListener("submit", async e => {
       await shWrite(() => SH.db.collection("payments").doc(uid() + uid()).set({...rec, amount: amt, date: isoDaysAgo(0), createdBy: me, createdAt: Date.now()}), (got ? `Recorded ${fmt(amt)} from ${bal.p.name}.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}.`) + rest + counted + (got ? " Undo it in History." : ` ${bal.p.name} was notified.`)); render(true); return; }
     if (got) S.settlements.push({id: sid, from: pid, to: "me", amount: amt, date: isoDaysAgo(0)});
     else S.settlements.push({id: sid, from: "me", to: pid, amount: amt, date: isoDaysAgo(0)});
-    tellSettled(pid, amt, got, left); save(); render(true); toast((got ? `Recorded ${fmt(amt)} from ${bal.p.name}.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}.`) + rest + counted + " Undo it in History."); return; }
+    tellSettled(pid, amt, got, left); save(); render(true); mailAfterTell(); toast((got ? `Recorded ${fmt(amt)} from ${bal.p.name}.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}.`) + rest + counted + " Undo it in History."); return; }
   if (kind === "tripAdd"){ const t = tripList().find(x => x.id === f.closest("[data-trip]").dataset.trip); if (!t) return; const lines = parseSpend(fd.get("q"), t.cur);
     if (!lines.length){ toast("Type what you spent, like “uber 20”."); return; }
     const bad = await convertLines(lines); if (bad){ toast(FX_FAIL(bad)); return; }
@@ -6762,7 +6813,7 @@ view.addEventListener("submit", async e => {
     const before = old ? JSON.parse(JSON.stringify(old)) : null, made = old || {id:uid(), ...rec, date:isoDaysAgo(0)};
     if (old) Object.assign(old, rec); else S.splits.push(made);
     tellAbout(old ? "edit" : "add", made, before);
-    splitDraft = null; splitErr = ""; save(); render(!!old); if (old) showSplitCard(old.id);
+    splitDraft = null; splitErr = ""; save(); render(!!old); if (old) showSplitCard(old.id); mailAfterTell();
     const tc = document.querySelector("[data-tell]"), sc = $("main");
     if (tc && !old) tc.scrollIntoView({block: "nearest"});
     else if (tc && sc){  // show as much of the prompt as fits without pushing the edited split off the top

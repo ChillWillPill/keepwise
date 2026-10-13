@@ -17,12 +17,12 @@
 </header>
 
 <h1>Privacy Policy</h1>
-<p class="meta">Effective date: 12 October 2026</p>
+<p class="meta">Effective date: 13 October 2026</p>
 
 <section class="summary">
   <h2>Summary</h2>
   <ul>
-    <li>Your financial information, including budgets, subscriptions, amounts owed and bank statements, is processed and stored only on your own device. It is never sent to us.</li>
+    <li>Your financial information, including budgets, subscriptions, amounts owed and bank statements, is processed and stored only on your own device. It is not sent to us. The only exceptions are KeepWise Plus features you choose to use that have to reach your bank, Stripe, PayPal or email: then only what that feature needs passes through our server, which does not store it.</li>
     <li>You can use KeepWise without an account. If you choose to create one, we store the profile details you give us, such as your name, email address and date of birth.</li>
     <li>We send you marketing emails only if you opt in, and you can unsubscribe at any time.</li>
     <li>We do not use analytics, advertising, tracking pixels or advertising identifiers.</li>
@@ -39,7 +39,7 @@
 <h2>2. How the Service works</h2>
 <p>The Service has two separate parts.</p>
 <ul>
-  <li><strong>Your financial information stays on your device.</strong> Calculations, budgeting, subscription detection, statement analysis and the answers given by the "Ask KeepWise" feature are performed by code running on your device. The information you enter or import for these features is saved in your browser's local storage or, in the Android app, in the app's private storage on your device. It is not transmitted to us, and we have no means of viewing, accessing or recovering it.</li>
+  <li><strong>Your financial information stays on your device.</strong> If you use KeepWise Plus to connect a bank, read sales from Stripe or PayPal, or email the people in a split, the information that feature needs passes through the KeepWise server on its way, as described in section 8; it is not stored there. Calculations, budgeting, subscription detection, statement analysis and the answers given by the "Ask KeepWise" feature are performed by code running on your device. The information you enter or import for these features is saved in your browser's local storage or, in the Android app, in the app's private storage on your device. It is not transmitted to us, and we have no means of viewing, accessing or recovering it.</li>
   <li><strong>Your account is stored online.</strong> If you create an account, the profile details described in section 5 are stored with our service provider, Google Firebase, so that you can sign in and so that we can provide account features. Your financial information is not part of your account.</li>
 </ul>
 
@@ -55,7 +55,7 @@
   <li>regular giving you add, with who it goes to, a cause, the amount and how often. KeepWise does not collect, process or send donations, and it does not recommend organisations;</li>
   <li>loans, credit cards and other debts you add, including the type, a name you give it, the payment, the amount and the number of installments left, the end date and any yearly card fee. KeepWise never asks for a card number or an account number, and you should not enter one;</li>
   <li>promotional codes and cheaper alternatives you save;</li>
-  <li>names of people you split costs with, and the amounts owed between you, and any groups you save;</li>
+  <li>names of people you split costs with, any email addresses you save for them, the amounts owed between you, and any groups you save;</li>
   <li>if you choose to let KeepWise search your contacts, the names, phone numbers and email addresses of those contacts, as described in section 8;</li>
   <li>a summary of any bank statement you import, as described in section 4;</li>
   <li>monthly statements that KeepWise writes from your plan, one for each month, showing what came in, what went out, what you kept, your subscriptions, the cheaper swaps you used, the amounts you set aside and a count of your splits and settled payments;</li>
@@ -146,7 +146,7 @@
 <p>If you use the Business space in KeepWise Plus, you can connect your own Stripe or PayPal account so your sales come in by themselves. For Stripe you create a restricted key that can only read; for PayPal you create your own app and copy its Client ID and Secret. These keys are stored only on your device, under a separate key that is never included in backups. Each sync sends the key and the dates to read through the KeepWise server to Stripe or PayPal, and hands the answer straight back; the server does not store or log the keys or your sales. KeepWise only reads: it cannot charge, refund or move money. From each sale KeepWise keeps the date, the description or the payer's name, the amount and the fee, as business entries on your device. Disconnecting removes the key from your device; to end access completely, also delete the key or app in your Stripe or PayPal account.</p>
 
 <h3>KeepWise Plus: emailing the people in a split</h3>
-<p>If you use KeepWise Plus and are signed in, you can tap a button to have KeepWise email the people in a split their part of it. Nothing is sent unless you tap it. For each person you send to, the KeepWise server passes their first name, the email address you saved for them, the split's title and the short message shown on your screen to Resend, the service that delivers the email. The email comes from splits@notify.mykeepwise.com, shows your first name, and replies go to your account's email address. KeepWise does not keep these addresses or messages on its server and never sends the people in your splits anything else. The email addresses you save for people stay with your other data on your device.</p>
+<p>If you use KeepWise Plus and are signed in, KeepWise emails the people in a split their part of it when you add, change, delete or settle a split, and, in the first week of each month, emails you (only you, at your account email) a summary of who owes whom. Only people you have saved an email address for are emailed, and you can turn automatic emails off at any time on the Tell them card, or send them yourself with a tap. For each person emailed, the KeepWise server passes their first name, the email address you saved for them, the split's title and the short message shown on your screen to Resend, the service that delivers the email. The email comes from splits@notify.mykeepwise.com, shows your first name, and replies go to your account's email address. KeepWise does not keep these addresses or messages on its server and sends the people in your splits nothing else. Anyone who doesn't want these emails can reply and ask you to remove their address. The email addresses you save for people stay with your other data on your device.</p>
 
 <h3>Finding a place on the map</h3>
 <p>When you plan a trip or an event you can add where it is. If you type at least three letters in that box, the words you type are sent to Photon, a free map search run by komoot that uses OpenStreetMap data, so it can suggest matching places. Nothing else is sent: not your name, your amounts, your dates or anything else in KeepWise. If you pick a suggestion, its name and map position are saved with the trip on your device. You can also leave the box empty, or keep the words you typed without picking a suggestion. Tapping a saved place opens it on the OpenStreetMap website.</p>

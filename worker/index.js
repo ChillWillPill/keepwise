@@ -115,27 +115,48 @@ async function firebaseUser(idToken){
 }
 const escH = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const EMAIL_RE = /^[^\s@<>",;]{1,64}@[^\s@<>",;]{1,190}\.[A-Za-z]{2,24}$/;
-function splitMail(from, name, text, title){
+function splitMail(from, name, text, subject){
+  const html = `<!doctype html><html><body style="margin:0;background:#f6f1e7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c2420">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f1e7;padding:24px 12px"><tr><td align="center">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:18px;padding:28px">
+  <tr><td style="font-size:13px;font-weight:700;letter-spacing:.04em;color:#1b6843;text-transform:uppercase">KeepWise</td></tr>
+  <tr><td style="padding-top:14px;font-size:15px;color:#4d564e">Hi ${escH(name)},</td></tr>
+  <tr><td style="padding:10px 0 4px;font-size:20px;font-weight:700;line-height:1.35">${escH(subject)}</td></tr>
+  <tr><td style="padding:14px 16px;background:#f2ede2;border-radius:12px;font-size:16px;line-height:1.6;white-space:pre-wrap">${escH(text)}</td></tr>
+  <tr><td style="padding-top:16px;font-size:14px;color:#4d564e">Questions about it? Reply to this email to reach ${escH(from)}.</td></tr>
+  <tr><td style="padding-top:22px"><a href="https://mykeepwise.com/?utm_source=split_email" style="display:inline-block;background:#1b6843;color:#fff;text-decoration:none;font-weight:600;padding:12px 18px;border-radius:12px">Split bills free with KeepWise</a></td></tr>
+  <tr><td style="padding-top:22px;font-size:12px;color:#8a8f87">You got this because ${escH(from)} included you in a split in KeepWise. KeepWise doesn't keep your address. Don't want these? Reply and ask ${escH(from)} to remove your email.</td></tr>
+  </table></td></tr></table></body></html>`;
+  return {html, text: `KeepWise\n\nHi ${name},\n\n${subject}\n\n${text}\n\nQuestions about it? Reply to this email to reach ${from}.\n\nSplit bills free with KeepWise: https://mykeepwise.com\n\nYou got this because ${from} included you in a split in KeepWise. KeepWise doesn't keep your address. Don't want these? Reply and ask ${from} to remove your email.`};
+}
+function selfMail(name, title, text){
   const html = `<!doctype html><html><body style="margin:0;background:#f6f1e7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c2420">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f1e7;padding:24px 12px"><tr><td align="center">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:18px;padding:28px">
   <tr><td style="font-size:15px;color:#4d564e">Hi ${escH(name)},</td></tr>
-  <tr><td style="padding:12px 0 4px;font-size:20px;font-weight:700;line-height:1.35">${escH(from)} shared a split with you: ${escH(title)}</td></tr>
-  <tr><td style="padding:14px 16px;margin-top:12px;background:#f2ede2;border-radius:12px;font-size:16px;line-height:1.5">${escH(text)}</td></tr>
-  <tr><td style="padding-top:16px;font-size:14px;color:#4d564e">Reply to this email to answer ${escH(from)} directly.</td></tr>
-  <tr><td style="padding-top:22px"><a href="https://mykeepwise.com/?utm_source=split_email" style="display:inline-block;background:#1b6843;color:#fff;text-decoration:none;font-weight:600;padding:12px 18px;border-radius:12px">Split bills free with KeepWise</a></td></tr>
-  <tr><td style="padding-top:22px;font-size:12px;color:#8a8f87">Sent by KeepWise because ${escH(from)} added you to a split. KeepWise doesn't keep your address or send you anything else.</td></tr>
+  <tr><td style="padding:12px 0 8px;font-size:20px;font-weight:700">Your ${escH(title)}</td></tr>
+  <tr><td style="padding:14px 16px;background:#f2ede2;border-radius:12px;font-size:16px;line-height:1.7;white-space:pre-wrap">${escH(text)}</td></tr>
+  <tr><td style="padding-top:22px"><a href="https://mykeepwise.com/?utm_source=balance_email" style="display:inline-block;background:#1b6843;color:#fff;text-decoration:none;font-weight:600;padding:12px 18px;border-radius:12px">Open KeepWise</a></td></tr>
+  <tr><td style="padding-top:22px;font-size:12px;color:#8a8f87">You get this once a month because automatic split emails are on in KeepWise Plus. Turn them off on the Tell them card in Split.</td></tr>
   </table></td></tr></table></body></html>`;
-  return {html, text: `Hi ${name},\n\n${from} shared a split with you: ${title}\n\n${text}\n\nReply to this email to answer ${from} directly.\n\nSplit bills free with KeepWise: https://mykeepwise.com\n\nSent by KeepWise because ${from} added you to a split. KeepWise doesn't keep your address or send you anything else.`};
+  return {html, text: `Hi ${name},\n\nYour ${title}\n\n${text}\n\nOpen KeepWise: https://mykeepwise.com\n\nYou get this once a month because automatic split emails are on in KeepWise Plus. Turn them off on the Tell them card in Split.`};
 }
 async function splitEmail(origin, env, b){
   if (!env.RESEND_API_KEY) return fail(origin, 503, "Email isn't switched on yet.");
   let user; try { user = await firebaseUser(b.idToken); } catch(e){ return fail(origin, 401, "Sign in again to send emails."); }
   if (!user.email || !user.email_verified) return fail(origin, 403, "Verify your account email first, then try again.");
   const from = String(b.from || "").replace(/[\r\n<>"]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40) || "A friend", title = String(b.title || "").replace(/[\r\n]/g, " ").trim().slice(0, 60) || "a split";
-  const items = (Array.isArray(b.items) ? b.items : []).slice(0, 10).map(x => ({to: String(x.to || "").trim(), name: String(x.name || "").replace(/[\r\n<>]/g, " ").trim().slice(0, 40) || "there", text: String(x.text || "").trim().slice(0, 400)})).filter(x => EMAIL_RE.test(x.to) && x.text);
+  if (b.kind === "self"){   // the monthly summary goes only to the signed-in person's own address
+    const x = (Array.isArray(b.items) && b.items[0]) || {}, name = String(x.name || "").replace(/[\r\n<>"]/g, " ").trim().slice(0, 40) || "there", text = String(x.text || "").trim().slice(0, 3000);
+    if (!text) return fail(origin, 400, "Nothing to send.");
+    const m = selfMail(name, title, text);
+    const r = await fetch("https://api.resend.com/emails", {method: "POST", headers: {Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json"}, body: JSON.stringify({from: "KeepWise <hello@notify.mykeepwise.com>", to: [user.email], subject: `Your ${title} in KeepWise`, html: m.html, text: m.text})});
+    if (!r.ok) return fail(origin, 502, "The email service didn't answer.");
+    return reply(origin, 200, {sent: 1});
+  }
+  const items = (Array.isArray(b.items) ? b.items : []).slice(0, 10).map(x => ({to: String(x.to || "").trim(), name: String(x.name || "").replace(/[\r\n<>]/g, " ").trim().slice(0, 40) || "there", text: String(x.text || "").trim().slice(0, 600), subject: String(x.subject || "").replace(/[\r\n]/g, " ").trim().slice(0, 100)})).filter(x => EMAIL_RE.test(x.to) && x.text);
   if (!items.length) return fail(origin, 400, "Nobody in this split has an email address yet.");
-  const batch = items.map(x => { const m = splitMail(from, x.name, x.text, title); return {from: `${from} via KeepWise <splits@notify.mykeepwise.com>`, to: [x.to], reply_to: user.email, subject: `${from} shared a split with you: ${title}`, html: m.html, text: m.text}; });
+  const batch = items.map(x => { const subject = x.subject || `${title}: an update from ${from}`, m = splitMail(from, x.name, x.text, subject); return {from: "KeepWise <splits@notify.mykeepwise.com>", to: [x.to], reply_to: user.email, subject, html: m.html, text: m.text}; });
   const r = await fetch("https://api.resend.com/emails/batch", {method: "POST", headers: {Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json"}, body: JSON.stringify(batch)});
   if (!r.ok){ const d = await r.json().catch(() => ({})); return fail(origin, 502, r.status === 429 ? "Too many emails today. Try again tomorrow." : (d.message || "The email service didn't answer.")); }
   return reply(origin, 200, {sent: items.length});

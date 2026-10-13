@@ -999,7 +999,7 @@ async def receipt_photo_is_a_plus_feature(ctx):
     await pg.fill("[data-d=title]", "Dinner")
     await b.click(); await pg.wait_for_timeout(150)
     note = await text(pg, ".receipt-note")
-    assert "Receipt photos come with KeepWise Plus" in note and "Sign in to join the waitlist" in note
+    assert "Receipt photos on splits are coming to KeepWise Plus" in note and "isn’t available yet" in note and "Sign in to join the waitlist" in note
     assert await pg.input_value("[data-d=title]") == "Dinner", "typed split kept"
     await pg.click("[data-receipt-close]"); await pg.wait_for_timeout(150)
     assert await pg.locator(".receipt-note").count() == 0 and await pg.locator("[data-receipt-plus]").count() == 1
@@ -2337,29 +2337,38 @@ async def plus_emails_the_people_in_a_split(ctx):
     await biz_on(pg); await pg.click("[data-space=personal]"); await tab(pg, "split")
     names = await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1')).people.filter(p => p.id !== 'me' && !p.archived).map(p => [p.id, p.name])")
     (a, an), (b, bn) = names[0], names[1]
-    await pg.click("[data-new-split]"); await pg.wait_for_timeout(100); f = pg.locator("form[data-form=split]")
-    await f.locator("[data-d=title]").fill("Pizza night"); await f.locator("[data-d=amount]").fill("60")
-    for pid in (a, b):
-        await pg.click("[data-part-search]"); await pg.wait_for_timeout(60); await pg.click(f"[data-part-add='{pid}']"); await pg.wait_for_timeout(60)
-    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
-    card = await text(pg, "[data-tell]"); assert "Email them with KeepWise Plus" in card and "Email is sent by KeepWise" in card, card
-    await pg.fill(f"form[data-form=tellMail][data-pid='{a}'] input", "sam@example.com"); await pg.press(f"form[data-form=tellMail][data-pid='{a}'] input", "Enter"); await pg.wait_for_timeout(150)
-    assert [p.get("email") for p in (await state(pg))["people"] if p["id"] == a] == ["sam@example.com"]
-    btn = pg.locator("[data-tell-email]"); assert "Sign in to email them" in await btn.inner_text()
-    await btn.click(); await pg.wait_for_timeout(300); assert await pg.locator("[data-acc-google]").count() == 1, "it asks to sign in first"
-    await pg.click("[data-acc-google]"); await pg.wait_for_timeout(600)
-    await tab(pg, "split"); await pg.wait_for_timeout(200)
-    if not await pg.locator("[data-tell-email]").count():   # the card may have closed on leaving: make a change to bring it back
+    async def new_split(title):
         await pg.click("[data-new-split]"); await pg.wait_for_timeout(100); f = pg.locator("form[data-form=split]")
-        await f.locator("[data-d=title]").fill("Pizza night 2"); await f.locator("[data-d=amount]").fill("60")
+        await f.locator("[data-d=title]").fill(title); await f.locator("[data-d=amount]").fill("60")
         for pid in (a, b):
             await pg.click("[data-part-search]"); await pg.wait_for_timeout(60); await pg.click(f"[data-part-add='{pid}']"); await pg.wait_for_timeout(60)
-        await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+        await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(700)
+    await new_split("Pizza night")
+    card = await text(pg, "[data-tell]"); assert "Email them with KeepWise Plus" in card and "splits@notify.mykeepwise.com" in card, card
+    await pg.fill(f"form[data-form=tellMail][data-pid='{a}'] input", "sam@example.com"); await pg.press(f"form[data-form=tellMail][data-pid='{a}'] input", "Enter"); await pg.wait_for_timeout(150)
+    assert [p.get("email") for p in (await state(pg))["people"] if p["id"] == a] == ["sam@example.com"]
+    btn = pg.locator("[data-tell-email]"); assert "Sign in to email them" in await btn.inner_text() and not sent, "nothing goes out before signing in"
+    await btn.click(); await pg.wait_for_timeout(300); assert await pg.locator("[data-acc-google]").count() == 1, "it asks to sign in first"
+    await pg.click("[data-acc-google]"); await pg.wait_for_timeout(3200)
+    await tab(pg, "split"); await pg.wait_for_timeout(200)
+    # signed in: a new split emails everyone in it by itself
+    await new_split("Pizza night 2")
+    assert len(sent) == 1 and sent[0]["kind"] == "split" and sent[0]["title"] == "Pizza night 2" and sent[0]["idToken"].startswith("mock-id-token-"), sent
+    it = sent[0]["items"]; assert len(it) == 1 and it[0]["to"] == "sam@example.com" and "Gina added a split: Pizza night 2, $60." in it[0]["text"] and "Gina paid. Your share is $20, so you owe Gina $20." in it[0]["text"] and it[0]["subject"] == "Pizza night 2: you owe Gina $20" and "I paid" not in it[0]["text"], it
+    assert "Emailed 1 of 2 automatically" in await text(pg, "[data-tell]") and "Emailed everyone in Pizza night 2" in await pg.inner_text("#toast")
+    # it can be turned off; then a tap sends it
+    await pg.click("[data-mail-auto=off]"); await pg.wait_for_timeout(150); assert (await state(pg)).get("splitMailOff") is True
+    await new_split("Pizza night 3"); assert len(sent) == 1, "no automatic email when it is off"
     btn = pg.locator("[data-tell-email]"); assert "Email 1 of 2" in await btn.inner_text(), await btn.inner_text()
-    await btn.click(); await pg.wait_for_timeout(400)
-    assert "Emailed 1 person" in await pg.inner_text("#toast") and "Emailed. Send again" in await btn.inner_text()
-    body = sent[-1]; assert body["idToken"].startswith("mock-id-token-") and body["title"].startswith("Pizza night") and len(body["items"]) == 1
-    it = body["items"][0]; assert it["to"] == "sam@example.com" and "I paid $60" in it["text"] and "Your share is $20" in it["text"], it
+    await btn.click(); await pg.wait_for_timeout(400); assert len(sent) == 2 and "Emailed 1 person" in await pg.inner_text("#toast")
+    await pg.click("[data-tell-close]"); await pg.click("[data-new-split]") if False else None
+    # the start of a month: one balance email to you, about all of it
+    await pg.evaluate("(() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.splitMailOff = false; s.splitMailMonth = ''; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); })()")
+    nxt = (datetime.date.today().replace(day=1) + datetime.timedelta(days=32)).replace(day=2)
+    await pg.clock.set_fixed_time(datetime.datetime(nxt.year, nxt.month, nxt.day, 10, 0)); await pg.reload(); await pg.wait_for_timeout(4000)
+    summ = [x for x in sent if x["kind"] == "self"]; assert len(summ) == 1, sent
+    month = nxt.strftime("%B"); s0 = summ[0]; assert s0["title"] == f"{month} balance" and len(s0["items"]) == 1 and "Owed to you:" in s0["items"][0]["text"] and f"{an} owes you" in s0["items"][0]["text"], s0
+    await pg.reload(); await pg.wait_for_timeout(3500); assert len([x for x in sent if x["kind"] == "self"]) == 1, "once a month"
     assert not pg.errors, pg.errors
 
 @test
@@ -2905,6 +2914,8 @@ async def app_lock_with_passcode_and_biometrics(ctx):
     await pg.evaluate("window.__vis = 'hidden'; document.dispatchEvent(new Event('visibilitychange'))")
     await pg.evaluate("const n = Date.now; Date.now = () => n() + 61000; window.__vis = 'visible'; document.dispatchEvent(new Event('visibilitychange')); Date.now = n"); await pg.wait_for_timeout(150)
     assert await locked(); await tap("2468"); assert not await locked()
+    await pg.evaluate("window.__vis = 'visible'; document.dispatchEvent(new Event('visibilitychange'))"); await pg.wait_for_timeout(150)
+    assert not await locked(), "a second 'visible' on the way back (as iPhones send after Face ID) does not lock it again"
     # Face ID or fingerprint: turn it on, and it unlocks without typing; the passcode still works when it fails
     await menu_to(pg, "security"); await pg.click("[data-lock-bio-toggle]"); await pg.wait_for_timeout(300)
     assert await pg.evaluate("window.__bio.made") == 1 and json.loads(await pg.evaluate("localStorage.getItem('keepwise-lock-v1')"))["bio"]
@@ -3306,12 +3317,12 @@ async def plus_screen_gives_reasons_and_prices(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     await pg.locator("[data-plus-open]").first.scroll_into_view_if_needed(); await pg.locator("[data-plus-open]").first.click(); await pg.wait_for_timeout(200)
     v = await text(pg, "#view")
-    for reason in ("Live splits with friends", "Your money on every device", "Business Account", "Receipt photos", "Moments"):
+    for reason in ("Connect your bank", "Since last time", "Split emails, sent for you", "Business Account", "Your money on every device", "Live splits and Moments"):
         assert reason in v, reason
-    assert "straight from your contacts" in v
+    assert await pg.locator(".plus-list li.soon").count() == 2 and "Coming next" in v and "Coming later" in v, "what isn't built yet says so"
     for unbuilt in ("shared household", "Offers near you", "Reminders on every phone", "only you can unlock", "birthday"):   # only promises we can keep
         assert unbuilt not in v, unbuilt
-    assert await pg.locator(".plus-list li").count() == 5
+    assert await pg.locator(".plus-list li").count() == 6
     # prices exactly as set: 12 from 15 for the first six months, 140 from 180 a year
     m = await text(pg, ".plus-price:not(.best)"); y = await text(pg, ".plus-price.best")
     assert "$15" in m and "$12" in m and "a month" in m and "first 6 months, then $15 a month" in m, m
