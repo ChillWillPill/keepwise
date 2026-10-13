@@ -19,12 +19,10 @@ async def _b(pg): await pg.click("[data-mseg=budget]")
 async def _c(pg): await pg.click("[data-mseg=more]")
 @screen("subs")
 async def _d(pg): await tab(pg, "subs")
-@screen("plan")
-async def _e(pg): await tab(pg, "plan")
 @screen("split")
 async def _f(pg): await tab(pg, "split")
 @screen("banks")
-async def _g(pg): await pg.click("[data-mseg=more]"); await pg.click("[data-banks-open]")
+async def _g(pg): await pg.click("[data-tab=banks]")
 for seg in ("money", "invoices", "miles", "tax"):
     async def _h(pg, seg=seg):
         await pg.click("[data-mseg=more]"); await pg.click("[data-space=business]"); await pg.wait_for_timeout(100)

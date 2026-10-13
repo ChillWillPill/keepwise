@@ -1245,6 +1245,7 @@ I.fun = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 I.eye = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 I.eyeOff = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.8 9.8 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
 I.bank = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v7M9.5 10v7M14.5 10v7M19 10v7"/><path d="M3 20h18"/></svg>';
+I.banks = I.bank;
 I.family = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.500" cy="8" r="3"/><circle cx="17" cy="9.500" r="2.300"/><path d="M3 19c0-3 2.500-5 5.500-5s5.500 2 5.500 5"/><path d="M15.500 14.200c3 0 5.500 1.600 5.500 4.800"/></svg>';
 // One-off spending wears a small icon so a glance says what it was. KeepWise picks one from the name; the person can
 // choose another, and that choice is remembered for the name.
@@ -1265,7 +1266,7 @@ const dFrom = v => !v || v >= isoDaysAgo(0) ? ` min="${isoDaysAgo(0)}"` : "", dU
 const dayOptions = sel => `<option value="">Pick a day</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${sel === i + 1 ? "selected" : ""}>${ordinal(i + 1)} of each month</option>`).join("")}`;
 const SUB_TABS = ["subs","cheaper","codes"];
 const subSeg = () => `<div class="seg sub-seg" role="group" aria-label="Subscriptions, cheaper options and codes">${[["subs","Yours"],["cheaper","Cheaper"],["codes","Codes"]].map(([k,n]) => `<button type="button" data-go="${k}" aria-pressed="${S.tab === k}">${n}</button>`).join("")}</div>`;
-const TABS = [["month","Month"],["subs","Subs"],["cheaper","Cheaper"],["codes","Codes"],["plan","Plan"],["split","Split"]];
+const TABS = [["month","Month"],["subs","Subs"],["cheaper","Cheaper"],["codes","Codes"],["banks","Banks"],["split","Split"]];
 
 /* ================= views ================= */
 const V = {};
@@ -1430,7 +1431,7 @@ V.banks = () => {
   const list = bankList(), used = list.filter(acctInUse), hidden = list.filter(a => !acctInUse(a)), cash = used.filter(a => !acctOwed(a)), owed = used.filter(acctOwed);
   const total = arr => { const t = arr.filter(a => a.cur === S.cur && a.balance != null).reduce((s, a) => s + Math.abs(+a.balance || 0), 0); return UI.bankEye ? fmt(t) : MASK_HTML(); };
   const group = (title, arr, note) => arr.length ? `<section class="card acct-group" data-acct-group="${title.toLowerCase()}"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>${title}</h2><span class="tnum muted">${total(arr)}${note && UI.bankEye ? ` ${note}` : ""}</span></div><div class="accts">${arr.map(acctRow).join("")}</div></section>` : "";
-  return `<div class="inline" style="justify-content:space-between"><h1>Banks &amp; statements</h1><span class="inline" style="gap:8px">${list.length ? `<button class="icon-btn" type="button" data-bank-eye aria-pressed="${!!UI.bankEye}" aria-label="${UI.bankEye ? "Hide balances" : "Show balances"}">${UI.bankEye ? I.eye : I.eyeOff}</button>` : ""}<button class="btn small" type="button" data-banks-close>Done</button></span></div>
+  return `<div class="inline" style="justify-content:space-between"><h1>Banks &amp; statements</h1><span class="inline" style="gap:8px">${list.length ? `<button class="icon-btn" type="button" data-bank-eye aria-pressed="${!!UI.bankEye}" aria-label="${UI.bankEye ? "Hide balances" : "Show balances"}">${UI.bankEye ? I.eye : I.eyeOff}</button>` : ""}${UI.banks ? `<button class="btn small" type="button" data-banks-close>Done</button>` : ""}</span></div>
   ${UI.bankPick ? bankPickCard() : ""}
   ${group("Cash", cash)}${group("Owed", owed, "owed")}
   ${hidden.length ? `<section class="card" data-acct-hidden><button class="link plain" type="button" data-acct-hidden-toggle aria-expanded="${!!UI.bankHidden}">Hidden (${hidden.length}) ${UI.bankHidden ? "▴" : "▾"}</button>
@@ -2343,9 +2344,9 @@ OUT.importBody = () => {
     ${R.subs.length ? `<p class="small" data-keep><b>${fmt(R.subs.filter(s => s.on).reduce((a, s) => a + s.monthly, 0))}</b> a month, <b>${fmt(R.subs.filter(s => s.on).reduce((a, s) => a + s.paid, 0))}</b> paid in this statement.</p>` : ""}</section>
   <section class="card" data-st="bills">${stHead("Bills", "bills", R.bills)}${R.bills.length ? R.bills.map(b => stItem(b, b.name, `${b.cat} · ${b.count} payment${b.count === 1 ? "" : "s"}`, `${fmt(b.monthly)}/mo`)).join("") : `<p class="muted">No regular bills found.</p>`}
     ${R.tax ? stItem(R.tax, "Tax payments", `Tax · ${fmt(R.tax.total)} in this statement`, `${fmt(R.tax.monthly)}/mo`) : ""}</section>
-  ${R.loans.length ? `<section class="card" data-st="loans">${stHead("Loans and debt", "loans", R.loans, "stLoans", "Payments on a loan, a mortgage, a credit card or an installment plan. Ticked ones are added to Loans and debt on the Plan tab, not to your bills. You can add the amount left and the end date there.")}
+  ${R.loans.length ? `<section class="card" data-st="loans">${stHead("Loans and debt", "loans", R.loans, "stLoans", "Payments on a loan, a mortgage, a credit card or an installment plan. Ticked ones are added to Loans and debt on Month · Budget, not to your bills. You can add the amount left and the end date there.")}
     ${R.loans.map(l => stItem(l, l.name, `${loanKind(l.kind)} · ${l.count} payment${l.count === 1 ? "" : "s"} · ${fmt(l.total)} in this statement`, `${fmt(l.pay)}${l.every === "mo" ? "/mo" : l.every === "yr" ? "/yr" : l.every === "wk" ? "/wk" : " every 2 wks"}`)).join("")}</section>` : ""}
-  ${R.giving.length ? `<section class="card" data-st="giving">${stHead("Giving", "giving", R.giving, "stGiving", "Donations and money given to charity or a place of worship. Ticked ones are added to Giving on the Plan tab.")}
+  ${R.giving.length ? `<section class="card" data-st="giving">${stHead("Giving", "giving", R.giving, "stGiving", "Donations and money given to charity or a place of worship. Ticked ones are added to Giving on Month · Budget.")}
     ${R.giving.map(g => stItem(g, g.name, `${giveCause(g.cause)} · ${g.count} time${g.count === 1 ? "" : "s"} · ${fmt(g.total)} in this statement`, `${fmt(g.monthly)}/mo`)).join("")}</section>` : ""}
   <section class="card" data-st="spending">${stHead("Everyday spending", "spending", R.spending)}${R.spending.length ? R.spending.map(s => stItem(s, s.name, `${s.cat === "Savings" ? "Not spending, left out unless you tick it" : s.env === "needs" ? "Expenditures" : "Miscellaneous"} · ${s.count} payment${s.count === 1 ? "" : "s"}${s.top && s.top.length ? ` · mostly ${s.top.join(", ")}` : ""}`, `${fmt(s.monthly)}/mo`, {exact: false})).join("") : `<p class="muted">Nothing else found.</p>`}</section>
   ${movesCards(M)}
@@ -2875,13 +2876,14 @@ function monthFind(sel){
   const was = UI.mseg || "now", opened = UI.needOpen;
   UI.mseg = "now"; UI.needOpen = true; UI.comingAll = true; render(false); el = view.querySelector(sel); if (el) return el;   // inside "Needs you" or the full "Coming up" list
   UI.needOpen = opened; UI.comingAll = false;
+  const all = UI.expAll; UI.expAll = true;   // a bill below the short list on Budget
   for (const [k] of MSEGS){ if (k === "now") continue; UI.mseg = k; render(false); el = view.querySelector(sel); if (el) return el; }
-  UI.mseg = was; render(false); return null;
+  UI.expAll = all; UI.mseg = was; render(false); return null;
 }
 V.month = () => {
   if (UI.biz) return spaceSwitch() + (plusOn() ? bizSpace() : bizPreview());
   const C = compute(), tabs = monthTabs(), on = k => !tabs || (UI.mseg || "now") === k;
-  const top = `${spaceSwitch()}${S.hideNote || TOUR.on ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on the Plan tab, or import a bank statement. Everything stays on this device." : "Add your other bills on the Plan tab and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
+  const top = `${spaceSwitch()}${S.hideNote || TOUR.on ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on Budget, or import a bank statement. Everything stays on this device." : "Add your other bills on Budget and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>`;
   const now = `  <div data-out="autoCard">${OUT.autoCard()}</div>
@@ -2908,10 +2910,14 @@ V.month = () => {
 ${now}
 ${coming}
   <section class="card pay-card">${fields}</section>
+${envSplitCard()}
 ${income}
-  ${banksRow()}
+${savingsCard()}
 ${trips}
 ${budget}
+${expCard()}
+  ${planCards.loans()}
+  ${planCards.giving()}
 ${donut}
 ${progress}
 ${tail}
@@ -2919,12 +2925,16 @@ ${tail}
   const seg = UI.mseg || "now", sw = monthSeg();
   if (seg === "budget") return `${sw}
 ${budget}
+${expCard()}
+  ${planCards.loans()}
+  ${planCards.giving()}
 ${trips}
 ${tail}`;   // where the money goes: envelopes, trips and events with budgets of their own, and past months
   if (seg === "more") return `${sw}
   <section class="card pay-card">${fields}</section>
+${envSplitCard()}
 ${income}
-  ${banksRow()}
+${savingsCard()}
 ${spaceSwitch()}`;   // what comes in: pay, other income, and a statement to read it from
   return `${sw}${top.slice(spaceSwitch().length)}
 ${now}
@@ -3065,7 +3075,7 @@ OUT.envelopes = () => {
       </button>
       ${open ? envDetail(k, C) : ""}</div>`;}).join("")}${loansRow(C)}</div>`;
 };
-// Loans and debts: what goes to repayments each month. Read-only here; the loans themselves are edited on Plan.
+// Loans and debts: what goes to repayments each month. Read-only here; the loans themselves are edited in the card below.
 function loansRow(C){
   const live = (S.loans || []).filter(l => !loanDone(l)); if (!live.length) return "";
   const share = C.income > 0 ? C.loans / C.income * 100 : 0, open = UI.openEnv === "loans", owed = r2(live.reduce((a, l) => a + (+l.total || 0), 0));
@@ -3078,7 +3088,7 @@ function loansRow(C){
     </button>
     ${open ? `<div class="env-body">${paidSum(live.map(l => ["l:" + l.id, loanMonthly(l)]), C.planKey)}${live.map(l => { const f = loanFinish(l), pd = paidOn("l:" + l.id, C.planKey); return `<div class="line${pd ? " paid" : ""}">${tickBtn("l:" + l.id, l.name || loanKind(l.kind), C.planKey)}<div><div>${esc(l.name || loanKind(l.kind))}</div><div class="muted small">${pd ? `Paid ${shortDate(pd)}` : esc(loanKind(l.kind)) + (f ? ` · ${f.est ? "about " : "ends "}${monthYear(f.date)}` : "")}</div></div><span class="tnum">${fmt(loanMonthly(l))}</span></div>`; }).join("")}
       ${owed > 0 ? `<p class="muted small">You owe ${fmt(owed)} in total.</p>` : ""}
-      <button class="btn" type="button" data-go="plan">Manage loans on Plan</button></div>` : ""}</div>`;
+      <button class="btn" type="button" data-go="month" data-go-sel="[data-out=loans]">Edit loans</button></div>` : ""}</div>`;
 }
 // ---- paid this month ----
 // A bill or a loan repayment can be ticked once it has gone out. The ticks belong to the month the plan covers and
@@ -3272,7 +3282,7 @@ function answer(q){
   }
   if (/emergency|fund|cushion/.test(t)){
     if (C.efGap <= 0) return `Your emergency fund is full: ${fmt(S.efSaved)} covers ${S.efMonths} months of needs.`;
-    return C.efMonthsLeft ? `You have ${fmt(S.efSaved)} of ${fmt(C.efTarget)}. At ${fmt(C.toEF)} a month it’s full in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}.` : `You have ${fmt(S.efSaved)} of ${fmt(C.efTarget)}, but nothing is going to it right now. Set leftover money to emergency fund first on the Plan tab.`;
+    return C.efMonthsLeft ? `You have ${fmt(S.efSaved)} of ${fmt(C.efTarget)}. At ${fmt(C.toEF)} a month it’s full in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}.` : `You have ${fmt(S.efSaved)} of ${fmt(C.efTarget)}, but nothing is going to it right now. Set leftover money to emergency fund first in Savings goals on Income.`;
   }
   if (/cheap|swap|save more|cut/.test(t)){
     const b = C.inactiveSwaps.slice(0,3); return b.length ? `Biggest swaps you’re not using:\n${b.map(x => `${x.w.title} → ${x.w.alt}: keeps ${fmt(x.save)}/mo`).join("\n")}` : S.swaps.length ? "You’re already using every swap on the Cheaper tab." : "There are no swaps on your Cheaper tab yet.";
@@ -3353,7 +3363,7 @@ V.cheaper = () => `
   <div data-out="cheapIdeas">${OUT.cheapIdeas()}</div>
   <div data-out="cheapList">${OUT.cheapList()}</div>
   <details class="card"><summary>Add your own comparison</summary>
-    ${!S.expenses.length && !S.subs.some(s => s.keep !== "drop") ? `<p class="muted" style="margin-top:12px">First add something you pay for: a bill on the Plan tab or a subscription on Subs. Then compare it with a cheaper option here.</p>` : `<form data-form="addSwap" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+    ${!S.expenses.length && !S.subs.some(s => s.keep !== "drop") ? `<p class="muted" style="margin-top:12px">First add something you pay for: a bill on Month · Budget or a subscription on Subs. Then compare it with a cheaper option here.</p>` : `<form data-form="addSwap" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
       <label class="field"><span>What you pay for now</span><select name="link">${[...S.expenses.map(e => `<option value="expense:${e.id}">${esc(e.name)} (${fmt(e.amount)})</option>`), ...S.subs.filter(s => s.keep !== "drop").map(s => `<option value="sub:${s.id}">${esc(s.name)} (${fmt(subMonthly(s))})</option>`)].join("")}</select></label>
       <label class="field"><span>Cheaper option</span><input name="alt" required placeholder="e.g. Library card"></label>
       <label class="field"><span>It costs per month</span><input name="altCost" required inputmode="decimal" placeholder="0"></label>
@@ -3477,37 +3487,38 @@ function planFind(sel){
   UI.expAll = true; for (const [k] of PSEGS){ UI.pseg = k; render(false); el = view.querySelector(sel); if (el) return el; }
   UI.pseg = was; UI.expAll = all; render(false); return null;
 }
-const dataCard = () => `<section class="card" data-your-data><p class="muted small">${plusOn() ? "Your money data is kept on this device. Plus features that reach your bank, Stripe, PayPal or email pass only what they need through the KeepWise server, which doesn’t store it." : "Your money data stays on this device and is never uploaded."} KeepWise gives estimates, not financial advice.</p>
+const dataCard = (inBanks) => `<section class="card" data-your-data><p class="muted small">${plusOn() ? "Your money data is kept on this device. Plus features that reach your bank, Stripe, PayPal or email pass only what they need through the KeepWise server, which doesn’t store it." : "Your money data stays on this device and is never uploaded."} KeepWise gives estimates, not financial advice.</p>
     <button class="btn" type="button" data-history>Monthly statements</button>
-    <button class="btn primary" type="button" data-import-open>Import a bank statement (CSV, PDF or photo)</button>
+    ${inBanks ? "" : `<button class="btn primary" type="button" data-import-open>Import a bank statement (CSV, PDF or photo)</button>`}
     ${S.example ? `<button class="btn primary" type="button" data-w-start>Set up my month</button>` : ""}
     <div class="inline" style="justify-content:space-between"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank" style="margin-left:auto">Start empty</button></div>
     <div id="reset-confirm"></div>
     <p class="small legal-links"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`;
-V.plan = () => { const tabs = monthTabs(), on = k => !tabs || (UI.pseg || "month") === k; return `
-  ${tabs ? planSeg() : "<h1>Plan</h1>"}
-  ${on("month") ? `<div class="grid2">
-    <label class="field"><span>${OUT.incomeLabel()}</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}"></span>${(S.extras || []).length ? `<small class="muted small">Plus ${fmt(extraExpected())} other income, on the Month tab.</small>` : ""}</label>
-    <label class="field"><span>Currency</span><select data-bind="cur">${curOptions(S.cur)}</select></label>
-  </div>
-  <section class="card"><div class="inline" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><h2 class="h-info">Envelopes${infoBtn("envelopes", "About Envelopes")}</h2><span class="seg env-mode" role="group" aria-label="Set envelopes as"><button type="button" data-envmode="pct" aria-pressed="${!envFlatOn()}">%</button><button type="button" data-envmode="flat" aria-pressed="${envFlatOn()}">${esc(sym())}</button></span></div>${infoTip("envelopes", envFlatOn() ? "Set a fixed amount each month for Expenditures and Misc. Savings is what is left of your income. Subscriptions are on the Subs tab and count toward Miscellaneous." : "Set the share of income for Expenditures and Misc. Savings is what is left, so they always total 100%. Subscriptions are on the Subs tab and count toward Miscellaneous.")}
+// Plan's cards now live on Month: how pay splits and savings goals on Income, the bills and loans on Budget.
+OUT.envTotal = () => { const C = compute(); return C.income > 0 ? `Your ${fmt(C.income)} a month${(S.extras || []).length ? ", with other income" : ""}, split into three envelopes.` : "Add your pay to split it into three envelopes."; };
+const envSplitCard = () => `
+  <section class="card"><div class="inline" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><h2 class="h-info">How your pay splits${infoBtn("envelopes", "About Envelopes")}</h2><span class="seg env-mode" role="group" aria-label="Set envelopes as"><button type="button" data-envmode="pct" aria-pressed="${!envFlatOn()}">%</button><button type="button" data-envmode="flat" aria-pressed="${envFlatOn()}">${esc(sym())}</button></span></div>${infoTip("envelopes", envFlatOn() ? "Set a fixed amount each month for Expenditures and Misc. Savings is what is left of your income. Subscriptions are on the Subs tab and count toward Miscellaneous." : "Set the share of income for Expenditures and Misc. Savings is what is left, so they always total 100%. Subscriptions are on the Subs tab and count toward Miscellaneous.")}
+    <p class="muted small" style="margin:0" data-out="envTotal">${OUT.envTotal()}</p>
     <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr));align-items:end" data-env-grid>
       ${envFlatOn() ? [["needs","Expenditures"],["misc","Misc"]].map(([k,n]) => `<label class="field"><span>${n}</span><span class="money-in"><em>${esc(sym())}</em><input data-envflat="${k}" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${+S.envFlat[k] || 0}"></span></label>`).join("") + `<div class="field"><span>Savings</span><span class="money-in auto" role="status" aria-label="Savings, worked out as what is left"><b class="tnum" data-env-save>${fmtBar(compute().envSave)}</b></span></div>` : [["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => k === "save" ? `<div class="field"><span>${n}</span><span class="money-in auto" role="status" aria-label="Savings, worked out as what is left"><b class="tnum" data-env-save>${S.env.save}</b><em>%</em></span></div>` : `<label class="field"><span>${n}</span><span class="money-in"><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"><em>%</em></span></label>`).join("")}
-    </div><div data-out="envCheck">${OUT.envCheck()}</div></section>
+    </div><div data-out="envCheck">${OUT.envCheck()}</div></section>`;
+const expCard = () => `
   <section class="card" data-col="b"><h2>What goes out each month</h2>
     <div data-out="expTotal">${OUT.expTotal()}</div>
-    <div data-out="expList" style="display:flex;flex-direction:column;gap:10px">${OUT.expList()}</div></section>` : ""}
-  ${on("goals") ? `<div data-out="loans">${OUT.loans()}</div>
+    <div data-out="expList" style="display:flex;flex-direction:column;gap:10px">${OUT.expList()}</div></section>`;
+const savingsCard = () => `
   <section class="card"><h2>Savings</h2>
     <div class="grid2"><label class="field"><span>Emergency fund so far</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="efSaved" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.efSaved}"></span></label>
     <label class="field"><span>Target, months of needs</span><input data-bind="efMonths" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.efMonths}"></label></div>
     <div class="grid2"><label class="field"><span>Saving for</span><input data-bind="goalName" type="text" enterkeyhint="done" value="${esc(S.goalName)}"></label>
     <label class="field"><span>Goal amount</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="goalAmt" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.goalAmt}"></span></label></div>
     <label class="field"><span>Leftover money goes to</span><select data-bind="priority"><option value="ef" ${S.priority==="ef"?"selected":""}>Emergency fund first</option><option value="goal" ${S.priority==="goal"?"selected":""}>My goal first</option><option value="split" ${S.priority==="split"?"selected":""}>Half and half</option></select></label>
-    <div data-out="saveSplit">${OUT.saveSplit()}</div></section>
-  <div data-out="giving">${OUT.giving()}</div>
-  <button class="w-choice plus-entry" type="button" data-plus-open><span class="pill gold">Plus</span><span><b>KeepWise Plus</b><span class="muted small">Live splits with friends, every device, and more.</span></span>${I.chev}</button>` : ""}
-  `; };
+    <div data-out="saveSplit">${OUT.saveSplit()}</div></section>`;
+const planCards = {loans: () => `<div data-out="loans">${OUT.loans()}</div>`, giving: () => `<div data-out="giving">${OUT.giving()}</div>`};
+// The Banks tab: what changed in the bank, the accounts, connecting and statements, then your data.
+V.bankTab = () => `${autoOn() ? `<div data-out="autoCard">${OUT.autoCard()}</div>` : ""}${V.banks()}
+  ${dataCard(true)}
+  <button class="w-choice plus-entry" type="button" data-plus-open><span class="pill gold">Plus</span><span><b>KeepWise Plus</b><span class="muted small">Live splits with friends, every device, and more.</span></span>${I.chev}</button>`;
 // The three shares always total 100: Expenditures and Miscellaneous are chosen, Savings is what is left. If the two
 // chosen ones would pass 100, the one not being edited gives way.
 // Envelopes can be set as shares of income (the default) or as fixed amounts. With amounts, Savings is what is left of the
@@ -3779,6 +3790,7 @@ function notifications(){
 const surveyDue = x => x.keep !== "drop" && !isOurs(x) && !(x.reviewedAt && x.reviewedAt >= isoDaysAgo(20));
 // Take someone to the exact card a note or a notification is about, and mark it for a moment so the eye finds it.
 function goTo(tabName, sel){
+  if (tabName === "plan"){ tabName = "month"; if (!sel){ UI.mseg = "more"; } }   // Plan's cards moved to Month
   if (sel && tabName === "month") UI.needKind = /data-arrive/.test(sel) ? "arrived" : /data-bill-due/.test(sel) ? "bills" : /data-yr-due/.test(sel) ? "yearly" : UI.needKind;   // bring the right question to the front
   UI.find = false; UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; S.tab = tabName; save(); render(false);
   const el = sel && (monthFind(sel) || planFind(sel) || view.querySelector(sel)), m = $("main"); if (!el) return false;
@@ -3824,9 +3836,9 @@ function renderBell(){
 const FIND_IC = {month: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4", plan: "M5 5h14v14H5zM9 9h6M9 13h6", pay: "M3 7h18v10H3zM12 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z", env: "M4 7h16v11H4zM4 8l8 6 8-6", bill: "M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6", loan: "M4 10h16M6 10v8M10 10v8M14 10v8M18 10v8M3 20h18M12 3l9 5H3z", save: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zM12 12h.01", give: "M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.500-7 10-7 10z", subs: "M4 6h16v12H4zM4 10h16", cheap: "M4 12l8-8h8v8l-8 8zM15.5 8.500h.01", code: "M4 8h16v3a1.500 1.500 0 0 0 0 3v3H4v-3a1.500 1.500 0 0 0 0-3zM10 8v9", split: "M9 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM2 19c0-3 2-4.500 4-4.500s4 1.500 4 4.500M14 19c0-3 2-4.500 4-4.500s4 1.500 4 4.500", hist: "M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h6", imp: "M12 15V4M8 8l4-4 4 4M5 19h14", data: "M5 7c0-1.700 3.100-3 7-3s7 1.300 7 3-3.100 3-7 3-7-1.300-7-3zM5 7v10c0 1.700 3.100 3 7 3s7-1.300 7-3V7M5 12c0 1.700 3.100 3 7 3s7-1.300 7-3", backup: "M12 4v11M8 11l4 4 4-4M5 19h14", lock: "M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z", look: "M12 4v2M12 18v2M4 12h2M18 12h2M6.500 6.500l1.400 1.400M16.100 16.100l1.400 1.400M6.500 17.500l1.400-1.400M16.100 7.900l1.400-1.400M15.500 12a3.500 3.500 0 1 1-7 0 3.500 3.500 0 0 1 7 0z", help: "M5 5h14v10H10l-5 4zM9 10h6", tour: "M4 12a8 8 0 1 0 3-6.200M4 4v4h4", who: "M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM4 21c0-4 3.600-6 8-6s8 2 8 6", owl: "M5 9a7 7 0 0 1 14 0v6a7 7 0 0 1-14 0zM9.500 10.500h.01M14.500 10.500h.01M11 14l1 1.500 1-1.500", bell: "M6 16V11a6 6 0 0 1 12 0v5l1.500 2h-15zM10 20.500a2 2 0 0 0 4 0"};
 // [name, where it lives, icon, other words people might type, where to go, shown before typing]
 const FIND_PLACES = [
-  ["Plan", "Pay, envelopes and bills", "plan", "budget setup", {tab: "plan"}, 1],
-  ["Savings", "Plan · Debt & savings", "save", "emergency fund goal saving for leftover", {tab: "plan", sel: "[data-bind=efSaved]"}, 1],
-  ["Loans and debt", "Plan · Debt & savings", "loan", "credit card mortgage installments owe borrowed repayments car insurance", {tab: "plan", sel: "[data-out=loans]"}, 1],
+  ["Income", "Month · Pay, envelopes and savings", "plan", "plan budget setup pay salary", {tab: "month", sel: "[data-env-grid]"}, 1],
+  ["Savings", "Month", "save", "emergency fund goal saving for leftover", {tab: "plan", sel: "[data-bind=efSaved]"}, 1],
+  ["Loans and debt", "Month", "loan", "credit card mortgage installments owe borrowed repayments car insurance", {tab: "plan", sel: "[data-out=loans]"}, 1],
   ["Backups", "Menu · Your data & backups", "backup", "download export restore save file", {menu: "data", sel: "[data-set-backup]"}, 1],
   ["Monthly statements", "Month · Budget", "hist", "history past months last month report", {act: "history"}, 1],
   ["Import a bank statement", "Banks & statements", "imp", "upload csv pdf photo scan picture", {menu: "banks", sel: ".import-card"}, 1],
@@ -3839,10 +3851,10 @@ const FIND_PLACES = [
   ["Trips and events", "Month · Budget", "split", "travel holiday vacation wedding party event plan a trip plan an event place location map address venue city where", {tab: "month", sel: "[data-out=trips]"}],
   ["Regular pay", "Month · Income", "pay", "salary income wage paycheck payday how am i paid", {tab: "month", sel: "[data-out=payBox]"}],
   ["Other income", "Month · Income", "pay", "extra money in bonus side", {tab: "month", sel: "[data-out=extraIncome]"}],
-  ["Envelope shares", "Plan · Monthly", "env", "percent amount flat 50 30 20 envelopes", {tab: "plan", sel: "[data-env-grid]"}],
-  ["What goes out each month", "Plan · Monthly", "bill", "bills rent utilities expenses add a line", {tab: "plan", sel: "[data-out=expList]"}],
-  ["Car insurance", "Plan · Debt & savings", "loan", "auto policy premium renewal geico progressive state farm", {tab: "plan", sel: "[data-out=loans]"}],
-  ["Giving", "Plan · Debt & savings", "give", "charity donations zakat tithe", {tab: "plan", sel: "[data-out=giving]"}],
+  ["Envelope shares", "Month", "env", "percent amount flat 50 30 20 envelopes", {tab: "plan", sel: "[data-env-grid]"}],
+  ["What goes out each month", "Month", "bill", "bills rent utilities expenses add a line", {tab: "plan", sel: "[data-out=expList]"}],
+  ["Car insurance", "Month", "loan", "auto policy premium renewal geico progressive state farm", {tab: "plan", sel: "[data-out=loans]"}],
+  ["Giving", "Month", "give", "charity donations zakat tithe", {tab: "plan", sel: "[data-out=giving]"}],
   ["Subscriptions", "Subs", "subs", "netflix spotify renewals cancel yearly", {tab: "subs"}],
   ["Cheaper options", "Subs · Cheaper", "cheap", "compare switch save alternative swap", {tab: "cheaper"}],
   ["Promo codes", "Subs · Code", "code", "coupon discount voucher", {tab: "codes"}],
@@ -4178,7 +4190,7 @@ OUT.backupBox = () => {
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const STANDALONE = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
 let installEvt = null;
-window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (S.tab === "plan" || S.tab === "month") refreshOuts(); });
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (S.tab === "banks" || S.tab === "month") refreshOuts(); });
 // ---- moving into the Home Screen app ----
 // iPhone gives the Home Screen app its own empty storage, separate from the browser tab. Nothing is shared between
 // them, so the data is carried across on the clipboard: copy it in the browser, paste it in the app.
@@ -4753,7 +4765,7 @@ async function logLoan(text){
   let name = pay.name.replace(/\b(amount|payment|payments|installments?|instalments?|emi|my|of|is|a)\b/gi, " ").replace(/\s+/g, " ").trim(); if (!name || name === "Spending") name = loanKind(kind); name = name[0].toUpperCase() + name.slice(1);
   const rec = {id: uid(), kind, name, pay: pay.amount, every: "mo", total: owed ? owed.amount : 0, end: "", left: count ? count.amount : 0}; if (kind === "card"){ rec.card = "Other"; rec.fee = 0; }
   loanList().push(rec); save(); ASK.go = {tab: "plan", sel: `[data-loan="${rec.id}"]`};
-  return `Added to Loans and debt: ${name}, ${conv(pay)} a month${owed ? `, with ${conv(owed)} left to pay` : ""}${count ? ` over ${count.amount} installments` : ""}. ${owed ? "" : "Add the amount left on the Plan tab to see when it ends. "}You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
+  return `Added to Loans and debt: ${name}, ${conv(pay)} a month${owed ? `, with ${conv(owed)} left to pay` : ""}${count ? ` over ${count.amount} installments` : ""}. ${owed ? "" : "Add the amount left on Month · Budget to see when it ends. "}You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
 }
 const loanNeedsDetails = l => !loanDone(l) && !(+l.total > 0) && !l.end;
 const SPEND_NOISE = /\b(as\s+an?\s+|as\s+|to\s+(my\s+)?|under\s+|in\s+)?(subscription|subscriptions|sub|bill|bills|expenditure|expenditures|misc|miscellaneous|one[- ]?off|one time|every month|each month|monthly|yearly|a year|per year|annual|annually)\b/gi;
@@ -4844,7 +4856,7 @@ async function logSpend(text, force){  // returns what to say back, or null when
   const today = isoOf(todayMid()), monthKey = compute().planKey; S.spends = S.spends || []; const spid = uid(); ASK.go = {tab: "month", sel: `[data-spend="${spid}"]`, pre: () => { UI.openEnv = "misc"; }}; lines.forEach((l, i) => S.spends.push({id: i === lines.length - 1 ? spid : uid(), date: today, at: Date.now(), k: monthKey, name: l.name, amount: l.amount, ...(l.ocur ? {orig: l.orig, ocur: l.ocur, rate: l.rate} : {})})); save();
   return `Added to this month under Miscellaneous, one time: ${each}. You now keep ${fmt(compute().savings)} in ${compute().planMonth}.`;
 }
-const FX_FAIL = cur => String(cur)[0] === "?" ? (f => `Which ${f}s? Say the code, like “dinner 500 ${CUR_KIN[f].list[0]}” or “dinner 500 ${CUR_KIN[f].list[1]}”, or set your currency on the Plan tab. Nothing was added.`)(String(cur).slice(1)) : `Could not get today’s rate for ${cur}. Check your connection and try again, or type the amount in ${S.cur}.`;
+const FX_FAIL = cur => String(cur)[0] === "?" ? (f => `Which ${f}s? Say the code, like “dinner 500 ${CUR_KIN[f].list[0]}” or “dinner 500 ${CUR_KIN[f].list[1]}”, or set your currency on Month · Income. Nothing was added.`)(String(cur).slice(1)) : `Could not get today’s rate for ${cur}. Check your connection and try again, or type the amount in ${S.cur}.`;
 // Where a trip or an event is: typed, or picked from a map search (OpenStreetMap data through Photon, free, no key).
 // Only what is typed in this one box is sent, and only once at least 3 letters are in; nothing else ever leaves the phone.
 const MAP_PIN = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`;
@@ -5501,12 +5513,13 @@ const TOUR_STEPS = [
   ["month", '[data-out="comingUp"]', "Coming up", "Bills, subscriptions and money due in the next 7 days. In a quiet week it names what comes next."],
   ["month", '[data-out="billsCard"]', "Bills and savings", "How many of this month’s bills are paid, and how your emergency fund and goal are building. Tap either to go to it."],
   ["month", '[data-out="envelopes"]', "Month · Budget", "Your three envelopes: Expenditures, Miscellaneous and Savings, each against its share. Open one to tick a bill once it is paid or tap Again to log the same spending. Loans have their own row. Plan a trip or an event at the bottom: from a week before, it shows on Overview."],
-  ["month", '[data-out="payBox"]', "Month · Income", "Your pay and how you are paid, and other money that comes in. At the bottom, Banks & statements: import a statement or connect your bank, and KeepWise finds your pay, bills and subscriptions."],
+  ["month", '[data-out="payBox"]', "Month · Income", "Your pay and how you are paid, how it splits between the envelopes, other money that comes in, and your savings goals."],
   ["subs", '[data-out="subsList"]', "Subs", "Everything you pay for on repeat. KeepWise flags what looks unused, and asks about each one a few days before it renews."],
   ["cheaper", "#view .sub-seg", "Subs · Cheaper", "Ways to pay less for things already on your list, with what each one keeps per month and per year."],
   ["codes", "#view .sub-seg", "Subs · Code", "Promo codes you find, kept in one place and ready at checkout."],
-  ["plan", '[data-out="expList"]', "Plan · Monthly", "Set it up once: your pay, how it is shared between the envelopes (as percentages or amounts), and the bills that go out every month."],
-  ["plan", '[data-out="loans"]', "Plan · Debt & savings", "Loans and cards you are paying back, your emergency fund, a goal to save for, and what you give."],
+  ["month", '[data-env-grid]', "How your pay splits", "On Income: how your pay is shared between the envelopes, as percentages or amounts. Savings is what is left."],
+  ["month", '[data-out="loans"]', "Bills, loans and giving", "Under the envelopes: the bills that go out every month, loans and cards you are paying back, and what you give."],
+  ["banks", ".import-card", "Banks", "Your bank accounts with balances hidden until you tap the eye, statement import, and with KeepWise Plus, connecting your bank and what changed since last time."],
   ["split", "#view", "Split", "Split a bill with friends or family. KeepWise works out who owes what and writes the message for you to send. With KeepWise Plus, it emails everyone in the split for you."],
   ["month", "#find-btn", "Search", "Type a few letters to find any part of the app, or one of your bills, subscriptions or loans, and go straight to it."],
   ["month", "#bell", "Notifications", "What needs a look: money to confirm, charges this week and subscriptions that look unused."],
@@ -5606,7 +5619,7 @@ function lockDraw(){
     ${LOCK.gate ? `<button class="link small" type="button" data-lock-cancel>Cancel</button>` : `<button class="link plain small" type="button" data-lock-forgot>Forgot passcode?</button>`}`;
 }
 function lockNow(){ if (!LOCK.cfg || LOCK.on) return; LOCK.on = true; LOCK.entry = ""; LOCK.forgot = false; if (isField(document.activeElement)) document.activeElement.blur(); lockDraw(); if (LOCK.cfg.bio) lockBio(); }
-function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; LOCK.openedAt = Date.now(); LOCK.hiddenAt = 0; lockDraw(); if (LOCK.gate){ LOCK.gate = false; UI.banks = true; render(false); } }
+function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; LOCK.openedAt = Date.now(); LOCK.hiddenAt = 0; lockDraw(); if (LOCK.gate){ const g = LOCK.gate; LOCK.gate = false; if (g === "tab"){ S.tab = "banks"; UI.find = false; UI.menu = false; save(); } else UI.banks = true; render(false); renderTabs(); } }
 async function lockBio(){ if (LOCK.busy || !LOCK.on) return; LOCK.busy = true; const ok = await bioCheck(); LOCK.busy = false; if (ok && LOCK.on) lockOpen(); }
 async function lockKey(d){
   if (!LOCK.on || LOCK.busy || Date.now() < LOCK.until || LOCK.forgot) return;
@@ -5690,7 +5703,7 @@ function segStick(){ const m = $("main"), g = m && m.querySelector(".view>.seg.s
   g.classList.toggle("stuck", m.scrollTop > 2 && g.getBoundingClientRect().top - m.getBoundingClientRect().top <= 9); }
 function render(keepScroll){
   const main = $("main"), top = main.scrollTop, back = keepScroll ? innerScrollKeep(document.getElementById("app") || document.body) : () => {};
-  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.find ? V.find() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : UI.banks ? V.banks() : UI.settings ? V.settings() : V[S.tab]();
+  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.find ? V.find() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : UI.banks ? V.banks() : UI.settings ? V.settings() : S.tab === "banks" ? V.bankTab() : (V[S.tab] || V.month)();
   const askOk = !STMT.result && !UI.pdfLock && !UI.account && UI.welcome == null && !UI.biz; if (!askOk) UI.askOpen = false;
   const sheet = $("asksheet"); if (sheet){ sheet.innerHTML = UI.askOpen ? askSheet() : ""; sheet.hidden = !UI.askOpen; }
   const fab = $("wise"); if (fab) fab.hidden = !askOk || !!UI.askOpen;
@@ -6212,7 +6225,9 @@ document.addEventListener("change", e => { const t = e.target;
   if (t.matches && t.matches("[data-biz-milerate]")){ const v = Math.max(0, Math.min(10, Math.round(numv(t.value) * 1000) / 1000 || 0)); bizData().mileRate = v; save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-pick]")){ const i = +t.dataset.bizPick; if (t.checked) BIZ.pick.add(i); else BIZ.pick.delete(i); const btn = document.querySelector("[data-biz-import-add]"); if (btn){ btn.disabled = !BIZ.pick.size; btn.textContent = `Add ${BIZ.pick.size} to Business`; } } });
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
-$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
+$("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return;
+  if (b.dataset.tab === "banks" && S.tab !== "banks" && LOCK.cfg && lockCan() && !LOCK.on){ LOCK.gate = "tab"; lockNow(); return; }
+  if (b.dataset.tab !== "banks"){ UI.bankEye = false; UI.bankMenu = null; UI.bankRename = null; } UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { S.theme = THEMES[(THEMES.indexOf(S.theme || "system") + 1) % 3]; save(); applyTheme(); toast(S.theme === "system" ? "Theme: Auto, matches your phone" : S.theme === "light" ? "Theme: Light" : "Theme: Dark"); });
 // The owl button: tap to ask or log from any tab. Hold it for a moment and it lifts, then it can be dragged anywhere on
 // the screen; where it is left is remembered on this device.
@@ -6321,7 +6336,8 @@ view.addEventListener("keydown", e => {  // Enter in "Add a line" adds it, like 
 view.addEventListener("click", async e => {
   const t = e.target, b = t.closest("button, a");
   if (!b) return;
-  if (b.dataset.go){ UI.settings = false; S.tab = b.dataset.go; UI.history = false; UI.banks = false; UI.stmt = null; save(); render(false); return; }
+  if (b.dataset.go && b.dataset.goSel){ UI.settings = false; goTo(b.dataset.go, b.dataset.goSel); return; }
+  if (b.dataset.go){ if (b.dataset.go === "plan") b.dataset.go = "month"; UI.settings = false; S.tab = b.dataset.go; UI.history = false; UI.banks = false; UI.stmt = null; save(); render(false); return; }
   // ---- first-run setup
   if (b.hasAttribute("data-w-start")){ UI.settings = false; DRAFT.cur = S.cur; DRAFT.income = ""; DRAFT.home = ""; DRAFT.pay = "monthly"; UI.welcome = 1; render(false); return; }
   if (b.hasAttribute("data-tour-start")){ tourStart(); return; }
@@ -6331,7 +6347,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-w-back")){ UI.welcome = Math.max(0, UI.welcome - 1); render(false); return; }
   if (b.hasAttribute("data-w-skip")){ DRAFT.home = ""; UI.welcome = 3; render(false); return; }
   if (b.hasAttribute("data-w-example")){ UI.welcome = null; welcomeDone(); S.tab = "month"; save(); render(false); return; }
-  if (b.hasAttribute("data-w-finish")){ finishWelcome(); render(false); toast("Your month is ready. Add bills on Plan as you go."); return; }
+  if (b.hasAttribute("data-w-finish")){ finishWelcome(); render(false); toast("Your month is ready. Add bills on Budget as you go."); return; }
   if (b.hasAttribute("data-w-import")){ finishWelcome(); render(false); $("stmt").click(); return; }
   // ---- how you are paid
   if (b.hasAttribute("data-payday-edit")){ const p = S.pay || {}; UI.payEdit = true; UI.payDraft = {when: p.when || "monthly", day: p.day || 1, day2: p.day2 || 15, wd: p.wd != null ? p.wd : 5, next: nextBiweekly(p.next), amount: p.amount ? String(p.amount) : (+S.income ? String(S.income) : ""), monthStart: monthStartDay()}; refreshOuts(); return; }
@@ -6389,7 +6405,7 @@ view.addEventListener("click", async e => {
     if (b.hasAttribute("data-trip-item-del")){ const it = b.closest("[data-trip-item]"), u = undoable(), gone = (tripX.items || []).find(x => x.id === it.dataset.tripItem); tripX.items = (tripX.items || []).filter(x => x !== gone); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; } }
   const billRow = b.closest("[data-bill-due]");
   if (billRow && (b.hasAttribute("data-bill-yes") || b.hasAttribute("data-bill-no"))){ const e = S.expenses.find(x => x.id === billRow.dataset.billDue); if (!e) return; const u = undoable(), yes = b.hasAttribute("data-bill-yes");
-    e.ans = billRow.dataset.billDate; e.ansPaid = yes; save(); refreshOuts(); toast(yes ? `${e.name} marked as paid. Next question after ${dayMonth(billNextDue(e) || todayMid())}.` : `Noted. ${e.name} shows as not paid on the Plan tab, and we will not ask again this month.`, u); return; }
+    e.ans = billRow.dataset.billDate; e.ansPaid = yes; save(); refreshOuts(); toast(yes ? `${e.name} marked as paid. Next question after ${dayMonth(billNextDue(e) || todayMid())}.` : `Noted. ${e.name} shows as not paid on Budget, and we will not ask again this month.`, u); return; }
   const yrRow = b.closest("[data-yr-due]");
   if (yrRow && (b.hasAttribute("data-yr-yes") || b.hasAttribute("data-yr-no"))){ const u = undoable(), yes = b.hasAttribute("data-yr-yes"), it = yearlyItems().find(x => x.key === yrRow.dataset.yrDue);
     S.yrAns = S.yrAns || {}; S.yrAns[yrRow.dataset.yrDue] = yrRow.dataset.yrDate; (S.yrPaid = S.yrPaid || {})[yrRow.dataset.yrDue] = yes; save(); refreshOuts();
@@ -6436,7 +6452,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-restore")){ $("restore-in").click(); return; }
   if (b.hasAttribute("data-restore-no")){ UI.restore = null; refreshOuts(); return; }
   if (b.hasAttribute("data-restore-yes")){ const d = UI.restore && UI.restore.data; if (!d) return; UI.restore = null;
-    S = d; S.tab = "plan"; S.settlements = S.settlements || []; S.statements = S.statements || {}; welcomeDone(); save(); render(false); toast("Backup restored."); return; }
+    S = d; S.tab = "month"; UI.mseg = "more"; S.settlements = S.settlements || []; S.statements = S.statements || {}; welcomeDone(); save(); render(false); toast("Backup restored."); return; }
   if (b.hasAttribute("data-move-copy")){ await moveCopy(); return; }
   if (b.hasAttribute("data-move-paste")){ await movePaste(); return; }
   if (b.hasAttribute("data-move-apply")){ const f = document.querySelector("[data-move-field]"); moveApply(f ? f.value : ""); return; }
@@ -6576,7 +6592,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.resetYes){ const ex = example();
     if (b.dataset.resetYes === "blank"){ Object.assign(ex, {income:0, efSaved:0, expenses:[], loans:[], giving:[], ins:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0, example:false, statements:{}, extras:[]}); }
     welcomeDone(); ex.lastBackup = S.lastBackup; ex.a2hsHide = S.a2hsHide; ex.started = S.started;
-    ex.tab = "plan"; UI.settings = false; UI.delOpen = false; S = ex; save(); render(false); toast(b.dataset.resetYes === "blank" ? "Started empty." : "Example loaded."); return; }
+    ex.tab = "month"; UI.mseg = "more"; UI.settings = false; UI.delOpen = false; S = ex; save(); render(false); toast(b.dataset.resetYes === "blank" ? "Started empty." : "Example loaded."); return; }
   if (b.dataset.pbOpen){ UI.pbOpen = UI.pbOpen === b.dataset.pbOpen ? null : b.dataset.pbOpen; refreshOuts(); return; }
   if (b.dataset.remind){ const c = CTX(), bal = myBalances(c).find(x => x.p.id === b.dataset.remind); if (bal && bal.net > 0) await tellSend(splitNudgeText(bal.p.id, bal.net, c), firstWord(bal.p.name)); return; }
   if (b.dataset.filter){ S.filter = b.dataset.filter; save(); render(true); return; }
@@ -6981,7 +6997,7 @@ V.pdfLock = () => `<div class="inline" style="justify-content:space-between"><h1
     <p class="muted small">The password is used once, on this phone, to open the file. KeepWise does not save it or send it anywhere.</p></section>`;
 $("restore-in").addEventListener("change", async e => {
   const file = e.target.files[0]; e.target.value = ""; if (!file) return;
-  try { UI.restore = readBackup(await file.text()); UI.history = false; UI.banks = false; UI.stmt = null; UI.account = false; UI.inbox = false; S.tab = "plan"; render(false);
+  try { UI.restore = readBackup(await file.text()); UI.history = false; UI.banks = false; UI.stmt = null; UI.account = false; UI.inbox = false; S.tab = "month"; render(false);
     const box = view.querySelector('[data-out="backupBox"]'); if (box) box.scrollIntoView({block: "center"}); }
   catch(err){ toast(err.message || "Couldn’t read that file."); }
 });
@@ -7003,6 +7019,7 @@ try { if (S.env) envFix(); } catch(e){}   // older plans could hold shares that 
 try { if (S.pay && S.pay.when && !S.pay.since) S.pay.since = isoDaysAgo(0); (S.extras || []).forEach(x => { if (!x.added) x.added = isoDaysAgo(0); }); } catch(e){}
 // One-offs logged before they carried their month: a recent one belongs to the month the plan is showing now.
 try { const pk = planPeriodNow().key, recent = isoDaysAgo(3); (S.spends || []).forEach(x => { if (!x.k) x.k = (x.date || "") >= recent ? pk : periodKeyOfIso(x.date); }); } catch(e){}
+if (S.tab === "plan") S.tab = "month";   // Plan became part of Month
 if (S.tab === "subs") remindSeen();  // opening straight onto Subs counts as checking them
 save();
 applyTheme();
@@ -7011,7 +7028,7 @@ lockLoad();
 try { const q = new URLSearchParams(location.search); if (q.has("ask")){ UI.askOpen = !firstRun; q.delete("ask"); const rest = q.toString(); history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash); } } catch(e){}
 render(false);
 if (LOCK.cfg && !window.KEEPWISE_NO_LOCK) lockNow();
-bioAvailable().then(ok => { LOCK.bioOk = ok; if (S && S.tab === "plan" && !LOCK.on) refreshOuts(); });
+bioAvailable().then(ok => { LOCK.bioOk = ok; if (S && S.tab === "banks" && !LOCK.on) refreshOuts(); });
 initShared();
 })();
 </script>
