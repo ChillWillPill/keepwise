@@ -2283,6 +2283,49 @@ async def plus_connects_a_bank_through_plaid(ctx):
     assert "Connect with Plaid" in await text(pg, "[data-bank]")
     assert not pg.errors, pg.errors
 
+
+@test
+async def plus_autopilot_shows_what_changed_in_the_bank(ctx):
+    pg = await open_app(ctx, month_tabs=True)
+    today = datetime.date.today(); d = lambda n: (today - datetime.timedelta(days=n)).isoformat()
+    PLAID_JS = """window.Plaid = {create: o => ({open: () => setTimeout(() => o.onSuccess('public-sandbox-1234abcd-12ab-34cd-56ef-1234567890ab', {institution: {name: 'First Platypus Bank', institution_id: 'ins_1'}}), 60)})};"""
+    await pg.route("https://cdn.plaid.com/**", lambda r: r.fulfill(status=200, content_type="text/javascript", body=PLAID_JS))
+    tx = []
+    for i, n in enumerate((5, 35, 65)): tx.append({"id": f"nf{i}", "acct": "a1", "amount": 19.99, "date": d(n), "name": "NETFLIX.COM", "cur": "USD", "pending": False})
+    for i, n in enumerate((10, 40, 70)): tx.append({"id": f"mx{i}", "acct": "a1", "amount": 16.99, "date": d(n), "name": "MAX.COM", "cur": "USD", "pending": False})
+    for i, n in enumerate((12, 42, 72)): tx.append({"id": f"ce{i}", "acct": "a1", "amount": 84.0, "date": d(n), "name": "CON EDISON BILL PAY", "cur": "USD", "pending": False})
+    for i, n in enumerate((8, 38, 68)): tx.append({"id": f"az{i}", "acct": "a1", "amount": 14.99, "date": d(n), "name": f"AMZN Mktp US*2K4AB{i}", "cur": "USD", "pending": False})
+    for i, n in enumerate((3, 33, 63)): tx.append({"id": f"tj{i}", "acct": "a1", "amount": 61.2 + i, "date": d(n), "name": "TRADER JOES #552", "cur": "USD", "pending": False})
+    async def api(route):
+        path = "/" + route.request.url.split("workers.dev/", 1)[1]; body = json.loads(route.request.post_data or "{}")
+        r = {"/plaid/link": {"link_token": "x"}, "/plaid/exchange": {"item": "B"},
+             "/plaid/sync": {"added": tx if not body.get("cursor") else [], "modified": [], "removed": [], "next_cursor": "c1", "has_more": False,
+                             "accounts": [{"id": "a1", "name": "Plaid Checking", "mask": "0000", "type": "checking", "kind": "depository", "balance": 900, "cur": "USD"}]}}[path]
+        await route.fulfill(status=200, content_type="application/json", body=json.dumps(r))
+    await pg.route(re.compile(r"keepwise-api\."), api)
+    await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-auto]").count() == 0, "Autopilot is Plus with a bank connected"
+    await biz_on(pg); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150)
+    await pg.click("[data-banks-open]"); await pg.click("[data-plaid-add]"); await pg.wait_for_timeout(800); await pg.click("[data-bank-pick-done]"); await pg.click("[data-banks-close]")
+    await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(400)
+    card = await text(pg, "[data-auto]")
+    assert "Since last time" in card and "New subscription: Max" in card and "Netflix went up" in card and "$17.99 → $19.99" in card and "New bill: Con Edison" in card, card
+    assert "Trader Joe" not in card, "everyday shopping is not news"
+    assert "New subscription: Amazon" in card and "Amzn" not in card, "bank shorthand reads as the shop's name"
+    await pg.locator("[data-auto-key='sub:amazon'] [data-auto-ignore]").click(); await pg.wait_for_timeout(150)
+    # Update takes the new price; Ignore is remembered; Add puts it in the plan
+    await pg.locator("[data-auto-key^='price:netflix'] [data-auto-add]").click(); await pg.wait_for_timeout(200)
+    assert [x["price"] for x in (await state(pg))["subs"] if x["name"] == "Netflix"] == [19.99]
+    await pg.locator("[data-auto-key='bill:con edison'] [data-auto-ignore]").click(); await pg.wait_for_timeout(200)
+    assert "Ignored" in await pg.inner_text("#toast") and "Con Edison" not in await text(pg, "[data-auto]")
+    await pg.locator("[data-auto-key='sub:max'] [data-auto-add]").click(); await pg.wait_for_timeout(200)
+    mx = [x for x in (await state(pg))["subs"] if x["name"] == "Max"]; assert len(mx) == 1 and mx[0]["price"] == 16.99 and mx[0]["source"] == "bank", mx
+    assert "All caught up" in await text(pg, "[data-auto]")
+    # after a reload nothing comes back
+    await pg.reload(); await pg.wait_for_timeout(600); await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(300)
+    assert "All caught up" in await text(pg, "[data-auto]"), await text(pg, "[data-auto]")
+    assert not pg.errors, pg.errors
+
 @test
 async def business_invoices_are_made_shared_and_paid(ctx):
     pg = await open_app(ctx, month_tabs=True); await biz_on(pg)

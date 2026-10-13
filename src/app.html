@@ -530,6 +530,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 @media (max-width:430px){.biz-mini[data-form=bizSub]{grid-template-columns:1fr 1fr}.biz-mini[data-form=bizSub] input[name=name]{grid-column:1/-1}}.bank-rows .line .muted{overflow-wrap:anywhere}
 button.card.banks-row{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit}.banks-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--green-soft);color:var(--green);flex:none}.banks-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.banks-txt b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.banks-go{color:var(--muted);flex:none;display:grid}
 .accts{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.acct+.acct{border-top:1px solid var(--line)}.acct .line{padding:10px 12px;gap:10px;border:0}.acct-more{width:34px;height:34px}.acct-more svg{transform:rotate(90deg);transition:transform .15s}.acct-more[aria-expanded=true] svg{transform:rotate(-90deg)}.acct-acts,.acct-rename{display:flex;gap:8px;padding:0 12px 12px;flex-wrap:wrap}.acct-rename input{flex:1;min-width:0}.masked{letter-spacing:2px;color:var(--muted)}.pick-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.pick-list .move-row{display:flex;align-items:center;gap:10px;padding:10px 12px}.pick-list .move-row+.move-row{border-top:1px solid var(--line)}.pay-card .grid2{margin:0}
+.auto-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.auto-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px}.auto-row+.auto-row{border-top:1px solid var(--line)}.auto-row.up .name{color:var(--rust)}.auto-acts{gap:12px;flex:none;flex-wrap:nowrap;align-items:center}.auto-acts .btn{width:auto;min-height:36px;padding:0 14px}@media (max-width:360px){.auto-row{flex-direction:column;align-items:stretch;gap:6px}.auto-acts{justify-content:flex-end}}
 .plaid-part{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.plaid-or{margin:2px 0 -4px}.biz-banks{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .sales-form{display:flex;flex-direction:column;gap:10px}.sales-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}.sales-steps code{font-size:.85em;padding:1px 5px;border-radius:6px;background:var(--chip)}[data-sales-card] .rows .line{padding:10px 12px;gap:10px}
 .seg.sub-seg.biz-seg{grid-template-columns:repeat(4,1fr)}.seg.sub-seg.biz-seg button{font-size:.86rem;padding:0 4px}
@@ -1424,6 +1425,78 @@ V.banks = () => {
   ${importCard()}
   <p class="muted small" style="text-align:center">Everything here stays on this phone.</p>`;
 };
+/* ---- KeepWise Plus: Autopilot ----
+   With a bank connected, KeepWise reads the accounts in use by itself, runs the same reading a statement gets, and shows
+   only what changed: a new subscription, a price that went up, a new bill, pay that arrived. Every Add or Ignore is
+   remembered, so nothing is asked twice. It all runs on this phone. */
+const AUTO = {busy: false, sig: "", R: null, at: 0};
+const autoOn = () => plusOn() && (plaidOn() || bankOn());
+const autoMem = () => { S.auto = S.auto || {}; S.auto.ignore = S.auto.ignore || {}; return S.auto; };
+function autoTx(){
+  const out = [], inUse = new Set(bankList().filter(acctInUse).map(a => a.key));
+  if (plusOn()) plaidStore().items.forEach(it => Object.entries(it.tx || {}).forEach(([id, t]) => { if (t.p || !inUse.has("p:" + t.a) || !/^\d{4}-\d{2}-\d{2}$/.test(t.d || "")) return;
+    out.push({date: new Date(t.d + "T00:00:00"), desc: t.n, amt: r2(-t.v), id: "p:" + id}); }));
+  if (bankOn() && BANK.cache) BANK.cache.accts.forEach(a => { if (!inUse.has("s:" + a.id)) return;
+    a.tx.forEach(t => out.push({date: new Date(+t.posted * 1000), desc: String(t.memo || t.description || t.payee || "Transaction").replace(/\s+/g, " ").trim(), amt: r2(+t.amount), id: "s:" + t.id})); });
+  return out.filter(t => t.amt && !isNaN(t.date)).sort((a, b) => a.date - b.date);
+}
+// The statement reader keeps its working state in STMT; Autopilot borrows it for a moment and puts it back.
+function autoRead(){
+  const tx = autoTx(); if (tx.length < 2) return null;
+  const sig = tx.length + "|" + tx[tx.length - 1].id + "|" + tx[0].id + "|" + JSON.stringify(bankList().filter(acctInUse).map(a => a.key));
+  if (AUTO.sig === sig && AUTO.R) return AUTO.R;
+  const keep = {}; ["dir", "skip", "move", "card", "pick", "me", "result"].forEach(k => keep[k] = STMT[k]);
+  STMT.dir = {}; STMT.skip = new Set(); STMT.move = Object.assign({}, autoMem().move || {}); STMT.card = false; STMT.pick = {};
+  let R = null; try { tx.forEach((t, i) => { t.i = i; t.amt0 = t.amt; }); R = analyzeStatement(tx, "bank", [], new Set(autoMem().me || [])); } catch(e){ R = null; }
+  Object.assign(STMT, keep); AUTO.sig = sig; AUTO.R = R; return R;
+}
+const autoKey = (kind, name, extra) => `${kind}:${String(name).toLowerCase()}${extra != null ? ":" + extra : ""}`;
+function autoFindings(){
+  const R = autoRead(); if (!R) return [];
+  const ign = autoMem().ignore, out = [], since = isoOf(dayPlus(todayMid(), -45));
+  R.subs.forEach(x => { if (x.lastCharge < since) return;   // something that stopped long ago is not news
+    const p = S.subs.find(s => planNameMatch(s.name, x.name));
+    if (!p){ if (!(x.known || x.charges >= 2)) return; const k = autoKey("sub", x.name); if (!ign[k]) out.push({key: k, kind: "sub", x, title: `New subscription: ${x.name}`, sub: `${fmt(x.price)}${x.cycle === "yr" ? "/yr" : "/mo"} · last charged ${shortDate(x.lastCharge)}`, act: "Add"}); return; }
+    const was = +p.price || 0, now = x.price; if (p.cycle !== x.cycle || !(now > 0) || Math.abs(now - was) < Math.max(0.5, was * 0.02)) return;
+    const k = autoKey("price", x.name, now.toFixed(2)); if (!ign[k]) out.push({key: k, kind: "price", x, p, title: `${p.name} ${now > was ? "went up" : "went down"}`, sub: `${fmt(was)} → ${fmt(now)}${x.cycle === "yr" ? " a year" : " a month"}`, act: "Update", up: now > was}); });
+  R.bills.forEach(x => { if (planHas(S.expenses, x.name)) return; const k = autoKey("bill", x.name); if (!ign[k]) out.push({key: k, kind: "bill", x, title: `New bill: ${x.name}`, sub: `About ${fmt(x.monthly)} a month`, act: "Add"}); });
+  // pay that came in during the last week: KeepWise marks it as arrived by itself
+  const pay = R.income[0], last = pay && pay.tx && pay.tx[pay.tx.length - 1];
+  if (last && payOn() && isoOf(last.date) >= isoOf(dayPlus(todayMid(), -7))){ const k = autoKey("pay", isoOf(last.date)); if (!ign[k]) out.push({key: k, kind: "pay", x: pay, title: "Pay arrived", sub: `${fmt(last.amt)} on ${shortDate(isoOf(last.date))}`, act: "", info: true}); }
+  return out;
+}
+// Quietly true to life: subscriptions in the plan follow their real charges, so renewal dates stay right.
+function autoSyncPlan(){ const R = autoRead(); if (!R) return false; let changed = false;
+  R.subs.forEach(x => { const p = S.subs.find(s => planNameMatch(s.name, x.name)); if (!p || !x.lastCharge || (p.lastCharge || "") >= x.lastCharge) return;
+    p.lastCharge = x.lastCharge; p.paidOn = x.lastCharge; setRenewalFrom(p, x.lastCharge); changed = true; });
+  const pay = R.income[0], last = pay && pay.tx && pay.tx[pay.tx.length - 1];
+  if (last && payOn()){ const d = isoOf(last.date); if (d >= isoOf(dayPlus(todayMid(), -7)) && (S.payGot || "") < d){ S.payGot = d; changed = true; } }
+  return changed; }
+async function autoRun(force){
+  if (!autoOn() || AUTO.busy || (!force && Date.now() - AUTO.at < 30 * 6e4) || navigator.onLine === false) return;
+  AUTO.busy = true; AUTO.at = Date.now();
+  try { if (plaidOn()){ const s = plaidStore(); for (const it of s.items){ try { await plaidSync(it, s); } catch(e){ PLAID.err = `${it.inst}: ${e.message}`; } } }
+    if (bankOn()) await bankFetch(false); } catch(e){}
+  AUTO.busy = false; AUTO.sig = ""; if (autoSyncPlan()) save(); else save(); refreshOuts();
+}
+function autoApply(f){
+  const x = f.x, mem = autoMem();
+  if (f.kind === "sub"){ const s = {id: uid(), name: x.name, price: x.price, cycle: x.cycle, last: null, group: "", env: "misc", keep: "auto", since: x.since, charges: x.charges, paid: x.paid, lastCharge: x.lastCharge, source: "bank"}; setRenewalFrom(s, x.lastCharge); S.subs.push(s); return `${x.name} added to your subscriptions.`; }
+  if (f.kind === "bill"){ S.expenses.push({id: uid(), name: x.name, amount: x.monthly, env: "needs", source: "bank"}); return `${x.name} added to your monthly bills.`; }
+  if (f.kind === "price"){ f.p.price = x.price; return `${f.p.name} is now ${fmt(x.price)}.`; }
+  mem.ignore[f.key] = 1; return "";
+}
+OUT.autoCard = () => {
+  if (!autoOn()) return "";
+  const list = autoFindings(), when = AUTO.at ? new Date(AUTO.at) : null, max = UI.autoAll ? 50 : 4;
+  return `<section class="card auto-card" data-auto><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Since last time${infoBtn("auto", "About Since last time")}</h2><button class="link small" type="button" data-auto-refresh ${AUTO.busy ? "disabled" : ""}>${AUTO.busy ? "Checking…" : "Refresh"}</button></div>
+    ${infoTip("auto", "KeepWise Plus reads the bank accounts you use and shows only what changed. Add puts it in your plan; Ignore means it won't come up again. Renewal dates and paydays update by themselves. It all happens on this phone.")}
+    ${list.length ? `<div class="auto-list">${list.slice(0, max).map(f => `<div class="auto-row${f.up ? " up" : ""}" data-auto-key="${esc(f.key)}"><div style="min-width:0"><div class="name">${esc(f.title)}</div><div class="muted small">${esc(f.sub)}</div></div>
+        <div class="inline auto-acts">${f.info ? `<button class="link plain small" type="button" data-auto-ignore>OK</button>` : `<button class="link plain small" type="button" data-auto-ignore>Ignore</button><button class="btn small primary" type="button" data-auto-add>${f.act}</button>`}</div></div>`).join("")}</div>
+      ${list.length > max ? `<button class="link small" type="button" data-auto-all>Show all ${list.length}</button>` : ""}`
+      : `<p class="muted small" data-auto-clear>${AUTO.busy ? "Checking your accounts…" : "All caught up. Nothing new in your accounts."}</p>`}
+    ${when ? `<p class="muted small" style="margin:0">Checked ${when.toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"})}</p>` : ""}</section>`;
+};
 function importCard(){
   return `<section class="card import-card"><div><h3 class="h-info">Import a bank statement${infoBtn("import", "About importing a statement")}</h3>${UI.info === "import" || UI.importFail ? `<p class="info-tip" role="note" data-info-tip="import">CSV or PDF from your bank, or a clear photo of a paper statement. KeepWise finds your pay, bills and every subscription. Read on this phone only.</p>` : ""}${S.imported ? `<p class="muted small">Last import: ${esc(S.imported.file)}, ${monthsLabel(S.imported.from)} to ${monthsLabel(S.imported.to)}.</p>` : ""}</div>
     <button class="btn primary" type="button" data-import-open>${S.imported ? "Import another statement" : "Choose a statement"}</button></section>`;
@@ -1525,7 +1598,12 @@ const TOWNS = new Set("KARACHI LAHORE ISLAMABAD RAWALPINDI FAISALABAD MULTAN PES
 const CARD_LINE = /CARD|\bPOS\b|PURCHASE/, STORE_FRONT = /^(APPLE|GOOGLE|PAYPAL)$/, STORE_ITEMS = /^(ICLOUD|MUSIC|TV|ONE|ARCADE|YOUTUBE|PLAY|STORAGE|WORKSPACE|DRIVE|FITNESS|NEWS|BOOKS)$/;
 // The shop's name: the first run of real words, with the bank's codes, card numbers and currency left out. On a card
 // line the last word is usually the town, so it is dropped when the name is long enough without it.
-function merchantKey(desc){
+// Card processors put their own tag in front of the shop's name (Square, Toast, Shopify, PayPal links): it is dropped.
+const PROC_PREFIX = /^\s*(SQ|SQU|TST|SP|PY|PP|IC|CKO|DD|FS|PAR|EB|ZEL)\s*\*\s*/i;
+// A few well-known shops that banks spell in their own shorthand.
+const MERCH_ALIAS = {"AMZN MKTP": "AMAZON", "AMZN": "AMAZON", "AMAZON MKTPL": "AMAZON", "AMAZON MKTPLACE": "AMAZON", "AMZN DIGITAL": "AMAZON DIGITAL", "WM SUPERCENTER": "WALMART", "WAL MART": "WALMART", "WALMART COM": "WALMART", "WMT": "WALMART", "MCDONALD": "MCDONALDS", "DOORDASH DASHPASS": "DOORDASH", "UBER EATS": "UBER EATS", "UBER": "UBER", "LYFT RIDE": "LYFT", "TARGET T": "TARGET", "CHICK FIL": "CHICK FIL A", "STARBUCKS STORE": "STARBUCKS", "SBUX": "STARBUCKS", "DUNKIN": "DUNKIN", "COSTCO WHSE": "COSTCO", "SAMSCLUB": "SAMS CLUB", "HLU HULU": "HULU", "SPOTIFY USA": "SPOTIFY", "NETFLIX COM": "NETFLIX", "GOOGLE YOUTUBE": "YOUTUBE", "MSFT": "MICROSOFT", "VZWRLSS": "VERIZON", "VZ WIRELESS": "VERIZON", "TMOBILE": "T MOBILE", "ATT": "AT&T"};
+function merchantKey(desc){ const k = merchantKey0(String(desc).replace(PROC_PREFIX, "")); return MERCH_ALIAS[k] || k; }
+function merchantKey0(desc){
   const up = String(desc).toUpperCase(), runs = []; let cur = null;
   for (const tok of nameTokens(desc)){ if (!tok){ cur = null; continue; } for (const w of tok){ if (MERCH_STOP.has(w)) continue; if (!cur){ cur = []; runs.push(cur); } cur.push(w); } }
   let r = runs.find(x => x.some(w => w.length > 1));
@@ -2686,7 +2764,8 @@ V.month = () => {
   const top = `${spaceSwitch()}${S.hideNote || TOUR.on ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on the Plan tab, or import a bank statement. Everything stays on this device." : "Add your other bills on the Plan tab and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>`;
-  const now = `  <div data-out="monthClose">${OUT.monthClose()}</div>
+  const now = `  <div data-out="autoCard">${OUT.autoCard()}</div>
+  <div data-out="monthClose">${OUT.monthClose()}</div>
   <div data-out="keepSafe">${OUT.keepSafe()}</div>
   <div data-out="needs">${OUT.needs()}</div>`;
   const coming = `  <div data-out="comingUp">${OUT.comingUp()}</div>`;
@@ -5430,6 +5509,7 @@ function render(keepScroll){
   appEl.classList.toggle("welcoming", UI.welcome != null && !UI.account && !STMT.result);
   if (!keepScroll){ v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   renderTabs(); renderBell();
+  if (S.tab === "month" && !UI.biz && autoOn() && Date.now() - AUTO.at > 30 * 6e4) setTimeout(() => autoRun(false), 0);   // Plus: look at the banks at most every half hour
   { const sn = $("sidenav"); if (sn){ sn.innerHTML = UI.menu ? sideNav() : ""; sn.hidden = !UI.menu; } }
   layoutWide(); tidyHints();
   main.scrollTop = keepScroll ? top : 0; back(); segStick();
@@ -6199,6 +6279,11 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-bank-add")){ UI.bankAdd = true; BANK.err = ""; render(true); const i = view.querySelector("[data-form=bank] [name=token]"); if (i) i.focus(); return; }
   if (b.hasAttribute("data-bank-cancel")){ UI.bankAdd = false; BANK.err = ""; render(true); return; }
   if (b.hasAttribute("data-bank-refresh")){ if (BANK.busy) return; BANK.busy = true; render(true); await bankFetch(true); BANK.busy = false; render(true); if (!BANK.err) toast("Your bank is up to date."); return; }
+  if (b.hasAttribute("data-auto-refresh")){ autoRun(true); refreshOuts(); return; }
+  if (b.hasAttribute("data-auto-all")){ UI.autoAll = true; refreshOuts(); return; }
+  if (b.hasAttribute("data-auto-add") || b.hasAttribute("data-auto-ignore")){ const key = b.closest("[data-auto-key]").dataset.autoKey, f = autoFindings().find(x => x.key === key); if (!f) return;
+    const u = undoable(), msg = b.hasAttribute("data-auto-add") ? autoApply(f) : ""; autoMem().ignore[key] = 1; save(); render(true);
+    toast(msg || (f.info ? "Got it." : "Ignored. It won’t come up again."), u); return; }
   if (b.hasAttribute("data-banks-open")){ openBanks(); return; }
   if (b.hasAttribute("data-banks-close")){ UI.banks = false; UI.bankEye = false; UI.bankMenu = null; UI.bankRename = null; UI.bankPick = null; UI.bankHidden = false; render(false); return; }
   if (b.hasAttribute("data-bank-eye")){ UI.bankEye = !UI.bankEye; render(true); return; }
