@@ -2463,6 +2463,41 @@ async def plus_emails_invoices_and_reminds_when_late(ctx):
     assert (await state(pg))["biz"]["remindOff"] is True
     assert not pg.errors, pg.errors
 
+
+@test
+async def business_live_sales_from_shopify_and_square(ctx):
+    pg = await open_app(ctx, month_tabs=True); await biz_on(pg)
+    today = datetime.date.today().isoformat(); calls = []
+    async def api(route):
+        path = route.request.url.split("workers.dev", 1)[1]; body = json.loads(route.request.post_data or "{}"); calls.append((path, body))
+        if path == "/shopify":
+            if body.get("token", "").endswith("bad"): return await route.fulfill(status=401, content_type="application/json", body=json.dumps({"error": "Shopify didn't accept that token. Check it can read orders."}))
+            if body.get("page_info"): return await route.fulfill(status=200, content_type="application/json", body=json.dumps({"orders": [{"id": "3", "name": "#1003", "at": today + "T09:00:00-04:00", "total": 30, "cur": "USD", "status": "paid", "cancelled": False, "refunded": 0, "customer": ""}], "next": ""}))
+            return await route.fulfill(status=200, content_type="application/json", body=json.dumps({"orders": [
+                {"id": "1", "name": "#1001", "at": today + "T10:00:00-04:00", "total": 45, "cur": "USD", "status": "partially_refunded", "cancelled": False, "refunded": 5, "customer": "Dana Lee"},
+                {"id": "2", "name": "#1002", "at": today + "T11:00:00-04:00", "total": 99, "cur": "USD", "status": "voided", "cancelled": True, "refunded": 0, "customer": "Sam"}], "next": "pageTWOxxxxx" if body.get("since", "") < today else ""}))
+        return await route.fulfill(status=200, content_type="application/json", body=json.dumps({"payments": [
+            {"id": "sq1", "at": today + "T12:00:00Z", "amount": 25, "cur": "USD", "status": "COMPLETED", "fee": 0.98, "refunded": 0, "note": "Market stall"},
+            {"id": "sq2", "at": today + "T13:00:00Z", "amount": 10, "cur": "USD", "status": "FAILED", "fee": 0, "refunded": 0, "note": ""}], "cursor": ""}))
+    await pg.route(re.compile(r"keepwise-api\."), api)
+    for s in ("stripe", "paypal", "shopify", "square"): assert await pg.locator(f"[data-sales-add={s}]").count() == 1, s
+    await pg.click("[data-sales-add=shopify]"); f = pg.locator("form[data-form=salesShopify]")
+    await f.locator("[name=shop]").fill("sofias-candles"); await f.locator("[name=token]").fill("shpat_" + "a" * 29 + "bad"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(300)
+    assert "didn't accept" in await text(pg, "form[data-form=salesShopify] [data-sales-err]")
+    await f.locator("[name=token]").fill("shpat_" + "a" * 32); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(900)
+    assert "2 new Shopify sales added" in await pg.inner_text("#toast"), await pg.inner_text("#toast")
+    assert calls[-2][1]["shop"] == "sofias-candles.myshopify.com" and calls[-1][1].get("page_info") == "pageTWOxxxxx", "the next page is fetched too"
+    shop = sorted((e["kind"], e["amount"], e["name"]) for e in (await state(pg))["biz"]["entries"] if e.get("src") == "shopify")
+    assert shop == sorted([("in", 45, "Dana Lee · #1001"), ("out", 5, "Refund · Dana Lee · #1001"), ("in", 30, "Shopify order #1003")]), shop
+    await pg.click("[data-sales-add=square]"); f = pg.locator("form[data-form=salesSquare]")
+    await f.locator("[name=token]").fill("EAAA" + "b" * 40); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(700)
+    assert "1 new Square sale added" in await pg.inner_text("#toast"), await pg.inner_text("#toast")
+    sq = sorted((e["kind"], e["amount"], e["cat"]) for e in (await state(pg))["biz"]["entries"] if e.get("src") == "square")
+    assert sq == sorted([("in", 25, "Sales"), ("out", 0.98, "Fees & commissions")]), sq
+    rows = await text(pg, "[data-sales-card]"); assert "Shopify" in rows and "Square" in rows
+    pg.errors[:] = [e for e in pg.errors if "status of 401" not in e]
+    assert not pg.errors, pg.errors
+
 @test
 async def business_invoices_are_made_shared_and_paid(ctx):
     pg = await open_app(ctx, month_tabs=True); await biz_on(pg)

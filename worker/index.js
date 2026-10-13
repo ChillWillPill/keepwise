@@ -214,6 +214,38 @@ async function invoiceEmail(origin, env, b){
   return reply(origin, 200, {sent: 1});
 }
 
+// ---- KeepWise Plus: live sales from Shopify and Square (read only, keys never stored) ----
+async function shopify(origin, b){
+  const shop = String(b.shop || "").toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, ""), token = String(b.token || "");
+  if (!/^[a-z0-9][a-z0-9-]{1,60}\.myshopify\.com$/.test(shop)) return fail(origin, 400, "Use your store's .myshopify.com address.");
+  if (!/^shpat_[A-Za-z0-9]{20,80}$/.test(token)) return fail(origin, 400, "Paste the Admin API access token (it starts with shpat_).");
+  const q = new URLSearchParams({limit: "250", fields: "id,name,created_at,total_price,currency,financial_status,cancelled_at,refunds,customer"});
+  const pi = String(b.page_info || ""); if (pi){ if (!/^[A-Za-z0-9_-]{10,400}$/.test(pi)) return fail(origin, 400, "Bad request."); q.set("page_info", pi); q.delete("fields"); q.set("fields", "id,name,created_at,total_price,currency,financial_status,cancelled_at,refunds,customer"); }
+  else { const since = String(b.since || ""); if (!/^\d{4}-\d{2}-\d{2}T/.test(since)) return fail(origin, 400, "Bad dates."); q.set("status", "any"); q.set("created_at_min", since); }
+  const r = await fetch(`https://${shop}/admin/api/2024-07/orders.json?${q}`, {headers: {"X-Shopify-Access-Token": token, Accept: "application/json"}});
+  if (r.status === 401 || r.status === 403) return fail(origin, 401, "Shopify didn't accept that token. Check it can read orders.");
+  if (!r.ok) return fail(origin, 502, "Shopify didn't answer.");
+  const d = await r.json().catch(() => ({})), link = r.headers.get("link") || "", next = (link.match(/<[^>]*page_info=([^&>]+)[^>]*>;\s*rel="next"/) || [])[1] || "";
+  const orders = (d.orders || []).map(o => ({id: String(o.id), name: o.name, at: o.created_at, total: +o.total_price || 0, cur: o.currency, status: o.financial_status, cancelled: !!o.cancelled_at,
+    refunded: (o.refunds || []).reduce((a, rf) => a + (rf.transactions || []).filter(t => t.kind === "refund" && t.status === "success").reduce((x, t) => x + (+t.amount || 0), 0), 0),
+    customer: o.customer ? [o.customer.first_name, o.customer.last_name].filter(Boolean).join(" ") : ""}));
+  return reply(origin, 200, {orders, next});
+}
+async function square(origin, b){
+  const token = String(b.token || ""), live = b.env !== "sandbox";
+  if (!/^[A-Za-z0-9_-]{30,200}$/.test(token)) return fail(origin, 400, "Paste your Square access token.");
+  const q = new URLSearchParams({limit: "100", sort_order: "ASC"}); const cur = String(b.cursor || "");
+  if (cur){ if (!/^[A-Za-z0-9_=+/-]{4,600}$/.test(cur)) return fail(origin, 400, "Bad request."); q.set("cursor", cur); }
+  const since = String(b.since || ""); if (!/^\d{4}-\d{2}-\d{2}T/.test(since)) return fail(origin, 400, "Bad dates."); q.set("begin_time", since);
+  const r = await fetch(`https://${live ? "connect.squareup.com" : "connect.squareupsandbox.com"}/v2/payments?${q}`, {headers: {Authorization: `Bearer ${token}`, "Square-Version": "2024-07-17", Accept: "application/json"}});
+  if (r.status === 401 || r.status === 403) return fail(origin, 401, "Square didn't accept that token.");
+  if (!r.ok) return fail(origin, 502, "Square didn't answer.");
+  const d = await r.json().catch(() => ({})), money = m => m ? (+m.amount || 0) / 100 : 0;
+  const payments = (d.payments || []).map(p => ({id: p.id, at: p.created_at, amount: money(p.amount_money), cur: p.amount_money && p.amount_money.currency, status: p.status,
+    fee: (p.processing_fee || []).reduce((a, f) => a + money(f.amount_money), 0), refunded: money(p.refunded_money), note: p.note || ""}));
+  return reply(origin, 200, {payments, cursor: d.cursor || ""});
+}
+
 export default {
   async fetch(req, env = {}){
     const origin = req.headers.get("Origin"), url = new URL(req.url);
@@ -225,6 +257,8 @@ export default {
     try {
       if (url.pathname === "/stripe") return await stripe(origin, b);
       if (url.pathname === "/paypal") return await paypal(origin, b);
+      if (url.pathname === "/shopify") return await shopify(origin, b);
+      if (url.pathname === "/square") return await square(origin, b);
       if (url.pathname.startsWith("/plaid/")) return await plaid(origin, env, url.pathname, b);
       if (url.pathname === "/split/email") return await splitEmail(origin, env, b);
       if (url.pathname === "/site/logo") return await siteLogo(origin, b);
