@@ -587,7 +587,11 @@ button.card.banks-row{display:flex;flex-direction:row;align-items:center;justify
 .trip-ic.ev{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}
 @media (max-width:420px){.trip-tile .muted{display:none}.trip-tile{padding:10px}.trip-tile b{font-size:.9rem}}
 @media (max-width:330px){.trip-tiles{grid-template-columns:1fr}}
-.link.inc-add{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;color:var(--green);font-weight:600}
+.link.inc-add{display:flex;align-items:center;gap:4px;width:100%;padding:13px 16px;border:1px dashed var(--line);border-radius:16px;background:var(--card);color:var(--green);font-weight:600;text-decoration:none}
+.save-goals .grid2{grid-template-columns:1fr 1fr}
+.exp-side{display:flex;align-items:baseline;justify-content:flex-end;gap:12px;white-space:nowrap}
+.inc-hint{flex-basis:100%;margin:2px 0 0 22px;font-size:.85rem}
+.link.inc-add{flex-wrap:wrap}
 .link.inc-add .muted{font-weight:500;margin-left:6px}
 .inc-card{gap:14px}
 .inc-row{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--bg)}
@@ -1375,7 +1379,10 @@ function plaidSection(){
       : `<p class="muted small">Connect in a few taps with your bank login. Included with KeepWise Plus, no extra fee.</p><button class="btn" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "link" ? "Opening…" : "Connect with Plaid"}</button>`}</div>`;
 }
 function bankCard(){
-  if (UI.biz || (!plusOn() && !bankOn())) return "";
+  if (UI.biz) return "";
+  if (!plusOn() && !bankOn()) return `<section class="card bank-card" data-bank-plus><h3 class="inline" style="gap:8px">Connect your bank <span class="pill gold">Plus</span></h3>
+    <p class="muted small" style="margin:0">Your accounts and transactions come in by themselves through Plaid, and KeepWise shows what changed. Included with KeepWise Plus.</p>
+    <button class="btn" type="button" data-plus-open>See KeepWise Plus</button></section>`;
   const on = bankOn(), list = (S.bank && S.bank.accounts) || [], when = S.bank && S.bank.updated ? new Date(S.bank.updated) : null;
   const head = `<h3 class="h-info">Connect your bank <span class="pill grey" style="font-size:.7rem">US</span>${infoBtn("bank", "About connecting your bank")}</h3>${infoTip("bank", plusOn() ? (bankOn() ? "With KeepWise Plus, connect through Plaid in a few taps, included at no extra cost. Your SimpleFIN connection keeps working too. Either way, your bank data is kept only on this phone, never in backups." : "With KeepWise Plus, connect through Plaid in a few taps, included at no extra cost. Your bank data is kept only on this phone, never in backups.") : "Your SimpleFIN link from before keeps working until you disconnect it. Your phone talks to SimpleFIN directly, and the link is kept only on this phone, never in backups. New bank connections come with KeepWise Plus.")}`;
   // Plus pays for Plaid, so Plus only offers Plaid. A SimpleFIN link made before keeps working until it is disconnected.
@@ -2923,20 +2930,19 @@ ${progress}
 ${tail}
   ${UI.askOpen ? "" : askCard(false)}`;
   const seg = UI.mseg || "now", sw = monthSeg();
-  if (seg === "budget") return `${sw}
+  if (seg === "budget") return `${spaceSwitch()}${sw}
 ${budget}
 ${expCard()}
   ${planCards.loans()}
   ${planCards.giving()}
 ${trips}
 ${tail}`;   // where the money goes: envelopes, trips and events with budgets of their own, and past months
-  if (seg === "more") return `${sw}
+  if (seg === "more") return `${spaceSwitch()}${sw}
   <section class="card pay-card">${fields}</section>
 ${envSplitCard()}
 ${income}
-${savingsCard()}
-${spaceSwitch()}`;   // what comes in: pay, other income, and a statement to read it from
-  return `${sw}${top.slice(spaceSwitch().length)}
+${savingsCard()}`;   // what comes in: pay, other income, and a statement to read it from
+  return `${spaceSwitch()}${sw}${top.slice(spaceSwitch().length)}
 ${now}
   <div data-out="tripsNow">${OUT.tripsNow()}</div>
 ${donut}
@@ -3475,8 +3481,8 @@ function expForm(e){
     ${editBtns(!e, "data-del-exp", "Add line", "data-exp-cancel")}</form>`;
 }
 OUT.expList = () => { const short = monthTabs() && !UI.expAll && !UI.expAdd && S.expenses.length > 4 && !(UI.expEdit && S.expenses.findIndex(e => e.id === UI.expEdit) > 3); return (short ? S.expenses.slice(0, 4) : S.expenses).map(e => UI.expEdit === e.id ? `<div class="inc-row editing" data-exp="${e.id}">${expForm(e)}</div>`
-    : `<div class="inc-row" data-exp="${e.id}"><div class="row-top"><div><div class="name">${esc(e.name)}</div><div class="muted small">${e.env === "misc" ? "Misc" : "Expenditures"}${e.due ? ` · due on the ${ordinal(e.due)}` : ""}</div></div><div class="name tnum">${fmt(e.amount)}<span class="muted small">/mo</span></div></div>
-      ${billTag(e)}<button class="link plain small" type="button" data-exp-edit aria-label="Edit ${esc(e.name)}" style="align-self:flex-end">Edit</button></div>`).join("")
+    : `<div class="inc-row" data-exp="${e.id}"><div class="row-top"><div><div class="name">${esc(e.name)}</div><div class="muted small">${e.env === "misc" ? "Misc" : "Expenditures"}${e.due ? ` · due on the ${ordinal(e.due)}` : ""}</div></div><div class="exp-side"><div class="name tnum">${fmt(e.amount)}<span class="muted small">/mo</span></div><button class="link plain small" type="button" data-exp-edit aria-label="Edit ${esc(e.name)}">Edit</button></div></div>
+      ${billTag(e)}</div>`).join("")
   + (UI.expAdd ? `<div class="inc-row editing">${expForm(null)}</div>` : `${monthTabs() && S.expenses.length > 4 ? `<button class="link plain small" type="button" data-exp-all style="align-self:flex-start">${short ? `Show all ${S.expenses.length}` : "Show less"}</button>` : ""}<button class="btn" type="button" data-add-exp>${I.plus}Add a line</button>`); };
 const PSEGS = [["month", "Monthly"], ["goals", "Debt & savings"]];
 const planSeg = () => `<div class="seg sub-seg" role="group" aria-label="Parts of your plan" data-pseg-switch>${PSEGS.map(([k, n]) => `<button type="button" data-pseg="${k}" aria-pressed="${(UI.pseg || "month") === k}">${n}</button>`).join("")}</div>`;
@@ -3490,9 +3496,9 @@ function planFind(sel){
 const dataCard = (inBanks) => `<section class="card" data-your-data><p class="muted small">${plusOn() ? "Your money data is kept on this device. Plus features that reach your bank, Stripe, PayPal or email pass only what they need through the KeepWise server, which doesn’t store it." : "Your money data stays on this device and is never uploaded."} KeepWise gives estimates, not financial advice.</p>
     <button class="btn" type="button" data-history>Monthly statements</button>
     ${inBanks ? "" : `<button class="btn primary" type="button" data-import-open>Import a bank statement (CSV, PDF or photo)</button>`}
-    ${S.example ? `<button class="btn primary" type="button" data-w-start>Set up my month</button>` : ""}
+    ${inBanks ? "" : `${S.example ? `<button class="btn primary" type="button" data-w-start>Set up my month</button>` : ""}
     <div class="inline" style="justify-content:space-between"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank" style="margin-left:auto">Start empty</button></div>
-    <div id="reset-confirm"></div>
+    <div id="reset-confirm"></div>`}
     <p class="small legal-links"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`;
 // Plan's cards now live on Month: how pay splits and savings goals on Income, the bills and loans on Budget.
 OUT.envTotal = () => { const C = compute(); return C.income > 0 ? `Your ${fmt(C.income)} a month${(S.extras || []).length ? ", with other income" : ""}, split into three envelopes.` : "Add your pay to split it into three envelopes."; };
@@ -3507,9 +3513,9 @@ const expCard = () => `
     <div data-out="expTotal">${OUT.expTotal()}</div>
     <div data-out="expList" style="display:flex;flex-direction:column;gap:10px">${OUT.expList()}</div></section>`;
 const savingsCard = () => `
-  <section class="card"><h2>Savings</h2>
-    <div class="grid2"><label class="field"><span>Emergency fund so far</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="efSaved" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.efSaved}"></span></label>
-    <label class="field"><span>Target, months of needs</span><input data-bind="efMonths" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.efMonths}"></label></div>
+  <section class="card save-goals"><h2>Savings goals</h2>
+    <div class="grid2"><label class="field"><span>Fund so far</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="efSaved" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.efSaved}"></span></label>
+    <label class="field"><span>Target, months</span><input data-bind="efMonths" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.efMonths}"></label></div>
     <div class="grid2"><label class="field"><span>Saving for</span><input data-bind="goalName" type="text" enterkeyhint="done" value="${esc(S.goalName)}"></label>
     <label class="field"><span>Goal amount</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="goalAmt" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.goalAmt}"></span></label></div>
     <label class="field"><span>Leftover money goes to</span><select data-bind="priority"><option value="ef" ${S.priority==="ef"?"selected":""}>Emergency fund first</option><option value="goal" ${S.priority==="goal"?"selected":""}>My goal first</option><option value="split" ${S.priority==="split"?"selected":""}>Half and half</option></select></label>
@@ -4496,7 +4502,7 @@ function incomeForm(x){
 }
 OUT.extraIncome = () => {
   const list = S.extras || [], k = todayKey(), mName = periodOf(new Date()).name;
-  if (!list.length && !UI.incAdd) return `<button class="link small inc-add" type="button" data-inc-add>${I.plus}Add other income <span class="muted">side job, creator, trading, rental</span></button>`;
+  if (!list.length && !UI.incAdd) return `<button class="link small inc-add" type="button" data-inc-add>${I.plus}Add other income <span class="muted inc-hint">Side job, creator, trading, rental</span></button>`;
   const rows = list.map(x => {
     if (UI.incEdit === x.id) return `<div class="inc-row editing" data-inc="${x.id}">${incomeForm(x)}</div>`;
     const got = gotIn(x, k), exp = extraMonthly(x), pct = exp > 0 ? Math.min(100, got / exp * 100) : (got ? 100 : 0), av = extraAverage(x);

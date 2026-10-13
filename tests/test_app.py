@@ -3472,7 +3472,7 @@ async def plus_screen_gives_reasons_and_prices(ctx):
     assert await pg.locator("[data-open-account]").count() >= 1, "signed out: the button leads to sign-in"
     w = await pg.evaluate("Math.max(...[...document.querySelectorAll('#view *')].map(e => e.getBoundingClientRect().right))"); assert w <= 390.5, f"nothing runs off the screen: {w}"
     await pg.click("[data-plus-close]"); await pg.wait_for_timeout(150)
-    assert await pg.locator(".plus-prices").count() == 0 and await pg.locator("#view [data-plus-open]").count() == 1, "Done returns to where you were"
+    assert await pg.locator(".plus-prices").count() == 0 and await pg.locator("#view [data-plus-open]").count() >= 1, "Done returns to where you were"
     # reachable from the coming-soon card on Split, and a tab tap leaves it
     await tab(pg, "split"); await pg.click("[data-mode=shared]"); await pg.wait_for_timeout(120)
     assert "COMING WITH PLUS" in (await text(pg, "[data-shared-soon]")).upper()
@@ -4253,7 +4253,7 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     assert await has("[data-out=envelopes]") == 0 and await has(".import-card") == 0 and await has('form[data-form="ask"]') == 0, "the rest is not on the Overview, and Ask is on the owl"
     assert not await pg.evaluate("document.getElementById('wise').hidden"), "the owl button is there to ask"
     if await has("[data-hide-note]"): await pg.click("[data-hide-note]"); await pg.wait_for_timeout(200)   # the first-visit note is extra, once
-    fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight * 2; })()"); assert fit <= 0, ("the Overview is no more than one scroll", fit)
+    fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight * 2; })()"); assert fit <= 72, ("the Overview is about one scroll, with the Personal / Business switch on top", fit)
     assert await has(".dn-compact .dn-list li") <= 6 and await pg.locator(".dn-compact .dn-amt").first.is_hidden()
     # "Needs you" is one line until it is tapped; "Coming up" shows two and offers the rest
     if await has("[data-need-open]"):
@@ -4268,7 +4268,7 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     # Income: pay first, other income, and one quiet row to banks and statements
     await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(250)
     assert await has(".import-card") == 0 and await has("[data-bank]") == 0 and await has("#m-income") == 1 and await has("[data-out=trips]") == 0 and await has(".space-switch") == 1 and await has("[data-env-grid]") == 1 and await has("[data-banks-open]") == 0
-    first = await pg.evaluate("(() => { const k = [...document.querySelectorAll('#view > *')].filter(e => !e.matches('[data-mseg-switch]') && e.offsetHeight); return k[0] && k[0].matches('.pay-card') && !!k[0].querySelector('#m-income'); })()"); assert first, "pay leads the Income part, in its own card"
+    first = await pg.evaluate("(() => { const k = [...document.querySelectorAll('#view > *')].filter(e => !e.matches('[data-mseg-switch], .space-switch') && e.offsetHeight); return k[0] && k[0].matches('.pay-card') && !!k[0].querySelector('#m-income'); })()"); assert first, "pay leads the Income part, in its own card"
     await menu_to(pg, "banks"); await pg.wait_for_timeout(200); assert await pg.inner_text("#view h1") == "Banks & statements"
     tip = pg.locator(".import-card [data-info-tip=import]"); assert await tip.count() == 0 and "clear photo" not in await pg.inner_text(".import-card"), "the how-to waits behind the (i)"
     await pg.click(".import-card [data-info=import]"); await pg.wait_for_timeout(150); assert "clear photo of a paper statement" in await tip.inner_text()
@@ -5452,7 +5452,7 @@ async def settings_leave_plan_and_delete_sits_quietly_at_the_foot(ctx):
     assert "Download a backup" not in t and "App lock" not in t and "Help and contact" not in t and "Replay the tour" not in t, "Plan no longer carries settings"
     assert await pg.locator("#view [data-your-data]").count() == 0 and await pg.locator("#view [data-reset]").count() == 0, "and Your data moved to the side menu"
     hs = await pg.evaluate("[...document.querySelectorAll('#view h2')].map(h => h.childNodes[0].textContent.trim())")
-    assert hs.index("Giving") == hs.index("Loans and debt") + 1 and hs.index("How your pay splits") < hs.index("Savings"), hs
+    assert hs.index("Giving") == hs.index("Loans and debt") + 1 and hs.index("How your pay splits") < hs.index("Savings goals"), hs
     await menu_to(pg, "data"); assert await pg.inner_text("#view h1") == "Your data & backups"
     assert await pg.locator("#view [data-import-open].primary").count() == 1 and await pg.locator("#view [data-history]").count() == 1
     await pg.set_viewport_size({"width": 780, "height": 760}); await pg.wait_for_timeout(150)
