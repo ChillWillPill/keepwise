@@ -530,6 +530,7 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 @media (max-width:430px){.biz-mini[data-form=bizSub]{grid-template-columns:1fr 1fr}.biz-mini[data-form=bizSub] input[name=name]{grid-column:1/-1}}.bank-rows .line .muted{overflow-wrap:anywhere}
 button.card.banks-row{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit}.banks-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--green-soft);color:var(--green);flex:none}.banks-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.banks-txt b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.banks-go{color:var(--muted);flex:none;display:grid}
 .accts{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.acct+.acct{border-top:1px solid var(--line)}.acct .line{padding:10px 12px;gap:10px;border:0}.acct-more{width:34px;height:34px}.acct-more svg{transform:rotate(90deg);transition:transform .15s}.acct-more[aria-expanded=true] svg{transform:rotate(-90deg)}.acct-acts,.acct-rename{display:flex;gap:8px;padding:0 12px 12px;flex-wrap:wrap}.acct-rename input{flex:1;min-width:0}.masked{letter-spacing:2px;color:var(--muted)}.pick-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.pick-list .move-row{display:flex;align-items:center;gap:10px;padding:10px 12px}.pick-list .move-row+.move-row{border-top:1px solid var(--line)}.pay-card .grid2{margin:0}
+.tell-mails{display:flex;flex-direction:column;gap:8px}.tell-mail{display:flex;gap:8px}.tell-mail input{flex:1;min-width:0}
 .auto-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.auto-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px}.auto-row+.auto-row{border-top:1px solid var(--line)}.auto-row.up .name{color:var(--rust)}.auto-acts{gap:12px;flex:none;flex-wrap:nowrap;align-items:center}.auto-acts .btn{width:auto;min-height:36px;padding:0 14px}@media (max-width:360px){.auto-row{flex-direction:column;align-items:stretch;gap:6px}.auto-acts{justify-content:flex-end}}
 .plaid-part{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.plaid-or{margin:2px 0 -4px}.biz-banks{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .sales-form{display:flex;flex-direction:column;gap:10px}.sales-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}.sales-steps code{font-size:.85em;padding:1px 5px;border-radius:6px;background:var(--chip)}[data-sales-card] .rows .line{padding:10px 12px;gap:10px}
@@ -4936,7 +4937,28 @@ function tellCard(){
       ${t.each ? `<div class="tell-rows">${t.rows.map(row).join("")}</div>` : `<button class="link small" type="button" data-tell-each style="align-self:center">Or tell each person separately</button>`}`
     : one ? `<div class="tell-msg">${esc(t.rows[0].text)}${tellFootHtml}</div><div data-tell-id="${esc(t.rows[0].id)}"><button class="btn primary" type="button" data-tell-send>${I.share}${t.rows[0].sent ? "Sent. Send again" : `Send to ${esc(firstWord(t.rows[0].name))}`}</button></div>`
     : `<div class="tell-rows">${t.rows.map(row).join("")}</div>`}
-    <p class="muted small">KeepWise does not message anyone. You send this yourself, from your own apps.</p></section>`;
+    ${tellEmailPart(t)}
+    <p class="muted small">${plusOn() ? "Share sends it from your own apps. Email is sent by KeepWise for you, and replies come straight to you." : "KeepWise does not message anyone. You send this yourself, from your own apps."}</p></section>`;
+}
+// KeepWise Plus: one tap emails each person their own message. Only people with an email address, and only when tapped.
+const tellPerson = id => S.people.find(p => p.id === id) || {};
+function tellEmailPart(t){
+  if (!plusOn() || t.kind === "settle" && !t.rows.length) return "";
+  const withMail = t.rows.filter(r => tellPerson(r.id).email), n = withMail.length, missing = t.rows.filter(r => !tellPerson(r.id).email && tellPerson(r.id).id).slice(0, 5);
+  const add = missing.length ? `<div class="tell-mails">${missing.map(r => `<form data-form="tellMail" data-pid="${esc(r.id)}" class="tell-mail"><input name="email" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc(firstWord(r.name))}’s email" aria-label="${esc(r.name)}’s email"><button class="btn small" type="submit">Save</button></form>`).join("")}</div>` : "";
+  if (!n) return `<p class="small" data-tell-noemail><b>Email them with KeepWise Plus.</b> <span class="muted">Add an email and KeepWise sends each person their message.</span></p>${add}`;
+  const signed = typeof ACC !== "undefined" && ACC.user;
+  return `${add}<button class="btn" type="button" data-tell-email ${t.emailBusy ? "disabled" : ""}>${signed ? (t.emailBusy ? "Sending…" : t.emailed ? `✓ Emailed. Send again` : `Email ${n === t.rows.length ? (n === 1 ? firstWord(withMail[0].name) : "everyone") : `${n} of ${t.rows.length}`}`) : "Sign in to email them"}</button>`;
+}
+async function tellEmail(){
+  const t = UI.tell; if (!t || t.emailBusy) return;
+  if (!(typeof ACC !== "undefined" && ACC.user)){ UI.account = true; ACC.err = ""; accInit(); render(false); return; }
+  const items = t.rows.filter(r => tellPerson(r.id).email).map(r => ({to: tellPerson(r.id).email, name: firstWord(r.name), text: r.text}));
+  t.emailBusy = true; render(true);
+  try { const idToken = await ACC.user.getIdToken(), d = await salesCall("/split/email", {idToken, from: (accName() || "A friend").split(/\s+/)[0], title: t.title, items});
+    t.emailed = true; toast(`Emailed ${d.sent} ${d.sent === 1 ? "person" : "people"}.`); }
+  catch(err){ toast(err.message); }
+  t.emailBusy = false; if (UI.tell === t) render(true);
 }
 const firstWord = n => String(n || "").trim().split(/\s+/)[0] || "them";
 async function tellSend(text, name){
@@ -6475,6 +6497,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-remind-off")){ S.remind = {on: false, hide: true}; save(); render(true); toast("Reminders are off."); return; }
   if (b.hasAttribute("data-remind-hide")){ S.remind = {on: false, hide: true}; save(); render(true); return; }
   if (b.hasAttribute("data-tell-close")){ UI.tell = null; render(true); return; }
+  if (b.hasAttribute("data-tell-email")){ await tellEmail(); return; }
   if (b.hasAttribute("data-tell-each")){ if (UI.tell) UI.tell.each = true; render(true); return; }
   if (b.hasAttribute("data-tell-all") && UI.tell){ const t = UI.tell; if (await tellSend(t.group) && UI.tell === t){ t.groupSent = true; render(true); } return; }
   if (b.hasAttribute("data-tell-send") && UI.tell){ const t = UI.tell, r = t.rows.find(y => y.id === b.closest("[data-tell-id]").dataset.tellId); if (!r) return;
@@ -6619,6 +6642,9 @@ view.addEventListener("submit", async e => {
     const u = undoable(), e = {id: uid(), kind: k2, name, amount: r2(amount), date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0), cat: String(fd.get("cat") || "Other")};
     if (BIZ.rcpt && k2 === "out"){ const blob = BIZ.rcpt; BIZ.rcpt = null; try { await rcptPut(e.id, blob); e.rcpt = e.id; } catch(err){ toast("The receipt photo couldn't be kept on this phone."); } }
     bizData().entries.push(e); save(); render(true); toast(k2 === "in" ? `Added ${fmt(amount)} in.` : `Added a ${fmt(amount)} cost.`, u); return; }
+  if (kind === "tellMail"){ const p = S.people.find(x => x.id === f.dataset.pid), em = String(fd.get("email") || "").trim();
+    if (!p) return; if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(em)){ toast("Check the email address."); return; }
+    p.email = em.slice(0, 120); save(); render(true); toast(`Saved ${firstWord(p.name)}’s email.`); return; }
   if (kind === "bankRename"){ const key = UI.bankRename, name = String(fd.get("name") || "").trim().slice(0, 40); if (!key) return; setBankPref(key, {name: name || null}); UI.bankRename = null; UI.bankMenu = null; save(); render(true); toast(name ? "Renamed." : "Name reset."); return; }
   if (kind === "salesStripe" || kind === "salesPaypal"){ if (!SALES.busy) await salesConnect(kind === "salesStripe" ? "stripe" : "paypal", f); return; }
   if (kind === "invoice"){ const bd = bizData(), items = invItemsOf(f).filter(x => x.desc.trim() || numv(x.price) > 0).map(x => ({desc: x.desc.trim().slice(0, 80) || "Item", qty: numv(x.qty) > 0 ? r2(numv(x.qty)) : 1, price: r2(numv(x.price))}));

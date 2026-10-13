@@ -16,6 +16,7 @@
       providerData: [{providerId: rec.provider}],
       sendEmailVerification: async () => { window.__mockMail.push({to: rec.email, type: "verify"}); },
       reload: async () => {},
+      getIdToken: async () => "mock-id-token-" + rec.uid,
       reauthenticateWithCredential: async c => { if (!c || c.email !== rec.email) throw err("auth/user-mismatch"); if (window.__mockOffline) throw err("auth/network-request-failed"); if (c.pw !== rec.pw) throw err("auth/wrong-password"); },
       reauthenticateWithPopup: async () => { const e = window.__mockGoogleEmail || "gina@example.com"; if (e !== rec.email) throw err("auth/user-mismatch"); },
       delete: async () => { delete users[rec.email]; saveUsers(); setUser(null); }

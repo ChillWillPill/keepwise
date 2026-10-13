@@ -2326,6 +2326,42 @@ async def plus_autopilot_shows_what_changed_in_the_bank(ctx):
     assert "All caught up" in await text(pg, "[data-auto]"), await text(pg, "[data-auto]")
     assert not pg.errors, pg.errors
 
+
+@test
+async def plus_emails_the_people_in_a_split(ctx):
+    pg = await open_app(ctx, fb=True, month_tabs=True); sent = []
+    async def api(route):
+        body = json.loads(route.request.post_data or "{}"); sent.append(body)
+        await route.fulfill(status=200, content_type="application/json", body=json.dumps({"sent": len(body["items"])}))
+    await pg.route(re.compile(r"keepwise-api\..*/split/email"), api)
+    await biz_on(pg); await pg.click("[data-space=personal]"); await tab(pg, "split")
+    names = await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1')).people.filter(p => p.id !== 'me' && !p.archived).map(p => [p.id, p.name])")
+    (a, an), (b, bn) = names[0], names[1]
+    await pg.click("[data-new-split]"); await pg.wait_for_timeout(100); f = pg.locator("form[data-form=split]")
+    await f.locator("[data-d=title]").fill("Pizza night"); await f.locator("[data-d=amount]").fill("60")
+    for pid in (a, b):
+        await pg.click("[data-part-search]"); await pg.wait_for_timeout(60); await pg.click(f"[data-part-add='{pid}']"); await pg.wait_for_timeout(60)
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    card = await text(pg, "[data-tell]"); assert "Email them with KeepWise Plus" in card and "Email is sent by KeepWise" in card, card
+    await pg.fill(f"form[data-form=tellMail][data-pid='{a}'] input", "sam@example.com"); await pg.press(f"form[data-form=tellMail][data-pid='{a}'] input", "Enter"); await pg.wait_for_timeout(150)
+    assert [p.get("email") for p in (await state(pg))["people"] if p["id"] == a] == ["sam@example.com"]
+    btn = pg.locator("[data-tell-email]"); assert "Sign in to email them" in await btn.inner_text()
+    await btn.click(); await pg.wait_for_timeout(300); assert await pg.locator("[data-acc-google]").count() == 1, "it asks to sign in first"
+    await pg.click("[data-acc-google]"); await pg.wait_for_timeout(600)
+    await tab(pg, "split"); await pg.wait_for_timeout(200)
+    if not await pg.locator("[data-tell-email]").count():   # the card may have closed on leaving: make a change to bring it back
+        await pg.click("[data-new-split]"); await pg.wait_for_timeout(100); f = pg.locator("form[data-form=split]")
+        await f.locator("[data-d=title]").fill("Pizza night 2"); await f.locator("[data-d=amount]").fill("60")
+        for pid in (a, b):
+            await pg.click("[data-part-search]"); await pg.wait_for_timeout(60); await pg.click(f"[data-part-add='{pid}']"); await pg.wait_for_timeout(60)
+        await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
+    btn = pg.locator("[data-tell-email]"); assert "Email 1 of 2" in await btn.inner_text(), await btn.inner_text()
+    await btn.click(); await pg.wait_for_timeout(400)
+    assert "Emailed 1 person" in await pg.inner_text("#toast") and "Emailed. Send again" in await btn.inner_text()
+    body = sent[-1]; assert body["idToken"].startswith("mock-id-token-") and body["title"].startswith("Pizza night") and len(body["items"]) == 1
+    it = body["items"][0]; assert it["to"] == "sam@example.com" and "I paid $60" in it["text"] and "Your share is $20" in it["text"], it
+    assert not pg.errors, pg.errors
+
 @test
 async def business_invoices_are_made_shared_and_paid(ctx):
     pg = await open_app(ctx, month_tabs=True); await biz_on(pg)
