@@ -1,0 +1,13 @@
+# KeepWise API: a small pass-through for KeepWise Plus live sales.
+# It stores nothing and logs nothing; each request is forwarded and the answer handed straight back.
+name = "keepwise-api"
+main = "index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[observability]
+enabled = false
+
+[vars]
+# Switch to "production" only after Plaid approves production access and Plus checks who has paid.
+PLAID_ENV = "sandbox"

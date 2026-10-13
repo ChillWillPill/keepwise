@@ -528,6 +528,8 @@ button.person:focus-visible{outline:2px solid var(--green);outline-offset:-3px}
 .plus-tap{appearance:none;border:0;font-family:inherit;line-height:normal;min-height:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .biz-mini{display:grid;grid-template-columns:1fr 104px auto;gap:8px;align-items:center}.biz-mini select{grid-column:1/-1}.biz-mini:has(select[name=cycle]) select{grid-column:auto}.biz-mini[data-form=bizSub]{grid-template-columns:1fr 96px 1fr auto}.biz-lines{max-height:360px}[data-biz-list] .rows .line,[data-biz-subs] .rows .line,[data-biz-shares] .rows .line{padding:10px 12px;gap:10px}.biz-lines .move-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
 @media (max-width:430px){.biz-mini[data-form=bizSub]{grid-template-columns:1fr 1fr}.biz-mini[data-form=bizSub] input[name=name]{grid-column:1/-1}}.bank-rows .line .muted{overflow-wrap:anywhere}
+.plaid-part{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.plaid-or{margin:2px 0 -4px}.biz-banks{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.sales-form{display:flex;flex-direction:column;gap:10px}.sales-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}.sales-steps code{font-size:.85em;padding:1px 5px;border-radius:6px;background:var(--chip)}[data-sales-card] .rows .line{padding:10px 12px;gap:10px}
 .seg.sub-seg.biz-seg{grid-template-columns:repeat(4,1fr)}.seg.sub-seg.biz-seg button{font-size:.86rem;padding:0 4px}
 .inv-item{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;align-items:center}.inv-item>input[name=desc]{grid-column:1/-1}.inv-item+.inv-item{padding-top:10px;border-top:1px dashed var(--line)}
 .q-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}.q-right .link{white-space:nowrap}
@@ -1286,17 +1288,78 @@ async function bankReview(id){
   if (!a.tx.length){ toast("No transactions in the last 90 days for this account."); return; }
   await openStatement(new File([bankCsv(a)], `${a.bank ? a.bank + " · " : ""}${a.name} (last 90 days).csv`, {type: "text/csv"}));
 }
+/* ---- KeepWise Plus: connect a US bank through Plaid ----
+   KeepWise keeps no database. The server seals Plaid's access token so only it can read it; the phone keeps that
+   sealed blob, the sync cursor and the last 90 days of transactions in its own storage, never in backups. */
+const PLAID_KEY = "keepwise-plaid-v1", PLAID = {busy: "", err: ""};
+const plaidStore = () => { try { const s = JSON.parse(localStorage.getItem(PLAID_KEY) || "null"); if (s && Array.isArray(s.items)) return s; } catch(e){} return {uid: "", items: []}; };
+const plaidKeep = s => { try { localStorage.setItem(PLAID_KEY, JSON.stringify(s)); return true; } catch(e){ return false; } };
+const plaidOn = () => plusOn() && plaidStore().items.length > 0;
+const plaidAccounts = () => plaidStore().items.flatMap(it => (it.accounts || []).map(a => ({...a, inst: it.inst, itemId: it.id})));
+async function plaidSync(it, s){
+  let cursor = it.cursor || "", tx = it.tx || {};
+  for (let i = 0; i < 20; i++){
+    const d = await salesCall("/plaid/sync", {item: it.item, cursor});
+    [...(d.added || []), ...(d.modified || [])].forEach(t => { if (t && t.id) tx[t.id] = {a: t.acct, n: String(t.name || "Transaction").slice(0, 80), v: +t.amount || 0, d: t.date, c: t.cur, p: t.pending ? 1 : 0}; });
+    (d.removed || []).forEach(id => delete tx[id]);
+    if (d.accounts && d.accounts.length) it.accounts = d.accounts.map(a => ({id: a.id, name: String(a.name || "Account").slice(0, 60), mask: a.mask || "", type: a.type || "", balance: a.balance, cur: a.cur || "USD"}));
+    cursor = d.next_cursor || cursor; if (!d.has_more) break;
+  }
+  const cut = isoOf(dayPlus(todayMid(), -92)); Object.keys(tx).forEach(id => { if (tx[id].d < cut) delete tx[id]; });   // only the last 90 days stay on the phone
+  it.tx = tx; it.cursor = cursor; it.at = Date.now(); plaidKeep(s);
+}
+async function plaidRefresh(){
+  const s = plaidStore(); if (!s.items.length || PLAID.busy) return;
+  PLAID.busy = "sync"; PLAID.err = ""; render(true);
+  for (const it of s.items){ try { await plaidSync(it, s); } catch(err){ PLAID.err = `${it.inst || "Your bank"}: ${err.message}`; } }
+  PLAID.busy = ""; render(true);
+}
+async function plaidConnect(){
+  if (PLAID.busy) return; PLAID.busy = "link"; PLAID.err = ""; render(true);
+  const s = plaidStore(); if (!s.uid){ s.uid = Array.from(crypto.getRandomValues(new Uint8Array(12)), x => x.toString(36).padStart(2, "0")).join("").slice(0, 20); plaidKeep(s); }
+  try {
+    const [{link_token}] = await Promise.all([salesCall("/plaid/link", {uid: s.uid}), window.Plaid ? null : loadScript("https://cdn.plaid.com/link/v2/stable/link-initialize.js")]);
+    if (!window.Plaid) throw new Error("The bank connection couldn't load. Check your connection and try again.");
+    await new Promise((done, stop) => { const h = window.Plaid.create({token: link_token,
+      onSuccess: async (public_token, meta) => { try { busy("Connecting your bank"); const {item} = await salesCall("/plaid/exchange", {public_token}); const s2 = plaidStore();
+          const it = {id: uid(), item, inst: String((meta && meta.institution && meta.institution.name) || "Your bank").slice(0, 60), cursor: "", tx: {}, accounts: []}; s2.items.push(it);
+          if (!plaidKeep(s2)) throw new Error("This browser won't let KeepWise keep the bank link. Try the installed app.");
+          await plaidSync(it, s2); busy(false); done(); } catch(err){ busy(false); stop(err); } },
+      onExit: err => err ? stop(new Error(err.display_message || "The bank connection was closed before it finished.")) : done()}); h.open(); });
+  } catch(err){ PLAID.err = err.message; }
+  PLAID.busy = ""; render(true);
+}
+async function plaidRemove(itemId){
+  const s = plaidStore(), it = s.items.find(x => x.id === itemId); if (!it) return;
+  try { await salesCall("/plaid/remove", {item: it.item}); } catch(e){}   // removed at Plaid when it can be reached; forgotten here either way
+  s.items = s.items.filter(x => x.id !== itemId); plaidKeep(s); render(true); toast(`${it.inst} disconnected.`);
+}
+function plaidCsv(acctId){
+  const a = plaidAccounts().find(x => x.id === acctId), it = plaidStore().items.find(x => x.id === (a && a.itemId)); if (!a || !it) return null;
+  const rows = Object.values(it.tx || {}).filter(t => t.a === acctId && !t.p).sort((x, y) => x.d.localeCompare(y.d))
+    .map(t => { const [y, m, d] = t.d.split("-"); return [`${m}/${d}/${y}`, csvCell(t.n.replace(/\s+/g, " ").trim()), (-t.v).toFixed(2)].join(","); });   // Plaid counts money out as positive
+  return rows.length ? new File(["Date,Description,Amount\n" + rows.join("\n") + "\n"], `${a.inst} · ${a.name}${a.mask ? " ••" + a.mask : ""} (last 90 days).csv`, {type: "text/csv"}) : null;
+}
+function plaidSection(){
+  const s = plaidStore(), accts = plaidAccounts(), last = Math.max(0, ...s.items.map(i => i.at || 0));
+  return `<div class="plaid-part" data-plaid><div class="inline" style="justify-content:space-between;align-items:baseline"><b class="small">Plaid <span class="pill gold" style="font-size:.66rem">Plus</span></b>${s.items.length ? `<span class="muted small">${last ? `Updated ${new Date(last).toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})}` : ""}</span>` : ""}</div>
+    ${accts.length ? `<div class="rows bank-rows">${accts.map(a => `<div class="line" data-plaid-acct="${esc(a.id)}"><div style="min-width:0"><div class="name">${esc(a.name)}${a.mask ? ` <span class="muted small">••${esc(a.mask)}</span>` : ""}</div><div class="muted small">${esc(a.inst)}</div></div><div class="inline">${a.balance != null ? `<span class="tnum">${a.cur === S.cur ? fmt(a.balance) : `${esc(a.cur)} ${(+a.balance).toFixed(2)}`}</span>` : ""}<button class="link small" type="button" data-plaid-review>Review</button></div></div>`).join("")}</div>` : ""}
+    ${PLAID.err ? `<p class="err small" role="alert" data-plaid-err>${esc(PLAID.err)}</p>` : ""}
+    ${s.items.length ? `<div class="inline" style="justify-content:space-between;flex-wrap:wrap;gap:8px"><span class="inline" style="gap:12px">${s.items.map(it => `<button class="link danger-link small" type="button" data-plaid-off="${esc(it.id)}">Disconnect ${esc(it.inst)}</button>`).join("")}</span><span class="inline" style="gap:12px"><button class="link small" type="button" data-plaid-refresh ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "sync" ? "Updating…" : "Refresh"}</button><button class="link small" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>Add a bank</button></span></div>`
+      : `<p class="muted small">Connect in a few taps with your bank login. Included with KeepWise Plus, no extra fee.</p><button class="btn" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "link" ? "Opening…" : "Connect with Plaid"}</button>`}</div>`;
+}
 function bankCard(){
   if (UI.biz) return "";
   const on = bankOn(), list = (S.bank && S.bank.accounts) || [], when = S.bank && S.bank.updated ? new Date(S.bank.updated) : null;
   const head = `<h3 class="h-info">Connect your bank <span class="pill grey" style="font-size:.7rem">US</span>${infoBtn("bank", "About connecting your bank")}</h3>${infoTip("bank", "Through SimpleFIN Bridge, which works with thousands of US banks and credit unions. SimpleFIN charges about $1.50 a month or $15 a year, paid to them; KeepWise charges nothing. Your phone talks to SimpleFIN directly: KeepWise has no server in between and never sees your bank data. The link is kept only on this phone, never in backups.")}`;
-  if (!on) return `<section class="card bank-card" data-bank>${head}
+  const plaid = plusOn() ? plaidSection() + `<p class="small muted plaid-or">Or with SimpleFIN</p>` : "";
+  if (!on) return `<section class="card bank-card" data-bank>${head}${plaid}
     ${UI.bankAdd ? `<form data-form="bank" style="display:flex;flex-direction:column;gap:10px"><ol class="small muted" style="margin:0;padding-left:20px"><li>Open <a href="${BANK_HELP}" target="_blank" rel="noopener" style="color:var(--green);font-weight:600">SimpleFIN Bridge</a>, connect your bank there and make a setup token.</li><li>Paste the token here.</li></ol>
       <label class="field"><span>Setup token</span><input name="token" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste your setup token" aria-label="SimpleFIN setup token"></label>
       ${BANK.err ? `<p class="err" role="alert" data-bank-err>${esc(BANK.err)}</p>` : ""}
       <div class="grid2"><button class="btn" type="button" data-bank-cancel>Cancel</button><button class="btn primary" type="submit"${BANK.busy ? " disabled" : ""}>${BANK.busy ? "Connecting…" : "Connect"}</button></div></form>`
     : `<p class="muted small">Pull in the last 90 days from your bank instead of downloading statements.</p><button class="btn" type="button" data-bank-add>Connect with SimpleFIN</button>`}</section>`;
-  return `<section class="card bank-card" data-bank>${head}
+  return `<section class="card bank-card" data-bank>${head}${plaid}
     ${list.length ? `<div class="rows bank-rows">${list.map(a => `<div class="line" data-bank-acct="${esc(a.id)}"><div style="min-width:0"><div class="name">${esc(a.name)}</div><div class="muted small">${esc(a.bank || "Bank")}${a.n ? ` · ${a.n} in 90 days` : ""}</div></div><div class="inline"><span class="tnum">${a.cur === S.cur ? fmt(a.balance) : `${esc(a.cur)} ${a.balance.toFixed(2)}`}</span><button class="btn small" type="button" data-bank-review="${esc(a.id)}">Review</button></div></div>`).join("")}</div>` : `<p class="muted small">No accounts came back yet. Add your bank at SimpleFIN, then refresh.</p>`}
     ${BANK.err ? `<p class="err small" role="alert" data-bank-err>${esc(BANK.err)}</p>` : ""}
     <div class="inline" style="justify-content:space-between"><span class="muted small" data-bank-when>${when ? `Updated ${when.toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})}` : ""}</span><span class="inline"><button class="link small" type="button" data-bank-refresh${BANK.busy ? " disabled" : ""}>${BANK.busy ? "Updating…" : "Refresh"}</button><button class="link plain small" type="button" data-bank-off>Disconnect</button></span></div>
@@ -2201,7 +2264,7 @@ function spaceSwitch(){
    Business money stays on this phone like everything else. Business runs on calendar months. */
 const plusOn = () => !!S.plusTester;
 const PLUS_TAP = {n: 0, t: 0};
-const BIZ_COST_CATS = ["Supplies", "Office & software", "Advertising & marketing", "Equipment", "Contract labor", "Fees & commissions", "Travel", "Meals", "Car & truck", "Utilities & phone", "Rent", "Insurance", "Other"], BIZ_IN_CATS = ["Sales", "Services", "Other"];
+const BIZ_COST_CATS = ["Supplies", "Office & software", "Advertising & marketing", "Equipment", "Contract labor", "Fees & commissions", "Travel", "Meals", "Car & truck", "Utilities & phone", "Rent", "Insurance", "Returns & refunds", "Other"], BIZ_IN_CATS = ["Sales", "Services", "Other"];
 const BIZ = {lines: null, pick: new Set(), file: "", rcpt: null, view: null};
 const BSEGS = [["money", "Money"], ["invoices", "Invoices"], ["miles", "Mileage"], ["tax", "Tax"]];
 const USA = () => S.cur === "USD";
@@ -2317,6 +2380,106 @@ function bizBars(){ const [y, m] = bizNow(), mons = []; for (let i = 5; i >= 0; 
   return `<svg viewBox="0 0 330 ${H + 34}" width="100%" role="img" aria-label="Money in and costs for the last six months" class="biz-bars">${mons.map((x, i) => { const cx = 30 + i * 52, hi = Math.round(x.inc / top * H), ho = Math.round(x.out / top * H);
     return `<rect x="${cx - bw}" y="${H - hi + 4}" width="${bw}" height="${Math.max(hi, 1)}" rx="4" fill="var(--green)"/><rect x="${cx + 2}" y="${H - ho + 4}" width="${bw}" height="${Math.max(ho, 1)}" rx="4" fill="var(--rust,#c4553f)" opacity=".85"/><text x="${cx}" y="${H + 26}" text-anchor="middle" font-size="12" fill="var(--muted)">${x.l}</text>`; }).join("")}</svg>
     <div class="inline small muted" style="gap:14px"><span><i class="dot" style="background:var(--green)"></i> Money in</span><span><i class="dot" style="background:var(--rust,#c4553f)"></i> Costs</span></div>`; }
+/* ---- KeepWise Plus: live sales from Stripe and PayPal ----
+   The business's own read-only keys stay on this phone (their own storage key, never in backups or synced).
+   Each request goes through the KeepWise API, a small pass-through on Cloudflare that stores and logs nothing. */
+const API_BASE = "https://keepwise-api.keepwise.workers.dev";
+const SALES_KEY = "keepwise-sales-v1", SALES = {busy: "", err: "", form: "", auto: 0};
+const SALES_SRC = {stripe: "Stripe", paypal: "PayPal"};
+const salesCreds = () => { try { return JSON.parse(localStorage.getItem(SALES_KEY) || "{}") || {}; } catch(e){ return {}; } };
+const salesSaveCreds = c => { try { localStorage.setItem(SALES_KEY, JSON.stringify(c)); return true; } catch(e){ return false; } };
+const salesState = () => { const b = bizData(); if (!b.sales) b.sales = {}; return b.sales; };
+const salesOn = src => !!salesCreds()[src] && !!salesState()[src];
+async function salesCall(path, body){
+  if (navigator.onLine === false) throw new Error("Connect to the internet to bring in your sales.");
+  let r; try { r = await fetch(API_BASE + path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)}); } catch(e){ throw new Error("KeepWise can't reach the sales service right now. Try again in a minute."); }
+  const data = await r.json().catch(() => ({})); if (!r.ok) throw new Error(data.error || "That didn't work. Try again in a minute."); return data;
+}
+// Turns sales into Business entries. Each one remembers where it came from, so nothing is ever added twice.
+function salesAdd(src, rows){
+  const b = bizData(), have = new Set(b.entries.map(e => e.ext).filter(Boolean)); let n = 0, other = 0;
+  rows.forEach(x => { if (x.cur && x.cur.toUpperCase() !== String(S.cur || "USD").toUpperCase()){ other++; return; }
+    const add = (ext, kind, name, amount, cat) => { if (!(amount > 0) || have.has(ext)) return; have.add(ext); b.entries.push({id: uid(), kind, name: String(name).slice(0, 60), amount: r2(amount), date: x.date, cat, ext, src}); if (kind === "in") n++; };
+    if (x.kind === "sale"){ add(`${src}:${x.id}`, "in", x.name, x.amount, "Sales"); add(`${src}-fee:${x.id}`, "out", `${SALES_SRC[src]} fee`, x.fee, "Fees & commissions"); }
+    else if (x.kind === "refund"){ add(`${src}:${x.id}`, "out", `Refund · ${x.name}`, x.amount, "Returns & refunds"); add(`${src}-fee:${x.id}`, "out", `${SALES_SRC[src]} fee`, x.fee, "Fees & commissions"); } });
+  return {n, other};
+}
+const yearStart = () => new Date(new Date().getFullYear(), 0, 1);
+async function stripeRows(key, sinceSec){
+  const out = []; let after = "";
+  for (let page = 0; page < 30; page++){
+    const q = {limit: 100, "created[gte]": sinceSec}; if (after) q.starting_after = after;
+    const d = await salesCall("/stripe", {key, path: "balance_transactions", query: q}), list = d.data || [];
+    list.forEach(t => { const type = String(t.type || ""), date = isoOf(new Date(t.created * 1000)), cur = t.currency, name = t.description || "Stripe sale";
+      if (type === "charge" || type === "payment") out.push({kind: "sale", id: t.id, date, cur, name, amount: (t.amount || 0) / 100, fee: (t.fee || 0) / 100});
+      else if (type === "refund" || type === "payment_refund") out.push({kind: "refund", id: t.id, date, cur, name: t.description || "Stripe", amount: Math.abs(t.amount || 0) / 100, fee: Math.max(0, (t.fee || 0) / 100)}); });
+    if (!d.has_more || !list.length) break; after = list[list.length - 1].id;
+  }
+  return out;
+}
+async function paypalRows(c, since){
+  const out = [], now = new Date(), day = 864e5; let from = new Date(Math.max(since.getTime(), now.getTime() - 3 * 365 * day));
+  while (from < now){ const to = new Date(Math.min(from.getTime() + 31 * day - 1000, now.getTime()));
+    for (let page = 1, pages = 1; page <= pages && page <= 20; page++){
+      const d = await salesCall("/paypal", {id: c.id, secret: c.secret, env: c.env, start: from.toISOString().replace(/\.\d+Z$/, "Z"), end: to.toISOString().replace(/\.\d+Z$/, "Z"), page}); pages = d.total_pages || 1;
+      (d.transaction_details || []).forEach(t => { const i = t.transaction_info || {}, code = String(i.transaction_event_code || ""), amt = i.transaction_amount || {}, v = +amt.value || 0;
+        if (i.transaction_status && i.transaction_status !== "S") return;
+        const p = t.payer_info || {}, name = (p.payer_name && (p.payer_name.alternate_full_name || [p.payer_name.given_name, p.payer_name.surname].filter(Boolean).join(" "))) || i.transaction_subject || "PayPal sale";
+        const base = {id: i.transaction_id, date: String(i.transaction_initiation_date || "").slice(0, 10), cur: amt.currency_code, name, fee: Math.abs(+(i.fee_amount && i.fee_amount.value) || 0)};
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(base.date) || !base.id) return;
+        if (v > 0 && /^T00/.test(code)) out.push({...base, kind: "sale", amount: v});
+        else if (v < 0 && /^T11/.test(code)) out.push({...base, kind: "refund", amount: -v}); });
+    }
+    from = new Date(to.getTime() + 1000);
+  }
+  return out;
+}
+async function salesSync(src, quiet){
+  const c = salesCreds()[src], st = salesState(); if (!c || SALES.busy) return;
+  SALES.busy = src; SALES.err = ""; if (!quiet) render(true);
+  try {
+    const s = st[src] || (st[src] = {}), since = s.since ? new Date(s.since) : yearStart();
+    const rows = src === "stripe" ? await stripeRows(c.key, Math.floor(since.getTime() / 1000)) : await paypalRows(c, since);
+    const r = salesAdd(src, rows); s.at = Date.now(); s.since = new Date(Date.now() - 3 * 864e5).toISOString();   // the last few days are read again: late sales are caught, and nothing is added twice
+    save(); SALES.busy = ""; render(true);
+    if (!quiet || r.n) toast(r.n ? `${r.n} new ${SALES_SRC[src]} sale${r.n === 1 ? "" : "s"} added.${r.other ? ` ${r.other} in another currency left out.` : ""}` : `${SALES_SRC[src]} is up to date.`);
+  } catch(err){ SALES.busy = ""; SALES.err = `${SALES_SRC[src]}: ${err.message}`; render(true); }
+}
+function salesAutoSync(){ if (SALES.busy || !navigator.onLine || Date.now() - SALES.auto < 6e4) return; SALES.auto = Date.now();
+  const st = salesState(); for (const src of Object.keys(SALES_SRC)) if (salesOn(src) && Date.now() - (st[src].at || 0) > 30 * 6e4){ setTimeout(() => salesSync(src, true), 50); break; } }
+async function salesConnect(src, form){
+  const fd = new FormData(form), c = salesCreds(), btn = form.querySelector("[type=submit]"), label = btn.textContent;
+  const msg = m => { SALES.busy = ""; SALES.err = m; btn.disabled = false; btn.textContent = label; let p = form.querySelector("[data-sales-err]"); if (!p){ p = document.createElement("p"); p.className = "small bad"; p.setAttribute("data-sales-err", ""); form.insertBefore(p, form.lastElementChild); } p.textContent = m; };
+  if (src === "stripe"){ const key = String(fd.get("key") || "").trim();
+    if (/^sk_live_/.test(key)) return msg("That is your secret key. Make a restricted key instead (it starts with rk_), so KeepWise can only read.");
+    if (!/^(rk_live_|rk_test_|sk_test_)\w{10,}$/.test(key)) return msg("Paste the restricted key from Stripe. It starts with rk_.");
+    c.stripe = {key}; }
+  else { const id = String(fd.get("id") || "").trim(), secret = String(fd.get("secret") || "").trim();
+    if (id.length < 20 || secret.length < 20) return msg("Paste both the Client ID and the Secret from your PayPal app.");
+    c.paypal = {id, secret, env: fd.get("env") === "sandbox" ? "sandbox" : "live"}; }
+  SALES.busy = src; SALES.err = ""; btn.disabled = true; btn.textContent = "Checking…";
+  try { if (src === "stripe") await salesCall("/stripe", {key: c.stripe.key, path: "balance"});
+    else { const end = new Date(), start = new Date(end.getTime() - 864e5); await salesCall("/paypal", {...c.paypal, start: start.toISOString().replace(/\.\d+Z$/, "Z"), end: end.toISOString().replace(/\.\d+Z$/, "Z")}); } }
+  catch(err){ return msg(err.message); }
+  if (!salesSaveCreds(c)) return msg("This browser won't let KeepWise keep the key. Try the installed app.");
+  salesState()[src] = {at: 0}; save(); SALES.busy = ""; SALES.form = ""; await salesSync(src);
+}
+function salesCard(){
+  const st = salesState(), b = bizData(), yr = String(new Date().getFullYear()), on = Object.keys(SALES_SRC).filter(salesOn);
+  const ago = t => { if (!t) return "not yet"; const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : shortDate(isoOf(new Date(t))); };
+  const count = src => b.entries.filter(e => e.src === src && e.kind === "in" && (e.date || "").startsWith(yr)).length;
+  const form = SALES.form === "stripe" ? `<form data-form="salesStripe" class="sales-form" autocomplete="off"><ol class="small sales-steps"><li>In Stripe, open <b>Developers → API keys</b>.</li><li>Tap <b>Create restricted key</b>, name it KeepWise, and set <b>Balance</b> and <b>Charges</b> to <b>Read</b>. Leave everything else as None.</li><li>Copy the key (it starts with <code>rk_</code>) and paste it here.</li></ol>
+      <label class="field"><span>Restricted key</span><input name="key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rk_live_…"></label>
+      <div class="grid2"><button class="btn" type="button" data-sales-cancel>Cancel</button><button class="btn primary" type="submit" ${SALES.busy ? "disabled" : ""}>${SALES.busy === "stripe" ? "Checking…" : "Connect Stripe"}</button></div></form>`
+    : SALES.form === "paypal" ? `<form data-form="salesPaypal" class="sales-form" autocomplete="off"><ol class="small sales-steps"><li>Sign in at <b>developer.paypal.com</b> with your business account and open <b>Apps &amp; Credentials</b>.</li><li>Switch to <b>Live</b>, tap <b>Create App</b>, and under features turn on <b>Transaction search</b>.</li><li>Copy the <b>Client ID</b> and <b>Secret</b> into the boxes below.</li></ol>
+      <label class="field"><span>Client ID</span><input name="id" autocomplete="off" autocapitalize="off" spellcheck="false"></label><label class="field"><span>Secret</span><input name="secret" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label class="field"><span>Account</span><select name="env"><option value="live">Live</option><option value="sandbox">Sandbox (testing)</option></select></label>
+      <div class="grid2"><button class="btn" type="button" data-sales-cancel>Cancel</button><button class="btn primary" type="submit" ${SALES.busy ? "disabled" : ""}>${SALES.busy === "paypal" ? "Checking…" : "Connect PayPal"}</button></div></form>` : "";
+  return `<section class="card" data-sales-card><h2 class="h-info">Live sales${infoBtn("sales", "About live sales")}</h2>${infoTip("sales", "Connect Stripe or PayPal and every sale comes in by itself as business income, with the fee as a cost and refunds taken off. KeepWise only asks for read access. Your key stays on this phone; each sync passes through the KeepWise server on its way to Stripe or PayPal and is not stored there.")}
+    ${on.length ? `<div class="rows">${on.map(src => `<div class="line" data-sales-src="${src}"><div style="min-width:0"><div>${SALES_SRC[src]}</div><div class="muted small">${SALES.busy === src ? "Syncing…" : `Synced ${ago(st[src].at)} · ${count(src)} sale${count(src) === 1 ? "" : "s"} this year`}</div></div><div class="inline"><button class="link small" type="button" data-sales-sync ${SALES.busy ? "disabled" : ""}>Sync</button><button class="link danger-link small" type="button" data-sales-off>Disconnect</button></div></div>`).join("")}</div>` : `<p class="muted small">Bring in sales from your shop automatically, no typing.</p>`}
+    ${SALES.err && !form ? `<p class="small bad" data-sales-err>${esc(SALES.err)}</p>` : ""}
+    ${form || (on.length < 2 ? `<div class="grid2">${Object.keys(SALES_SRC).filter(s => !on.includes(s)).map(s => `<button class="btn" type="button" data-sales-add="${s}">Connect ${SALES_SRC[s]}</button>`).join("")}</div>` : "")}</section>`;
+}
 let RCPT_SWEPT = false;
 function rcptSweep(){ if (RCPT_SWEPT || typeof indexedDB === "undefined") return; RCPT_SWEPT = true; const keep = new Set(bizData().entries.map(e => e.rcpt).filter(Boolean));
   rcptDo("readonly", st => st.getAllKeys()).then(keys => (keys || []).filter(k => !keep.has(k)).forEach(rcptDel)).catch(() => {}); }   // photos whose cost was removed
@@ -2330,7 +2493,8 @@ function bizSpace(){
   let body = "";
   if (seg === "money"){
     const shareable = [...(S.expenses || []).map(e => ["e:" + e.id, e.name]), ...(S.subs || []).filter(v => v.keep !== "drop").map(v => ["s:" + v.id, v.name])].filter(([id]) => !b.shares.some(sh => sh.src === id));
-    body = hero + `<section class="card" data-biz-add><h2>Add business money</h2>
+    salesAutoSync();
+    body = hero + salesCard() + `<section class="card" data-biz-add><h2>Add business money</h2>
     <form data-form="bizEntry" style="display:flex;flex-direction:column;gap:10px">
       <div class="seg sub-seg biz-kind" role="group" aria-label="Money in or a cost" style="grid-template-columns:1fr 1fr"><button type="button" data-biz-kind="out" aria-pressed="${d.kind !== "in"}">A cost</button><button type="button" data-biz-kind="in" aria-pressed="${d.kind === "in"}">Money in</button></div>
       ${d.kind !== "in" ? `<button class="btn" type="button" data-biz-rcpt-add>${I.camera || ""}Snap a receipt</button><div class="biz-rcpt-prev" data-biz-rcpt-preview hidden><img alt="Receipt photo"><span class="small muted"></span></div>` : ""}
@@ -2340,7 +2504,7 @@ function bizSpace(){
       <label class="field"><span>Date</span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}"></label>
       <input type="hidden" name="kind" value="${d.kind === "in" ? "in" : "out"}"><button class="btn primary" type="submit">${d.kind === "in" ? "Add money in" : "Add cost"}</button></form></section>
   <section class="card" data-biz-list><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>This month</h2><span class="muted small tnum">${M.es.length} entr${M.es.length === 1 ? "y" : "ies"}</span></div>
-    ${M.es.length ? `<div class="rows">${M.es.slice().sort((a, c) => c.date.localeCompare(a.date)).map(e => `<div class="line" data-biz-entry="${e.id}"><div style="min-width:0"><div>${esc(e.name)}</div><div class="muted small">${shortDate(e.date)} · ${esc(e.cat || "")}${e.rcpt ? ` · <button class="link small" type="button" data-biz-rcpt-view>Receipt</button>` : ""}</div></div><div class="inline"><span class="tnum ${e.kind === "in" ? "good" : ""}">${e.kind === "in" ? "+" : ""}${fmt(e.amount)}</span><button class="link danger-link small" type="button" data-biz-del aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Nothing yet this month. Add a sale or a cost above, or sort a statement below.</p>`}
+    ${M.es.length ? `<div class="rows">${M.es.slice().sort((a, c) => c.date.localeCompare(a.date)).map(e => `<div class="line" data-biz-entry="${e.id}"><div style="min-width:0"><div>${esc(e.name)}</div><div class="muted small">${shortDate(e.date)} · ${esc(e.cat || "")}${e.src && SALES_SRC[e.src] ? ` · ${SALES_SRC[e.src]}` : ""}${e.rcpt ? ` · <button class="link small" type="button" data-biz-rcpt-view>Receipt</button>` : ""}</div></div><div class="inline"><span class="tnum ${e.kind === "in" ? "good" : ""}">${e.kind === "in" ? "+" : ""}${fmt(e.amount)}</span><button class="link danger-link small" type="button" data-biz-del aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Nothing yet this month. Add a sale or a cost above, or sort a statement below.</p>`}
     ${M.subs || M.shares || M.miles ? `<p class="muted small">Also counted: ${[M.subs ? `${fmt(M.subs)} in subscriptions` : "", M.shares ? `${fmt(M.shares)} as the business share of personal bills` : "", M.miles ? `${fmt(M.miles)} for ${M.dist} ${mileUnit()}s driven` : ""].filter(Boolean).join(", ")}.</p>` : ""}</section>
   <section class="card" data-biz-subs><h2>Business subscriptions</h2>
     ${b.subs.length ? `<div class="rows">${b.subs.map(v => `<div class="line" data-biz-sub="${v.id}"><div><div>${esc(v.name)}</div><div class="muted small">${v.cycle === "yr" ? `Yearly${v.on ? `, ${dayMonth(isoDate(v.on))}` : ""}` : "Monthly"}</div></div><div class="inline"><span class="tnum">${fmt(v.price)}${v.cycle === "yr" ? "/yr" : "/mo"}</span><button class="link danger-link small" type="button" data-biz-sub-del aria-label="Remove ${esc(v.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Software, hosting, tools: anything the business pays for on a schedule.</p>`}
@@ -2351,7 +2515,7 @@ function bizSpace(){
   <section class="card" data-biz-import-card><h2 class="h-info">Sort a statement${infoBtn("bizImport", "About sorting a statement")}</h2>${infoTip("bizImport", "Choose a CSV, PDF or photo of a statement. Tick the lines that were business: money in becomes business income, money out a business cost. Read on this phone only.")}
     ${BIZ.lines ? (BIZ.lines.length ? `<p class="muted small">${esc(BIZ.file)}: tick what was business.</p><div class="st-tx biz-lines">${BIZ.lines.map((l, i) => `<label class="move-row"><input type="checkbox" data-biz-pick="${i}" ${BIZ.pick.has(i) ? "checked" : ""}><span style="flex:1;min-width:0"><span>${esc(l.desc)}</span><span class="muted small" style="display:block">${shortDate(l.date)}</span></span><span class="tnum ${l.amt > 0 ? "good" : ""}">${l.amt > 0 ? "+" : ""}${fmt(Math.abs(l.amt))}</span></label>`).join("")}</div>
       <div class="grid2"><button class="btn" type="button" data-biz-import-cancel>Cancel</button><button class="btn primary" type="button" data-biz-import-add ${BIZ.pick.size ? "" : "disabled"}>Add ${BIZ.pick.size} to Business</button></div>` : `<p class="muted small">Every line in that statement is already in Business.</p><button class="btn" type="button" data-biz-import-cancel>Done</button>`)
-      : `<button class="btn" type="button" data-biz-import>Choose a statement</button>`}</section>
+      : `<button class="btn" type="button" data-biz-import>Choose a statement</button>${plaidOn() ? `<div class="biz-banks">${plaidAccounts().map(a => `<button class="btn" type="button" data-biz-bank="${esc(a.id)}">From ${esc(a.name)}${a.mask ? " ••" + esc(a.mask) : ""}</button>`).join("")}</div>` : ""}`}</section>
   <section class="card" data-biz-settings><h2>Your business</h2><label class="field"><span>Business name <small class="muted">shown on invoices</small></span><input data-biz-name maxlength="50" value="${esc(b.name || "")}" placeholder="e.g. Sofia's Candles" autocomplete="organization"></label></section>`;
   } else if (seg === "invoices"){
     const list = b.invoices.slice().sort((a, c) => (c.date || "").localeCompare(a.date || "")), owed = r2(list.filter(i => i.status !== "paid").reduce((a, i) => a + invTotal(i), 0)), late = list.filter(invLate);
@@ -5972,6 +6136,11 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-bank-add")){ UI.bankAdd = true; BANK.err = ""; render(true); const i = view.querySelector("[data-form=bank] [name=token]"); if (i) i.focus(); return; }
   if (b.hasAttribute("data-bank-cancel")){ UI.bankAdd = false; BANK.err = ""; render(true); return; }
   if (b.hasAttribute("data-bank-refresh")){ if (BANK.busy) return; BANK.busy = true; render(true); await bankFetch(true); BANK.busy = false; render(true); if (!BANK.err) toast("Your bank is up to date."); return; }
+  if (b.hasAttribute("data-plaid-add")){ await plaidConnect(); return; }
+  if (b.hasAttribute("data-plaid-refresh")){ await plaidRefresh(); return; }
+  if (b.dataset.plaidOff){ await plaidRemove(b.dataset.plaidOff); return; }
+  if (b.hasAttribute("data-plaid-review")){ const f = plaidCsv(b.closest("[data-plaid-acct]").dataset.plaidAcct); if (!f){ toast("No transactions in the last 90 days for this account yet."); return; } await openStatement(f); return; }
+  if (b.dataset.bizBank){ const f = plaidCsv(b.dataset.bizBank); if (!f){ toast("No transactions in the last 90 days for this account yet."); return; } await bizRead(f); return; }
   if (b.hasAttribute("data-bank-review")){ await bankReview(b.dataset.bankReview); return; }
   if (b.hasAttribute("data-bank-off")){ try { localStorage.removeItem(BANK_KEY); } catch(e){} delete S.bank; BANK.cache = null; BANK.err = ""; save(); render(true); toast("Disconnected. To end it fully, also remove KeepWise in your SimpleFIN account."); return; }
   if (b.hasAttribute("data-import-cancel")){ STMT.result = null; STMT.fx = null; STMT.tx = null; render(false); return; }
@@ -6103,6 +6272,11 @@ view.addEventListener("click", async e => {
     picked.forEach(l => { bd.entries.push({id: uid(), kind: l.amt > 0 ? "in" : "out", name: l.desc.slice(0, 60), amount: r2(Math.abs(l.amt)), date: l.date, cat: l.amt > 0 ? "Sales" : "From statement"}); bd.imported.push(l.key); });
     bd.imported = bd.imported.slice(-3000); BIZ.lines = null; BIZ.pick = new Set(); save(); render(true); toast(`Added ${picked.length} to Business.`, u); return; }
   if (b.hasAttribute("data-biz-export")){ const ok = await saveFile(new Blob([bizCsv()], {type: "text/csv"}), `keepwise-business-${bizNow()[0]}.csv`); if (ok) toast("Saved. Send the file to your accountant."); return; }
+  if (b.dataset.salesAdd){ SALES.form = b.dataset.salesAdd; SALES.err = ""; render(true); const f = view.querySelector(".sales-form input"); if (f) f.focus({preventScroll: true}); return; }
+  if (b.hasAttribute("data-sales-cancel")){ SALES.form = ""; SALES.err = ""; render(true); return; }
+  if (b.hasAttribute("data-sales-sync")){ salesSync(b.closest("[data-sales-src]").dataset.salesSrc); return; }
+  if (b.hasAttribute("data-sales-off")){ const src = b.closest("[data-sales-src]").dataset.salesSrc, c = salesCreds(); delete c[src]; salesSaveCreds(c); delete salesState()[src]; SALES.err = ""; save(); render(true);
+    toast(`${SALES_SRC[src]} disconnected. Sales already brought in stay. To end it fully, also delete the key in ${SALES_SRC[src]}.`); return; }
   if (b.dataset.bseg){ UI.bseg = b.dataset.bseg; UI.invAdd = false; UI.invEdit = null; render(false); const m = $("main"); if (m) m.scrollTop = 0; return; }
   if (b.hasAttribute("data-biz-rcpt-add")){ const form = b.closest("form"), inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.setAttribute("capture", "environment"); inp.hidden = true;
     inp.addEventListener("change", () => { const file = inp.files && inp.files[0]; inp.remove(); if (file) bizReceipt(file, form); }); document.body.appendChild(inp); inp.click(); return; }
@@ -6283,6 +6457,7 @@ view.addEventListener("submit", async e => {
     const u = undoable(), e = {id: uid(), kind: k2, name, amount: r2(amount), date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0), cat: String(fd.get("cat") || "Other")};
     if (BIZ.rcpt && k2 === "out"){ const blob = BIZ.rcpt; BIZ.rcpt = null; try { await rcptPut(e.id, blob); e.rcpt = e.id; } catch(err){ toast("The receipt photo couldn't be kept on this phone."); } }
     bizData().entries.push(e); save(); render(true); toast(k2 === "in" ? `Added ${fmt(amount)} in.` : `Added a ${fmt(amount)} cost.`, u); return; }
+  if (kind === "salesStripe" || kind === "salesPaypal"){ if (!SALES.busy) await salesConnect(kind === "salesStripe" ? "stripe" : "paypal", f); return; }
   if (kind === "invoice"){ const bd = bizData(), items = invItemsOf(f).filter(x => x.desc.trim() || numv(x.price) > 0).map(x => ({desc: x.desc.trim().slice(0, 80) || "Item", qty: numv(x.qty) > 0 ? r2(numv(x.qty)) : 1, price: r2(numv(x.price))}));
     const client = String(fd.get("client") || "").trim().slice(0, 60), date = String(fd.get("date") || ""), due = String(fd.get("due") || ""), note = String(fd.get("note") || "").trim().slice(0, 160), ok = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
     if (!client){ toast("Say who the invoice is for."); f.elements.client.focus(); return; }

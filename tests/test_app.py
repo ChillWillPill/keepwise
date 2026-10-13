@@ -2157,6 +2157,104 @@ async def biz_on(pg):
         for _ in range(7): await pg.click("[data-plus-tap]", force=True)
         await pg.wait_for_timeout(200)
 
+
+@test
+async def business_live_sales_come_in_from_stripe_and_paypal(ctx):
+    pg = await open_app(ctx, month_tabs=True); await biz_on(pg)
+    now = int(datetime.datetime.now().timestamp()); today = datetime.date.today().isoformat(); calls = []
+    async def api(route):
+        req = route.request; body = json.loads(req.post_data or "{}"); calls.append((req.url.rsplit("/", 1)[1], body))
+        if req.url.endswith("/stripe"):
+            if body.get("path") == "balance": return await route.fulfill(status=200, content_type="application/json", body="{}")
+            data = [{"id": "txn_1", "type": "charge", "amount": 4500, "fee": 161, "currency": "usd", "created": now - 3600, "description": "Lavender candle x3"},
+                    {"id": "txn_2", "type": "payment", "amount": 2000, "fee": 88, "currency": "usd", "created": now - 7200, "description": None},
+                    {"id": "txn_3", "type": "refund", "amount": -1500, "fee": 0, "currency": "usd", "created": now - 600, "description": "Broken jar"},
+                    {"id": "txn_4", "type": "payout", "amount": -5000, "fee": 0, "currency": "usd", "created": now - 500},
+                    {"id": "txn_5", "type": "charge", "amount": 3000, "fee": 120, "currency": "eur", "created": now - 400, "description": "Order from Berlin"}]
+            return await route.fulfill(status=200, content_type="application/json", body=json.dumps({"data": data, "has_more": False}))
+        if body.get("secret", "").startswith("wrong"): return await route.fulfill(status=401, content_type="application/json", body=json.dumps({"error": "PayPal didn't accept that Client ID and Secret."}))
+        tx = [{"transaction_info": {"transaction_id": "PP1", "transaction_event_code": "T0006", "transaction_status": "S", "transaction_initiation_date": today + "T10:00:00+0000", "transaction_amount": {"currency_code": "USD", "value": "50.00"}, "fee_amount": {"currency_code": "USD", "value": "-1.75"}}, "payer_info": {"payer_name": {"alternate_full_name": "Dana Lee"}}},
+              {"transaction_info": {"transaction_id": "PP2", "transaction_event_code": "T1107", "transaction_status": "S", "transaction_initiation_date": today + "T11:00:00+0000", "transaction_amount": {"currency_code": "USD", "value": "-20.00"}}, "payer_info": {"payer_name": {"alternate_full_name": "Sam Ortiz"}}},
+              {"transaction_info": {"transaction_id": "PP3", "transaction_event_code": "T0403", "transaction_status": "S", "transaction_initiation_date": today + "T12:00:00+0000", "transaction_amount": {"currency_code": "USD", "value": "-100.00"}}},
+              {"transaction_info": {"transaction_id": "PP4", "transaction_event_code": "T0006", "transaction_status": "P", "transaction_initiation_date": today + "T12:00:00+0000", "transaction_amount": {"currency_code": "USD", "value": "80.00"}}}]
+        last = body.get("end", "")[:10] >= today
+        return await route.fulfill(status=200, content_type="application/json", body=json.dumps({"transaction_details": tx if last else [], "total_pages": 1}))
+    await pg.route(re.compile(r"keepwise-api\."), api)
+    assert "Live sales" in await text(pg, "[data-sales-card]")
+    # a full secret key is refused before anything is sent
+    await pg.click("[data-sales-add=stripe]"); f = pg.locator("form[data-form=salesStripe]")
+    await f.locator("[name=key]").fill("sk_live_" + "a" * 24); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(150)
+    assert "restricted key" in await text(pg, "[data-sales-err]") and not calls
+    await f.locator("[name=key]").fill("rk_test_" + "a" * 24); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(600)
+    assert "2 new Stripe sales added. 1 in another currency left out." in await pg.inner_text("#toast"), await pg.inner_text("#toast")
+    es = (await state(pg))["biz"]["entries"]
+    assert sorted((e["kind"], e["amount"], e["cat"]) for e in es) == sorted([("in", 45, "Sales"), ("out", 1.61, "Fees & commissions"), ("in", 20, "Sales"), ("out", 0.88, "Fees & commissions"), ("out", 15, "Returns & refunds")]), es
+    assert money(await text(pg, "[data-biz-profit]")) == 47.51 and "Stripe" in await text(pg, "[data-biz-list]")
+    assert "rk_test_" not in json.dumps(await state(pg)), "the key never goes into the plan or backups"
+    # syncing again adds nothing twice
+    await pg.click("[data-sales-src=stripe] [data-sales-sync]"); await pg.wait_for_timeout(500)
+    assert "Stripe is up to date." in await pg.inner_text("#toast") and len((await state(pg))["biz"]["entries"]) == 5
+    # PayPal: a wrong secret keeps what was typed and says why
+    await pg.click("[data-sales-add=paypal]"); f = pg.locator("form[data-form=salesPaypal]")
+    await f.locator("[name=id]").fill("A" * 30); await f.locator("[name=secret]").fill("wrong" + "B" * 30); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(300)
+    assert "didn't accept" in await text(pg, "form[data-form=salesPaypal] [data-sales-err]") and await f.locator("[name=id]").input_value() == "A" * 30
+    await f.locator("[name=secret]").fill("B" * 30); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(1500)
+    assert "1 new PayPal sale added." in await pg.inner_text("#toast"), await pg.inner_text("#toast")
+    pp = [e for e in (await state(pg))["biz"]["entries"] if e.get("src") == "paypal"]
+    assert sorted((e["kind"], e["amount"], e["name"]) for e in pp) == sorted([("in", 50, "Dana Lee"), ("out", 1.75, "PayPal fee"), ("out", 20, "Refund · Sam Ortiz")]), pp
+    rows = await text(pg, "[data-sales-card]"); assert "Stripe" in rows and "PayPal" in rows and "Synced just now" in rows
+    # disconnect keeps the sales but forgets the key
+    await pg.click("[data-sales-src=paypal] [data-sales-off]"); await pg.wait_for_timeout(150)
+    assert "PayPal" not in (await pg.evaluate("localStorage.getItem('keepwise-sales-v1')") or "") and len([e for e in (await state(pg))["biz"]["entries"] if e.get("src") == "paypal"]) == 3
+    assert await pg.locator("[data-sales-add=paypal]").count() == 1
+    pg.errors[:] = [e for e in pg.errors if "status of 401" not in e]   # the browser logs the refusal this test asks for
+    assert not pg.errors, pg.errors
+
+
+@test
+async def plus_connects_a_bank_through_plaid(ctx):
+    pg = await open_app(ctx, month_tabs=True)
+    today = datetime.date.today(); d = lambda n: (today - datetime.timedelta(days=n)).isoformat(); calls = []
+    PLAID_JS = """window.Plaid = {create: o => ({open: () => setTimeout(() => o.onSuccess('public-sandbox-1234abcd-12ab-34cd-56ef-1234567890ab', {institution: {name: 'First Platypus Bank'}}), 60)})};"""
+    await pg.route("https://cdn.plaid.com/**", lambda r: r.fulfill(status=200, content_type="text/javascript", body=PLAID_JS))
+    tx = [{"id": "p1", "acct": "a1", "amount": -2100, "date": d(20), "name": "ACME CORP PAYROLL", "cur": "USD", "pending": False},
+          {"id": "p2", "acct": "a1", "amount": 15.49, "date": d(15), "name": "Netflix", "cur": "USD", "pending": False},
+          {"id": "p3", "acct": "a1", "amount": 61.2, "date": d(3), "name": "Craft Warehouse", "cur": "USD", "pending": False},
+          {"id": "p4", "acct": "a1", "amount": 9.99, "date": d(0), "name": "Pending Shop", "cur": "USD", "pending": True},
+          {"id": "p5", "acct": "a1", "amount": 40, "date": d(200), "name": "Old thing", "cur": "USD", "pending": False}]
+    async def api(route):
+        path = "/" + route.request.url.split("workers.dev/", 1)[1]; body = json.loads(route.request.post_data or "{}"); calls.append((path, body))
+        r = {"/plaid/link": {"link_token": "link-sandbox-x", "env": "sandbox"}, "/plaid/exchange": {"item": "SEALED-BLOB"}, "/plaid/remove": {"removed": True},
+             "/plaid/sync": {"added": tx if not body.get("cursor") else [], "modified": [], "removed": [], "next_cursor": "c1", "has_more": False,
+                             "accounts": [{"id": "a1", "name": "Plaid Checking", "mask": "0000", "type": "checking", "balance": 1100.5, "cur": "USD"}]}}[path]
+        await route.fulfill(status=200, content_type="application/json", body=json.dumps(r))
+    await pg.route(re.compile(r"keepwise-api\."), api)
+    await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-plaid]").count() == 0, "Plaid is a Plus feature"
+    await biz_on(pg); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150)
+    card = await text(pg, "[data-bank]"); assert "Connect with Plaid" in card and "Connect with SimpleFIN" in card, card
+    await pg.click("[data-plaid-add]"); await pg.wait_for_timeout(800)
+    card = await text(pg, "[data-bank]"); assert "Plaid Checking" in card and "••0000" in card and "First Platypus Bank" in card and "$1,100.50" in card, card
+    assert [c[0] for c in calls] == ["/plaid/link", "/plaid/exchange", "/plaid/sync"] and calls[2][1]["item"] == "SEALED-BLOB"
+    store = await pg.evaluate("localStorage.getItem('keepwise-plaid-v1')"); assert "SEALED-BLOB" in store and "Old thing" not in store, "only 90 days stay"
+    assert "SEALED-BLOB" not in json.dumps(await state(pg)), "never in the plan or backups"
+    # review reads the account like a statement, without the pending line
+    await pg.click("[data-plaid-review]"); await pg.wait_for_timeout(1500)
+    v = await pg.inner_text("#view"); assert "Your statement" in v and "Netflix" in v and "Pending Shop" not in v, v[:500]
+    await pg.click("button:has-text('Cancel')"); await pg.wait_for_timeout(300)
+    # refresh asks again with the cursor
+    await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150); await pg.click("[data-plaid-refresh]"); await pg.wait_for_timeout(400)
+    assert calls[-1] == ("/plaid/sync", {"item": "SEALED-BLOB", "cursor": "c1"})
+    # Business can sort the same account
+    await pg.click("[data-space=business]"); await pg.wait_for_timeout(150); await pg.click("[data-biz-bank=a1]"); await pg.wait_for_timeout(800)
+    lines = await text(pg, "[data-biz-import-card]"); assert "Craft Warehouse" in lines and await pg.locator("[data-biz-pick]").count() == 3, lines
+    await pg.click("[data-biz-import-cancel]"); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150)
+    # disconnect removes it at Plaid and on the phone
+    await pg.click("[data-plaid-off]"); await pg.wait_for_timeout(300)
+    assert calls[-1][0] == "/plaid/remove" and "SEALED-BLOB" not in (await pg.evaluate("localStorage.getItem('keepwise-plaid-v1')") or "")
+    assert "Connect with Plaid" in await text(pg, "[data-bank]")
+    assert not pg.errors, pg.errors
+
 @test
 async def business_invoices_are_made_shared_and_paid(ctx):
     pg = await open_app(ctx, month_tabs=True); await biz_on(pg)
