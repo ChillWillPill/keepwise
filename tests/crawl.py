@@ -23,6 +23,12 @@ async def _d(pg): await tab(pg, "subs")
 async def _f(pg): await tab(pg, "split")
 @screen("banks")
 async def _g(pg): await pg.click("[data-tab=banks]")
+@screen("cards")
+async def _g2(pg): await pg.click("[data-tab=banks]"); await pg.click("[data-bankseg=cards]")
+@screen("statements")
+async def _g3(pg): await pg.click("[data-tab=banks]"); await pg.click("[data-bankseg=statements]")
+@screen("owl")
+async def _g4(pg): await pg.click("#wise")
 for seg in ("money", "invoices", "miles", "tax"):
     async def _h(pg, seg=seg):
         await pg.click("[data-mseg=more]"); await pg.click("[data-space=business]"); await pg.wait_for_timeout(100)

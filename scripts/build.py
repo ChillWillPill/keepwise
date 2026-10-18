@@ -102,7 +102,7 @@ self.addEventListener("fetch", e => {{
 }});
 """)
 import shutil
-for f in ("privacy.html", "terms.html", "legal.css"):
+for f in ("privacy.html", "terms.html", "refund.html", "legal.css"):
     shutil.copy(os.path.join(ROOT, "src/legal", f), os.path.join(ROOT, "www", f))
 shutil.copy(os.path.join(ROOT, "src/admin/admin.html"), os.path.join(ROOT, "www/admin.html"))
 os.makedirs(os.path.join(ROOT, "www/admin"), exist_ok=True)
