@@ -6146,6 +6146,39 @@ async def android_app_unlocks_with_the_phones_own_fingerprint(ctx):
     await tap("2468"); assert not await locked()
     assert not pg.errors, pg.errors
 
+@test
+async def every_way_into_banks_asks_for_the_app_lock(ctx):
+    pg = await open_app(ctx, month_tabs=True)
+    locked = lambda: pg.evaluate("!document.getElementById('lockscreen').hidden")
+    async def tap(code):
+        for d in code: await pg.click(f"[data-lock-key='{d}']"); await pg.wait_for_timeout(40)
+        await pg.wait_for_timeout(500)
+    await pg.click("[data-tab=banks]"); await pg.click("[data-bankseg=cards]"); await pg.click("[data-card-add]"); f = "form[data-form=card]"
+    await pg.fill(f + " [name=name]", "Gold card"); await pg.fill(f + " [name=balance]", "200"); await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(200)
+    await menu_to(pg, "security"); await pg.click("[data-lock-set]"); f = "form[data-form=lockSet] "
+    await pg.fill(f + "[name=pin]", "2468"); await pg.fill(f + "[name=pin2]", "2468"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(600)
+    await tab(pg, "plan"); await pg.wait_for_timeout(150)
+    await pg.click(".loan-card [data-cards-open]"); await pg.wait_for_timeout(250)
+    assert await locked() and "Unlock your banks" in await pg.inner_text("#lockscreen"), "the Credit cards line asks for the passcode first"
+    assert await pg.locator("#view [data-cards]").count() == 0
+    await pg.click("[data-lock-cancel]"); await pg.wait_for_timeout(200); assert not await locked() and await pg.locator("#view [data-cards]").count() == 0, "cancel stays out"
+    await pg.click(".loan-card [data-cards-open]"); await pg.wait_for_timeout(250); await tap("2468")
+    assert not await locked() and await pg.locator("#view [data-cards]").count() == 1 and await pg.locator("[data-bankseg=cards][aria-pressed=true]").count() == 1, "then Cards opens"
+    # search goes through the lock too
+    await pg.click("[data-tab=month]"); await pg.click("#find-btn"); await pg.fill("#find-in", "connect your bank"); await pg.wait_for_timeout(400)
+    await pg.locator(".find-row", has_text="Connect your bank").first.click(); await pg.wait_for_timeout(250)
+    assert await locked(), "search into Banks asks for the passcode"
+    await tap("2468"); assert not await locked() and (await state(pg))["tab"] == "banks"
+    assert not pg.errors, pg.errors
+
+@test
+async def the_owl_has_a_fuel_icon_in_misc(ctx):
+    pg = await open_app(ctx, month_tabs=True)
+    await pg.click("#wise"); await pg.wait_for_timeout(300)
+    labels = [x.strip() for x in await pg.locator(".quick-grid button").all_inner_texts()]
+    assert "Fuel" in labels and labels.index("Fuel") == labels.index("Car") + 1, labels[:8]
+    assert not pg.errors, pg.errors
+
 async def main():
     passed, failed = 0, []
     async with async_playwright() as p:

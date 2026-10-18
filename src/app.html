@@ -2984,7 +2984,7 @@ function bizPreview(){
 // tab, in a panel over the page. Same box, same microphone, same answers.
 // Tap a category, type the amount, Add: a one-time Misc spend under that name and icon.
 // Only everyday one-offs belong here: they go to Miscellaneous. Monthly bills (utilities, phone, rent) are Expenditures, so they are left out.
-const QUICK_ORDER = ["food", "coffee", "car", "bag", "drink", "fun", "film", "health", "pill", "shirt", "beauty", "gift", "travel", "kid", "paw", "gym", "book", "game", "park", "family", "charity", "work", "smoke", "cash"];
+const QUICK_ORDER = ["food", "coffee", "car", "fuel", "bag", "drink", "fun", "film", "health", "pill", "shirt", "beauty", "gift", "travel", "kid", "paw", "gym", "book", "game", "park", "family", "charity", "work", "smoke", "cash"];
 const QUICK = QUICK_ORDER.map(k => SPEND_ICONS.find(x => x[0] === k)).filter(Boolean).concat([["receipt", "Other"]]);
 function quickPick(){
   const exp = UI.quickEnv === "exp", list = exp ? EXP_QUICK : QUICK, on = UI.quick && list.find(([k]) => k === UI.quick), line = exp && on ? expFor(on) : null;
@@ -4108,6 +4108,8 @@ const surveyDue = x => x.keep !== "drop" && !isOurs(x) && !(x.reviewedAt && x.re
 function goTo(tabName, sel){
   if (tabName === "plan"){ tabName = "month"; if (!sel){ UI.mseg = "more"; } }
   if (tabName === "banks" && sel && /data-card/.test(sel)) UI.bankSeg = "cards";   // Plan's cards moved to Month
+  // Banks is behind the app lock however it is reached: a link from Month, search, the bell or Coming up asks first, like the tab does.
+  if (tabName === "banks" && S.tab !== "banks" && LOCK.cfg && lockCan() && !LOCK.on){ UI.menu = false; UI.find = false; LOCK.gate = "tab"; LOCK.gateGo = {sel: sel || null, pay: UI.cardPay || null}; UI.cardPay = null; lockNow(); render(true); return false; }
   if (sel && tabName === "month") UI.needKind = /data-arrive/.test(sel) ? "arrived" : /data-bill-due/.test(sel) ? "bills" : /data-yr-due/.test(sel) ? "yearly" : UI.needKind;   // bring the right question to the front
   UI.find = false; UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; S.tab = tabName; save(); render(false);
   const el = sel && (monthFind(sel) || planFind(sel) || view.querySelector(sel)), m = $("main"); if (!el) return false;
@@ -6019,7 +6021,8 @@ function lockDraw(){
     ${LOCK.gate ? `<button class="link small" type="button" data-lock-cancel>Cancel</button>` : `<button class="link plain small" type="button" data-lock-forgot>Forgot passcode?</button>`}`;
 }
 function lockNow(){ if (!LOCK.cfg || LOCK.on) return; LOCK.on = true; LOCK.entry = ""; LOCK.forgot = false; if (isField(document.activeElement)) document.activeElement.blur(); lockDraw(); if (LOCK.cfg.bio) lockBio(); }
-function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; LOCK.openedAt = Date.now(); LOCK.hiddenAt = 0; lockDraw(); if (LOCK.gate){ const g = LOCK.gate; LOCK.gate = false; if (g === "tab"){ S.tab = "banks"; UI.find = false; UI.menu = false; save(); } else UI.banks = true; render(false); renderTabs(); } }
+function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; LOCK.openedAt = Date.now(); LOCK.hiddenAt = 0; lockDraw(); if (LOCK.gate){ const g = LOCK.gate; LOCK.gate = false; if (g === "tab"){ S.tab = "banks"; UI.find = false; UI.menu = false; save(); } else UI.banks = true; render(false); renderTabs();
+    const go = LOCK.gateGo; LOCK.gateGo = null; if (g === "tab" && go){ if (go.pay) UI.cardPay = go.pay; if (go.sel) goTo("banks", go.sel); else if (go.pay) render(false); } } }
 async function lockBio(){ if (LOCK.busy || !LOCK.on) return; LOCK.busy = true; const ok = await bioCheck(); LOCK.busy = false; if (ok && LOCK.on) lockOpen(); }
 async function lockKey(d){
   if (!LOCK.on || LOCK.busy || Date.now() < LOCK.until || LOCK.forgot) return;
@@ -6036,7 +6039,7 @@ $("lockscreen").addEventListener("click", e => { const b = e.target.closest("but
   if (b.dataset.lockKey) lockKey(b.dataset.lockKey);
   else if (b.hasAttribute("data-lock-del")) lockKey("del");
   else if (b.hasAttribute("data-lock-bio")) lockBio();
-  else if (b.hasAttribute("data-lock-cancel")){ LOCK.gate = false; LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; lockDraw(); }
+  else if (b.hasAttribute("data-lock-cancel")){ LOCK.gate = false; LOCK.gateGo = null; LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; lockDraw(); }
   else if (b.hasAttribute("data-lock-forgot")){ LOCK.forgot = 1; LOCK.rmsg = ""; lockDraw(); }
   else if (b.hasAttribute("data-lock-back")){ LOCK.forgot = false; LOCK.rmsg = ""; lockDraw(); }
   else if (b.hasAttribute("data-lock-google")) lockRecover("", true);
@@ -6104,7 +6107,7 @@ function segStick(){ const m = $("main"), g = m && m.querySelector(".view>.seg.s
 function render(keepScroll){
   const main = $("main"), top = main.scrollTop, back = keepScroll ? innerScrollKeep(document.getElementById("app") || document.body) : () => {};
   // Banks & statements is the Banks tab now: anything that opens it (the menu, search, a bank just connected) lands on Accounts.
-  if (UI.banks){ UI.banks = false; S.tab = "banks"; UI.bankSeg = "accounts"; UI.settings = false; UI.account = false; }
+  if (UI.banks){ UI.banks = false; S.tab = "banks"; UI.bankSeg = "accounts"; UI.settings = false; UI.account = false; save(); }
   const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.find ? V.find() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : UI.banks ? V.banks() : UI.settings ? V.settings() : S.tab === "banks" ? V.bankTab() : (V[S.tab] || V.month)();
   const askOk = !STMT.result && !UI.pdfLock && !UI.account && UI.welcome == null && !UI.biz; if (!askOk) UI.askOpen = false;
   const sheet = $("asksheet"); if (sheet){ sheet.innerHTML = UI.askOpen ? askSheet() : ""; sheet.hidden = !UI.askOpen; }
@@ -6808,7 +6811,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.cardPayFill){ const i = b.closest("form").querySelector("[name=amount]"); i.value = b.dataset.cardPayFill; i.focus(); return; }
   if (b.dataset.upCardPay){ UI.cardPay = b.dataset.upCardPay; UI.cardPayMode = "pay"; goTo("banks", `[data-card="${b.dataset.upCardPay}"]`);
     setTimeout(() => { const i = document.querySelector("[data-form=cardPay] [name=amount]"); if (i) i.focus(); }, 350); return; }
-  if (b.hasAttribute("data-cards-open")){ goTo("banks", "[data-cards]"); UI.bankSeg = "cards"; render(false); return; }
+  if (b.hasAttribute("data-cards-open")){ goTo("banks", "[data-cards]"); return; }   // the selector opens Cards; the app lock asks first
   if (b.hasAttribute("data-card-cancel")){ UI.cardAdd = false; UI.cardEdit = null; render(true); return; }
   if (b.dataset.cardType){ const f = b.closest("form"); f.dataset.ctype = b.dataset.cardType; f.querySelector("[name=ctype]").value = b.dataset.cardType; f.querySelectorAll("[data-card-type]").forEach(x => x.setAttribute("aria-pressed", x === b)); return; }
   { const cr = b.closest("[data-card]");
