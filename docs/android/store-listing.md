@@ -31,8 +31,13 @@ BILLS AND SUBSCRIPTIONS
 CARDS AND STATEMENTS
 • Credit and debit cards with limits, payments and yearly fees
 • Log a payment and see what is available on each card
+• Car insurance and loans, with what is left on each
 • Import a bank statement (CSV, PDF or photo) and see it sorted
 • Monthly statements and trends by day, week, month or year
+
+TRIPS AND EVENTS
+• Give a trip its own budget and log spending as you go
+• Your month stays untouched until you decide
 
 SPLITS
 • Split a bill with friends or family
@@ -41,7 +46,7 @@ SPLITS
 PRIVATE BY DESIGN
 • Your budget is kept on your phone, not on our servers
 • An account is optional
-• App lock with a passcode
+• App lock with a passcode or your fingerprint
 • No ads. No selling your data.
 
 KeepWise Plus is coming later with bank connections, a Business space and more. Everything free stays free.

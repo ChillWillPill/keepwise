@@ -14,7 +14,7 @@
       uid: rec.uid, email: rec.email, displayName: rec.displayName || null, photoURL: rec.photoURL || null,
       get emailVerified(){ return !!(users[rec.email] && users[rec.email].verified); },
       providerData: [{providerId: rec.provider}],
-      sendEmailVerification: async () => { window.__mockMail.push({to: rec.email, type: "verify"}); },
+      sendEmailVerification: async (o) => { window.__mockMail.push({to: rec.email, type: "verify", url: o && o.url}); },
       reload: async () => {},
       getIdToken: async () => "mock-id-token-" + rec.uid,
       reauthenticateWithCredential: async c => { if (!c || c.email !== rec.email) throw err("auth/user-mismatch"); if (window.__mockOffline) throw err("auth/network-request-failed"); if (c.pw !== rec.pw) throw err("auth/wrong-password"); },

@@ -871,7 +871,7 @@ async def account_email_signup_and_profile(ctx):
     assert await pg.locator("[data-pw-rules] li.ok").count() == 3 and await pg.locator("[data-pw-rules] li").count() == 4
     await pg.fill("#acc-pass", "Longenough1!"); await pg.wait_for_timeout(80); assert await pg.locator("[data-pw-rules] li.ok").count() == 4
     await pg.fill("#acc-pass", "Longenough1!"); await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(400)
-    assert await pg.evaluate("window.__mockMail.some(m => m.type === 'verify' && m.to === 'ada@example.com')"), "verification email sent"
+    assert await pg.evaluate("window.__mockMail.some(m => m.type === 'verify' && m.to === 'ada@example.com' && m.url === 'https://mykeepwise.com/?verified=1')"), "verification email sent, with a way back to KeepWise"
     v = await text(pg, "#view")
     assert "Finish your profile" in v and "Verify your email" in v
     f = "[data-form=acc-profile]"
@@ -972,7 +972,7 @@ async def account_google_signout_and_delete(ctx):
     await pg.click("[data-acc-google]"); await pg.wait_for_timeout(400)
     assert "Save changes" in await text(pg, "#view"), "a finished profile opens straight away"
     async def del_from_settings():
-        await menu_to(pg, "settings"); await pg.click("#view [data-del-acct]"); await pg.wait_for_timeout(200)
+        await menu_to(pg, "data"); await pg.click("#view [data-del-acct]"); await pg.wait_for_timeout(200)
     await del_from_settings()
     step = await text(pg, "[data-del-step='1']"); assert "Download a copy of your data" in step and "Stays:" in step and "Deleted:" in step, step
     await pg.click("[data-acc-delete-no]"); await pg.wait_for_timeout(120)
@@ -3040,37 +3040,43 @@ async def app_lock_with_passcode_and_biometrics(ctx):
     stored = await pg.evaluate("localStorage.getItem('keepwise-lock-v1')")
     assert "2468" not in stored and json.loads(stored)["len"] == 4 and "2468" not in await pg.evaluate("localStorage.getItem('keepwise-app-v1')"), "only a hash is kept, apart from your data"
     # it locks when the app opens, hides the app behind it, and only the right passcode opens it
-    await pg.reload(); await pg.wait_for_timeout(500)
+    await pg.evaluate("localStorage.removeItem('keepwise-unlocked-at'); localStorage.removeItem('keepwise-seen-at')"); await pg.reload(); await pg.wait_for_timeout(500)
     assert await locked() and await pg.evaluate("getComputedStyle(document.getElementById('app')).visibility") == "hidden" and "Enter your passcode" in await pg.inner_text("#lockscreen")
     await tap("1111"); assert await locked() and "not right" in await pg.inner_text("#lockscreen") and await pg.locator(".lock-dots i.on").count() == 0
     await tap("24"); await pg.click("[data-lock-del]"); await pg.wait_for_timeout(60); assert await pg.locator(".lock-dots i.on").count() == 1
     await tap("468"); assert not await locked() and await pg.evaluate("getComputedStyle(document.getElementById('app')).visibility") == "visible"
-    # the Banks screen asks for the passcode again, and can be cancelled
+    # just unlocked, Banks opens straight away; five minutes later it asks again, and can be cancelled
     await tab(pg, "month"); await menu_to(pg, "banks"); await pg.wait_for_timeout(200)
+    assert not await locked() and await pg.inner_text("#view h1") == "Banks & statements", "within five minutes of unlocking, Banks just opens"
+    await tab(pg, "month"); await pg.evaluate("window.__n0 = window.__n0 || Date.now; Date.now = () => window.__n0() + 301000"); await menu_to(pg, "banks"); await pg.wait_for_timeout(200)
     assert await locked() and "Unlock your banks" in await pg.inner_text("#lockscreen")
     await pg.click("[data-lock-cancel]"); await pg.wait_for_timeout(150); assert not await locked() and await pg.locator("#view [data-bank]").count() == 0
     await menu_to(pg, "banks"); await pg.wait_for_timeout(200); await tap("2468")
     assert not await locked() and await pg.inner_text("#view h1") == "Banks & statements"
     await pg.click("[data-tab=month]"); await pg.wait_for_timeout(150)
     # five wrong tries make you wait
-    await pg.reload(); await pg.wait_for_timeout(500)
+    await pg.evaluate("localStorage.removeItem('keepwise-unlocked-at'); localStorage.removeItem('keepwise-seen-at')"); await pg.reload(); await pg.wait_for_timeout(500)
     for _ in range(5): await tap("0000")
     assert "Too many tries" in await pg.inner_text("#lockscreen")
     await tap("2468"); assert await locked(), "even the right passcode waits out the pause"
-    await pg.evaluate("void 0"); await pg.reload(); await pg.wait_for_timeout(500); await tap("2468"); assert not await locked()
-    # a minute away locks it again; a short glance away does not
+    await pg.evaluate("void 0"); await pg.evaluate("localStorage.removeItem('keepwise-unlocked-at'); localStorage.removeItem('keepwise-seen-at')"); await pg.reload(); await pg.wait_for_timeout(500); await tap("2468"); assert not await locked()
+    # five minutes away locks it again; a minute in another app does not
     await pg.evaluate("Object.defineProperty(document, 'visibilityState', {configurable: true, get: () => window.__vis || 'visible'}); window.__vis = 'hidden'; document.dispatchEvent(new Event('visibilitychange'))")
     await pg.evaluate("window.__vis = 'visible'; document.dispatchEvent(new Event('visibilitychange'))"); assert not await locked()
     await pg.evaluate("window.__vis = 'hidden'; document.dispatchEvent(new Event('visibilitychange'))")
     await pg.evaluate("const n = Date.now; Date.now = () => n() + 61000; window.__vis = 'visible'; document.dispatchEvent(new Event('visibilitychange')); Date.now = n"); await pg.wait_for_timeout(150)
-    assert await locked(); await tap("2468"); assert not await locked()
+    assert not await locked(), "a minute in another app stays unlocked"
+    await pg.evaluate("window.__vis = 'hidden'; document.dispatchEvent(new Event('visibilitychange'))")
+    assert await pg.evaluate("+localStorage.getItem('keepwise-seen-at') > 0"), "leaving the app notes when, in case the phone closes it"
+    await pg.evaluate("const n = Date.now; Date.now = () => n() + 301000; window.__vis = 'visible'; document.dispatchEvent(new Event('visibilitychange')); Date.now = n"); await pg.wait_for_timeout(150)
+    assert await locked() and await pg.evaluate("localStorage.getItem('keepwise-seen-at')") is None; await tap("2468"); assert not await locked()
     await pg.evaluate("window.__vis = 'visible'; document.dispatchEvent(new Event('visibilitychange'))"); await pg.wait_for_timeout(150)
     assert not await locked(), "a second 'visible' on the way back (as iPhones send after Face ID) does not lock it again"
     # Face ID or fingerprint: turn it on, and it unlocks without typing; the passcode still works when it fails
     await menu_to(pg, "security"); await pg.click("[data-lock-bio-toggle]"); await pg.wait_for_timeout(300)
     assert await pg.evaluate("window.__bio.made") == 1 and json.loads(await pg.evaluate("localStorage.getItem('keepwise-lock-v1')"))["bio"]
-    await pg.reload(); await pg.wait_for_timeout(700); assert not await locked() and await pg.evaluate("window.__bio.asked") == 1, "the phone's own check opens it"
-    await pg.add_init_script("window.__bioFail = true"); await pg.reload(); await pg.wait_for_timeout(700)
+    await pg.evaluate("localStorage.removeItem('keepwise-unlocked-at'); localStorage.removeItem('keepwise-seen-at')"); await pg.reload(); await pg.wait_for_timeout(700); assert not await locked() and await pg.evaluate("window.__bio.asked") == 1, "the phone's own check opens it"
+    await pg.add_init_script("window.__bioFail = true"); await pg.evaluate("localStorage.removeItem('keepwise-unlocked-at'); localStorage.removeItem('keepwise-seen-at')"); await pg.reload(); await pg.wait_for_timeout(700)
     assert await locked() and await pg.locator("[data-lock-bio]").count() == 1, "when the phone's check fails it stays locked and offers the passcode"
     await pg.click("[data-lock-bio]"); await pg.wait_for_timeout(200); assert await locked()
     await tap("2468"); assert not await locked()
@@ -3085,7 +3091,7 @@ async def app_lock_with_passcode_and_biometrics(ctx):
     assert await pg.evaluate("localStorage.getItem('keepwise-lock-v1')") is None and "Set a passcode" in await pg.locator("[data-lock-card]").inner_text()
     # forgotten passcode: nothing can recover it; erasing takes two taps and clears the phone
     await pg.click("[data-lock-set]"); f = "form[data-form=lockSet] "; await pg.fill(f + "[name=pin]", "9999"); await pg.fill(f + "[name=pin2]", "9999"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(600)
-    await pg.reload(); await pg.wait_for_timeout(500); assert await locked()
+    await pg.evaluate("localStorage.removeItem('keepwise-unlocked-at'); localStorage.removeItem('keepwise-seen-at')"); await pg.reload(); await pg.wait_for_timeout(500); assert await locked()
     await pg.click("[data-lock-forgot]"); v = await pg.inner_text("#lockscreen"); assert "cannot be recovered" in v and "backup file" in v
     await pg.click("[data-lock-back]"); assert "Enter your passcode" in await pg.inner_text("#lockscreen")
     await pg.click("[data-lock-forgot]"); await pg.click("[data-lock-erase]"); await pg.wait_for_timeout(100)
@@ -4828,10 +4834,10 @@ async def the_round_chart_shows_where_the_month_goes(ctx):
     mid = await text(pg, "[data-donut] .dn-mid"); assert f"${needs + misc:,.2f}" in mid and "goes out" in mid, mid
     pcts = [int(r[2].replace("%", "").replace("<", "")) for r in rows]; assert 97 <= sum(pcts) <= 103 and pcts[0] == round(1850 / (out + sav) * 100), pcts
     # one slice per row, drawn all the way round, with the share written on the slices big enough to hold it
-    arcs = await pg.evaluate("[...document.querySelectorAll('[data-donut] svg circle')].map(c => parseFloat(c.getAttribute('stroke-dasharray')))")
+    arcs = await pg.evaluate("[...document.querySelectorAll('[data-donut] .dn-ring svg circle')].map(c => parseFloat(c.getAttribute('stroke-dasharray')))")
     assert len(arcs) == len(rows) and 255 < sum(arcs) + 0.9 * len(arcs) < 266, arcs
-    labels = await pg.locator("[data-donut] svg text").all_text_contents(); assert "36%" in labels and len(labels) == len([p for p in pcts if p >= 7]), labels
-    assert "percent" in await pg.locator("[data-donut] svg").get_attribute("aria-label")
+    labels = await pg.locator("[data-donut] .dn-ring svg text").all_text_contents(); assert "36%" in labels and len(labels) == len([p for p in pcts if p >= 7]), labels
+    assert "percent" in await pg.locator("[data-donut] .dn-ring svg").get_attribute("aria-label")
     # it follows the plan: drop the most expensive subscription and its slice shrinks while what you keep grows
     before = dict(amt); await tab(pg, "subs"); await pg.locator("[data-sub] [data-keep=drop]").first.click(); await pg.wait_for_timeout(200); await tab(pg, "month")
     rows2 = await pg.evaluate("Object.fromEntries([...document.querySelectorAll('[data-donut] .dn-list li')].map(li => [li.querySelector('.dn-name').textContent, li.querySelector('.dn-amt').textContent]))")
@@ -5449,7 +5455,7 @@ async def settings_leave_plan_and_delete_sits_quietly_at_the_foot(ctx):
     a = await pg.locator("[data-reset=example]").bounding_box(); b = await pg.locator("[data-reset=blank]").bounding_box(); card = await pg.locator("[data-reset=blank]").locator("xpath=ancestor::section[1]").bounding_box()
     assert abs(a["y"] - b["y"]) < 2 and card["x"] + card["width"] - (b["x"] + b["width"]) < 30, "Start empty sits at the right edge of the card"
     await pg.set_viewport_size({"width": 360, "height": 760})
-    await _menu(pg, "settings")
+    await _menu(pg, "data")
     link = pg.locator("#view [data-del-toggle]"); assert await link.inner_text() == "Erase data on this phone"
     last = await pg.evaluate("document.querySelector('#view').lastElementChild.matches('[data-del-toggle]')"); assert last, "it is the last thing on the screen"
     style = await link.evaluate("e => [getComputedStyle(e).color, getComputedStyle(document.querySelector('.btn.danger') || e).color, parseFloat(getComputedStyle(e).fontSize)]")
@@ -5722,7 +5728,7 @@ async def a_forgotten_passcode_can_be_reset_by_signing_in_again(ctx):
         await menu_to(pg, "security"); await pg.click("[data-lock-set]"); f = "form[data-form=lockSet] "
         assert "reset it by signing in" in await pg.inner_text("[data-lock-note]"), "setting a passcode says how to get back in"
         await pg.fill(f + "[name=pin]", "2468"); await pg.fill(f + "[name=pin2]", "2468"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(500)
-        await pg.reload(); await pg.wait_for_timeout(700); assert await pg.locator("#lockscreen").is_visible()
+        await pg.evaluate("localStorage.removeItem('keepwise-unlocked-at'); localStorage.removeItem('keepwise-seen-at')"); await pg.reload(); await pg.wait_for_timeout(700); assert await pg.locator("#lockscreen").is_visible()
         await pg.click("[data-lock-forgot]"); await pg.wait_for_timeout(150); return pg
     # --- email and password
     pg = await locked_page("password"); t = await pg.inner_text("#lockscreen")
@@ -5740,7 +5746,7 @@ async def a_forgotten_passcode_can_be_reset_by_signing_in_again(ctx):
     assert await pg.locator("#view h1").inner_text() == "Security & privacy" and await pg.locator("form[data-form=lockSet]").count() == 1 and "Set a new passcode" in await pg.inner_text("#toast")
     assert (await state(pg))["expenses"] == spends, "nothing on the phone was touched"
     f = "form[data-form=lockSet] "; await pg.fill(f + "[name=pin]", "1357"); await pg.fill(f + "[name=pin2]", "1357"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(500)
-    await pg.reload(); await pg.wait_for_timeout(700); assert await pg.locator("#lockscreen").is_visible()
+    await pg.evaluate("localStorage.removeItem('keepwise-unlocked-at'); localStorage.removeItem('keepwise-seen-at')"); await pg.reload(); await pg.wait_for_timeout(700); assert await pg.locator("#lockscreen").is_visible()
     for d in "2468": await pg.click(f"[data-lock-key='{d}']")
     await pg.wait_for_timeout(500); assert await pg.locator("#lockscreen").is_visible(), "the old passcode no longer works"
     for d in "1357": await pg.click(f"[data-lock-key='{d}']")
@@ -6141,9 +6147,21 @@ async def android_app_unlocks_with_the_phones_own_fingerprint(ctx):
     assert json.loads(await pg.evaluate("localStorage.getItem('keepwise-lock-v1')"))["bio"] == "native", "only a note that the phone's own unlock is on: nothing about the fingerprint"
     o = await pg.evaluate("window.__nb.opts"); assert o["androidTitle"] == "Unlock KeepWise" and o["cancelTitle"] == "Use passcode", o
     await pg.reload(); await pg.wait_for_timeout(800); assert not await locked() and await pg.evaluate("window.__nb.asked") == 1, "Android's own prompt opens it"
+    # the system sheet closing can reload the app or report it came back: it must not ask a second time
+    await pg.reload(); await pg.wait_for_timeout(800); assert not await locked() and await pg.evaluate("window.__nb.asked") == 0, "just unlocked, a reload does not ask again"
+    await pg.evaluate("document.dispatchEvent(new Event('visibilitychange'))"); await pg.wait_for_timeout(300)
+    assert not await locked() and await pg.evaluate("window.__nb.asked") == 0, "coming back straight away does not ask again"
+    await pg.evaluate("localStorage.removeItem('keepwise-unlocked-at'); localStorage.removeItem('keepwise-seen-at')")
     await pg.add_init_script("window.__nbFail = true"); await pg.reload(); await pg.wait_for_timeout(800)
-    assert await locked() and await pg.locator("[data-lock-bio]").count() == 1, "cancelled, it stays locked and the passcode works"
+    assert await locked() and await pg.locator("[data-lock-bio]").count() == 1 and await pg.evaluate("window.__nb.asked") == 1, "after a while it asks once; cancelled, it stays locked"
+    await pg.click("[data-lock-bio]"); await pg.wait_for_timeout(300); assert await pg.evaluate("window.__nb.asked") == 2, "the Fingerprint button always asks"
     await tap("2468"); assert not await locked()
+    # the phone closed KeepWise in the background: back within five minutes it is still open, later it asks
+    for ago, want in ((120000, False), (360000, True)):
+        p2 = await ctx.new_page(); await p2.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;" + NATIVE_BIO_MOCK + f"localStorage.removeItem('keepwise-unlocked-at'); localStorage.setItem('keepwise-seen-at', String(Date.now() - {ago}));")
+        await p2.goto(URL); await p2.wait_for_timeout(600)
+        assert await p2.evaluate("window.__nb.asked") == (1 if want else 0), (ago, want)   # asked means locked: the phone's own check is what opens it
+        await p2.close()
     assert not pg.errors, pg.errors
 
 @test
@@ -6164,11 +6182,34 @@ async def every_way_into_banks_asks_for_the_app_lock(ctx):
     await pg.click("[data-lock-cancel]"); await pg.wait_for_timeout(200); assert not await locked() and await pg.locator("#view [data-cards]").count() == 0, "cancel stays out"
     await pg.click(".loan-card [data-cards-open]"); await pg.wait_for_timeout(250); await tap("2468")
     assert not await locked() and await pg.locator("#view [data-cards]").count() == 1 and await pg.locator("[data-bankseg=cards][aria-pressed=true]").count() == 1, "then Cards opens"
-    # search goes through the lock too
-    await pg.click("[data-tab=month]"); await pg.click("#find-btn"); await pg.fill("#find-in", "connect your bank"); await pg.wait_for_timeout(400)
+    await pg.click("[data-tab=month]"); await pg.wait_for_timeout(150); await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(250)
+    assert not await locked(), "unlocked a moment ago, Banks does not ask again"
+    # five minutes on, search goes through the lock too
+    await pg.evaluate("window.__n0 = window.__n0 || Date.now; Date.now = () => window.__n0() + 301000"); await pg.click("[data-tab=month]"); await pg.click("#find-btn"); await pg.fill("#find-in", "connect your bank"); await pg.wait_for_timeout(400)
     await pg.locator(".find-row", has_text="Connect your bank").first.click(); await pg.wait_for_timeout(250)
     assert await locked(), "search into Banks asks for the passcode"
     await tap("2468"); assert not await locked() and (await state(pg))["tab"] == "banks"
+    assert not pg.errors, pg.errors
+
+@test
+async def where_your_month_goes_shows_as_a_circle_bars_or_a_line(ctx):
+    pg = await open_app(ctx, month_tabs=True)
+    await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-donut] [data-dn-kind=ring][aria-pressed=true]").count() == 1 and await pg.locator("[data-donut] .dn-ring circle").count() > 2, "a circle by default"
+    total = await text(pg, "[data-donut] [data-dn-total]")
+    await pg.click("[data-dn-kind=bar]"); await pg.wait_for_timeout(150)
+    n = await pg.locator("[data-donut] .dn-list li").count()
+    assert await pg.locator("[data-donut] .dn-bars rect").count() == n and await text(pg, "[data-donut] [data-dn-total]") == total, "one bar per line, same total"
+    await pg.click("[data-dn-kind=line]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-donut] .dn-strip span").count() == n and (await state(pg))["dnKind"] == "line"
+    await pg.reload(); await pg.wait_for_timeout(500); await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-donut] .dn-strip").count() == 1, "the choice is remembered"
+    await pg.click("[data-donut] .dn-tap"); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-donut] [data-dn-full] li").count() > await pg.locator("[data-donut] .dn-strip span").count(), "opened, every line is listed while the line stays readable"
+    for w in (320, 1100):
+        await pg.set_viewport_size({"width": w, "height": 800}); await pg.wait_for_timeout(200)
+        assert await pg.evaluate("document.documentElement.scrollWidth <= innerWidth"), f"no sideways scroll at {w}"
+    await pg.click("[data-dn-kind=ring]"); await pg.wait_for_timeout(150); assert "dnKind" not in (await state(pg)) or not (await state(pg))["dnKind"]
     assert not pg.errors, pg.errors
 
 @test

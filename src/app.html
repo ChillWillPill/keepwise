@@ -264,6 +264,27 @@ a.btn{display:block;text-decoration:none}
 .dn-pct{font:700 6.2px var(--body);fill:#fff}.dn-pct.dk{fill:#1c2420}.dn-pct.kp{fill:var(--card)}
 .dn-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;padding:0 26%}
 .dn-mid b{font:600 1.15rem/1.1 var(--display);letter-spacing:-.02em;white-space:nowrap}.dn-mid span{font-size:.72rem}
+.dn-tools{display:flex;justify-content:flex-end;margin:-4px 0 2px}
+.dn-kind button{padding:5px 10px}
+.dn-vis{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;margin:0 auto}
+.dn-k-line .dn{flex-direction:column;align-items:stretch;flex-wrap:nowrap}
+.dn-k-line .dn-vis{width:100%;align-items:stretch}
+.dn-k-line .dn-list{flex-basis:auto}
+.dn-line{width:100%;display:flex;flex-direction:column;gap:8px}
+.dn-strip{display:flex;gap:2px;height:34px;border-radius:12px;overflow:hidden;width:100%}
+.dn-strip span{display:flex;align-items:center;justify-content:center;min-width:3px}
+.dn-strip b{font:700 .72rem var(--body);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.dn-bars{height:auto!important;aspect-ratio:1}
+.dn-base{stroke:var(--line);stroke-width:.8}
+.dn-pct-out{fill:var(--muted);font-size:5.6px}
+.dn-sum{margin:0;text-align:center;font-size:.86rem}
+.dn-sum b{font:600 1.05rem var(--display)}
+.dn-k-line .dn-sum{text-align:left}
+.dn-big{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0}
+.dn-big .dn-bars{width:min(260px,72vw)}
+.dn-big .dn-line{margin:6px 0}
+.dn-compact .dn-k-bar .dn-ring,.dn-compact .dn-bars{width:124px}
+.dn-compact .dn-pct-out{display:inline}
 .dn-tap{appearance:none;border:0;background:none;color:inherit;font:inherit;text-align:left;padding:0;width:100%;cursor:pointer}
 .dn-open .dn-ring-big,.dn-compact .dn-open .dn-ring-big{appearance:none;border:0;background:none;padding:0;cursor:pointer;color:inherit;font:inherit;width:min(240px,70vw);height:min(240px,70vw);margin:4px auto 6px}
 .dn-compact .dn-open .dn-pct{display:inline}.dn-open .dn-mid b{font-size:1.25rem!important}.dn-open .dn-mid span{font-size:.72rem}
@@ -1189,6 +1210,8 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyThe
 const save = () => { if (UI.welcome != null || window.__kwErasing || window.__kwTour) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} remindSync(); pushSync(); };
 window.addEventListener("pagehide", save);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
+// Back from the email app: if the email was just verified, the profile says so without a tap.
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && typeof ACC !== "undefined" && ACC.user && !ACC.user.emailVerified) accCheckVerified(true); });
 
 /* ================= money math ================= */
 const subMonthly = s => s.cycle === "yr" ? s.price / 12 : s.price;   // an average, only for sorting and swap comparisons, never shown as a charge
@@ -1552,7 +1575,7 @@ function acctRow(a){
       : open ? `<div class="acct-acts"><button class="btn small" type="button" data-acct-review>Review</button><button class="btn small" type="button" data-acct-rename>Rename</button><button class="btn small" type="button" data-acct-hide>Hide</button></div>` : ""}</div>`;
 }
 // Every way in (Income, the side menu, search) asks for the passcode first when App lock is on.
-function openBanks(){ if (LOCK.cfg && lockCan()){ LOCK.gate = true; lockNow(); render(true); return; } UI.banks = true; render(false); }
+function openBanks(){ if (bankLocked()){ LOCK.gate = true; lockNow(); render(true); return; } UI.banks = true; render(false); }
 function banksRow(){
   const list = bankList(), used = list.filter(acctInUse), insts = [...new Set(list.map(a => a.inst))];
   const title = list.length ? insts.slice(0, 2).join(", ") + (insts.length > 2 ? ` +${insts.length - 2}` : "") : "Banks & statements";
@@ -3163,22 +3186,40 @@ function donutParts(all){
   const total = out + keep; top.forEach(x => { x.pct = total > 0 ? x.amount / total * 100 : 0; });
   return {parts: top, out, total};
 }
+// The same breakdown three ways: a ring (the default), bars, or one line split by share. The choice is remembered.
+const DN_KINDS = [["ring", "Circle", `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3.2"><circle cx="12" cy="12" r="7.5"/></svg>`],
+  ["bar", "Bars", `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="4" y="11" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="16" y="13" width="4" height="7" rx="1"/></svg>`],
+  ["line", "Line", `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="2" y="9" width="9" height="6" rx="2"/><rect x="12" y="9" width="5" height="6" rx="1"/><rect x="18" y="9" width="4" height="6" rx="2" opacity=".55"/></svg>`]];
+const dnKind = () => DN_KINDS.some(k => k[0] === S.dnKind) ? S.dnKind : "ring";
+function dnBars(D){
+  const n = D.parts.length, step = 108 / n, w = Math.min(16, step * .7), max = Math.max(...D.parts.map(x => x.pct), 1);
+  return `<line x1="4" y1="104.5" x2="116" y2="104.5" class="dn-base"></line>` + D.parts.map((x, i) => { const h = Math.max(1.5, x.pct / max * 80), cx = 6 + step * i + step / 2;
+    return `<rect x="${(cx - w / 2).toFixed(1)}" y="${(104 - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${x.color}"></rect><text x="${cx.toFixed(1)}" y="${(100 - h).toFixed(1)}" text-anchor="middle" class="dn-pct dn-pct-out">${x.pct >= 0.5 ? Math.round(x.pct) : "<1"}%</text>`; }).join("");
+}
+const dnStrip = D => `<div class="dn-strip" aria-hidden="true">${D.parts.map(x => `<span style="flex:${Math.max(x.pct, 0.6).toFixed(2)} 1 0;background:${x.color}">${x.pct >= 9 ? `<b>${Math.round(x.pct)}%</b>` : ""}</span>`).join("")}</div>`;
 OUT.donut = () => {
   const open = !!UI.dnOpen, D = donutParts(open); if (D.out <= 0.005 || D.parts.length < 2) return "";
+  const kind = dnKind(), lbl = esc(D.parts.map(x => `${x.name} ${Math.round(x.pct)} percent`).join(", "));
   const R = 42, CIRC = 2 * Math.PI * R; let at = 0;
   const ring = D.parts.map(x => { const len = x.pct / 100 * CIRC, start = at, mid = (start + len / 2) / CIRC * 2 * Math.PI - Math.PI / 2; at += len;
     const lab = x.pct >= 7 ? `<text x="${(60 + R * Math.cos(mid)).toFixed(1)}" y="${(60 + R * Math.sin(mid) + 2.4).toFixed(1)}" text-anchor="middle" class="dn-pct${x.keep ? " kp" : x.color === "#c9a13a" ? " dk" : ""}">${Math.round(x.pct)}%</text>` : "";
     return `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${x.color}" stroke-width="22" stroke-dasharray="${Math.max(0.1, len - 0.9).toFixed(2)} ${(CIRC - Math.max(0.1, len - 0.9)).toFixed(2)}" stroke-dashoffset="${(-start).toFixed(2)}" transform="rotate(-90 60 60)"></circle>${lab}`; }).join("");
-  const head = `<div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Where your month goes</h2><button class="link plain small" type="button" data-dn-open aria-expanded="${open}">${open ? "Show less" : "See all"}</button></div>`;
+  const kinds = `<div class="dn-tools"><div class="seg tr-kind dn-kind" role="group" aria-label="Chart type">${DN_KINDS.map(([k, n, ic]) => `<button type="button" data-dn-kind="${k}" aria-pressed="${kind === k}" aria-label="${n}" title="${n}">${ic}</button>`).join("")}</div></div>`;
+  const head = `<div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Where your month goes</h2><button class="link plain small" type="button" data-dn-open aria-expanded="${open}">${open ? "Show less" : "See all"}</button></div>${kinds}`;
+  const outLine = big => `<p class="dn-sum"><b class="tnum" data-dn-total>${big || !monthTabs() ? fmt(D.out) : fmtBar(D.out)}</b> <span class="muted">goes out${open ? ` of ${fmt(D.total)}` : ""}</span></p>`;
+  const V = open && kind !== "ring" ? donutParts(false) : D;   // bars and the line stay readable: the biggest few, then Other
+  const visual = big => kind === "bar" ? `<div class="dn-ring dn-bars"><svg viewBox="0 0 120 120" role="img" aria-label="${lbl}">${dnBars(V)}</svg></div>${outLine(big)}`
+    : kind === "line" ? `<div class="dn-line" role="img" aria-label="${lbl}">${dnStrip(V)}${outLine(big)}</div>` : "";
   if (open){ const big = D.parts.filter(x => !x.keep).reduce((m, x) => Math.max(m, x.amount), 0) || 1;
-    return `<section class="card dn-card dn-open" data-donut>${head}
-    <button type="button" class="dn-ring dn-ring-big dn-tap" data-dn-open aria-label="Close the full breakdown"><svg viewBox="0 0 120 120" role="img" aria-label="${esc(D.parts.map(x => `${x.name} ${Math.round(x.pct)} percent`).join(", "))}">${ring}</svg>
-      <div class="dn-mid"><b class="tnum" data-dn-total>${fmtBar(D.out)}</b><span class="muted">goes out of ${fmtBar(D.total)}</span></div></button>
+    return `<section class="card dn-card dn-open dn-k-${kind}" data-donut>${head}
+    ${kind === "ring" ? `<button type="button" class="dn-ring dn-ring-big dn-tap" data-dn-open aria-label="Close the full breakdown"><svg viewBox="0 0 120 120" role="img" aria-label="${lbl}">${ring}</svg>
+      <div class="dn-mid"><b class="tnum" data-dn-total>${fmtBar(D.out)}</b><span class="muted">goes out of ${fmtBar(D.total)}</span></div></button>`
+      : `<button type="button" class="dn-tap dn-big" data-dn-open aria-label="Close the full breakdown">${visual(true)}</button>`}
     <ul class="dn-full" data-dn-full>${D.parts.map(x => `<li${x.keep ? ' class="keep"' : ""}><i style="background:${x.color}"></i><span class="dn-nm"><b>${esc(x.name)}</b>${x.kind ? `<small class="muted">${esc(x.kind)}</small>` : ""}</span><span class="tnum dn-v">${fmt(x.amount)}<small class="muted">${x.pct >= 0.5 ? Math.round(x.pct) : "<1"}%</small></span>${x.keep ? "" : `<span class="dn-bar"><span style="width:${(x.amount / big * 100).toFixed(1)}%;background:${x.color}"></span></span>`}</li>`).join("")}</ul>
     <p class="muted small">Percentages are of everything coming in this month, ${fmt(D.total)}.</p></section>`; }
-  return `<section class="card dn-card" data-donut>${head}
-    <button type="button" class="dn dn-tap" data-dn-open aria-label="Open the full breakdown"><div class="dn-ring"><svg viewBox="0 0 120 120" width="200" height="200" role="img" aria-label="${esc(D.parts.map(x => `${x.name} ${Math.round(x.pct)} percent`).join(", "))}">${ring}</svg>
-      <div class="dn-mid"><b class="tnum" style="font-size:min(1.15rem, calc(6rem / ${(fmt(D.out).length * 0.62).toFixed(2)}))" data-dn-total>${monthTabs() ? fmtBar(D.out) : fmt(D.out)}</b><span class="muted">goes out</span></div></div>
+  return `<section class="card dn-card dn-k-${kind}" data-donut>${head}
+    <button type="button" class="dn dn-tap" data-dn-open aria-label="Open the full breakdown">${kind === "ring" ? `<div class="dn-ring"><svg viewBox="0 0 120 120" width="200" height="200" role="img" aria-label="${lbl}">${ring}</svg>
+      <div class="dn-mid"><b class="tnum" style="font-size:min(1.15rem, calc(6rem / ${(fmt(D.out).length * 0.62).toFixed(2)}))" data-dn-total>${monthTabs() ? fmtBar(D.out) : fmt(D.out)}</b><span class="muted">goes out</span></div></div>` : `<div class="dn-vis">${visual(false)}</div>`}
       <ul class="dn-list">${D.parts.map(x => `<li${x.keep ? ' class="keep"' : ""}><i style="background:${x.color}"></i><span class="dn-name">${esc(x.name)}</span><span class="tnum dn-amt">${fmt(x.amount)}</span><span class="tnum dn-p">${x.pct >= 0.5 ? Math.round(x.pct) : "<1"}%</span></li>`).join("")}</ul></button></section>`;
 };
 const UI = {compare:false};
@@ -4140,7 +4181,7 @@ function goTo(tabName, sel){
   if (tabName === "plan"){ tabName = "month"; if (!sel){ UI.mseg = "more"; } }
   if (tabName === "banks" && sel && /data-card/.test(sel)) UI.bankSeg = "cards";   // Plan's cards moved to Month
   // Banks is behind the app lock however it is reached: a link from Month, search, the bell or Coming up asks first, like the tab does.
-  if (tabName === "banks" && S.tab !== "banks" && LOCK.cfg && lockCan() && !LOCK.on){ UI.menu = false; UI.find = false; LOCK.gate = "tab"; LOCK.gateGo = {sel: sel || null, pay: UI.cardPay || null}; UI.cardPay = null; lockNow(); render(true); return false; }
+  if (tabName === "banks" && S.tab !== "banks" && bankLocked() && !LOCK.on){ UI.menu = false; UI.find = false; LOCK.gate = "tab"; LOCK.gateGo = {sel: sel || null, pay: UI.cardPay || null}; UI.cardPay = null; lockNow(); render(true); return false; }
   if (sel && tabName === "month") UI.needKind = /data-arrive/.test(sel) ? "arrived" : /data-bill-due/.test(sel) ? "bills" : /data-yr-due/.test(sel) ? "yearly" : UI.needKind;   // bring the right question to the front
   UI.find = false; UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; S.tab = tabName; save(); render(false);
   const el = sel && (monthFind(sel) || planFind(sel) || view.querySelector(sel)), m = $("main"); if (!el) return false;
@@ -5996,7 +6037,9 @@ document.addEventListener("keydown", e => { if (TOUR.on && e.key === "Escape") t
 /* ================= app lock (a passcode, and Face ID or fingerprint, checked on this phone) ================= */
 // The lock keeps out someone who picks up an unlocked phone. Only a salted, slow hash of the passcode is kept, in its
 // own storage key, so backups and "Copy my data" never carry it. It is a screen lock, not encryption of the data.
-const LOCK_KEY = "keepwise-lock-v1", LOCK_AWAY = 60000;
+const LOCK_KEY = "keepwise-lock-v1", LOCK_AWAY = 300000;   // five minutes: switching to another app and back stays unlocked
+// Banks and cards ask again unless the app was unlocked in the last five minutes.
+const bankLocked = () => !!(LOCK.cfg && lockCan() && !(LOCK.openedAt && Date.now() - LOCK.openedAt < LOCK_AWAY));
 const LOCK = {on: false, cfg: null, entry: "", fails: 0, until: 0, forgot: false, bioOk: false, hiddenAt: 0, busy: false};
 const lockCan = () => !!(window.crypto && crypto.subtle && crypto.getRandomValues);
 const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf))), unb64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
@@ -6051,10 +6094,18 @@ function lockDraw(){
       ${c.bio ? `<button type="button" class="ghost" data-lock-bio aria-label="Unlock with ${IS_IOS ? "Face ID" : "fingerprint"}">${IS_IOS ? "Face ID" : "Fingerprint"}</button>` : `<span></span>`}<button type="button" data-lock-key="0">0</button><button type="button" class="ghost" data-lock-del aria-label="Delete">Delete</button></div>
     ${LOCK.gate ? `<button class="link small" type="button" data-lock-cancel>Cancel</button>` : `<button class="link plain small" type="button" data-lock-forgot>Forgot passcode?</button>`}`;
 }
-function lockNow(){ if (!LOCK.cfg || LOCK.on) return; LOCK.on = true; LOCK.entry = ""; LOCK.forgot = false; if (isField(document.activeElement)) document.activeElement.blur(); lockDraw(); if (LOCK.cfg.bio) lockBio(); }
-function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; LOCK.openedAt = Date.now(); LOCK.hiddenAt = 0; lockDraw(); if (LOCK.gate){ const g = LOCK.gate; LOCK.gate = false; if (g === "tab"){ S.tab = "banks"; UI.find = false; UI.menu = false; save(); } else UI.banks = true; render(false); renderTabs();
+// The phone's own unlock opens a system sheet over the app. On some phones the app is reloaded or reports "back" when
+// that sheet closes, which used to ask a second time. An unlock is remembered for a few seconds, and an automatic
+// prompt never follows straight after another one; the Fingerprint button always asks.
+const LOCK_FRESH = "keepwise-unlocked-at", LOCK_SEEN = "keepwise-seen-at", lsNum = k => { try { return +localStorage.getItem(k) || 0; } catch(e){ return 0; } };
+// Phones often close an app that is in the background. Coming back within five minutes of leaving it unlocked still
+// counts as the same visit; reloading or closing the page on purpose does not.
+const lockRecent = () => { const t = lsNum(LOCK_SEEN), n = Date.now(); return t > 0 && n - t >= 0 && n - t < LOCK_AWAY; };
+const lockFresh = () => { try { const t = +localStorage.getItem(LOCK_FRESH) || 0, n = Date.now(); return n - t >= 0 && n - t < 15000; } catch(e){ return false; } };
+function lockNow(){ if (!LOCK.cfg || LOCK.on) return; try { localStorage.removeItem(LOCK_SEEN); } catch(e){} LOCK.on = true; LOCK.entry = ""; LOCK.forgot = false; if (isField(document.activeElement)) document.activeElement.blur(); lockDraw(); if (LOCK.cfg.bio && Date.now() - (LOCK.bioEnd || 0) > 2000) lockBio(); }
+function lockOpen(){ LOCK.on = false; LOCK.entry = ""; LOCK.fails = 0; LOCK.forgot = false; LOCK.openedAt = Date.now(); LOCK.hiddenAt = 0; try { localStorage.setItem(LOCK_FRESH, String(LOCK.openedAt)); } catch(e){} lockDraw(); if (LOCK.gate){ const g = LOCK.gate; LOCK.gate = false; if (g === "tab"){ S.tab = "banks"; UI.find = false; UI.menu = false; save(); } else UI.banks = true; render(false); renderTabs();
     const go = LOCK.gateGo; LOCK.gateGo = null; if (g === "tab" && go){ if (go.pay) UI.cardPay = go.pay; if (go.sel) goTo("banks", go.sel); else if (go.pay) render(false); } } }
-async function lockBio(){ if (LOCK.busy || !LOCK.on) return; LOCK.busy = true; const ok = await bioCheck(); LOCK.busy = false; if (ok && LOCK.on) lockOpen(); }
+async function lockBio(){ if (LOCK.busy || !LOCK.on) return; LOCK.busy = true; const ok = await bioCheck(); LOCK.busy = false; LOCK.bioEnd = Date.now(); if (ok && LOCK.on) lockOpen(); }
 async function lockKey(d){
   if (!LOCK.on || LOCK.busy || Date.now() < LOCK.until || LOCK.forgot) return;
   if (d === "del"){ LOCK.entry = LOCK.entry.slice(0, -1); lockDraw(); return; }
@@ -6098,9 +6149,10 @@ async function lockRecover(pw, viaGoogle){
 }
 $("lockscreen").addEventListener("submit", e => { const f = e.target.closest("[data-lock-recover]"); if (!f) return; e.preventDefault(); const pw = String(new FormData(f).get("pw") || ""); if (pw) lockRecover(pw, false); });
 document.addEventListener("keydown", e => { if (!LOCK.on || LOCK.forgot || isField(e.target)) return; if (/^\d$/.test(e.key)) lockKey(e.key); else if (e.key === "Backspace") lockKey("del"); });
-// Away for a minute or more locks it again. The time away is used once: iPhones can report "visible" twice on the way
+// Away for five minutes or more locks it again. The time away is used once: iPhones can report "visible" twice on the way
 // back (once on return, again when the Face ID sheet closes), and that second report must not lock it a second time.
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden"){ if (!LOCK.on && !LOCK.busy) LOCK.hiddenAt = Date.now(); return; }
+window.addEventListener("pagehide", () => { LOCK.leaving = true; try { localStorage.removeItem(LOCK_SEEN); } catch(e){} });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden"){ if (!LOCK.on && !LOCK.busy){ LOCK.hiddenAt = Date.now(); if (LOCK.cfg && !LOCK.leaving) try { localStorage.setItem(LOCK_SEEN, String(LOCK.hiddenAt)); } catch(e){} } return; }
   const away = LOCK.hiddenAt ? Date.now() - LOCK.hiddenAt : 0; LOCK.hiddenAt = 0;
   if (LOCK.cfg && away >= LOCK_AWAY && Date.now() - (LOCK.openedAt || 0) > 5000) lockNow(); });
 // ---- the setting, on Plan ----
@@ -6108,7 +6160,7 @@ OUT.lockBox = () => {
   if (!lockCan()) return "";
   const c = LOCK.cfg, m = UI.lockForm, pin = (name, label, ac) => `<label class="field"><span>${label}</span><input name="${name}" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="${ac}" enterkeyhint="next"></label>`;
   const head = `<div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">App lock${infoBtn("lock", "About the app lock")}</h2>${c ? `<span class="pill ok">On</span>` : ""}</div>
-    ${infoTip("lock", "Ask for a passcode when KeepWise opens, and again after a minute away. The passcode is checked on this phone and cannot be recovered if you forget it, so keep a backup file.")}`;
+    ${infoTip("lock", "Ask for a passcode when KeepWise opens, and again after five minutes away. Banks and cards ask again five minutes after you unlock. The passcode is checked on this phone and cannot be recovered if you forget it, so keep a backup file.")}`;
   if (m === "set" || m === "change") return `<section class="card" data-lock-card>${head}<form class="inc-form" data-form="lockSet">
       ${m === "change" ? pin("old", "Current passcode", "current-password") : ""}<div class="grid2">${pin("pin", "New passcode", "new-password")}${pin("pin2", "Repeat it", "new-password")}</div>
       <p class="muted small">4 to 8 digits.</p>
@@ -6217,6 +6269,7 @@ function accInit(){
           if (u) await accLoadProfile();
           S.acctOn = !!u; if (u && (!LOCK.on || !S.acct)) S.acct = {uid: u.uid, email: u.email || "", prov: (u.providerData && u.providerData[0] && u.providerData[0].providerId) || "password"};
           save(); ACC.state = "ready"; renderAcctBtn();
+          if (u && /[?&]verified=1/.test(location.search)){ try { history.replaceState(null, "", location.pathname); } catch(x){} UI.account = true; setTimeout(() => accCheckVerified(true), 300); }
           if (u) setTimeout(mailMonthly, 2500);   // Plus: this month's balance emails, once a month
           if (u) setTimeout(invReminders, 4000);   // Plus: late invoices get a polite reminder
           if (UI.account) render(true);
@@ -6324,7 +6377,9 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")
   <section class="card" data-set-move><h2 class="h-info">Move to another browser or the app${infoBtn("move", "About moving your data")}</h2>${infoTip("move", "Copy my data puts everything on the clipboard as one block of text. Open KeepWise where you want it, in another browser or the installed app, and tap Paste my data. Nothing is sent anywhere on the way.")}
     <div class="grid2"><button class="btn" type="button" data-move-copy>${UI.moveCopied ? "✓ Copied" : "Copy my data"}</button><button class="btn" type="button" data-move-paste>Paste my data</button></div>
     ${UI.movePaste ? moveBox() : ""}</section>
-  ${dataCard()}`
+  ${dataCard()}
+  ${ACC.user && ACC.profile && !UI.delOpen ? `<button class="link small quiet-del" type="button" data-del-acct>Delete account</button>` : UI.delOpen ? `<div class="note" data-del-box><p><b>Delete account and data?</b> Erasing this phone clears your budget here for good. Deleting your account erases your profile.</p><div class="inline" style="margin-top:10px;flex-wrap:wrap"><button class="btn danger" type="button" data-reset="blank">Erase this phone</button>${ACC.user && ACC.profile ? `<button class="btn danger" type="button" data-del-acct>Delete my account</button>` : ""}<button class="btn" type="button" data-del-toggle>Keep everything</button></div><div id="reset-confirm"></div></div>`
+    : `<button class="link small quiet-del" type="button" data-del-toggle>Erase data on this phone</button>`}`
   : `${setHead("Settings")}
   ${themesCard()}
   <section class="card" data-set-look-old hidden>
@@ -6337,9 +6392,7 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")
   <section class="card" data-set-app><h2>App</h2>
     <div data-out="installBtn">${OUT.installBtn()}</div>
     <div class="inline" style="justify-content:space-between" data-ask-row><span class="h-info">Open on the owl${infoBtn("asklink", "About opening on the owl")}</span><button class="btn small" type="button" data-ask-link>Copy link</button></div>
-    ${infoTip("asklink", askLinkTip())}</section>
-  ${ACC.user && ACC.profile && !UI.delOpen ? `<button class="link small quiet-del" type="button" data-del-acct>Delete account</button>` : UI.delOpen ? `<div class="note" data-del-box><p><b>Delete account and data?</b> Erasing this phone clears your budget here for good. Deleting your account erases your profile.</p><div class="inline" style="margin-top:10px;flex-wrap:wrap"><button class="btn danger" type="button" data-reset="blank">Erase this phone</button>${ACC.user && ACC.profile ? `<button class="btn danger" type="button" data-del-acct>Delete my account</button>` : ""}<button class="btn" type="button" data-del-toggle>Keep everything</button></div><div id="reset-confirm"></div></div>`
-    : `<button class="link small quiet-del" type="button" data-del-toggle>Erase data on this phone</button>`}`;
+    ${infoTip("asklink", askLinkTip())}</section>`;
 const SN_IC = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 function sideNav(){
   const on = ACC.user && ACC.profile, nm = on ? accName() : "", ph = on ? accPhoto() : "", em = on ? (ACC.user.email || "") : "";
@@ -6421,6 +6474,17 @@ function accSignIn(){
   </section>
   <p class="muted small legal-links acc-legal">By continuing, you agree to the ${legalLinks}.</p>`;
 }
+// The links in our emails bring people back to KeepWise: after verifying, Google's page shows a Continue button to
+// mykeepwise.com. If that address is ever refused, the email still goes out without it.
+const ACC_BACK = {url: "https://mykeepwise.com/?verified=1"};
+async function accSendVerify(u){ try { await u.sendEmailVerification(ACC_BACK); } catch(e){ await u.sendEmailVerification(); } }
+async function accSendReset(email){ try { await ACC.auth.sendPasswordResetEmail(email, {url: "https://mykeepwise.com/?signin=1"}); } catch(e){ if (e && e.code === "auth/user-not-found") throw e; await ACC.auth.sendPasswordResetEmail(email); } }
+async function accCheckVerified(quiet){
+  if (!ACC.user || ACC.user.emailVerified) return;
+  try { await ACC.user.reload(); ACC.user = ACC.auth.currentUser; } catch(err){ return; }
+  if (ACC.user && ACC.user.emailVerified){ try { await accDoc().set({emailVerified: true, updatedAt: Date.now()}, {merge: true}); if (ACC.profile) ACC.profile.emailVerified = true; } catch(err){} toast("Email verified. Thank you."); render(true); }
+  else if (!quiet) toast("Not verified yet. Open the link in the email, then try again.");
+}
 function accVerifyNote(){
   const u = ACC.user; if (!u || u.emailVerified) return "";
   return `<div class="note acc-verify"><p><b>Verify your email.</b> We sent a link to ${esc(u.email)}. Open it, then come back here.</p><div class="inline"><button class="btn small" type="button" data-acc-verified>I’ve verified it</button><button class="btn small" type="button" data-acc-resend>Send the link again</button></div></div>`;
@@ -6447,7 +6511,8 @@ function accFinish(){
   ${accVerifyNote()}
   <section class="card"><h2>Finish your profile</h2><p class="muted small">Signed in as ${esc(ACC.user.email || "")}. Your name and date of birth are required. Everything else is optional.</p>
     <form data-form="acc-profile" class="acc-form" novalidate>${accFields(true)}${accErrBox()}<button class="btn primary" type="submit" ${ACC.busy ? "disabled" : ""}>Save profile</button></form></section>
-  <button class="btn" type="button" data-acc-signout>Sign out</button>`;
+  <button class="btn" type="button" data-acc-signout>Sign out</button>
+  <div class="pf-quiet" data-pf-delete>${ACC.del ? delFlow() : `<button class="link small quiet-del" type="button" data-acc-delete>Delete account</button>`}</div>`;
 }
 function accProfile(){
   const u = ACC.user, nm = accName(), ph = "photo" in ACC.draft ? ACC.draft.photo : accPhoto(), pw = !(u.providerData && u.providerData[0] && u.providerData[0].providerId === "google.com");
@@ -6479,6 +6544,7 @@ function delFlow(){
   if (ACC.del === 2) return `<section class="card pf-card del-card" data-del-step="2"><h2>Delete for good?</h2>
     <p class="small">This deletes the KeepWise account for <b>${esc(em)}</b>. It can’t be undone${ACC.delErase ? ", and everything on this phone is erased too" : ""}.</p>
     <label class="field"><span>Type DELETE to confirm</span><input data-del-type autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="DELETE"></label>
+    ${ACC.delErr ? `<p class="small err" role="alert" data-del-err>${esc(ACC.delErr)}</p><button class="btn" type="button" data-acc-signout>Sign out, then sign in again</button>` : ""}
     <div class="grid2"><button class="btn" type="button" data-acc-delete-no>Keep my account</button><button class="btn danger" type="button" data-acc-delete-yes disabled>Delete account</button></div></section>`;
   return `<section class="card pf-card del-card" data-del-step="1"><h2>Delete your account?</h2>
     <ul class="del-list small"><li><b>Deleted:</b> your profile, photo, sign-in and Plus waitlist place. People you split with keep their own records.</li>
@@ -6571,11 +6637,8 @@ $("view").addEventListener("click", async e => {
     return;
   }
   if (has("data-acc-signout")){ S.acct = null; save(); await ACC.auth.signOut(); toast("Signed out."); return; }
-  if (has("data-acc-resend")){ try { await ACC.user.sendEmailVerification(); toast("Verification link sent. Check your inbox."); } catch(err){ toast(accErrText(err)); } return; }
-  if (has("data-acc-verified")){
-    try { await ACC.user.reload(); ACC.user = ACC.auth.currentUser; } catch(err){}
-    if (ACC.user.emailVerified){ try { await accDoc().set({emailVerified: true, updatedAt: Date.now()}, {merge: true}); ACC.profile.emailVerified = true; } catch(err){} toast("Email verified. Thank you."); }
-    else toast("Not verified yet. Open the link in the email, then try again.");
+  if (has("data-acc-resend")){ try { await accSendVerify(ACC.user); toast("Verification link sent. Check your inbox."); } catch(err){ toast(accErrText(err)); } return; }
+  if (has("data-acc-verified")){ await accCheckVerified(false);
     render(true); return;
   }
   if (has("data-acc-plus") || has("data-acc-plus-off")){
@@ -6601,11 +6664,11 @@ $("view").addEventListener("click", async e => {
   }
   if (has("data-loc-help-close")){ ACC.locHelp = 0; render(true); return; }
   if (has("data-acc-loc-clear")){ ACC.draft.location = null; render(true); return; }
-  if (has("data-acc-delete")){ ACC.del = 1; ACC.delSaved = false; ACC.delErase = false; render(true); const d = document.querySelector("[data-pf-delete]"); if (d) d.scrollIntoView({block: "center"}); return; }
+  if (has("data-acc-delete")){ ACC.del = 1; ACC.delSaved = false; ACC.delErase = false; ACC.delErr = ""; render(true); const d = document.querySelector("[data-pf-delete]"); if (d) d.scrollIntoView({block: "center"}); return; }
   if (has("data-del-copy")){ downloadMyData(); return; }
   if (has("data-del-next")){ ACC.delErase = !!(document.querySelector("[data-del-erase]") || {}).checked; ACC.del = 2; render(true); const i = document.querySelector("[data-del-type]"); if (i){ i.scrollIntoView({block: "center"}); i.focus(); } return; }
-  if (has("data-acc-pw")){ const em = ACC.user && ACC.user.email; if (!em) return; ACC.auth.sendPasswordResetEmail(em).then(() => toast(`A link to change your password is on its way to ${em}.`)).catch(() => toast("That didn’t send. Try again in a minute."));  return; }
-  if (has("data-acc-delete-no")){ ACC.del = false; render(true); return; }
+  if (has("data-acc-pw")){ const em = ACC.user && ACC.user.email; if (!em) return; accSendReset(em).then(() => toast(`A link to change your password is on its way to ${em}.`)).catch(() => toast("That didn’t send. Try again in a minute."));  return; }
+  if (has("data-acc-delete-no")){ ACC.del = false; ACC.delErr = ""; render(true); return; }
   if (has("data-acc-delete-yes")){
     const typed = document.querySelector("[data-del-type]"); if (!typed || typed.value.trim().toUpperCase() !== "DELETE") return;
     const keep = ACC.profile, erase = ACC.delErase;
@@ -6614,6 +6677,8 @@ $("view").addEventListener("click", async e => {
       save(); render(false); toast(erase ? "Your account and everything on this phone were deleted." : "Your account was deleted. Your budget is still on this phone."); }
     catch(err){
       if (keep) try { await accDoc().set(keep); } catch(x){}
+      // Deleting needs a recent sign-in: say so inside the delete card, with a way to sign in again, instead of closing it.
+      if (err && err.code === "auth/requires-recent-login"){ ACC.del = 2; ACC.delErr = "For your security, sign in again, then delete. Nothing was deleted."; render(true); return; }
       ACC.del = false; ACC.err = accErrText(err); render(true);
     }
     return;
@@ -6630,8 +6695,8 @@ $("view").addEventListener("submit", async e => {
     if (ACC.mode === "create" && pwMissing(pw).length){ setAccErr("Your password needs " + pwMissing(pw).join(", ") + "."); return; }
     ACC.err = ""; refreshOuts(); accBusy(true);
     try {
-      if (ACC.mode === "reset"){ await ACC.auth.sendPasswordResetEmail(email); ACC.mode = "signin"; accBusy(false); render(true); toast("If an account uses that email, a reset link is on its way."); return; }
-      if (ACC.mode === "create"){ const r = await ACC.auth.createUserWithEmailAndPassword(email, pw); try { await r.user.sendEmailVerification(); } catch(x){} toast("Account created. We sent you a link to verify your email."); }
+      if (ACC.mode === "reset"){ await accSendReset(email); ACC.mode = "signin"; accBusy(false); render(true); toast("If an account uses that email, a reset link is on its way."); return; }
+      if (ACC.mode === "create"){ const r = await ACC.auth.createUserWithEmailAndPassword(email, pw); try { await accSendVerify(r.user); } catch(x){} toast("Account created. We sent you a link to verify your email."); }
       else await ACC.auth.signInWithEmailAndPassword(email, pw);
     } catch(err){ setAccErr(accErrText(err)); }
     accBusy(false);
@@ -6689,7 +6754,7 @@ document.addEventListener("change", e => { const t = e.target;
   if (t.matches && t.matches("[data-biz-pick]")){ const i = +t.dataset.bizPick; if (t.checked) BIZ.pick.add(i); else BIZ.pick.delete(i); const btn = document.querySelector("[data-biz-import-add]"); if (btn){ btn.disabled = !BIZ.pick.size; btn.textContent = `Add ${BIZ.pick.size} to Business`; } } });
 $("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
 $("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return;
-  if (b.dataset.tab === "banks" && S.tab !== "banks" && LOCK.cfg && lockCan() && !LOCK.on){ LOCK.gate = "tab"; lockNow(); return; }
+  if (b.dataset.tab === "banks" && S.tab !== "banks" && bankLocked() && !LOCK.on){ LOCK.gate = "tab"; lockNow(); return; }
   if (b.dataset.tab !== "banks"){ UI.bankEye = false; UI.bankMenu = null; UI.bankRename = null; } UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { const dark = S.theme === "dark" || ((S.theme || "system") === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   S.theme = dark ? "light" : "dark"; save(); applyTheme(); if (UI.account || UI.settings) render(true); toast(S.theme === "light" ? "Light mode" : "Dark mode"); });
@@ -6832,6 +6897,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.findGo){ const h = FIND.hits[+b.dataset.findGo]; if (h) findGo(h); return; }
   if (b.hasAttribute("data-bills-open")){ UI.mseg = "budget"; UI.openEnv = "needs"; if (!goTo("month", "[data-env-open=needs]")) render(false); return; }
   if (b.hasAttribute("data-save-go")){ goTo("plan", "[data-bind=efSaved]"); return; }
+  if (b.dataset.dnKind){ S.dnKind = b.dataset.dnKind === "ring" ? undefined : b.dataset.dnKind; save(); refreshOuts(); return; }
   if (b.hasAttribute("data-dn-open")){ UI.dnOpen = !UI.dnOpen; refreshOuts(); cardInView(view.querySelector("[data-donut]")); return; }
   if (b.dataset.themeSet){ S.theme = b.dataset.themeSet; save(); applyTheme(); render(true); return; }
   if (b.dataset.bankseg){ UI.bankSeg = b.dataset.bankseg; UI.cardAdd = false; UI.cardEdit = null; UI.cardPay = null; render(false); $("main").scrollTop = 0; return; }
@@ -7547,7 +7613,7 @@ lockLoad();
 // Opened from the Ask KeepWise link or icon shortcut: start with the owl up, then tidy the address so a refresh is a normal open.
 try { const q = new URLSearchParams(location.search); if (q.has("ask")){ UI.askOpen = !firstRun; q.delete("ask"); const rest = q.toString(); history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash); } } catch(e){}
 render(false);
-if (LOCK.cfg && !window.KEEPWISE_NO_LOCK) lockNow();
+if (LOCK.cfg && !window.KEEPWISE_NO_LOCK){ if (lockFresh() || lockRecent()) LOCK.openedAt = lsNum(LOCK_FRESH); else lockNow(); }
 bioAvailable().then(ok => { LOCK.bioOk = ok; if (S && S.tab === "banks" && !LOCK.on) refreshOuts(); });
 initShared();
 })();
