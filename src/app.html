@@ -330,6 +330,15 @@ a.btn{display:block;text-decoration:none}
 .steps li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px}
 .steps li::before{counter-increment:s;content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-weight:700;font-size:.9rem}
 .summary3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.subs-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.subs-head h1{margin:0}
+.subs-sum{gap:12px}.seg.sub-cycle{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--chip);border:0;border-radius:12px;padding:3px;gap:3px}
+.seg.sub-cycle button{border:0;border-radius:9px;min-height:36px;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:6px;background:none}
+.seg.sub-cycle button small{font-size:.72rem;color:var(--muted);font-weight:600;background:var(--card);border-radius:8px;padding:1px 6px}
+.seg.sub-cycle button[aria-pressed="true"]{background:var(--card);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.14)}.seg.sub-cycle button{min-width:0;padding-left:4px;padding-right:4px;white-space:nowrap}@media (max-width:340px){.seg.sub-cycle button small{display:none}}.seg.sub-cycle button[aria-pressed="true"] small{background:var(--chip)}
+.sub-next{display:block;font:500 .74rem var(--body);letter-spacing:0;margin-top:1px}
+.sub-rule{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.86rem;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+.sub-rule input{width:52px;min-height:34px;padding:4px 8px;text-align:center;font-weight:700;border-radius:10px}
+.subs-import{align-self:center;display:inline-flex;align-items:center;gap:8px;margin-top:2px}.subs-import svg{width:18px;height:18px}
 .summary3 b{display:block;font:600 1.5rem/1.2 var(--display);font-variant-numeric:tabular-nums;margin-top:4px}
 .balances{border-top:1px solid var(--line)}
 .split-hero{text-align:center;gap:6px;padding-top:18px}.split-hero .label{margin:0}.split-hero .big{margin:0}.split-square{font:600 1.4rem/1.2 var(--display);margin:4px 0}
@@ -3443,13 +3452,12 @@ function answer(q){
 // ---- Subs ----
 V.subs = () => `
   ${subSeg()}
-  <h1>Subscriptions</h1>
+  <div class="subs-head"><h1>Subscriptions</h1><button class="icon-btn" type="button" data-import-open aria-label="Find subscriptions in a bank statement" title="Find subscriptions in a bank statement">${STMT_IC}</button></div>
   <div data-out="reviewCard">${OUT.reviewCard()}</div>
   <div data-out="subsSummary">${OUT.subsSummary()}</div>
   <div data-out="remindBox">${OUT.remindBox()}</div>
-  <button class="btn" type="button" data-import-open>Find subscriptions in a bank statement</button>
-  <label class="field"><span>Flag anything unused for more than</span><span class="inline"><input id="rule-days" data-bind="ruleDays" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.ruleDays}" style="width:90px" aria-label="Days"><span class="muted">days, or a duplicate of one you use</span></span></label>
   <div data-out="subsList">${OUT.subsList()}</div>
+  <button class="link small subs-import" type="button" data-import-open>${STMT_IC}Find subscriptions in a bank statement</button>
   <details class="card"><summary>Add a subscription</summary>
     <form data-form="addSub" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
       <label class="field"><span>Name</span><input name="name" required placeholder="e.g. YouTube Premium"></label>
@@ -3462,18 +3470,28 @@ V.subs = () => `
       <datalist id="groups">${[...new Set(S.subs.map(s => s.group).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("")}</datalist>
       <button class="btn primary" type="submit">Add subscription</button>
     </form></details>`;
+// All, Monthly or Yearly: the totals and the list below follow the switch.
+const STMT_IC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg>';
+const SUB_CYCLES = [["all", "All"], ["mo", "Monthly"], ["yr", "Yearly"]];
+const subCycleOf = s => s.cycle === "yr" ? "yr" : "mo";
+const subInCycle = s => (UI.subCycle || "all") === "all" || subCycleOf(s) === UI.subCycle;
 OUT.subsSummary = () => {
-  const C = compute(), now = r2(C.liveSubs.reduce((a,s) => a + subCostIn(s, C.planKey), 0)), dropped = S.subs.filter(s => s.keep === "drop");
-  return `<div class="card"><div class="summary3">
-    <div><span class="label">This month</span><b data-subs-now>${fmt(now)}</b></div>
-    <div><span class="label">A year</span><b data-subs-year>${fmt(subPer(C.liveSubs).year)}</b></div>
-    <div><span class="label">Flagged a year</span><b class="${C.flagged.length ? "bad" : ""}">${fmt(subPer(C.flagged).year)}</b></div></div>
+  const C = compute(), cyc = UI.subCycle || "all", live = C.liveSubs.filter(subInCycle), flagged = C.flagged.filter(subInCycle), dropped = S.subs.filter(s => s.keep === "drop" && subInCycle(s));
+  const now = r2(live.reduce((a,s) => a + subCostIn(s, C.planKey), 0)), n = c => S.subs.filter(s => c === "all" || subCycleOf(s) === c).length;
+  const next = cyc === "yr" ? live.map(s => ({s, d: nextRenewal(s)})).filter(x => x.d).sort((a, b) => a.d - b.d)[0] : null;
+  const rows = cyc === "mo" ? [["A month", fmt(r2(live.reduce((a, s) => a + (+s.price || 0), 0))), "data-subs-now"], ["A year", fmt(subPer(live).year), "data-subs-year"], ["Flagged a month", fmt(r2(flagged.reduce((a, s) => a + (+s.price || 0), 0))), "", flagged.length]]
+    : cyc === "yr" ? [["A year", fmt(subPer(live).year), "data-subs-year"], next ? ["Next renewal", dayMonth(next.d), "", 0, next.s.name] : ["Next renewal", "Add dates", "", 0, "Tap “+ Renewal date” below"], ["Flagged a year", fmt(subPer(flagged).year), "", flagged.length]]
+    : [["This month", fmt(now), "data-subs-now"], ["A year", fmt(subPer(live).year), "data-subs-year"], ["Flagged a year", fmt(subPer(flagged).year), "", flagged.length]];
+  return `<div class="card subs-sum"><div class="seg sub-cycle" role="group" aria-label="Show subscriptions">${SUB_CYCLES.map(([k, t]) => `<button type="button" data-sub-cycle="${k}" aria-pressed="${cyc === k}">${t}<small>${n(k)}</small></button>`).join("")}</div>
+    <div class="summary3">${rows.map(([l, v, attr, bad, sub]) => `<div><span class="label">${l}</span><b ${attr} class="${bad ? "bad" : ""}">${esc(v)}${sub ? `<small class="muted sub-next">${esc(sub)}</small>` : ""}</b></div>`).join("")}</div>
+    <label class="sub-rule"><span>Flag if unused for</span><input id="rule-days" data-bind="ruleDays" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.ruleDays}" aria-label="Days unused before a subscription is flagged"><span>days, or a duplicate</span></label>
     ${dropped.length ? `<p class="small good">Dropping ${dropped.length} keeps ${subsKeep(dropped)}.</p>` : ""}</div>`;
 };
 OUT.subsList = () => {
   const C = compute();
   if (!S.subs.length) return `<p class="empty">No subscriptions yet. Add one below.</p>`;
-  const order = [...S.subs].sort((a,b) => (C.flags[b.id].length - C.flags[a.id].length) || subMonthly(b) - subMonthly(a));
+  if (!S.subs.some(subInCycle)) return `<p class="empty">No ${UI.subCycle === "yr" ? "yearly" : "monthly"} subscriptions.</p>`;
+  const order = S.subs.filter(subInCycle).sort((a,b) => (C.flags[b.id].length - C.flags[a.id].length) || subMonthly(b) - subMonthly(a));
   return `<div class="rows">${order.map(s => {
     const f = C.flags[s.id], d = daysSince(s.last), k = s.keep;
     const nr = nextRenewal(s), nd = nr ? daysUntil(nr) : null;
@@ -3552,7 +3570,15 @@ const DEALS = [
   {id: "uberone", n: "Uber One", re: /uber\s*one/i, url: "https://www.uber.com/us/en/u/uber-one/", plans: [{n: "Uber One monthly", m: 9.99, y: 96}]},
   {id: "dashpass", n: "DashPass", re: /dashpass|doordash/i, url: "https://www.doordash.com/dashpass/", plans: [{n: "DashPass monthly", m: 9.99, y: 96}]},
   {id: "instacart", n: "Instacart+", re: /instacart/i, url: "https://www.instacart.com/instacart-plus", plans: [{n: "Instacart+ monthly", m: 9.99, y: 99}]},
-  {id: "walmart", n: "Walmart+", re: /walmart/i, url: "https://www.walmart.com/plus", plans: [{n: "Walmart+ monthly", m: 12.95, y: 98}]}
+  {id: "walmart", n: "Walmart+", re: /walmart/i, url: "https://www.walmart.com/plus", plans: [{n: "Walmart+ monthly", m: 12.95, y: 98}]},
+  // Apps and tools people pay for every month, from each company's own US price page (checked Oct 2026).
+  {id: "claude", n: "Claude", re: /\bclaude\b/i, url: "https://claude.com/pricing", plans: [{n: "Pro", m: 20, y: 200}]},
+  {id: "canva", n: "Canva", re: /\bcanva\b/i, url: "https://www.canva.com/pricing/", plans: [{n: "Pro", yOnly: 144}]},
+  {id: "m365", n: "Microsoft 365", re: /microsoft\s*365|office\s*365|\bm365\b/i, url: "https://www.microsoft.com/en-us/microsoft-365/buy/compare-all-microsoft-365-products", plans: [{n: "Personal", m: 9.99, y: 99.99}, {n: "Family", m: 12.99, y: 129.99, people: 6}]},
+  {id: "icloud", n: "iCloud+", tiers: 1, re: /icloud/i, url: "https://support.apple.com/en-us/108047", plans: [{n: "50 GB", m: 0.99, cond: "If you use less than 50 GB"}, {n: "200 GB", m: 2.99, cond: "If you use less than 200 GB"}, {n: "2 TB", m: 9.99, cond: "If you use less than 2 TB"}]},
+  {id: "gone", n: "Google One", tiers: 1, re: /google\s*one|google\s*ai\s*(plus|pro)|gemini\s*(advanced|pro)/i, url: "https://one.google.com/about/plans", plans: [{n: "Basic 100 GB", m: 1.99, cond: "If you only need storage"}, {n: "AI Plus 2 TB", m: 9.99, cond: "If you use less than 2 TB"}]},
+  {id: "audible", n: "Audible", re: /audible/i, url: "https://www.audible.com/ep/memberbenefits", plans: [{n: "Standard", m: 8.99, cond: "One title a month to keep, without the monthly credit"}, {n: "Premium", m: 14.95, y: 149.5}]},
+  {id: "photoshop", n: "Adobe", re: /photoshop|lightroom|adobe\s*photo/i, url: "https://www.adobe.com/products/photoshop/plans.html", plans: [{n: "Photography plan (Photoshop and Lightroom)", m: 19.99, cond: "Billed monthly on a yearly plan"}, {n: "Photoshop", m: 22.99, y: 263.88}]}
 ];
 // Two or three of these together cost less as one bundle.
 const DEAL_BUNDLES = [
@@ -3570,8 +3596,13 @@ const PHONE_DEALS = {
 const dealsOn = () => plusOn() && S.cur === "USD";
 function dealIdeas(name, cost, link){
   const out = [], d = DEALS.find(x => x.re.test(name));
-  if (d) d.plans.forEach(p => {
-    if (p.people && p.people > 1) { const each = r2(p.m / p.people); if (cost - each >= 1) out.push({k: d.id + ":" + p.n, alt: `${d.n} ${p.n.replace(d.n + " ", "")}`, altCost: each, why: `${fmt(p.m)} a month for up to ${p.people} people. ${fmt(each)} each if you share it.`, url: d.url}); }
+  // Storage plans: only the next size down is suggested, never a jump to the smallest.
+  const plans = !d ? [] : d.tiers ? d.plans.filter(p => cost - p.m >= 1).sort((a, b) => b.m - a.m).slice(0, 1) : d.plans;
+  if (d) plans.forEach(p => {
+    const already = p.people && name.toLowerCase().includes(p.n.toLowerCase());   // already on the family plan: no "share it" idea for the same plan
+    if (already) {}
+    else if (p.people && p.people > 1) { const each = r2(p.m / p.people); if (cost - each >= 1) out.push({k: d.id + ":" + p.n, alt: `${d.n} ${p.n.replace(d.n + " ", "")}`, altCost: each, why: `${fmt(p.m)} a month for up to ${p.people} people. ${fmt(each)} each if you share it.`, url: d.url}); }
+    else if (p.yOnly){ if (cost * 12 - p.yOnly >= 6) out.push({k: d.id + ":yr:" + p.n, alt: `${d.n} ${p.n}, paid yearly`, altCost: r2(p.yOnly / 12), why: `${fmt(p.yOnly)} a year instead of about ${fmt(r2(cost * 12))}.`, url: d.url}); return; }
     else if (cost - p.m >= 1) out.push({k: d.id + ":" + p.n, alt: `${d.n} ${p.n.replace(d.n + " ", "")}`, altCost: p.m, why: `${fmt(p.m)} a month${p.ads ? ", with ads" : ""}.${p.cond ? " " + p.cond + "." : ""}`, url: d.url});
     if (p.y && Math.abs(cost - p.m) < 1.5 && p.m * 12 - p.y >= 6) out.push({k: d.id + ":yr:" + p.n, alt: `${d.n} ${p.n.replace(d.n + " ", "")}, paid yearly`, altCost: r2(p.y / 12), why: `${fmt(p.y)} a year instead of ${fmt(p.m * 12)}.`, url: d.url});
   });
@@ -3607,7 +3638,7 @@ OUT.cheapIdeas = () => {
     <div class="rows">${list.map(i => `<div class="row idea${i.real ? " real" : ""}" data-idea="${esc(i.key)}"><div><div class="name">${esc(i.name)} → ${esc(i.alt)}${i.real ? ` <span class="pill ok">Today’s price</span>` : ""}</div><div class="muted small">${esc(i.why)}</div>
       <div class="good small tnum">${i.real ? `Keep ${fmt(i.save)} a month, ${fmt(r2(i.save * 12))} a year` : `Could keep about ${fmt(i.save)} a month`}</div>${i.real && i.url ? `<a class="link small" href="${esc(i.url)}" target="_blank" rel="noopener noreferrer">Official page</a>` : ""}</div>
       <div class="inline" style="justify-content:space-between"><button class="btn small primary" type="button" data-idea-add style="width:auto;padding:8px 18px">Add</button><button class="link plain small" type="button" data-idea-skip>Not for me</button></div></div>`).join("")}</div>
-    ${all.some(i => i.real) ? `<p class="muted small" style="margin:0">Prices from each company’s own site, checked ${DEALS_CHECKED}. Prices can change; check before you switch.</p>` : !plusOn() && S.cur === "USD" ? `<p class="muted small" style="margin:0">KeepWise Plus shows today’s real prices for these.</p>` : ""}
+    ${all.some(i => i.real) ? `<p class="muted small" style="margin:0">Prices from each company’s own site, checked ${DEALS_CHECKED}. Prices can change; check before you switch.</p>` : !plusOn() && S.cur === "USD" ? `<p class="muted small" style="margin:0">KeepWise Plus shows today’s real prices for these.</p>` : S.cur !== "USD" ? `<p class="muted small" style="margin:0">Today’s real prices are for the US so far. These ideas are estimates.</p>` : ""}
     ${all.length > 3 ? `<button class="link small" type="button" data-ideas-more style="align-self:center">${UI.ideasAll ? "Show fewer" : `Show ${all.length - 3} more`}</button>` : ""}</section>`;
 };
 OUT.cheapSummary = () => {
@@ -6818,6 +6849,7 @@ view.addEventListener("click", async e => {
     if (cr && b.hasAttribute("data-card-edit")){ UI.cardEdit = cr.dataset.card; UI.cardAdd = false; render(true); return; }
     if (cr && b.hasAttribute("data-card-del")){ const id = cr.dataset.card, u = undoable(), l = (S.loans || []).find(x => x.id === id), d = (S.cards || []).find(x => x.id === id);
       S.loans = (S.loans || []).filter(x => x.id !== id); S.cards = (S.cards || []).filter(x => x.id !== id); UI.cardEdit = null; save(); render(true); toast(`Removed ${cardName(l || d || {})}.`, u); return; } }
+  if (b.dataset.subCycle){ UI.subCycle = b.dataset.subCycle; refreshOuts(); return; }
   if (b.dataset.trendBy){ UI.trendBy = b.dataset.trendBy; UI.trendPick = null; refreshOuts(); return; }
   if (b.dataset.trendKind){ UI.trendKind = b.dataset.trendKind; refreshOuts(); return; }
   if (b.dataset.quickEnv){ UI.quickEnv = b.dataset.quickEnv; UI.quick = null; const sh = $("asksheet"); if (sh) sh.innerHTML = askSheet(); return; }

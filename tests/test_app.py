@@ -6179,6 +6179,37 @@ async def the_owl_has_a_fuel_icon_in_misc(ctx):
     assert "Fuel" in labels and labels.index("Fuel") == labels.index("Car") + 1, labels[:8]
     assert not pg.errors, pg.errors
 
+@test
+async def cheaper_knows_common_apps_and_yearly_plans(ctx):
+    pg = await open_app(ctx)
+    await seed(pg, "s.cur = 'USD'; s.plusTester = true; s.swaps = []; s.subs = [{id: 'cl', name: 'Claude Pro', price: 20, cycle: 'mo', last: '2026-10-01', env: 'misc', group: ''}, {id: 'ca', name: 'Canva Pro', price: 15, cycle: 'mo', last: '2026-10-01', env: 'misc', group: ''}, {id: 'ic', name: 'iCloud+ 2TB', price: 9.99, cycle: 'mo', last: '2026-10-01', env: 'misc', group: ''}, {id: 'ps', name: 'Adobe Photoshop', price: 22.99, cycle: 'mo', last: '2026-10-01', env: 'misc', group: ''}]")
+    await tab(pg, "cheaper")
+    if await pg.locator("[data-ideas-more]").count(): await pg.click("[data-ideas-more]"); await pg.wait_for_timeout(150)
+    v = await tc(pg, ".ideas")
+    assert "Claude Pro → Claude Pro, paid yearly" in v and "$200 a year instead of $240" in v, v[:900]
+    assert "Canva Pro → Canva Pro, paid yearly" in v and "$144 a year" in v, v[:900]
+    assert "iCloud+ 200 GB" in v and "Adobe Photoshop → Adobe Photography plan" in v, v[:1200]
+    await seed(pg, "s.cur = 'GBP'")
+    await tab(pg, "cheaper"); v = await tc(pg, ".ideas")
+    assert "Today’s price" not in v and "for the US so far" in v, "outside the US the ideas say they are estimates"
+    assert not pg.errors, pg.errors
+
+@test
+async def subs_switch_between_all_monthly_and_yearly(ctx):
+    pg = await open_app(ctx)
+    await tab(pg, "subs")
+    assert await pg.locator(".subs-head [data-import-open]").count() == 1 and await pg.locator("#view .subs-import[data-import-open]").count() == 1
+    sw = [x.strip().split("\n")[0] for x in await pg.locator("[data-sub-cycle]").all_inner_texts()]; assert sw == ["All", "Monthly", "Yearly"], sw
+    n_all = await pg.locator("[data-out=subsList] [data-sub]").count()
+    await pg.click("[data-sub-cycle=yr]"); await pg.wait_for_timeout(150)
+    yr = await pg.locator("[data-out=subsList] [data-sub]").count(); st = await state(pg)
+    assert yr == len([x for x in st["subs"] if x.get("cycle") == "yr"]) and yr < n_all
+    sm = (await text(pg, "[data-out=subsSummary]")).lower(); assert "a year" in sm and "this month" not in sm, sm
+    await pg.click("[data-sub-cycle=mo]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-out=subsList] [data-sub]").count() == n_all - yr and "a month" in (await text(pg, "[data-out=subsSummary]")).lower()
+    assert await pg.locator("[data-out=subsSummary] #rule-days").count() == 1, "the flag rule sits in the totals card"
+    assert not pg.errors, pg.errors
+
 async def main():
     passed, failed = 0, []
     async with async_playwright() as p:
