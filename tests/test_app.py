@@ -6213,6 +6213,22 @@ async def where_your_month_goes_shows_as_a_circle_bars_or_a_line(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def you_can_choose_your_country_for_prices_and_offers(ctx):
+    pg = await open_app(ctx)
+    await seed(pg, "s.cur = 'EUR'; s.plusTester = true; s.swaps = []; s.subs = [{id: 'cl', name: 'Claude Pro', price: 20, cycle: 'mo', last: '2026-10-01', env: 'misc', group: ''}]")
+    await tab(pg, "cheaper")
+    v = await tc(pg, "#view"); assert "real prices are for the US so far" in v and await pg.locator("#view select[data-country]").count() == 1, "outside the US it says so and offers a country"
+    await pg.select_option("#view select[data-country]", "US"); await pg.wait_for_timeout(300)
+    assert (await state(pg))["country"] == "US" and (await state(pg))["cur"] == "EUR", "the country changes, the currency does not"
+    if await pg.locator("[data-ideas-more]").count(): await pg.click("[data-ideas-more]"); await pg.wait_for_timeout(150)
+    v = await tc(pg, "#view"); assert "Claude Pro, paid yearly" in v and "real prices are for the US so far" not in v, "living in the US, the real prices show"
+    await menu_to(pg, "settings"); sel = pg.locator("[data-set-money] select[data-country]")
+    assert await sel.count() == 1 and await sel.input_value() == "US"
+    await sel.select_option(""); await pg.wait_for_timeout(300); assert "country" not in (await state(pg)), "back to matching the currency"
+    assert "Match my currency" in await pg.locator("[data-set-money] select[data-country] option").first.inner_text()
+    assert not pg.errors, pg.errors
+
+@test
 async def the_owl_has_a_fuel_icon_in_misc(ctx):
     pg = await open_app(ctx, month_tabs=True)
     await pg.click("#wise"); await pg.wait_for_timeout(300)

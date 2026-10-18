@@ -2613,7 +2613,15 @@ const PLUS_TAP = {n: 0, t: 0};
 const BIZ_COST_CATS = ["Supplies", "Office & software", "Advertising & marketing", "Equipment", "Contract labor", "Fees & commissions", "Travel", "Meals", "Car & truck", "Utilities & phone", "Rent", "Insurance", "Returns & refunds", "Other"], BIZ_IN_CATS = ["Sales", "Services", "Other"];
 const BIZ = {lines: null, pick: new Set(), file: "", rcpt: null, view: null};
 const BSEGS = [["money", "Money"], ["invoices", "Invoices"], ["miles", "Mileage"], ["tax", "Tax"]];
-const USA = () => S.cur === "USD";
+// Where you live, for prices, offers and US-only rules. Picked by you, or taken from your currency until you pick one.
+// It stays on this phone.
+const COUNTRY_CODES = "AD AE AF AG AI AL AM AO AR AS AT AU AW AZ BA BB BD BE BF BG BH BI BJ BM BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CK CL CM CN CO CR CU CV CW CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FO FR GA GB GD GE GH GI GL GM GN GQ GR GT GU GW GY HK HN HR HT HU ID IE IL IN IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MO MR MT MU MV MW MX MY MZ NA NC NE NG NI NL NO NP NR NZ OM PA PE PF PG PH PK PL PR PS PT PW PY QA RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TG TH TJ TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VG VI VN VU WS XK YE ZA ZM ZW".split(" ");
+const countryName = c => { try { return new Intl.DisplayNames(["en"], {type: "region"}).of(c) || c; } catch(e){ return c; } };
+const countryFlag = c => /^[A-Z]{2}$/.test(c) ? String.fromCodePoint(...[...c].map(x => 0x1F1A5 + x.charCodeAt(0))) : "";
+const regionCode = () => COUNTRY_CODES.includes(S.country) ? S.country : S.cur === "USD" ? "US" : "";
+const countryOptions = () => `<option value="">Match my currency${S.country ? "" : regionCode() ? ` (${esc(countryName(regionCode()))})` : ""}</option>` + COUNTRY_CODES.map(c => [c, countryName(c)]).sort((a, b) => a[1].localeCompare(b[1])).map(([c, n]) => `<option value="${c}"${S.country === c ? " selected" : ""}>${countryFlag(c)} ${esc(n)}</option>`).join("");
+const countryField = (label, note) => `<label class="field"><span>${label}</span><select data-bind="country" data-country>${countryOptions()}</select>${note ? `<small class="muted small">${note}</small>` : ""}</label>`;
+const USA = () => regionCode() === "US";
 const bizData = () => { if (!S.biz) S.biz = {}; const b = S.biz; ["entries", "subs", "shares", "imported", "invoices", "trips"].forEach(k => b[k] = b[k] || []);
   if (b.taxPct == null) b.taxPct = 25; if (b.mileRate == null) b.mileRate = USA() ? 0.725 : 0; if (!b.qpaid) b.qpaid = {}; if (!b.invNext) b.invNext = 1; return b; };
 const bizShareSrc = id => { const [t, x] = String(id).split(":"); return t === "e" ? (S.expenses || []).find(e => e.id === x) : t === "s" ? (S.subs || []).find(v => v.id === x) : null; };
@@ -3664,7 +3672,7 @@ const PHONE_DEALS = {
   tmobile: [{n: "Mint Mobile Unlimited", m: 15, cond: "Runs on T-Mobile's network. Pay 12 months ($180) up front", url: "https://www.mintmobile.com"}, {n: "Tello Unlimited", m: 25, cond: "Runs on T-Mobile's network", url: "https://tello.com"}],
   any: [{n: "Visible", m: 25, cond: "Verizon's network, unlimited data, taxes included", url: "https://www.visible.com"}, {n: "Mint Mobile Unlimited", m: 15, cond: "T-Mobile's network. Pay 12 months ($180) up front", url: "https://www.mintmobile.com"}]
 };
-const dealsOn = () => plusOn() && S.cur === "USD";
+const dealsOn = () => plusOn() && USA();
 function dealIdeas(name, cost, link){
   const out = [], d = DEALS.find(x => x.re.test(name));
   // Storage plans: only the next size down is suggested, never a jump to the smallest.
@@ -3709,7 +3717,7 @@ OUT.cheapIdeas = () => {
     <div class="rows">${list.map(i => `<div class="row idea${i.real ? " real" : ""}" data-idea="${esc(i.key)}"><div><div class="name">${esc(i.name)} → ${esc(i.alt)}${i.real ? ` <span class="pill ok">Today’s price</span>` : ""}</div><div class="muted small">${esc(i.why)}</div>
       <div class="good small tnum">${i.real ? `Keep ${fmt(i.save)} a month, ${fmt(r2(i.save * 12))} a year` : `Could keep about ${fmt(i.save)} a month`}</div>${i.real && i.url ? `<a class="link small" href="${esc(i.url)}" target="_blank" rel="noopener noreferrer">Official page</a>` : ""}</div>
       <div class="inline" style="justify-content:space-between"><button class="btn small primary" type="button" data-idea-add style="width:auto;padding:8px 18px">Add</button><button class="link plain small" type="button" data-idea-skip>Not for me</button></div></div>`).join("")}</div>
-    ${all.some(i => i.real) ? `<p class="muted small" style="margin:0">Prices from each company’s own site, checked ${DEALS_CHECKED}. Prices can change; check before you switch.</p>` : !plusOn() && S.cur === "USD" ? `<p class="muted small" style="margin:0">KeepWise Plus shows today’s real prices for these.</p>` : S.cur !== "USD" ? `<p class="muted small" style="margin:0">Today’s real prices are for the US so far. These ideas are estimates.</p>` : ""}
+    ${all.some(i => i.real) ? `<p class="muted small" style="margin:0">Prices from each company’s own site, checked ${DEALS_CHECKED}. Prices can change; check before you switch.</p>` : !plusOn() && USA() ? `<p class="muted small" style="margin:0">KeepWise Plus shows today’s real prices for these.</p>` : !USA() ? `<p class="muted small" style="margin:0">Today’s real prices are for the US so far. These ideas are estimates.</p>${countryField("Where you live", "")}` : ""}
     ${all.length > 3 ? `<button class="link small" type="button" data-ideas-more style="align-self:center">${UI.ideasAll ? "Show fewer" : `Show ${all.length - 3} more`}</button>` : ""}</section>`;
 };
 OUT.cheapSummary = () => {
@@ -6417,6 +6425,7 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")
     <p class="muted small">Auto follows your phone.</p></section>
   <section class="card" data-set-money><h2>Money</h2>
     <label class="field"><span>Currency</span><select data-bind="cur">${curOptions(S.cur)}</select></label>
+    ${countryField("Country", "Used for prices, offers and rules where you live. Kept on this phone.")}
     ${notifPlugin() ? setRow("Reminders", `A nudge before ${payOn() ? "payday" : "each new month"} to check your subscriptions.`, setToggle(S.remind && S.remind.on, "data-remind-set", "Reminders"), "data-set-remind")
       : webPushRow()}</section>
   <section class="card" data-set-app><h2>App</h2>
@@ -6532,6 +6541,7 @@ function accFields(first){
     <div class="field"><span>Location for local offers</span>
       ${loc ? `<p class="small">Approximate location saved (to about 1 km).</p><div class="inline"><button class="btn small" type="button" data-acc-loc>Update</button><button class="btn small danger" type="button" data-acc-loc-clear>Remove</button></div>`
             : `<p class="muted small">Optional. We save only an approximate area, never your exact location.</p>${ACC.locHelp ? `<div class="part-help" data-loc-help style="border-radius:14px"><b>${ACC.locHelp === 1 ? "Location is turned off for KeepWise" : "We couldn’t find your location"}</b><p class="muted small">${locHow(ACC.locHelp)}</p><div class="grid2"><button class="btn small" type="button" data-loc-help-close>Not now</button><button class="btn small primary" type="button" data-acc-loc>Try again</button></div></div>` : `<button class="btn small" type="button" data-acc-loc style="align-self:flex-start">Use my approximate location</button>`}`}
+      ${countryField("Or choose your country", "Kept on this phone. Used for prices and offers where you live.")}
     </div>
     <label class="check"><input type="checkbox" name="marketing" data-acc-field="marketing" ${mk ? "checked" : ""}><span>Email me news and offers from KeepWise. You can unsubscribe at any time.</span></label>
     ${first ? `<label class="check"><input type="checkbox" name="consent" data-acc-field="consent" ${d.consent ? "checked" : ""}><span>I’m 18 or older and I agree to the ${legalLinks}.</span></label>` : ""}`;
@@ -6834,7 +6844,7 @@ view.addEventListener("input", e => {
   if (lineBox){ const d = LINE_DRAFT[lineBox.dataset.addLine] = LINE_DRAFT[lineBox.dataset.addLine] || {}; if (t.hasAttribute("data-new-name")) d.n = t.value; if (t.hasAttribute("data-new-amt")) d.a = t.value; return; }
   if (t.dataset.bind){
     const k = t.dataset.bind; S[k] = t.hasAttribute("data-num") ? numv(t.value) : t.value;
-    if (k === "cur"){ save(); render(true); return; }
+    if (k === "cur" || k === "country"){ if (k === "country" && !S.country) delete S.country; save(); render(true); return; }
     if (k === "income" && payOn()) S.pay.amount = r2(S.income / payBase());  // the monthly number and the paycheck stay in step
     if (k === "efMonths") S.efMonths = Math.max(0, Math.round(S.efMonths));
     if (k === "ruleDays") S.ruleDays = Math.max(1, Math.round(S.ruleDays));
