@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status bar icon: a plain owl face, white on transparent as Android asks. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="M5,3.5 L8.6,6.2 C9.6,5.8 10.8,5.6 12,5.6 C13.2,5.6 14.4,5.8 15.4,6.2 L19,3.5 L18.6,8.4 C19.5,9.6 20,11 20,12.6 C20,17.2 16.4,20.5 12,20.5 C7.6,20.5 4,17.2 4,12.6 C4,11 4.5,9.6 5.4,8.4 Z M8.8,9.6 A2.6,2.6 0 1,0 8.8,14.8 A2.6,2.6 0 1,0 8.8,9.6 Z M15.2,9.6 A2.6,2.6 0 1,0 15.2,14.8 A2.6,2.6 0 1,0 15.2,9.6 Z M12,14.6 L10.9,16.2 L12,17.4 L13.1,16.2 Z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M8.8,11.3 A0.9,0.9 0 1,0 8.8,13.1 A0.9,0.9 0 1,0 8.8,11.3 Z M15.2,11.3 A0.9,0.9 0 1,0 15.2,13.1 A0.9,0.9 0 1,0 15.2,11.3 Z"/>
+</vector>

@@ -1,3 +1,8 @@
 node_modules/
 *.apk
 __pycache__/
+
+# Android signing keys never live in this repository
+*.jks
+*.keystore
+*-for-github.txt

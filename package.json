@@ -9,14 +9,16 @@
     "android": "npm run build && npx cap sync android && npx cap open android"
   },
   "dependencies": {
-    "@capacitor-community/contacts": "^7.2.0",
-    "@capacitor/android": "^7.0.0",
-    "@capacitor/core": "^7.0.0",
-    "@capacitor/ios": "^7.0.0",
-    "@capacitor/local-notifications": "^7.0.7"
+    "@aparajita/capacitor-biometric-auth": "10.0.0",
+    "@capacitor-community/contacts": "^8.0.0",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
+    "@capacitor/local-notifications": "^8.3.1"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^7.0.0"
+    "@capacitor/cli": "^8.5.3"
   }
 }

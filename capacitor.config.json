@@ -1,8 +1,20 @@
 {
-  "appId": "app.keepwise.money",
+  "appId": "com.mykeepwise.app",
   "appName": "KeepWise",
   "webDir": "www",
   "backgroundColor": "#f3efe6",
-  "android": { "backgroundColor": "#f3efe6" },
-  "ios": { "backgroundColor": "#f3efe6", "contentInset": "never" }
+  "android": {
+    "backgroundColor": "#f3efe6"
+  },
+  "ios": {
+    "backgroundColor": "#f3efe6",
+    "contentInset": "never"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_keepwise",
+      "iconColor": "#1B6843",
+      "sound": "keepwise_hoot.wav"
+    }
+  }
 }

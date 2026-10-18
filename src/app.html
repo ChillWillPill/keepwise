@@ -56,6 +56,9 @@
 @media (prefers-color-scheme: dark){:root[data-skin="forest"]:not([data-theme="light"]){--bg:#0b140f; --card:#122019; --ink:#e6f0e9; --muted:#9db5a6; --line:#22362a; --chip:#182a20; --green:#6fd39a; --green-soft:#143322; --sheet:#1f392b; --sheet-line:#407a5a; --sheet-in:#0b140f; color-scheme:dark}}
 
 *{box-sizing:border-box}
+/* No grey box where a finger lands (iPhone and Android): buttons and links show their own pressed state instead. */
+html{-webkit-tap-highlight-color:transparent}*{-webkit-tap-highlight-color:transparent}
+button:not(:disabled):not(.wise-fab):active,a:active{opacity:.6;transition:opacity 0s}
 .brand b,h1,h2,.big,.summary3 b,.bigsoft{font-optical-sizing:auto;font-weight:600;letter-spacing:-.025em}
 html,body{margin:0;overflow:hidden;overscroll-behavior:none}
 html{touch-action:manipulation}  /* a quick double tap (on a tab, a button) must never zoom the page; pinch to zoom still works */
@@ -74,19 +77,32 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .pw-rules li{display:flex;gap:6px;align-items:center}
 .pw-rules svg{width:13px;height:13px;flex:none;opacity:.3}
 .pw-rules li.ok{color:var(--green)} .pw-rules li.ok svg{opacity:1}
-.tour{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:40;width:min(92vw,440px);background:#14382a;color:#f6f1e6;border:1px solid rgba(224,187,94,.55);border-radius:22px;padding:18px 18px 16px;box-shadow:0 28px 70px -12px rgba(0,0,0,.6),0 0 0 6px rgba(224,187,94,.14);display:flex;flex-direction:column;gap:8px}
-#tour .muted{color:rgba(246,241,230,.78)}#tour .link,#tour .link.plain{color:#f1d68a}#tour .pill.gold{background:rgba(224,187,94,.2);color:#f1d68a}#tour h3{color:#fff}
-#tour .btn{background:transparent;color:#f6f1e6;border-color:rgba(246,241,230,.35);box-shadow:none}#tour .btn.primary{background:#f1d68a;color:#14382a;border-color:#f1d68a;font-weight:700}
-.tour-who{display:flex;align-items:center;gap:10px}.tour-who img{width:34px;height:34px;border-radius:50%;background:#fbf8f2;flex:none}
+.tour{--tb:#2457d6;--tb-soft:#e8efff;--tink:#0f1c2b;--tmut:#5b6676;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:40;width:min(92vw,420px);background:#fff;color:var(--tink);border:0;border-radius:24px;padding:14px 18px 16px;box-shadow:0 24px 60px -16px rgba(15,28,43,.45),0 0 0 1px rgba(36,87,214,.12);display:flex;flex-direction:column;gap:8px;font-family:var(--body)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tour{--tb:#7aa2ff;--tb-soft:#1b2a4f;--tink:#f3f6ff;--tmut:#aab6cc;background:#101a33;box-shadow:0 24px 60px -16px rgba(0,0,0,.7),0 0 0 1px rgba(122,162,255,.25)}}
+:root[data-theme="dark"] .tour{--tb:#7aa2ff;--tb-soft:#1b2a4f;--tink:#f3f6ff;--tmut:#aab6cc;background:#101a33;box-shadow:0 24px 60px -16px rgba(0,0,0,.7),0 0 0 1px rgba(122,162,255,.25)}
 @media (prefers-reduced-motion:no-preference){.tour{animation:tourin .28s cubic-bezier(.2,.9,.3,1.2) both}@keyframes tourin{from{opacity:0;transform:translateX(-50%) translateY(14px) scale(.97)}to{opacity:1;transform:translateX(-50%)}}}
 .tour[hidden]{display:none}
-.tour h3{font:600 1.2rem/1.2 var(--display);letter-spacing:-.02em;margin:0}
-.tour p{margin:0;line-height:1.45}
-.tour-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.tour-nav{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+.tour h3{font:700 1.25rem/1.2 var(--body);letter-spacing:-.01em;margin:2px 0 0;color:var(--tink)}
+.tour p{margin:0;line-height:1.45}.tour .tour-sub{color:var(--tmut);font-size:.98rem}
+.tour-top{display:flex;align-items:center;gap:10px}
+.tour-bars{flex:1;display:flex;gap:4px}.tour-bars i{flex:1;height:4px;border-radius:2px;background:var(--tb-soft);overflow:hidden}.tour-bars i b{display:block;height:100%;width:0;background:var(--tb)}
+.tour-bars i.done b{width:100%}.tour-bars i.now b{animation:tourbar linear forwards}.tour.paused .tour-bars i.now b{animation:none;width:35%}@keyframes tourbar{from{width:0}to{width:100%}}
+.tour-final .tour-bars i.now b{animation:none;width:100%}
+.tour-ctl{display:flex;align-items:center;gap:4px;flex:none}
+.tour-ic{appearance:none;border:0;background:var(--tb-soft);color:var(--tb);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0}.tour-ic svg{width:14px;height:14px}
+.tour-skip{appearance:none;border:0;background:none;color:var(--tmut);font:600 .88rem var(--body);padding:6px 4px 6px 8px;cursor:pointer}
+.tour-nav{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:6px}
+.tour-arrow{appearance:none;border:0;background:var(--tb-soft);color:var(--tb);width:44px;height:44px;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0}.tour-arrow svg{width:20px;height:20px}
+.tour-go{appearance:none;border:0;background:var(--tb);color:#fff;font:700 1rem var(--body);height:44px;padding:0 22px;border-radius:22px;cursor:pointer;flex:1;max-width:220px}
+:root[data-theme="dark"] .tour-go{color:#0b1530}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tour-go{color:#0b1530}}
+.tour-all{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0}
+.tour-all span{display:flex;align-items:center;gap:8px;font-size:.88rem;font-weight:600;color:var(--tink);background:var(--tb-soft);border-radius:12px;padding:8px 10px}
+.tour-all i{color:var(--tb);display:grid;place-items:center;flex:none}.tour-all svg{width:16px;height:16px}
+@media (prefers-reduced-motion:no-preference){.tour-all span{opacity:0;animation:tourpop .35s ease forwards}@keyframes tourpop{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .app.touring .app-main,.app.touring .tabbar,.app.touring .app-header{pointer-events:none}
 .app.touring .view{padding-bottom:70vh}  /* room to bring anything, even the last card, up above the tour card */
-.tour-focus{outline:2.5px solid var(--gold);outline-offset:4px;border-radius:18px;transition:outline-color .2s;position:relative;z-index:5;box-shadow:0 0 0 200vmax rgba(20,26,22,.42)}  /* the rest of the page dims so the part being explained stands out */
+.tour-focus{outline:2.5px solid #2457d6;outline-offset:4px;border-radius:18px;transition:outline-color .2s;position:relative;z-index:5;box-shadow:0 0 0 200vmax rgba(20,26,22,.42)}  /* the rest of the page dims so the part being explained stands out */
 .lockscreen{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));text-align:center;overflow:auto}
 .lockscreen[hidden]{display:none}
 .app.locked{visibility:hidden}
@@ -118,7 +134,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .wise-fab[hidden]{display:none}.wise-fab img{width:44px;height:44px;border-radius:50%;pointer-events:none}
 .wise-fab{width:64px;height:64px;border:2.5px solid var(--green);box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 18%,transparent),0 10px 24px rgba(0,0,0,.28)}
 .wise-fab img{width:52px;height:52px}
-.app:not(.touring) .view{padding-bottom:max(96px,var(--view-pb,0px))}
+.app:not(.touring) .view{padding-bottom:max(24px,var(--view-pb,0px))}
 .wise-fab::after{content:"+";position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:var(--green);color:var(--card);font:700 16px/22px var(--body);text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .wise-fab.moving{transform:scale(1.12);box-shadow:0 10px 26px rgba(0,0,0,.28);cursor:grabbing}
 .app.typing .wise-fab,.app.welcoming .wise-fab,.app.touring .wise-fab{display:none}
@@ -277,9 +293,9 @@ a.btn{display:block;text-decoration:none}
 .seg.sub-seg[data-pseg-switch]{grid-template-columns:1fr 1fr}
 [data-pseg-switch]~.card .inc-row:not(.editing){padding:10px 14px;gap:4px}
 [data-pseg-switch]~.card .inc-row:not(.editing)>.row-top+[data-exp-edit]{margin-top:-24px}
-.view:has([data-pseg-switch]){gap:12px;padding-top:12px;padding-bottom:96px}
+.view:has([data-pseg-switch]){gap:12px;padding-top:12px;padding-bottom:24px}
 [data-pseg-switch]~[data-out] .card,[data-pseg-switch]~.card{padding:14px 16px;gap:8px;border-radius:18px}
-.view:has([data-mseg-switch]){gap:12px;padding-top:12px;padding-bottom:96px}
+.view:has([data-mseg-switch]){gap:12px;padding-top:12px;padding-bottom:24px}
 [data-mseg-switch]~.hero{padding:14px 14px 12px;gap:2px;border-radius:20px}
 [data-mseg-switch]~.hero h1{font-size:1.1rem}
 [data-mseg-switch]~.hero .big{font-size:min(2.35rem,11.5vw)!important;margin-top:2px!important}
@@ -576,6 +592,8 @@ button.card.banks-row{display:flex;flex-direction:row;align-items:center;justify
 .tr-card{gap:12px}.tr-kind{flex:none}.tr-kind button{padding:6px 10px}
 .tr-by{position:static!important}
 .tr-svg{width:100%;height:auto;display:block}.tr-axis{stroke:var(--line);stroke-width:1}.tr-lab{font-size:8.5px;fill:var(--muted);font-family:var(--body)}
+.tr-title{display:flex;align-items:baseline;gap:10px;min-width:0}.tr-title h2{margin:0}.tr-range{white-space:nowrap}
+.tr-hit{cursor:pointer}.tr-guide{stroke:var(--line);stroke-width:1;stroke-dasharray:3 3}.tr-legend .tr-when{font-weight:700}
 .tr-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem}.tr-legend span{display:inline-flex;align-items:center;gap:6px}.tr-legend i{width:10px;height:10px;border-radius:3px}
 .st-grp{border:1px solid var(--line);border-radius:14px;padding:4px 14px 6px;margin:10px 0}
 .st-gh{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0 8px;border-bottom:1px solid var(--line);font-weight:700}.st-gh span{font-size:1rem}.st-gh b{font-size:1.05rem}
@@ -604,9 +622,17 @@ button.card.banks-row{display:flex;flex-direction:row;align-items:center;justify
 .cc-num{font-size:1.05rem;letter-spacing:.14em;opacity:.95}
 .cc-row{justify-content:space-between}
 .cc-meter.over i{background:var(--rust)}
+.seg.card-type{display:grid;grid-template-columns:1fr 1fr}
+.cc-colors{display:flex;flex-wrap:wrap;gap:10px}.cc-color{position:relative;cursor:pointer}.cc-color input{position:absolute;opacity:0;inset:0;margin:0}
+.cc-color i{display:block;width:34px;height:24px;border-radius:7px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}.cc-color input:checked+i{outline:2.5px solid var(--green);outline-offset:2px}.cc-color input:focus-visible+i{outline:2.5px solid var(--ink);outline-offset:2px}
+.cc-acts{display:flex;gap:16px;justify-content:flex-end;flex-wrap:wrap}
+.cc-pay{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.cards-link{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
 form[data-ctype="debit"] [data-only="credit"],form[data-ctype="credit"] [data-only="debit"]{display:none}
 .pf-photo{flex-direction:row;align-items:center;gap:18px}.pf-photo .acc-photo img,.pf-photo .avatar.lg{width:84px;height:84px}
 .pf-photo-txt{display:flex;flex-direction:column;gap:6px}
+.del-card{text-align:left;width:100%;border-color:color-mix(in srgb,var(--rust) 35%,var(--line))}.del-list{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.del-card .check{display:flex;gap:10px;align-items:center;font-size:.92rem}
 .pf-card{gap:10px}.pf-quiet{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 0 12px;text-align:center}.pf-card p{margin:0}.pf-ro{opacity:.75}
 .pf-foot{display:flex;justify-content:flex-end;border-top:1px solid var(--line);padding-top:14px;margin-top:4px}
 .pf-dev{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--line);padding-top:12px}.pf-dev svg{width:22px;height:22px;flex:none;margin-top:2px}
@@ -671,6 +697,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .inc-log{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .inc-log input[type=date]{min-height:48px}
 .inc-pays .line{padding:8px 0}
+.pill-btn{border:0;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:4px}.pill-btn .pill-chev{transition:transform .2s}.pill-btn[aria-expanded=true] .pill-chev{transform:rotate(180deg)}
 .inc-avg{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;background:var(--gold-soft);border-radius:12px;padding:8px 12px}
 .up-row.in .up-date{background:var(--green-soft);color:var(--green)}
 .close-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--gold-soft) 55%,var(--card)),var(--card))}
@@ -880,20 +907,27 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .sn-back{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;background:rgba(0,0,0,.5);cursor:pointer}
 .sn{position:absolute;top:0;right:0;bottom:0;width:min(304px,86vw);box-sizing:border-box;background:var(--card);border-left:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;overflow:auto;box-shadow:-8px 0 24px rgba(0,0,0,.25);animation:snIn .2s ease}
 @keyframes snIn{from{transform:translateX(100%)}to{transform:none}}
-.sn-head{display:flex;align-items:center;gap:12px}
-.sn-head img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none}
-.sn-id{flex:1;min-width:0;display:flex;flex-direction:column}
-.sn-id b,.sn-id span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sn-top{display:flex;align-items:flex-start;gap:8px}
+.sn-head{appearance:none;border:0;background:none;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.sn-head img,.sn-head .avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none}
+.sn-id{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.sn-id b,.sn-id>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sn-id b{font-size:1.05rem}.sn-view{color:var(--green);font-weight:600}
 .sn-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--chip);border-radius:14px;padding:4px}
-.sn-seg button{appearance:none;border:0;background:none;border-radius:11px;min-height:42px;font:500 .92rem var(--body);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.sn-seg button{appearance:none;border:0;background:none;border-radius:11px;min-height:40px;font:500 .92rem var(--body);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
 .sn-seg button[aria-pressed="true"]{background:var(--card);color:var(--green);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.14)}
-.sn-plus{appearance:none;display:flex;align-items:center;gap:10px;text-align:left;border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line));background:var(--gold-soft);border-radius:14px;padding:12px 14px;cursor:pointer;color:var(--ink);font:inherit}
-.sn-plus b{flex:1;color:var(--gold)}.sn-plus svg{width:16px;height:16px;color:var(--gold);flex:none}
-.sn-list{display:flex;flex-direction:column}
-.sn-row{appearance:none;border:0;background:none;display:flex;align-items:center;gap:12px;min-height:48px;padding:0;text-align:left;color:var(--ink);font:500 1rem var(--body);cursor:pointer}
+.sn-plus{appearance:none;display:flex;align-items:center;gap:12px;text-align:left;border:0;background:linear-gradient(135deg,var(--gold-soft),color-mix(in srgb,var(--gold) 22%,var(--card)));border-radius:16px;padding:12px 14px;cursor:pointer;color:var(--ink);font:inherit}
+.sn-plus-ic{width:34px;height:34px;border-radius:50%;background:var(--gold);color:#fff;display:grid;place-items:center;flex:none}.sn-plus-ic svg{width:18px;height:18px}
+.sn-plus-t{flex:1;display:flex;flex-direction:column}.sn-plus-t b{color:var(--gold)}.sn-plus-t span{color:var(--muted)}.sn-plus>svg{width:16px;height:16px;color:var(--gold);flex:none}
+.sn-label{pointer-events:none;margin:6px 4px -6px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.sn>*{flex-shrink:0}.sn-list{display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.sn-row{appearance:none;border:0;background:none;display:flex;align-items:center;gap:12px;min-height:50px;padding:0 12px;text-align:left;color:var(--ink);font:500 .98rem var(--body);cursor:pointer}
 .sn-row+.sn-row{border-top:1px solid var(--line)}
-.sn-row svg{width:20px;height:20px;color:var(--muted);flex:none}
-.sn-row span{flex:1}.sn-row small{color:var(--muted);font-size:.78rem}
+.sn-ic{width:32px;height:32px;border-radius:10px;background:var(--chip);display:grid;place-items:center;flex:none;font-style:normal}.sn-ic svg{width:18px;height:18px;color:var(--green)}
+.sn-row span{flex:1}.sn-row small{color:var(--muted);font-size:.78rem}.sn-row>svg{width:14px;height:14px;color:var(--muted);flex:none}
+.sn-foot{text-align:center;margin:0}
+.play-badge{display:inline-flex;align-items:center;gap:10px;background:#000;color:#fff;border:1px solid #a6a6a6;border-radius:10px;padding:7px 14px;text-decoration:none;align-self:flex-start}.play-badge span{display:flex;flex-direction:column;line-height:1.05}.play-badge small{font-size:.6rem;letter-spacing:.04em}.play-badge b{font-size:1.05rem;font-weight:600}
+.sn-switch{width:42px;height:26px;border-radius:13px;background:var(--line);position:relative;flex:none;transition:background .2s}.sn-switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+.sn-row[aria-checked=true] .sn-switch{background:var(--green)}.sn-row[aria-checked=true] .sn-switch::after{transform:translateX(16px)}
 .link.quiet-del{align-self:center;color:var(--muted);font-weight:500;font-size:.82rem;text-decoration:underline}
 .card>.linkrow:first-child{border-top:0;padding-top:0;margin-top:0}
 .has-hint:not(.hint-open) p.hint-p{display:none}
@@ -3688,51 +3722,81 @@ const planCards = {loans: () => `<div data-out="loans">${OUT.loans()}</div>`, gi
    Days and weeks use the spending you log (one-offs from Ask or Misc). Months and years use the monthly statements:
    what went out and what you kept. */
 const TREND_BY = [["day", "Daily"], ["week", "Weekly"], ["month", "Monthly"], ["year", "Yearly"]];
+const trMD = d => d.toLocaleDateString("en-US", {month: "short", day: "numeric"});
+function trendRange(D, by){  // the dates the chart covers, shown beside the title
+  const r = D.rows; if (!r.length) return "";
+  const a = r[0], b = r[r.length - 1];
+  if (by === "day" || by === "week"){ const f = a.from, t = b.to || b.from;
+    return f.getMonth() === t.getMonth() ? `${trMD(f)} – ${t.getDate()}` : `${trMD(f)} – ${trMD(t)}`; }
+  if (by === "month"){ const f = a.from, t = b.from; if (r.length === 1) return a.full;
+    return f.getFullYear() === t.getFullYear() ? `${f.toLocaleString("en-US", {month: "short"})} – ${t.toLocaleString("en-US", {month: "short"})} ${t.getFullYear()}` : `${f.toLocaleString("en-US", {month: "short", year: "numeric"})} – ${t.toLocaleString("en-US", {month: "short", year: "numeric"})}`; }
+  return r.length === 1 ? a.label : `${a.label} – ${b.label}`;
+}
 function trendData(by){
   const sp = (S.spends || []).filter(x => +x.amount > 0 && /^\d{4}-\d{2}-\d{2}$/.test(x.date || "")), t = todayMid();
   if (by === "day" || by === "week"){ const n = by === "day" ? 14 : 8, out = [];
     for (let i = n - 1; i >= 0; i--){ const from = by === "day" ? dayPlus(t, -i) : dayPlus(t, -(i * 7 + t.getDay())), to = by === "day" ? from : dayPlus(from, 6), a = isoOf(from), b = isoOf(to);
-      out.push({label: by === "day" ? String(from.getDate()) : dayMonth(from), a: r2(sp.filter(x => x.date >= a && x.date <= b).reduce((m, x) => m + +x.amount, 0))}); }
+      out.push({label: by === "day" ? String(from.getDate()) : dayMonth(from), full: by === "day" ? from.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"}) : `${trMD(from)} – ${trMD(to)}`, from, to, a: r2(sp.filter(x => x.date >= a && x.date <= b).reduce((m, x) => m + +x.amount, 0))}); }
     return {series: [{name: "Spent", color: "var(--rust)", key: "a"}], rows: out}; }
   const st = S.statements || {}, keys = Object.keys(st).sort(), row = s => ({out: r2(Math.max(0, (+s.income || 0) - keptOf(s))), kept: r2(keptOf(s))});
   let rows;
-  if (by === "month") rows = keys.slice(-12).map(k => ({label: new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1).toLocaleString("en-US", {month: "short"}), ...row(st[k])}));
-  else { const yrs = {}; keys.forEach(k => { const y = k.slice(0, 4), r = row(st[k]); yrs[y] = yrs[y] || {label: y, out: 0, kept: 0}; yrs[y].out = r2(yrs[y].out + r.out); yrs[y].kept = r2(yrs[y].kept + r.kept); }); rows = Object.values(yrs); }
+  if (by === "month") rows = keys.slice(-12).map(k => { const d = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1); return {label: d.toLocaleString("en-US", {month: "short"}), full: d.toLocaleString("en-US", {month: "long", year: "numeric"}), from: d, ...row(st[k])}; });
+  else { const yrs = {}; keys.forEach(k => { const y = k.slice(0, 4), r = row(st[k]); yrs[y] = yrs[y] || {label: y, full: y, out: 0, kept: 0}; yrs[y].out = r2(yrs[y].out + r.out); yrs[y].kept = r2(yrs[y].kept + r.kept); }); rows = Object.values(yrs); }
   return {series: [{name: "Out", color: "var(--rust)", key: "out"}, {name: "Kept", color: "var(--green)", key: "kept"}], rows};
 }
-function trendSvg(D, kind){
+function trendSvg(D, kind, pick = -1){
   const W = 320, H = 150, P = {l: 6, r: 6, t: 10, b: 22}, n = D.rows.length, vals = D.rows.flatMap(r => D.series.map(x => +r[x.key] || 0));
   const max = Math.max(1, ...vals), min = Math.min(0, ...vals), y = v => P.t + (H - P.t - P.b) * (1 - (v - min) / (max - min)), slot = (W - P.l - P.r) / Math.max(1, n), z = y(0);
   const lab = D.rows.map((r, i) => (n <= 8 || i % Math.ceil(n / 7) === 0 || i === n - 1) ? `<text x="${(P.l + slot * (i + .5)).toFixed(1)}" y="${H - 6}" text-anchor="middle" class="tr-lab">${esc(r.label)}</text>` : "").join("");
   let marks = "";
   if (kind === "line") marks = D.series.map(sr => { const pts = D.rows.map((r, i) => [P.l + slot * (i + .5), y(+r[sr.key] || 0)]);
-      return `<polyline fill="none" stroke="${sr.color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="${pts.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ")}"/>` + pts.map((p, i) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="${sr.color}"><title>${esc(D.rows[i].label)} · ${sr.name}: ${fmt(+D.rows[i][sr.key] || 0)}</title></circle>`).join(""); }).join("");
+      return `<polyline fill="none" stroke="${sr.color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="${pts.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ")}"/>` + pts.map((p, i) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i === pick ? 5.5 : 3}" fill="${sr.color}"${i === pick ? ' stroke="var(--card)" stroke-width="2"' : ""}><title>${esc(D.rows[i].label)} · ${sr.name}: ${fmt(+D.rows[i][sr.key] || 0)}</title></circle>`).join(""); }).join("");
   else { const k = D.series.length, bw = Math.min(26, slot * .7 / k);
     marks = D.rows.map((r, i) => D.series.map((sr, j) => { const v = +r[sr.key] || 0, x = P.l + slot * (i + .5) - bw * k / 2 + bw * j, top = Math.min(y(v), z), h = Math.max(1.5, Math.abs(y(v) - z));
-      return `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${(bw - 1.5).toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${sr.color}"><title>${esc(r.label)} · ${sr.name}: ${fmt(v)}</title></rect>`; }).join("")).join(""); }
-  return `<svg class="tr-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(D.series.map(x => x.name).join(" and "))} over time"><line x1="${P.l}" x2="${W - P.r}" y1="${z.toFixed(1)}" y2="${z.toFixed(1)}" class="tr-axis"/>${marks}${lab}</svg>`;
+      return `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${(bw - 1.5).toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${sr.color}"${pick >= 0 && i !== pick ? ' opacity=".3"' : ""}><title>${esc(r.label)} · ${sr.name}: ${fmt(v)}</title></rect>`; }).join("")).join(""); }
+  const guide = kind === "line" && pick >= 0 ? `<line x1="${(P.l + slot * (pick + .5)).toFixed(1)}" x2="${(P.l + slot * (pick + .5)).toFixed(1)}" y1="${P.t}" y2="${z.toFixed(1)}" class="tr-guide"/>` : "";
+  const hits = D.rows.map((r, i) => `<rect class="tr-hit" data-trend-pick="${i}" x="${(P.l + slot * i).toFixed(1)}" y="0" width="${slot.toFixed(1)}" height="${H}" fill="transparent"><title>${esc(r.full || r.label)}</title></rect>`).join("");
+  return `<svg class="tr-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(D.series.map(x => x.name).join(" and "))} over time"><line x1="${P.l}" x2="${W - P.r}" y1="${z.toFixed(1)}" y2="${z.toFixed(1)}" class="tr-axis"/>${guide}${marks}${lab}${hits}</svg>`;
 }
 OUT.trends = () => {
   const by = UI.trendBy || "month", kind = UI.trendKind || "bar", D = trendData(by), has = D.rows.some(r => D.series.some(x => +r[x.key]));
-  const tot = k => r2(D.rows.reduce((m, r) => m + (+r[k] || 0), 0));
-  return `<section class="card tr-card" data-trends><div class="inline" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><h2>Trends</h2>
+  const tot = k => r2(D.rows.reduce((m, r) => m + (+r[k] || 0), 0)), pick = UI.trendPick != null && UI.trendPick < D.rows.length ? UI.trendPick : -1, pr = D.rows[pick];
+  const legend = pr ? `<span class="tr-when">${esc(pr.full || pr.label)}</span>${D.series.map(x => `<span><i style="background:${x.color}"></i>${x.name} <b class="tnum">${fmt(+pr[x.key] || 0)}</b></span>`).join("")}`
+    : D.series.map(x => `<span><i style="background:${x.color}"></i>${x.name} <b class="tnum">${fmt(tot(x.key))}</b></span>`).join("");
+  return `<section class="card tr-card" data-trends><div class="inline" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><div class="tr-title"><h2>Trends</h2>${has ? `<span class="tr-range muted small">${esc(trendRange(D, by))}</span>` : ""}</div>
     <div class="seg tr-kind" role="group" aria-label="Chart type"><button type="button" data-trend-kind="bar" aria-pressed="${kind === "bar"}" aria-label="Bars"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="4" y="11" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="16" y="13" width="4" height="7" rx="1"/></svg></button><button type="button" data-trend-kind="line" aria-pressed="${kind === "line"}" aria-label="Line"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 8-9"/></svg></button></div></div>
     <div class="seg sub-seg tr-by" role="group" aria-label="Show by">${TREND_BY.map(([k, n]) => `<button type="button" data-trend-by="${k}" aria-pressed="${by === k}">${n}</button>`).join("")}</div>
-    ${has ? `${trendSvg(D, kind)}<div class="tr-legend">${D.series.map(x => `<span><i style="background:${x.color}"></i>${x.name} <b class="tnum">${fmt(tot(x.key))}</b></span>`).join("")}</div>`
+    ${has ? `${trendSvg(D, kind, pick)}<div class="tr-legend${pr ? " picked" : ""}" aria-live="polite">${legend}</div>`
       : `<p class="muted small" style="margin:0">${by === "day" || by === "week" ? "Spending you add from the owl or Misc shows here." : "Each month you use KeepWise adds a statement here."}</p>`}</section>`;
 };
+// Card colours: optional, the look of the card on screen only.
+const CARD_COLORS = [["forest", "Forest", "#1f3a2e", "#1b6843"], ["graphite", "Graphite", "#2b2f36", "#525b6b"], ["navy", "Navy", "#13213f", "#2f4f9a"], ["black", "Black", "#050506", "#2a2a2e"], ["gold", "Gold", "#6b4a12", "#b88a2c"], ["plum", "Plum", "#2e1640", "#6b3fa0"], ["rose", "Rose", "#5a1730", "#b4325a"], ["teal", "Teal", "#0b3b3a", "#0e7c7b"], ["silver", "Silver", "#5d6570", "#9aa3ad"]];
+const cardColor = (c, credit) => CARD_COLORS.find(x => x[0] === c.color) || CARD_COLORS[credit ? 0 : 1];
+const ccBg = (c, credit) => { const k = cardColor(c, credit); return `background:linear-gradient(135deg,${k[2]},${k[3]})`; };
+/* Credit card payments: logged on the card (or from Coming up). A payment lowers what is owed and counts this month,
+   in place of the planned payment when it is bigger, or on its own when no payment was planned. */
+const cardPays = () => S.cardPays || (S.cardPays = []);
+const cardPaidIn = (id, k) => r2((S.cardPays || []).filter(x => x.c === id && x.k === k).reduce((a, x) => a + (+x.amount || 0), 0));
+const cardPaidSince = (id, iso) => r2((S.cardPays || []).filter(x => x.c === id && x.date >= iso).reduce((a, x) => a + (+x.amount || 0), 0));
 const NET_MARK = {"Visa": "VISA", "Mastercard": "mastercard", "American Express": "AMEX", "Discover": "DISCOVER", "UnionPay": "UnionPay"};
+function cardPayForm(c){
+  const pay = UI.cardPayMode !== "charge", owed = +c.total || 0, sug = pay ? (+c.pay > 0 ? +c.pay : owed) : 0;
+  return `<form class="cc-pay" data-form="cardPay" data-mode="${pay ? "pay" : "charge"}"><label class="field"><span>${pay ? "Payment made today" : "Charge on this card"}</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="${sug > 0 ? r2(sug) : "0"}" autocomplete="off"></span></label>
+    ${pay && owed > 0 ? `<div class="chips">${[+c.pay > 0 && +c.pay < owed ? ["Planned", +c.pay] : null, ["Full balance", owed]].filter(Boolean).map(([n, v]) => `<button class="chip" type="button" data-card-pay-fill="${r2(v)}">${n} ${fmt(v)}</button>`).join("")}</div>` : ""}
+    <div class="grid2"><button class="btn" type="button" data-card-pay-cancel>Cancel</button><button class="btn primary" type="submit">${pay ? "Log payment" : "Add charge"}</button></div></form>`;
+}
 function cardTile(c, credit){
-  const lim = +c.limit || 0, owed = +c.total || 0, pct = lim > 0 ? Math.min(100, owed / lim * 100) : 0;
+  const lim = +c.limit || 0, owed = +c.total || 0, paidNow = credit ? cardPaidIn(c.id, planPeriodNow().key) : 0, pct = lim > 0 ? Math.min(100, owed / lim * 100) : 0;
   const fee = +c.fee > 0 ? `Yearly fee ${fmt(+c.fee)}${c.feeOn ? ` on ${dayMonth(new Date(c.feeOn + "T00:00:00"))}` : ""}` : "";
   const due = credit ? (+c.pay > 0 ? `${fmt(+c.pay)} a month${c.due ? `, due on the ${ordinal(+c.due)}` : ""}` : "") : (+c.charge > 0 ? `${fmt(+c.charge)} a month${c.day ? ` on the ${ordinal(+c.day)}` : ""}` : "");
   if (UI.cardEdit === c.id) return `<div class="inc-row editing" data-card="${c.id}">${cardForm(c, credit)}</div>`;
   return `<div class="card-item" data-card="${c.id}">
-    <div class="cc ${credit ? "cc-credit" : "cc-debit"}"><div class="cc-top"><span class="cc-kind">${credit ? "Credit" : "Debit"}</span><span class="cc-net">${esc(NET_MARK[c.card] || c.card || "")}</span></div>
+    <div class="cc ${credit ? "cc-credit" : "cc-debit"}" style="${ccBg(c, credit)}"><div class="cc-top"><span class="cc-kind">${credit ? "Credit" : "Debit"}</span><span class="cc-net">${esc(NET_MARK[c.card] || c.card || "")}</span></div>
       <div class="cc-name">${esc(c.name || c.card || "Card")}</div><div class="cc-num tnum">•••• ${esc(c.last4 || "····")}</div></div>
-    ${credit && lim > 0 ? `<div class="meter cc-meter${pct >= 90 ? " over" : ""}"><i style="width:${pct}%"></i></div><div class="inline cc-row"><span class="small tnum">${fmt(owed)} used</span><span class="small muted tnum">of ${fmt(lim)}${lim > owed ? ` · ${fmt(r2(lim - owed))} left` : ""}</span></div>` : credit && owed > 0 ? `<p class="small tnum" style="margin:0">${fmt(owed)} owed</p>` : ""}
+    ${credit && lim > 0 ? `<div class="meter cc-meter${pct >= 90 ? " over" : ""}"><i style="width:${pct}%"></i></div><div class="inline cc-row"><span class="small tnum">${fmt(owed)} used</span><span class="small tnum ${owed > lim ? "bad" : "muted"}">${owed > lim ? `${fmt(r2(owed - lim))} over the ${fmt(lim)} limit` : `${fmt(r2(lim - owed))} available of ${fmt(lim)}`}</span></div>` : credit && owed > 0 ? `<p class="small tnum" style="margin:0">${fmt(owed)} owed</p>` : ""}
     ${due || fee ? `<p class="muted small" style="margin:0">${[due, fee].filter(Boolean).join(" · ")}</p>` : ""}
-    <button class="link plain small" type="button" data-card-edit style="align-self:flex-end">Edit</button></div>`;
+    ${credit && paidNow > 0 ? `<p class="small good tnum" style="margin:0" data-card-paid>Paid ${fmt(paidNow)} this month</p>` : ""}
+    ${credit && UI.cardPay === c.id ? cardPayForm(c) : `<div class="cc-acts">${credit ? `<button class="link plain small" type="button" data-card-pay="pay">Log a payment</button><button class="link plain small" type="button" data-card-pay="charge">Add a charge</button>` : ""}<button class="link plain small" type="button" data-card-edit>Edit</button></div>`}</div>`;
 }
 function cardForm(c, credit){
   const t = c ? (credit ? "credit" : "debit") : (UI.cardNew || "credit"), v = k => c && c[k] != null && c[k] !== 0 ? esc(c[k]) : "";
@@ -3740,17 +3804,18 @@ function cardForm(c, credit){
   const days = (name, val) => `<select name="${name}"><option value="">None</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+val === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select>`;
   const money = (name, ph) => `<span class="money-in"><em>${esc(sym())}</em><input name="${name}" inputmode="decimal" enterkeyhint="next" placeholder="${ph || "0"}" value="${v(name === "balance" ? "total" : name)}"></span>`;
   return `<form class="inc-form" data-form="card" data-ctype="${t}">
-    <div class="seg" role="group" aria-label="Card type"><button type="button" data-card-type="credit" aria-pressed="${t === "credit"}">Credit</button><button type="button" data-card-type="debit" aria-pressed="${t === "debit"}">Debit</button></div>
+    <div class="seg card-type" role="group" aria-label="Card type"><button type="button" data-card-type="credit" aria-pressed="${t === "credit"}">Credit</button><button type="button" data-card-type="debit" aria-pressed="${t === "debit"}">Debit</button></div>
     <input type="hidden" name="ctype" value="${t}">
     <div class="grid2"><label class="field"><span>Network</span><select name="card">${CARD_TYPES.map(n => `<option ${n === net ? "selected" : ""}>${n}</option>`).join("")}</select></label>
       <label class="field"><span>Last four <small class="muted">optional</small></span><input name="last4" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="1234" value="${v("last4")}"></label></div>
     <label class="field"><span>Name <small class="muted">optional</small></span><input name="name" enterkeyhint="next" placeholder="e.g. Chase Freedom" value="${v("name")}"></label>
+    <div class="field"><span>Colour <small class="muted">optional</small></span><div class="cc-colors" role="radiogroup" aria-label="Card colour">${CARD_COLORS.map(([k, n, a, b]) => `<label class="cc-color" title="${n}"><input type="radio" name="color" value="${k}" ${(c && c.color) === k ? "checked" : ""} aria-label="${n}"><i style="background:linear-gradient(135deg,${a},${b})"></i></label>`).join("")}</div></div>
     <div class="grid2" data-only="credit"><label class="field"><span>Limit <small class="muted">optional</small></span>${money("limit")}</label><label class="field"><span>Balance <small class="muted">optional</small></span>${money("balance")}</label></div>
     <div class="grid2" data-only="credit"><label class="field"><span>Payment a month <small class="muted">optional</small></span>${money("pay")}</label><label class="field"><span>Due on</span>${days("due", c && c.due)}</label></div>
     <div class="grid2" data-only="debit"><label class="field"><span>Monthly charge <small class="muted">optional</small></span>${money("charge")}</label><label class="field"><span>Charged on</span>${days("day", c && c.day)}</label></div>
     <label class="field"><span>Yearly fee <small class="muted">optional</small></span>${money("fee")}</label>
     <div class="field" data-card-feeon><span>Fee charged every year on</span>${mdPick("feeOn", c && c.feeOn, "Yearly fee date")}</div>
-    <p class="muted small" style="margin:0">Payments and charges with a day come up as reminders. KeepWise never asks for a full card number.</p>
+    <p class="muted small" style="margin:0">A due day comes up as a reminder, even without an amount, so you can log what you paid. KeepWise never asks for a full card number.</p>
     ${editBtns(!c, "data-card-del", c ? "Save" : "Add card", "data-card-cancel")}</form>`;
 }
 function cardsView(){
@@ -4355,8 +4420,9 @@ OUT.comingUp = () => {
         <div class="tnum name">${fmt(s.price)}</div></div>`}); });
   yearlySoon(7).forEach(({x, d}) => items.push({d, o: 1, html: `<div class="up-row" data-up-yearly="${esc(x.key)}">${dateCell(d)}
         <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · ${x.kind === "giving" ? "yearly giving" : x.kind === "fee" ? "once a year" : "yearly payment"}</div></div><div class="tnum name">${fmt(x.amount)}</div></div>`}));
-  cardsSoon(7).forEach(({c, credit, d, amount}) => items.push({d, o: 1, html: `<div class="up-row" data-up-card="${c.id}">${dateCell(d)}
-        <div class="up-main"><div class="name">${esc(cardName(c))}</div><div class="small muted">${whenLabel(daysUntil(d))} · ${credit ? "card payment" : "card charge"}</div></div><div class="tnum name">${fmt(amount)}</div></div>`}));
+  cardsSoon(7).forEach(({c, credit, d, amount}) => { const paid = credit ? cardPaidSince(c.id, isoOf(dayPlus(d, -20))) : 0;
+    items.push({d, o: 1, html: `<div class="up-row" data-up-card="${c.id}">${dateCell(d)}
+        <div class="up-main"><div class="name">${esc(cardName(c))}</div><div class="small ${paid > 0 ? "good" : "muted"}">${paid > 0 ? `Paid ${fmt(paid)}` : whenLabel(daysUntil(d))} · ${credit ? "card payment" : "card charge"}</div></div>${credit && !paid ? `<button class="btn small" type="button" data-up-card-pay="${c.id}">${amount ? `Pay ${fmt(amount)}` : "Log payment"}</button>` : `<div class="tnum name">${fmt(paid || amount)}</div>`}</div>`}); });
   billsSoon(7).forEach(({e, d}) => items.push({d, o: 1, html: `<div class="up-row" data-up-bill="${e.id}">${dateCell(d)}
         <div class="up-main"><div class="name">${esc(e.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · you pay this yourself</div></div><div class="tnum name">${fmt(e.amount)}</div></div>`}));
   (payOn() ? paydaysBetween(t0, t7) : []).filter(d => !((S.payGot || "") >= isoOf(d))).forEach(d => items.push({d, o: 2, html: `<div class="up-row in">${dateCell(d)}
@@ -4426,6 +4492,15 @@ async function saveFile(blob, name){
   } catch(e){ if (e && e.name === "AbortError") return false; }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); return true;
+}
+const blankOut = ex => Object.assign(ex, {income:0, efSaved:0, expenses:[], loans:[], giving:[], ins:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0, example:false, statements:{}, extras:[], cards:[], cardPays:[], spends:[], billSpends:[]});
+// A copy of everything, before an account is deleted: the profile from the account and the money data on this phone, in one file.
+async function downloadMyData(){
+  const data = JSON.parse(JSON.stringify(S)); delete data.tab;
+  const acct = typeof ACC !== "undefined" && ACC.user ? {email: ACC.user.email || "", ...(ACC.profile || {})} : null;
+  const body = JSON.stringify({app: "KeepWise", kind: "backup", version: 1, made: new Date().toISOString(), account: acct, data}, null, 1);
+  const ok = await saveFile(new Blob([body], {type: "application/json"}), `keepwise-my-data-${isoDaysAgo(0)}.json`);
+  if (ok){ S.lastBackup = isoDaysAgo(0); save(); ACC.delSaved = true; render(true); toast("Your data is saved. It also works as a backup."); }
 }
 async function downloadBackup(){
   const data = JSON.parse(JSON.stringify(S)); delete data.tab;
@@ -4500,7 +4575,11 @@ OUT.keepSafe = () => {
     return `<div class="note keep-safe"><div><b>${S.lastBackup ? "Time for a fresh backup" : "Back up your KeepWise data"}</b><p class="small">Everything lives on this device. A backup file keeps it safe if you clear your browser or change phones.</p></div><div class="inline" style="flex-direction:column;align-items:flex-end;gap:6px"><button class="btn small" type="button" data-backup style="white-space:nowrap">Back up</button><button class="link plain small" type="button" data-backup-later>Later</button></div></div>`;
   return "";
 };
-OUT.installBtn = () => installEvt && !STANDALONE ? `<button class="btn" type="button" data-install>${I.download}Install KeepWise on this device</button>` : "";
+// The Google Play link: empty until the store listing is live, then Android browsers are offered the app instead of installing the web version.
+const PLAY_URL = "";
+const playBadge = () => `<a class="play-badge" href="${esc(PLAY_URL)}" target="_blank" rel="noopener" data-play-badge aria-label="Get it on Google Play"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="#34A853" d="M3.6 2.3 13.3 12l-9.7 9.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1z"/><path fill="#FBBC04" d="m16.6 15.3-3.3-3.3 3.3-3.3 3.7 2.1c1 .6 1 1.9 0 2.4z"/><path fill="#4285F4" d="M13.3 12 3.6 2.3c.3-.2.8-.2 1.2 0l11.8 6.4z"/><path fill="#EA4335" d="m13.3 12 3.3 3.3-11.8 6.4c-.4.2-.9.2-1.2 0z"/></svg><span><small>GET IT ON</small><b>Google Play</b></span></a>`;
+const onAndroidWeb = () => !!PLAY_URL && !window.Capacitor && /Android/i.test(navigator.userAgent || "");
+OUT.installBtn = () => onAndroidWeb() ? playBadge() : installEvt && !STANDALONE ? `<button class="btn" type="button" data-install>${I.download}Install KeepWise on this device</button>` : "";
 
 /* ================= share what you found (image made on this device) ================= */
 function shareFacts(){
@@ -4766,13 +4845,14 @@ OUT.extraIncome = () => {
         <div style="text-align:right"><div class="name tnum ${got >= exp && got > 0 ? "good" : ""}">${fmt(got)}</div><div class="muted small">${monthStartDay() !== 1 ? `received since ${dayMonth(periodOf(new Date()).start)}` : `received in ${mName}`}</div></div></div>
       <div class="meter"><i style="width:${pct}%"></i></div>
       ${UI.incLog === x.id ? `<form class="inc-log" data-form="incomeLog"><span class="money-in" style="flex:1 1 110px"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="Amount" value="${x.when && x.when !== "any" && extraFixed(x) ? esc(x.amount) : ""}" aria-label="Amount received"></span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}" aria-label="Date received" style="flex:1 1 130px"><button class="btn small primary" type="submit">Save</button><button class="link plain small" type="button" data-inc-log-cancel>Cancel</button></form>`
-        : `<div class="inline" style="justify-content:space-between"><span class="inline" style="gap:8px"><button class="btn small" type="button" data-inc-log>${I.plus}Log a payment</button>${pays.length ? `<span class="pill ok" data-inc-logged>${x.when === "monthly" && pays.length === 1 ? `${I.check}Logged` : `${pays.length} logged`}</span>` : ""}</span><button class="link plain small" type="button" data-inc-edit aria-label="Edit ${esc(x.name)}">Edit</button></div>`}
-      ${pays.length ? `<div class="inc-pays">${pays.map(p => `<div class="line" data-pay-in="${p.id}"><span class="muted small">${shortDate(p.date)}</span><span class="inline"><span class="tnum good">+${fmt(p.amount)}</span><button class="link danger-link small" type="button" data-inc-pay-del aria-label="Remove this payment">Remove</button></span></div>`).join("")}</div>` : ""}
+        : `<div class="inline" style="justify-content:space-between"><span class="inline" style="gap:8px"><button class="btn small" type="button" data-inc-log>${I.plus}Log a payment</button>${pays.length ? `<button class="pill ok pill-btn" type="button" data-inc-logged aria-expanded="${!!(UI.incOpen || {})[x.id]}">${x.when === "monthly" && pays.length === 1 ? `${I.check}Logged` : `${pays.length} logged`}<svg class="pill-chev" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>` : ""}</span><button class="link plain small" type="button" data-inc-edit aria-label="Edit ${esc(x.name)}">Edit</button></div>`}
+      ${pays.length && (UI.incOpen || {})[x.id] ? `<div class="inc-pays">${pays.map(p => `<div class="line" data-pay-in="${p.id}"><span class="muted small">${shortDate(p.date)}</span><span class="inline"><span class="tnum good">+${fmt(p.amount)}</span><button class="link danger-link small" type="button" data-inc-pay-del aria-label="Remove this payment">Remove</button></span></div>`).join("")}</div>` : ""}
       ${av && (!x.when || x.when === "any") && Math.abs(av.avg - x.amount) > Math.max(1, x.amount * 0.05) ? `<div class="inc-avg small"><span>Your average over the last ${av.n} months is <b>${fmt(av.avg)}</b>.</span><button class="link small" type="button" data-inc-use-avg="${av.avg}">Use ${fmt(av.avg)}</button></div>` : ""}</div>`; }).join("");
   const total = extraExpected(), gotAll = list.reduce((a, x) => a + gotIn(x, k), 0);
   return `<section class="card inc-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Other income</h2>${list.length ? `<span class="muted small tnum">${fmt(gotAll)} of ${fmt(total)}</span>` : ""}</div>
     ${rows}${UI.incAdd ? `<div class="inc-row editing">${incomeForm(null)}</div>` : `<button class="btn" type="button" data-inc-add>${I.plus}Add other income</button>`}
-    ${list.length ? `<p class="muted small">Your plan counts ${fmt((+S.income || 0) + total)} coming in: ${fmt(+S.income || 0)} regular pay plus ${fmt(total)} ${list.every(extraFixed) ? "expected here" : "from here"}.${list.some(x => !extraFixed(x)) ? " Income with no fixed amount counts as you log it." : ""}</p>` : ""}</section>`;
+    ${list.length ? `<div class="inline inc-total" style="justify-content:space-between;align-items:baseline"><span class="h-info">Total coming in${infoBtn("incTotal", "About the total coming in")}</span><b class="tnum">${fmt((+S.income || 0) + total)}</b></div>
+    ${infoTip("incTotal", `${fmt(+S.income || 0)} regular pay plus ${fmt(total)} ${list.every(extraFixed) ? "expected" : "from other income"}.${list.some(x => !extraFixed(x)) ? " Income with no fixed amount counts as you log it." : ""}`)}` : ""}</section>`;
 };
 OUT.incomeLabel = () => (S.extras || []).length ? "Regular pay" : "Money coming in";
 
@@ -5104,6 +5184,9 @@ async function logIncome(text, forced){
 { const base = OUT.extraIncome; OUT.extraIncome = () => { const list = insOf(compute().planKey);
   return base() + (list.length ? `<section class="card" data-ins><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Money in this month</h2><span class="tnum good">+${fmt(insTotal(compute().planKey))}</span></div>
     <div class="rows">${list.map(x => `<div class="row" data-in="${x.id}"><div class="row-top"><div><div class="name">${esc(x.name)}</div><div class="muted small">One time · ${shortDate(x.date)}</div></div><div class="inline"><span class="tnum name good">+${fmt(x.amount)}</span><button class="btn small" type="button" data-in-del="${x.id}">Remove</button></div></div></div>`).join("")}</div></section>` : ""); }; }
+// Tapping a bar or point shows that day, week, month or year below the chart; tapping it again shows the total.
+document.addEventListener("click", e => { const h = e.target.closest && e.target.closest("[data-trend-pick]"); if (!h) return;
+  const i = +h.dataset.trendPick; UI.trendPick = UI.trendPick === i ? null : i; refreshOuts(); });
 document.addEventListener("click", e => { const b = e.target.closest("[data-in-del]"); if (!b) return; const u = undoable(); S.ins = (S.ins || []).filter(x => x.id !== b.dataset.inDel); save(); render(true); toast("Removed.", u); });
 async function logSpend(text, force){  // returns what to say back, or null when the text is not a spending line; force = the kind picked in Add as
   if (!force && (TRIP_CMD.test(text) || EVENT_CMD.test(text)) && !activeTrip()) return startTrip(text);
@@ -5483,7 +5566,7 @@ const LOAN_EVERY = [["mo","Every month","a month"],["wk","Every week","a week"],
 const CARD_TYPES = ["Visa", "Mastercard", "American Express", "Discover", "UnionPay", "Other"];
 const loanKind = k => (LOAN_KINDS.find(x => x[0] === k) || LOAN_KINDS.find(x => x[0] === "other"))[1];
 const loanList = () => S.loans || (S.loans = []);
-const loanMonthly = l => { if (l.kind === "carins") return insThisMonth(l); const k = planPeriodNow().key, a = +l.pay || 0, fee = l.kind === "card" ? yearlyIn(+l.fee || 0, l.feeOn, k) : 0; return r2(fee + (l.every === "wk" ? a * 52 / 12 : l.every === "2wk" ? a * 26 / 12 : l.every === "yr" ? yearlyIn(a, l.on, k) : a)); };
+const loanMonthly = l => { if (l.kind === "carins") return insThisMonth(l); const k = planPeriodNow().key, a = l.kind === "card" ? Math.max(+l.pay || 0, cardPaidIn(l.id, k)) : +l.pay || 0, fee = l.kind === "card" ? yearlyIn(+l.fee || 0, l.feeOn, k) : 0; return r2(fee + (l.every === "wk" ? a * 52 / 12 : l.every === "2wk" ? a * 26 / 12 : l.every === "yr" ? yearlyIn(a, l.on, k) : a)); };
 const loanYearly = l => l.kind !== "carins" && (l.every === "yr" || (l.kind === "card" && +l.fee > 0));   // has a once-a-year part, so its amount is for this month
 const loanDone = l => l.kind !== "carins" && !!l.end && l.end < isoDaysAgo(0);   // a policy renews: it is never paid off
 /* ---- Cards (Banks › Cards) ----
@@ -5493,7 +5576,7 @@ const debitList = () => S.cards || (S.cards = []);
 const creditCards = () => (S.loans || []).filter(l => l.kind === "card" && !loanDone(l));
 const cardFeesMonthly = () => { const k = planPeriodNow().key; return r2((S.cards || []).reduce((a, c) => a + (+c.charge || 0) + (+c.fee > 0 ? yearlyIn(+c.fee, c.feeOn, k) : 0), 0)); };
 const dayNext = day => { if (!day) return null; const t = todayMid(); for (let i = 0; i <= 31; i++){ const d = dayPlus(t, i); if (d.getDate() === Math.min(+day, daysInMonth(d.getFullYear(), d.getMonth()))) return d; } return null; };
-const cardsSoon = days => [...creditCards().filter(l => +l.pay > 0 && l.due).map(l => ({c: l, credit: true, d: dayNext(l.due), amount: +l.pay})),
+const cardsSoon = days => [...creditCards().filter(l => l.due && (+l.pay > 0 || +l.total > 0 || !+l.limit)).map(l => ({c: l, credit: true, d: dayNext(l.due), amount: +l.pay || 0})),
   ...(S.cards || []).filter(c => +c.charge > 0 && c.day).map(c => ({c, credit: false, d: dayNext(c.day), amount: +c.charge}))].filter(v => v.d && daysUntil(v.d) <= days).sort((a, b) => a.d - b.d);
 const cardName = c => c.name || `${c.card || "Card"}${c.last4 ? " ••" + c.last4 : ""}`;
 /* ---- Spent toward a planned bill ----
@@ -5536,7 +5619,7 @@ const loanRateText = l => { const r = loanRate(l); return !r ? "" : r.short ? "C
 const monthYear = d => d.toLocaleDateString("en-US", {month: "short", year: "numeric"});
 function loanForm(l){
   const d = UI.loanDraft, cardSel = !d.card ? "Visa" : CARD_TYPES.includes(d.card) ? d.card : "Other", sel = (name, list, v) => `<select name="${name}">${list.map(([k, n]) => `<option value="${k}" ${v === k ? "selected" : ""}>${n}</option>`).join("")}</select>`;
-  return `<form class="inc-form" data-form="loan"><div class="grid2"><label class="field"><span>Type</span>${sel("kind", LOAN_KINDS, d.kind)}</label>
+  return `<form class="inc-form" data-form="loan"><div class="grid2"><label class="field"><span>Type</span>${sel("kind", LOAN_KINDS.filter(x => x[0] !== "card" || d.kind === "card"), d.kind)}</label>
       <label class="field"><span>Name <small class="muted">optional</small></span><input name="name" value="${esc(d.name)}" placeholder="e.g. Bank of America" enterkeyhint="next" autocomplete="off"></label></div>
     <div class="grid2" data-loan-cardrow ${d.kind === "card" ? "" : "hidden"}><label class="field"><span>Card</span>${sel("card", CARD_TYPES.map(c => [c, c]), cardSel)}</label>
       <label class="field"><span>Yearly fee <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="fee" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.fee || "")}"></span></label>
@@ -5573,7 +5656,8 @@ function insRow(l){
 }
 OUT.loans = () => {
   const list = S.loans || [], live = list.filter(l => !loanDone(l)), owed = r2(live.reduce((a, l) => a + (+l.total || 0), 0));
-  const rows = list.map(l => {
+  const cc = live.filter(l => l.kind === "card"), ccRow = cc.length ? `<button class="inc-row cards-link" type="button" data-cards-open><div class="row-top"><div><div class="name">Credit cards</div><div class="muted small">${cc.length} card${cc.length === 1 ? "" : "s"} · ${cc.some(l => +l.total > 0) ? `${fmt(r2(cc.reduce((a, l) => a + (+l.total || 0), 0)))} owed · ` : ""}open in Cards</div></div><div style="text-align:right"><div class="name tnum">${fmt(r2(cc.reduce((a, l) => a + loanMonthly(l), 0)))}<span class="muted small">/mo</span></div></div></div></button>` : "";
+  const rows = ccRow + list.filter(l => l.kind !== "card").map(l => {
     if (UI.loanEdit === l.id) return `<div class="inc-row editing" data-loan="${l.id}">${loanForm(l)}</div>`;
     if (l.kind === "carins") return insRow(l);
     const f = loanFinish(l), done = loanDone(l), rate = loanRate(l), ev = (LOAN_EVERY.find(x => x[0] === l.every) || LOAN_EVERY[0])[2];
@@ -5584,8 +5668,8 @@ OUT.loans = () => {
       <button class="link plain small" type="button" data-loan-edit aria-label="Edit ${esc(l.name || loanKind(l.kind))}" style="align-self:flex-end">Edit</button></div>`; }).join("");
   return `<section class="card inc-card loan-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Loans and debt${infoBtn("loans", "About loans and debt")}</h2>${live.length ? `<span class="muted small tnum">${fmt(loansMonthly())}${live.some(loanYearly) ? " this month" : "/mo"}</span>` : ""}</div>
     ${infoTip("loans", "Loan and credit card payments come out of what you keep each month until the end date passes, and show as Loans & debts on the Month tab. A card’s yearly fee, and anything paid once a year, counts in full in the month it is charged. Interest is worked out only when the payment, amount left, installments left and end date are all filled in. With an amount left and no end date, the finish is estimated from your payments and does not include interest. Car insurance runs for its policy length: monthly installments count each month, a premium paid in full counts in the month it is paid.")}
-    ${rows}${UI.loanAdd ? `<div class="inc-row editing">${loanForm(null)}</div>` : `<button class="btn" type="button" data-loan-add>${I.plus}Add a loan, card or car insurance</button>`}
-    ${live.length && owed > 0 ? `<p class="muted small">You owe ${fmt(owed)} in total across ${live.filter(l => +l.total > 0).length} of these.</p>` : !list.length && !UI.loanAdd ? `<p class="muted small">Bank loans, student debt, credit cards and anything else you are paying back.</p>` : ""}</section>`;
+    ${rows}${UI.loanAdd ? `<div class="inc-row editing">${loanForm(null)}</div>` : `<button class="btn" type="button" data-loan-add>${I.plus}Add a loan or car insurance</button>`}
+    ${live.length && owed > 0 ? `<p class="muted small">You owe ${fmt(owed)} in total across ${live.filter(l => +l.total > 0).length} of these.</p>` : !list.length && !UI.loanAdd ? `<p class="muted small">Bank loans, student debt and anything else you are paying back. Cards are kept in Banks › Cards.</p>` : ""}</section>`;
 };
 
 /* ================= KeepWise Plus: what it adds and what it costs ================= */
@@ -5616,7 +5700,7 @@ V.plus = () => { const P = PLUS_PRICE, perMonth = P.yearlyEarly / 12;
   <h1 class="plus-h">Everything free stays free.</h1>
   <p class="plus-sub">Plus adds what one phone cannot do alone.</p>
   <section class="card"><ul class="plus-list">${PLUS_REASONS().map(([ic, t, d, soon]) => `<li${soon ? ' class="soon"' : ""}><span class="plus-ic">${ic}</span><div><b>${t}${soon ? ` <span class="pill grey" style="font-size:.68rem">${soon}</span>` : ""}</b><span class="muted small">${d}</span></div></li>`).join("")}</ul></section>
-  <section class="plus-prices" aria-label="Prices">
+  ${window.Capacitor ? `<p class="muted small" style="text-align:center" data-plus-app-note>Plus is coming to the Android app later. Join the waitlist and we’ll email you when it’s here.</p>` : `  <section class="plus-prices" aria-label="Prices">
     <div class="card plus-price best"><span class="pill gold">Early user price</span><span class="label">Yearly</span>
       <div class="plus-amt"><s>${usd(P.yearly)}</s><b>${usd(P.yearlyEarly)}</b><span>a year</span></div>
       <p class="muted small">About ${usd(Math.round(perMonth * 100) / 100)} a month. You save ${usd(P.yearly - P.yearlyEarly)}.</p>${kwCodeChip(KW_CODES[0])}</div>
@@ -5625,6 +5709,7 @@ V.plus = () => { const P = PLUS_PRICE, perMonth = P.yearlyEarly / 12;
       <p class="muted small">For your first ${P.earlyMonths} months, then ${usd(P.monthly)} a month.</p>${kwCodeChip(KW_CODES[1])}</div>
   </section>
   <p class="muted small" style="text-align:center">Prices in US dollars. Plus is not on sale yet. Join the waitlist and we will email you when it opens. <a href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund Policy</a></p>
+`}
   ${plusCta()}
   <section class="card"><h2 style="font-size:1.2rem">Free, and staying free</h2><ul class="plus-free">${PLUS_FREE.map(t => `<li>${I.check}<span>${t}</span></li>`).join("")}</ul></section>`; };
 // KeepWise's own codes for Plus. They carry the early user prices, so the Codes tab and the Plus screen always agree.
@@ -5705,17 +5790,20 @@ function arrivePlan(){  // the morning after money was due, if it has not been l
 function remindText(x){ const s = x.sub, r = nextRenewal(s);
   return {title: `Still using ${s.name}?`, body: `${fmt(s.price)} a ${s.cycle === "yr" ? "year" : "month"}${r && r >= x.at ? `, renews ${dayMonth(r)}` : ""}. Tap an answer.`}; }
 let remindT = 0, remindReady = false;
+const KW_CHANNEL = "kw_reminders", KW_LOOK = {channelId: "kw_reminders", smallIcon: "ic_stat_keepwise", iconColor: "#1B6843", sound: "keepwise_hoot.wav"};
 function remindSync(){ if (!window.Capacitor || !notifPlugin()) return; clearTimeout(remindT); remindT = setTimeout(remindApply, 1200); }
 async function remindApply(){
   const P = notifPlugin(); if (!P) return;
   try {
     if (!remindReady){ remindReady = true;
       await P.registerActionTypes({types: [{id: "KW_USE", actions: [{id: "lot", title: "A lot"}, {id: "barely", title: "Barely"}, {id: "none", title: "Not at all"}]}]});
+      // Android: one channel with the soft KeepWise hoot. People can change the sound or mute it in the phone's settings.
+      try { if (P.createChannel) await P.createChannel({id: KW_CHANNEL, name: "Reminders", description: "Subscription questions and money that was due", importance: 4, sound: "keepwise_hoot.wav", vibration: true, visibility: 0, lights: true, lightColor: "#1B6843"}); } catch(x){}
       P.addListener("localNotificationActionPerformed", remindAnswer); }
     await P.cancel({notifications: [...REMIND_IDS, ...RENEW_IDS, ...ARRIVE_IDS, ...BILL_IDS].map(id => ({id}))});
     const plan = [...remindPlan(), ...renewPlan()], inc = [...arrivePlan().map(x => ({...x, kind: "income"})), ...billPlan().map(x => ({...x, kind: "bill"}))]; if (!plan.length && !inc.length) return;
-    await P.schedule({notifications: [...plan.map(x => ({id: x.id, ...remindText(x), schedule: {at: x.at, allowWhileIdle: true}, actionTypeId: "KW_USE", extra: {subId: x.sub.id, cycle: x.cycle, at: isoOf(x.at)}})),
-      ...inc.map(x => ({id: x.id, title: x.title, body: x.body, schedule: {at: x.at, allowWhileIdle: true}, extra: {kind: x.kind, key: x.key, date: x.date, ...(x.pre ? {pre: true} : {})}}))]});
+    await P.schedule({notifications: [...plan.map(x => ({id: x.id, ...KW_LOOK, ...remindText(x), schedule: {at: x.at, allowWhileIdle: true}, actionTypeId: "KW_USE", extra: {subId: x.sub.id, cycle: x.cycle, at: isoOf(x.at)}})),
+      ...inc.map(x => ({id: x.id, ...KW_LOOK, title: x.title, body: x.body, schedule: {at: x.at, allowWhileIdle: true}, extra: {kind: x.kind, key: x.key, date: x.date, ...(x.pre ? {pre: true} : {})}}))]});
   } catch(e){}
 }
 // Answering, or opening Subs during the 10 days, ends this month's reminders.
@@ -5805,30 +5893,27 @@ const TOUR_KEY = "keepwise-tour-done";
 const TOUR = {on: false, i: 0, saved: null, welcome: null, tab: null};
 // The tour goes through the app the way it is laid out: every tab, and every part of a tab, with what it is for.
 const TOUR_STEPS = [
-  ["month", ".hero", "Month · What you keep", "The number KeepWise is built around: what you will have left when the month ends, if the plan holds. The eye hides it; the (i) explains it."],
-  ["month", 'form[data-form="ask"]', "The owl", "Tap the owl on any screen. Pick an icon and type the amount, or type or say it: “coffee 4”, “rent 1200 monthly”, “received 300”. Misc is for one-offs; Expenditures counts spending toward your bills. You can ask questions too."],
-  ["month", '[data-out="donut"]', "Where your month goes", "Everything going out this month, and what you keep. Tap the chart to open every line with its amount and its share."],
-  ["month", '[data-out="comingUp"]', "Coming up", "Bills, subscriptions and money due in the next 7 days. In a quiet week it names what comes next."],
-  ["month", '[data-out="billsCard"]', "Bills and savings", "How many of this month’s bills are paid, and how your emergency fund and goal are building. Tap either to go to it."],
-  ["month", '[data-out="envelopes"]', "Month · Budget", "Your three envelopes: Expenditures, Miscellaneous and Savings, each against its share. Open one to tick a bill once it is paid or tap Again to log the same spending. Loans have their own row. Plan a trip or an event at the bottom: from a week before, it shows on Overview."],
-  ["month", '[data-out="payBox"]', "Month · Income", "Your pay and how you are paid, how it splits between the envelopes, other money that comes in, and your savings goals."],
-  ["subs", '[data-out="subsList"]', "Subs", "Everything you pay for on repeat. KeepWise flags what looks unused, and asks about each one a few days before it renews."],
-  ["cheaper", "#view .sub-seg", "Subs · Cheaper", "Ways to pay less for things already on your list, with what each one keeps per month and per year."],
-  ["codes", "#view .sub-seg", "Subs · Code", "Promo codes you find, kept in one place and ready at checkout."],
-  ["month", '[data-env-grid]', "How your pay splits", "On Income: how your pay is shared between the envelopes, as percentages or amounts. Savings is what is left."],
-  ["month", '[data-out="loans"]', "Bills, loans and giving", "Under the envelopes: the bills that go out every month, loans and cards you are paying back, and what you give."],
-  ["banks", ".import-card", "Banks", "Accounts: your banks with balances hidden, and statement import. Cards: your credit and debit cards with limits, payments and fees. Statements: your months and trends."],
-  ["split", "#view", "Split", "Split a bill with friends or family. KeepWise works out who owes what and writes the message for you to send. With KeepWise Plus, it emails everyone in the split for you."],
-  ["month", "#find-btn", "Search", "Type a few letters to find any part of the app, or one of your bills, subscriptions or loans, and go straight to it."],
-  ["month", "#bell", "Notifications", "What needs a look: money to confirm, charges this week and subscriptions that look unused."],
-  ["month", "#acct-btn", "Menu", "Your profile and themes, your data and backups, the app lock, KeepWise Plus and support."],
+  ["month", ".hero", "What you keep", "Your number: what is left when the month ends, if the plan holds."],
+  ["month", 'form[data-form="ask"]', "The owl", "Tap it on any screen. Pick an icon or type “coffee 4” and it is added."],
+  ["month", '[data-out="donut"]', "Where it goes", "Every bill and spend this month, and the share you keep."],
+  ["month", '[data-out="comingUp"]', "Coming up", "Bills, subscriptions and money due in the next 7 days."],
+  ["month", '[data-out="envelopes"]', "Budget", "Three envelopes. Open one to tick a bill as you pay it."],
+  ["month", '[data-out="payBox"]', "Income", "Your pay, other money coming in and your savings goals."],
+  ["subs", '[data-out="subsList"]', "Subscriptions", "Flags what you don’t use. Cheaper and Codes help you pay less."],
+  ["banks", ".import-card", "Banks", "Accounts, your cards with limits, and statements with trends."],
+  ["split", "#view", "Split", "Share a bill. KeepWise works out who owes what."],
+  ["month", "#acct-btn", "Menu", "Profile, security, backups, dark mode and help."],
 ];
+// The closing scene: everything KeepWise does, appearing one after another like the end of a short video.
+const TOUR_ALL = [["month", "What you keep"], ["plus", "The owl"], ["plan", "Budget envelopes"], ["receipt", "Bills and due dates"], ["cash", "Income and goals"], ["subs", "Subscriptions"], ["cheaper", "Cheaper prices"], ["codes", "Promo codes"], ["bank", "Cards and limits"], ["film", "Statements and trends"], ["split", "Splits"], ["lock", "App lock"]];
+const TOUR_MS = 6000;   // each scene plays for six seconds unless paused
 const tourSeen = () => { try { return !!localStorage.getItem(TOUR_KEY); } catch(e){ return true; } };
 function tourStart(){
   if (TOUR.on) return;
-  window.__kwTour = true; TOUR.on = true; TOUR.i = 0; TOUR.welcome = UI.welcome; TOUR.saved = UI.welcome != null ? null : S; TOUR.tab = S.tab;
+  window.__kwTour = true; TOUR.on = true; TOUR.i = 0; TOUR.paused = false; TOUR.welcome = UI.welcome; TOUR.saved = UI.welcome != null ? null : S; TOUR.tab = S.tab;
   if (TOUR.saved){ window.__kwTour = false; save(); window.__kwTour = true; S = example(); }   // the person's month is saved first, then set aside
   UI.welcome = null; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.biz = false; UI.share = false;
+  TOUR.skin = S.skin; S.skin = "blue"; applyTheme();   // the tour is shown in the Blue look, then each person's own look comes back
   appEl.classList.add("touring"); tourShow();
 }
 // On the step about asking, the owl itself is shown, lifted just above the tour card, then put back where it was.
@@ -5836,32 +5921,41 @@ function tourOwl(on){ const w = $("wise"); if (!w) return;
   if (!on){ if (TOUR.owlCss != null){ w.style.cssText = TOUR.owlCss; TOUR.owlCss = null; } return; }
   if (TOUR.owlCss == null) TOUR.owlCss = w.style.cssText;
   const r = $("tour").getBoundingClientRect(); w.style.cssText = `left:auto;top:auto;right:20px;bottom:${Math.max(96, Math.round(innerHeight - r.top + 18))}px`; }
+function tourBars(){ const n = TOUR_STEPS.length; return `<div class="tour-bars" aria-hidden="true">${Array.from({length: n + 1}, (_, k) => `<i class="${k < TOUR.i ? "done" : k === TOUR.i ? "now" : ""}"><b style="animation-duration:${TOUR_MS}ms"></b></i>`).join("")}</div>`; }
+const tourAuto = () => !matchMedia("(prefers-reduced-motion: reduce)").matches && !TOUR.paused && !window.KEEPWISE_TOUR_MANUAL;
 function tourShow(){
-  const el = $("tour"), n = TOUR_STEPS.length, last = TOUR.i >= n; el.hidden = false;
+  const el = $("tour"), n = TOUR_STEPS.length, last = TOUR.i >= n; el.hidden = false; el.classList.toggle("paused", !tourAuto());
   document.querySelectorAll(".tour-focus").forEach(x => x.classList.remove("tour-focus")); tourOwl(false);
-  if (last){ el.innerHTML = `<div class="tour-top"><span class="pill gold">Tour</span></div><h3>That is the whole app.</h3>
-      <p class="muted">${TOUR.saved ? "What you saw was an example month. Your own numbers are exactly as you left them." : "What you saw was an example month. Yours takes about a minute to set up."}</p>
-      <div class="tour-nav"><button class="btn small" type="button" data-tour-back>Back</button><button class="btn small primary" type="button" data-tour-end>${TOUR.saved ? "Back to my month" : "Set up my month"}</button></div>`; return; }
+  const head = `<div class="tour-top">${tourBars()}<div class="tour-ctl"><button class="tour-ic" type="button" data-tour-pause aria-label="${TOUR.paused ? "Play" : "Pause"}">${TOUR.paused ? '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>'}</button><button class="tour-skip" type="button" data-tour-skip>Skip</button></div></div>`;
+  if (last){ el.classList.add("tour-final"); el.innerHTML = `${head}<h3>Everything in KeepWise</h3>
+      <div class="tour-all">${TOUR_ALL.map(([ic, t], k) => `<span style="animation-delay:${k * 110}ms"><i>${I[ic] || ""}</i>${t}</span>`).join("")}</div>
+      <p class="tour-sub">${TOUR.saved ? "That was an example month. Your own numbers are exactly as you left them." : "That was an example month. Yours takes about a minute to set up."}</p>
+      <div class="tour-nav"><button class="tour-arrow" type="button" data-tour-back aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="tour-go" type="button" data-tour-end>${TOUR.saved ? "Back to my month" : "Set up my month"}</button></div>`;
+    S.tab = "month"; UI.mseg = "now"; render(false); $("main").scrollTop = 0; el.querySelector("[data-tour-pause]").remove(); return; }
+  el.classList.remove("tour-final");
   const [tabName, sel, title, text] = TOUR_STEPS[TOUR.i];
   if (S.tab !== tabName || TOUR.i === 0){ S.tab = tabName; if (TOUR.i === 0) UI.mseg = "now"; render(false); }
   const target = (tabName === "month" && !/^#(view|bell|acct-btn|find-btn)$/.test(sel) ? monthFind(sel) : tabName === "plan" && sel !== "#view" ? planFind(sel) : null) || document.querySelector(sel) || (/data-form="ask"/.test(sel) ? $("wise") : null), m = $("main");
   if (target && !target.offsetParent && target.closest("details")) target.closest("details").open = true;
-  if (target){ if (sel !== "#view" && sel !== "#bell" && sel !== "#acct-btn" && sel !== "#find-btn" && target.id !== "wise"){ target.classList.add("tour-focus"); m.scrollTop += target.getBoundingClientRect().top - m.getBoundingClientRect().top - 14; } else { m.scrollTop = 0; if (sel === "#bell" || sel === "#acct-btn" || sel === "#find-btn" || target.id === "wise") target.classList.add("tour-focus"); } }
-  el.innerHTML = `<div class="tour-top"><span class="tour-who"><img alt="" src="${(document.querySelector(".logo") || {}).src || ""}"><span class="muted small" data-tour-count>${TOUR.i + 1} of ${n}</span></span><button class="link plain small" type="button" data-tour-skip>Skip tour</button></div>
-    <h3>${title}</h3><p class="muted">${text}</p>
-    <div class="tour-nav">${TOUR.i ? `<button class="btn small" type="button" data-tour-back>Back</button>` : ""}<button class="btn small primary" type="button" data-tour-next>${TOUR.i === n - 1 ? "Finish" : "Next"}</button></div>`;
+  if (target){ if (sel !== "#view" && sel !== "#bell" && sel !== "#acct-btn" && sel !== "#find-btn" && target.id !== "wise"){ target.classList.add("tour-focus"); const seg = document.querySelector("#view > .seg.sub-seg"), gap = seg ? seg.offsetHeight + 22 : 14; m.scrollTop += target.getBoundingClientRect().top - m.getBoundingClientRect().top - gap; } else { m.scrollTop = 0; if (sel === "#bell" || sel === "#acct-btn" || sel === "#find-btn" || target.id === "wise") target.classList.add("tour-focus"); } }
+  el.innerHTML = `${head}<span class="sr-only" data-tour-count>${TOUR.i + 1} of ${n}</span><h3>${title}</h3><p class="tour-sub">${text}</p>
+    <div class="tour-nav">${TOUR.i ? `<button class="tour-arrow" type="button" data-tour-back aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ""}<button class="tour-go" type="button" data-tour-next>${TOUR.i === n - 1 ? "Finish" : "Next"}</button></div>`;
   if (target && target.id === "wise" && target.classList.contains("tour-focus")) tourOwl(true);
+  tourTimer();
 }
+// Plays like a short video: the bar fills and the next scene follows, until the last one. Pause stops it; any button takes over.
+function tourTimer(){ clearTimeout(TOUR.t); if (!tourAuto() || TOUR.i >= TOUR_STEPS.length) return; TOUR.t = setTimeout(() => { if (TOUR.on && !TOUR.paused){ TOUR.i++; tourShow(); } }, TOUR_MS); }
 function tourEnd(){
   if (!TOUR.on) return;
   document.querySelectorAll(".tour-focus").forEach(x => x.classList.remove("tour-focus"));
-  tourOwl(false); appEl.classList.remove("touring"); $("tour").hidden = true; TOUR.on = false; window.__kwTour = false;
+  clearTimeout(TOUR.t); TOUR.paused = false; tourOwl(false); appEl.classList.remove("touring"); $("tour").hidden = true; TOUR.on = false; window.__kwTour = false;
   try { localStorage.setItem(TOUR_KEY, "1"); } catch(e){}
-  if (TOUR.saved){ S = TOUR.saved; S.tab = TOUR.tab || "month"; TOUR.saved = null; } else { S.tab = "month"; UI.welcome = TOUR.welcome != null ? TOUR.welcome : null; }
-  render(false);
+  if (TOUR.saved){ S = TOUR.saved; S.tab = TOUR.tab || "month"; TOUR.saved = null; } else { S.tab = "month"; S.skin = TOUR.skin; UI.welcome = TOUR.welcome != null ? TOUR.welcome : null; }
+  applyTheme(); render(false);
 }
 $("tour").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
   if (b.hasAttribute("data-tour-skip") || b.hasAttribute("data-tour-end")){ const setup = b.hasAttribute("data-tour-end") && !TOUR.saved && TOUR.welcome != null; tourEnd(); if (setup){ UI.welcome = 1; render(false); } return; }
+  if (b.hasAttribute("data-tour-pause")){ TOUR.paused = !TOUR.paused; tourShow(); return; }
   if (b.hasAttribute("data-tour-next")){ TOUR.i++; tourShow(); return; }
   if (b.hasAttribute("data-tour-back")){ TOUR.i = Math.max(0, TOUR.i - 1); tourShow(); return; } });
 document.addEventListener("keydown", e => { if (TOUR.on && e.key === "Escape") tourEnd(); });
@@ -5883,14 +5977,22 @@ function lockStore(c){ LOCK.cfg = c; try { if (c) localStorage.setItem(LOCK_KEY,
 async function lockSetPin(pin){ const salt = b64(randBytes(16)); lockStore({v: 1, salt, hash: await pinHash(pin, salt), len: pin.length, bio: LOCK.cfg && LOCK.cfg.bio || null}); }
 const lockPinOk = async pin => !!LOCK.cfg && (await pinHash(pin, LOCK.cfg.salt)) === LOCK.cfg.hash;
 // Face ID, Touch ID or fingerprint, through the phone's own check. KeepWise only learns that it passed.
-async function bioAvailable(){ try { return !!(window.PublicKeyCredential && navigator.credentials && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch(e){ return false; } }
+// In the Android app the phone's own fingerprint or face unlock is used directly (Android's BiometricPrompt): the check happens
+// on the phone, and KeepWise only hears that it passed. No fingerprint or face data ever reaches the app or us.
+const bioNative = () => { try { const C = window.Capacitor; if (!C || !C.isNativePlatform || !C.isNativePlatform()) return null; return (C.Plugins && C.Plugins.BiometricAuthNative) || (C.registerPlugin ? C.registerPlugin("BiometricAuthNative") : null); } catch(e){ return null; } };
+const bioNativeAuth = async () => { const N = bioNative(); if (!N) return false;
+  try { await N.internalAuthenticate({reason: "Unlock KeepWise", androidTitle: "Unlock KeepWise", androidSubtitle: "Use your fingerprint or face", cancelTitle: "Use passcode", allowDeviceCredential: false, androidConfirmationRequired: false}); return true; } catch(e){ return false; } };
+async function bioAvailable(){ const N = bioNative(); if (N){ try { const r = await N.checkBiometry(); return !!(r && r.isAvailable); } catch(e){ return false; } }
+  try { return !!(window.PublicKeyCredential && navigator.credentials && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch(e){ return false; } }
 async function bioEnroll(){
+  if (bioNative()){ if (await bioNativeAuth()) return "native"; throw new Error("cancelled"); }
   const cred = await navigator.credentials.create({publicKey: {challenge: randBytes(32), rp: {name: "KeepWise"}, user: {id: randBytes(16), name: "KeepWise on this device", displayName: "KeepWise"},
     pubKeyCredParams: [{type: "public-key", alg: -7}, {type: "public-key", alg: -257}], authenticatorSelection: {authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged"}, timeout: 60000, attestation: "none"}});
   return b64(cred.rawId);
 }
 async function bioCheck(){
   if (!LOCK.cfg || !LOCK.cfg.bio) return false;
+  if (LOCK.cfg.bio === "native") return bioNativeAuth();
   try { return !!(await navigator.credentials.get({publicKey: {challenge: randBytes(32), allowCredentials: [{type: "public-key", id: unb64(LOCK.cfg.bio), transports: ["internal"]}], userVerification: "required", timeout: 60000}})); } catch(e){ return false; }
 }
 function lockDraw(){
@@ -6001,6 +6103,8 @@ function segStick(){ const m = $("main"), g = m && m.querySelector(".view>.seg.s
   g.classList.toggle("stuck", m.scrollTop > 2 && g.getBoundingClientRect().top - m.getBoundingClientRect().top <= 9); }
 function render(keepScroll){
   const main = $("main"), top = main.scrollTop, back = keepScroll ? innerScrollKeep(document.getElementById("app") || document.body) : () => {};
+  // Banks & statements is the Banks tab now: anything that opens it (the menu, search, a bank just connected) lands on Accounts.
+  if (UI.banks){ UI.banks = false; S.tab = "banks"; UI.bankSeg = "accounts"; UI.settings = false; UI.account = false; }
   const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.find ? V.find() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : UI.banks ? V.banks() : UI.settings ? V.settings() : S.tab === "banks" ? V.bankTab() : (V[S.tab] || V.month)();
   const askOk = !STMT.result && !UI.pdfLock && !UI.account && UI.welcome == null && !UI.biz; if (!askOk) UI.askOpen = false;
   const sheet = $("asksheet"); if (sheet){ sheet.innerHTML = UI.askOpen ? askSheet() : ""; sheet.hidden = !UI.askOpen; }
@@ -6200,29 +6304,25 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")
     <div data-out="installBtn">${OUT.installBtn()}</div>
     <div class="inline" style="justify-content:space-between" data-ask-row><span class="h-info">Open on the owl${infoBtn("asklink", "About opening on the owl")}</span><button class="btn small" type="button" data-ask-link>Copy link</button></div>
     ${infoTip("asklink", askLinkTip())}</section>
-  ${UI.delOpen ? `<div class="note" data-del-box><p><b>Delete account and data?</b> Erasing this phone clears your budget here for good. Deleting your account erases your profile.</p><div class="inline" style="margin-top:10px;flex-wrap:wrap"><button class="btn danger" type="button" data-reset="blank">Erase this phone</button>${ACC.user && ACC.profile ? `<button class="btn danger" type="button" data-del-acct>Delete my account</button>` : ""}<button class="btn" type="button" data-del-toggle>Keep everything</button></div><div id="reset-confirm"></div></div>`
-    : `<button class="link small quiet-del" type="button" data-del-toggle>Delete account and data</button>`}`;
+  ${ACC.user && ACC.profile && !UI.delOpen ? `<button class="link small quiet-del" type="button" data-del-acct>Delete account</button>` : UI.delOpen ? `<div class="note" data-del-box><p><b>Delete account and data?</b> Erasing this phone clears your budget here for good. Deleting your account erases your profile.</p><div class="inline" style="margin-top:10px;flex-wrap:wrap"><button class="btn danger" type="button" data-reset="blank">Erase this phone</button>${ACC.user && ACC.profile ? `<button class="btn danger" type="button" data-del-acct>Delete my account</button>` : ""}<button class="btn" type="button" data-del-toggle>Keep everything</button></div><div id="reset-confirm"></div></div>`
+    : `<button class="link small quiet-del" type="button" data-del-toggle>Erase data on this phone</button>`}`;
 const SN_IC = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 function sideNav(){
   const on = ACC.user && ACC.profile, nm = on ? accName() : "", ph = on ? accPhoto() : "", em = on ? (ACC.user.email || "") : "";
-  const row = (k, d, label, sum) => `<button class="sn-row" type="button" data-menu="${k}">${SN_IC(d)}<span>${label}</span>${sum ? `<small>${sum}</small>` : ""}</button>`;
-  const th = S.theme === "light" ? "Light" : S.theme === "dark" ? "Dark" : "Auto";
+  const row = (k, d, label, sum) => `<button class="sn-row" type="button" data-menu="${k}"><i class="sn-ic">${SN_IC(d)}</i><span>${label}</span>${sum ? `<small>${sum}</small>` : ""}${I.chev}</button>`;
+  const dark = S.theme === "dark" || ((S.theme || "system") === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+  const group = (title, rows) => `<p class="sn-label">${title}</p><div class="sn-list">${rows}</div>`;
   return `<button class="sn-back" type="button" data-menu="close" aria-label="Close menu"></button><aside class="sn" role="dialog" aria-label="Menu">
-    <div class="sn-head">${ph ? `<img src="${esc(ph)}" alt="" referrerpolicy="no-referrer">` : `<span class="avatar" style="--h:${avatarHue(nm || "KeepWise")}" aria-hidden="true">${on ? esc(initials(nm)) : "K"}</span>`}
-      <div class="sn-id"><b>${on ? esc(nm) : "Your account"}</b><span class="muted small">${on ? esc(em) : "Not signed in"}</span></div>
+    <div class="sn-top"><button class="sn-head" type="button" data-menu="profile">${ph ? `<img src="${esc(ph)}" alt="" referrerpolicy="no-referrer">` : `<span class="avatar" style="--h:${avatarHue(nm || "KeepWise")}" aria-hidden="true">${on ? esc(initials(nm)) : "K"}</span>`}
+      <span class="sn-id"><b>${on ? esc(nm) : "Sign in"}</b><span class="muted small">${on ? esc(em) : "Or create an account"}</span><span class="sn-view small">${on ? "View profile" : ""}</span></span></button>
       <button class="icon-btn" type="button" data-menu="close" aria-label="Close menu">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
     <div class="sn-seg" role="group" aria-label="Personal or Business"><button type="button" data-menu="personal" aria-pressed="${!UI.biz}">Personal</button><button type="button" data-menu="biz" aria-pressed="${!!UI.biz}">Business <span class="pill gold">Plus</span></button></div>
-    <button class="sn-plus" type="button" data-menu="plus"><b>KeepWise Plus</b><span class="muted small">Coming soon</span>${I.chev}</button>
-    <div class="sn-list">
-      ${row("profile", "M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM4 21c0-4 3.6-6 8-6s8 2 8 6", on ? "Edit profile" : "Sign in or create account")}
-      ${row("settings", "M4 7h10M18 7h2M4 17h2M10 17h10M16 5v4M8 15v4", "Settings")}
-      ${row("security", "M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z", "Security & privacy")}
-      ${row("banks", "M3 9.5 12 4l9 5.5M5 10v7M9.5 10v7M14.5 10v7M19 10v7M3 20h18", "Banks & statements")}
-      ${row("data", "M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zM5 7v10c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3", "Your data & backups")}
-      ${row("tour", "M4 12a8 8 0 1 0 3-6.2M4 4v4h4", "Replay the tour")}
-      ${row("support", "M5 5h14v10H10l-5 4zM9 10h6", "Support")}
-    </div><div style="flex:1"></div>
-    <p class="small legal-links" style="text-align:center"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></aside>`;
+    <button class="sn-plus" type="button" data-menu="plus"><span class="sn-plus-ic">${I.heart || ""}</span><span class="sn-plus-t"><b>KeepWise Plus</b><span class="small">Coming soon</span></span>${I.chev}</button>
+    ${group("Account", row("security", "M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z", "Security & privacy") + row("data", "M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zM5 7v10c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3", "Your data & backups"))}
+    ${group("App", row("settings", "M4 7h10M18 7h2M4 17h2M10 17h10M16 5v4M8 15v4", "Settings") + `<button class="sn-row" type="button" data-menu="theme" role="switch" aria-checked="${dark}"><i class="sn-ic">${SN_IC("M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z")}</i><span>Dark mode</span><b class="sn-switch" aria-hidden="true"></b></button>` + row("tour", "M4 12a8 8 0 1 0 3-6.2M4 4v4h4", "Replay the tour"))}
+    ${group("Help", row("support", "M5 5h14v10H10l-5 4zM9 10h6", "Support"))}
+    <div style="flex:1"></div>
+    <p class="small legal-links sn-foot"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms</a> · <a href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refunds</a></p></aside>`;
 }
 // Explanations inside a card wait behind its (i), so a small screen shows the numbers first. An empty card keeps its one line of guidance.
 // On a computer the main screens use the width: cards sit in two columns and long lists run side by side.
@@ -6336,9 +6436,22 @@ function accProfile(){
     <div class="pf-dev">${I.phone || ""}<div><b>${esc(dev)}</b> <span class="pill ok">This device</span><div class="muted small">Active now${since ? ` · signed in ${since.toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric"})}` : ""}</div></div></div></section>
   <section class="card pf-card"><h2>Sign out</h2><p class="muted small">Sign out of KeepWise on this device. Your money data stays on this phone.</p>
     <div><button class="btn" type="button" data-acc-signout><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M14 8l4 4-4 4M18 12H9"/></svg>Sign out</button></div></section>
-  <div class="pf-quiet" data-pf-delete>${ACC.del ? `<p class="small"><b>Delete your account?</b> Your profile is erased for good. What’s on this phone stays until you clear it.</p><div class="inline" style="gap:10px"><button class="btn danger small" type="button" data-acc-delete-yes>Delete my account</button><button class="btn small" type="button" data-acc-delete-no>Keep it</button></div>`
-      : ""}
+  <div class="pf-quiet" data-pf-delete>${ACC.del ? delFlow() : `<button class="link small quiet-del" type="button" data-acc-delete>Delete account</button>`}
     <p class="small legal-links">${legalLinks.replace(" and ", " · ")}</p></div>`;
+}
+// Deleting an account takes two steps: first what goes and what stays, with a copy of your data offered; then typing DELETE.
+function delFlow(){
+  const em = (ACC.user && ACC.user.email) || "";
+  if (ACC.del === 2) return `<section class="card pf-card del-card" data-del-step="2"><h2>Delete for good?</h2>
+    <p class="small">This deletes the KeepWise account for <b>${esc(em)}</b>. It can’t be undone${ACC.delErase ? ", and everything on this phone is erased too" : ""}.</p>
+    <label class="field"><span>Type DELETE to confirm</span><input data-del-type autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="DELETE"></label>
+    <div class="grid2"><button class="btn" type="button" data-acc-delete-no>Keep my account</button><button class="btn danger" type="button" data-acc-delete-yes disabled>Delete account</button></div></section>`;
+  return `<section class="card pf-card del-card" data-del-step="1"><h2>Delete your account?</h2>
+    <ul class="del-list small"><li><b>Deleted:</b> your profile, photo, sign-in and Plus waitlist place. People you split with keep their own records.</li>
+      <li><b>Stays:</b> your budget on this phone, unless you erase it below.</li></ul>
+    <button class="btn" type="button" data-del-copy>${I.download || ""}${ACC.delSaved ? "Saved. Download again" : "Download a copy of your data"}</button>
+    <label class="check"><input type="checkbox" data-del-erase ${ACC.delErase ? "checked" : ""}> <span>Also erase everything on this phone</span></label>
+    <div class="grid2"><button class="btn" type="button" data-acc-delete-no>Keep my account</button><button class="btn danger" type="button" data-del-next>Continue</button></div></section>`;
 }
 // ---- photo: shrink to a small square so it fits in the profile record ----
 function shrinkPhoto(file){
@@ -6381,6 +6494,7 @@ document.addEventListener("click", e => { const b = e.target.closest && e.target
   const fld = b.closest(".place-field"), f = fld.closest("form"), inp = fld.querySelector("[data-place-q]"), box = fld.querySelector("[data-place-res]");
   if (b.hasAttribute("data-place-pick")){ const x = PLACE.list[+b.dataset.placePick]; if (x){ inp.value = x.short; f.elements.lat.value = x.lat; f.elements.lon.value = x.lon; f.elements.geoFor.value = x.short; } }
   PLACE.seq++; box.hidden = true; box.innerHTML = ""; }, true);
+document.addEventListener("input", e => { if (!e.target.matches || !e.target.matches("[data-del-type]")) return; const y = document.querySelector("[data-acc-delete-yes]"); if (y) y.disabled = e.target.value.trim().toUpperCase() !== "DELETE"; });
 document.addEventListener("input", e => { if (e.target.id !== "find-in") return; UI.findQ = e.target.value; clearTimeout(FIND.t);   // wait for a pause in typing before looking
   FIND.t = setTimeout(() => { const o = view.querySelector('[data-out="findList"]'); if (o) o.innerHTML = OUT.findList(); }, 180); });
 document.addEventListener("keydown", e => { if (e.target.id !== "find-in") return; if (e.key === "Enter"){ e.preventDefault(); clearTimeout(FIND.t); const h = findHits(e.target.value)[0]; if (h) findGo(h); } else if (e.key === "Escape"){ UI.find = false; render(false); } });
@@ -6398,7 +6512,7 @@ document.addEventListener("click", e => {
   if (e.target.closest("[data-settings-close]")){ UI.settings = false; UI.delOpen = false; render(false); return; }
   if (e.target.closest("[data-menu-theme]")){ $("theme-btn").click(); render(true); return; }
   if (e.target.closest("[data-del-toggle]")){ UI.delOpen = !UI.delOpen; render(true); if (UI.delOpen){ const m = $("main"); m.scrollTop = m.scrollHeight; } return; }
-  if (e.target.closest("[data-del-acct]")){ UI.settings = false; UI.delOpen = false; UI.account = true; ACC.del = true; accInit(); render(false); return; }
+  if (e.target.closest("[data-del-acct]")){ UI.settings = false; UI.delOpen = false; UI.account = true; ACC.del = 1; ACC.delSaved = false; ACC.delErase = false; accInit(); render(false); setTimeout(() => { const d = document.querySelector("[data-pf-delete]"); if (d) d.scrollIntoView({block: "center"}); }, 60); return; }
 });
 // The Ask panel sits outside the page, fixed to the screen, so it opens where you are however far you have scrolled.
 // Everything the page listens for is listened for there too, so its box, chips and microphone behave exactly the same.
@@ -6453,12 +6567,17 @@ $("view").addEventListener("click", async e => {
   }
   if (has("data-loc-help-close")){ ACC.locHelp = 0; render(true); return; }
   if (has("data-acc-loc-clear")){ ACC.draft.location = null; render(true); return; }
-  if (has("data-acc-delete")){ ACC.del = true; render(true); return; }
+  if (has("data-acc-delete")){ ACC.del = 1; ACC.delSaved = false; ACC.delErase = false; render(true); const d = document.querySelector("[data-pf-delete]"); if (d) d.scrollIntoView({block: "center"}); return; }
+  if (has("data-del-copy")){ downloadMyData(); return; }
+  if (has("data-del-next")){ ACC.delErase = !!(document.querySelector("[data-del-erase]") || {}).checked; ACC.del = 2; render(true); const i = document.querySelector("[data-del-type]"); if (i){ i.scrollIntoView({block: "center"}); i.focus(); } return; }
   if (has("data-acc-pw")){ const em = ACC.user && ACC.user.email; if (!em) return; ACC.auth.sendPasswordResetEmail(em).then(() => toast(`A link to change your password is on its way to ${em}.`)).catch(() => toast("That didn’t send. Try again in a minute."));  return; }
   if (has("data-acc-delete-no")){ ACC.del = false; render(true); return; }
   if (has("data-acc-delete-yes")){
-    const keep = ACC.profile;
-    try { await accDoc().delete(); await ACC.user.delete(); S.acctOn = false; S.acct = null; save(); toast("Your account was deleted."); }
+    const typed = document.querySelector("[data-del-type]"); if (!typed || typed.value.trim().toUpperCase() !== "DELETE") return;
+    const keep = ACC.profile, erase = ACC.delErase;
+    try { await accDoc().delete(); await ACC.user.delete(); ACC.del = false; S.acctOn = false; S.acct = null;
+      if (erase){ const ex = blankOut(example()); welcomeDone(); ex.started = S.started; ex.tab = "month"; S = ex; UI.account = false; }
+      save(); render(false); toast(erase ? "Your account and everything on this phone were deleted." : "Your account was deleted. Your budget is still on this phone."); }
     catch(err){
       if (keep) try { await accDoc().set(keep); } catch(x){}
       ACC.del = false; ACC.err = accErrText(err); render(true);
@@ -6681,15 +6800,22 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-save-go")){ goTo("plan", "[data-bind=efSaved]"); return; }
   if (b.hasAttribute("data-dn-open")){ UI.dnOpen = !UI.dnOpen; refreshOuts(); cardInView(view.querySelector("[data-donut]")); return; }
   if (b.dataset.themeSet){ S.theme = b.dataset.themeSet; save(); applyTheme(); render(true); return; }
-  if (b.dataset.bankseg){ UI.bankSeg = b.dataset.bankseg; UI.cardAdd = false; UI.cardEdit = null; render(false); $("main").scrollTop = 0; return; }
+  if (b.dataset.bankseg){ UI.bankSeg = b.dataset.bankseg; UI.cardAdd = false; UI.cardEdit = null; UI.cardPay = null; render(false); $("main").scrollTop = 0; return; }
   if (b.hasAttribute("data-card-add")){ UI.cardAdd = true; UI.cardEdit = null; UI.cardNew = "credit"; render(true); return; }
+  if (b.dataset.cardPay){ const cr = b.closest("[data-card]"); UI.cardPay = cr && cr.dataset.card; UI.cardPayMode = b.dataset.cardPay; UI.cardEdit = null; render(true);
+    const i = document.querySelector("[data-form=cardPay] [name=amount]"); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-card-pay-cancel")){ UI.cardPay = null; render(true); return; }
+  if (b.dataset.cardPayFill){ const i = b.closest("form").querySelector("[name=amount]"); i.value = b.dataset.cardPayFill; i.focus(); return; }
+  if (b.dataset.upCardPay){ UI.cardPay = b.dataset.upCardPay; UI.cardPayMode = "pay"; goTo("banks", `[data-card="${b.dataset.upCardPay}"]`);
+    setTimeout(() => { const i = document.querySelector("[data-form=cardPay] [name=amount]"); if (i) i.focus(); }, 350); return; }
+  if (b.hasAttribute("data-cards-open")){ goTo("banks", "[data-cards]"); UI.bankSeg = "cards"; render(false); return; }
   if (b.hasAttribute("data-card-cancel")){ UI.cardAdd = false; UI.cardEdit = null; render(true); return; }
   if (b.dataset.cardType){ const f = b.closest("form"); f.dataset.ctype = b.dataset.cardType; f.querySelector("[name=ctype]").value = b.dataset.cardType; f.querySelectorAll("[data-card-type]").forEach(x => x.setAttribute("aria-pressed", x === b)); return; }
   { const cr = b.closest("[data-card]");
     if (cr && b.hasAttribute("data-card-edit")){ UI.cardEdit = cr.dataset.card; UI.cardAdd = false; render(true); return; }
     if (cr && b.hasAttribute("data-card-del")){ const id = cr.dataset.card, u = undoable(), l = (S.loans || []).find(x => x.id === id), d = (S.cards || []).find(x => x.id === id);
       S.loans = (S.loans || []).filter(x => x.id !== id); S.cards = (S.cards || []).filter(x => x.id !== id); UI.cardEdit = null; save(); render(true); toast(`Removed ${cardName(l || d || {})}.`, u); return; } }
-  if (b.dataset.trendBy){ UI.trendBy = b.dataset.trendBy; refreshOuts(); return; }
+  if (b.dataset.trendBy){ UI.trendBy = b.dataset.trendBy; UI.trendPick = null; refreshOuts(); return; }
   if (b.dataset.trendKind){ UI.trendKind = b.dataset.trendKind; refreshOuts(); return; }
   if (b.dataset.quickEnv){ UI.quickEnv = b.dataset.quickEnv; UI.quick = null; const sh = $("asksheet"); if (sh) sh.innerHTML = askSheet(); return; }
   if (b.dataset.quickIc){ UI.quick = UI.quick === b.dataset.quickIc ? null : b.dataset.quickIc; const sh = $("asksheet"); if (sh){ sh.innerHTML = askSheet(); const i = sh.querySelector("[data-form=quick] [name=amount]"); if (i) i.focus(); } return; }
@@ -6754,6 +6880,7 @@ view.addEventListener("click", async e => {
     if (b.hasAttribute("data-inc-del")){ const u = undoable(); S.extras = S.extras.filter(x => x !== incX); UI.incEdit = null; save(); refreshOuts(); toast(`Removed ${incX.name}.`, u); return; }
     if (b.hasAttribute("data-inc-log")){ UI.incLog = incX.id; refreshOuts(); const i = view.querySelector('form[data-form="incomeLog"] [name=amount]'); if (i){ i.focus(); i.select(); } return; }
     if (b.hasAttribute("data-inc-log-cancel")){ UI.incLog = null; refreshOuts(); return; }
+    if (b.hasAttribute("data-inc-logged")){ UI.incOpen = UI.incOpen || {}; UI.incOpen[incX.id] = !UI.incOpen[incX.id]; refreshOuts(); return; }
     if (b.hasAttribute("data-inc-pay-del")){ const id = b.closest("[data-pay-in]").dataset.payIn, u = undoable(); incX.got = (incX.got || []).filter(p => p.id !== id); save(); refreshOuts(); toast("Payment removed.", u); return; }
     if (b.dataset.incUseAvg){ incX.amount = +b.dataset.incUseAvg; save(); refreshOuts(); toast(`${incX.name} now counts ${fmt(incX.amount)} a month.`); return; }
   }
@@ -6916,7 +7043,7 @@ view.addEventListener("click", async e => {
     $("reset-confirm").innerHTML = `<div class="note" style="margin-top:10px"><p>${kind === "blank" ? "Clear everything and start empty?" : "Replace your numbers with the example?"} This can’t be undone.</p><div class="inline" style="margin-top:10px"><button class="btn" type="button" data-reset-no>Keep my data</button><button class="btn danger" type="button" data-reset-yes="${kind}">${kind === "blank" ? "Clear it" : "Load example"}</button></div></div>`; return; }
   if (b.hasAttribute("data-reset-no")){ $("reset-confirm").innerHTML = ""; return; }
   if (b.dataset.resetYes){ const ex = example();
-    if (b.dataset.resetYes === "blank"){ Object.assign(ex, {income:0, efSaved:0, expenses:[], loans:[], giving:[], ins:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0, example:false, statements:{}, extras:[]}); }
+    if (b.dataset.resetYes === "blank") blankOut(ex);
     welcomeDone(); ex.lastBackup = S.lastBackup; ex.a2hsHide = S.a2hsHide; ex.started = S.started;
     ex.tab = "month"; UI.mseg = "more"; UI.settings = false; UI.delOpen = false; S = ex; save(); render(false); toast(b.dataset.resetYes === "blank" ? "Started empty." : "Example loaded."); return; }
   if (b.dataset.pbOpen){ UI.pbOpen = UI.pbOpen === b.dataset.pbOpen ? null : b.dataset.pbOpen; refreshOuts(); return; }
@@ -7134,11 +7261,19 @@ view.addEventListener("submit", async e => {
     const nm = q[0] === "receipt" ? "Other" : q[1], id = uid(), u = undoable(); S.spends = S.spends || []; S.spendIcons = S.spendIcons || {}; S.spendIcons[nm.toLowerCase()] = q[0];
     S.spends.push({id, date: isoDaysAgo(0), at: Date.now(), k: compute().planKey, name: nm, amount: amt}); UI.quick = null; save(); refreshOuts();
     const sh = $("asksheet"); if (sh) sh.innerHTML = askSheet(); toast(`Added ${nm}, ${fmt(amt)}, under Misc.`, u); return; }
+  if (kind === "cardPay"){
+    const id = UI.cardPay, l = (S.loans || []).find(x => x.id === id), amt = numv(fd.get("amount")); if (!l) return;
+    if (!(amt > 0)){ toast("Enter the amount."); f.querySelector("[name=amount]").focus(); return; }
+    const u = undoable(), pay = f.dataset.mode !== "charge";
+    if (pay){ cardPays().push({id: uid(), c: id, date: isoDaysAgo(0), k: planPeriodNow().key, amount: amt}); l.total = r2(Math.max(0, (+l.total || 0) - amt)); }
+    else l.total = r2((+l.total || 0) + amt);
+    UI.cardPay = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
+    toast(pay ? `Logged ${fmt(amt)} paid on ${cardName(l)}.${+l.limit > 0 ? ` ${fmt(r2(Math.max(0, l.limit - l.total)))} available.` : ""}` : `Added ${fmt(amt)} to ${cardName(l)}.`, u); return; }
   if (kind === "card"){
     const t = fd.get("ctype") === "debit" ? "debit" : "credit", last4 = String(fd.get("last4") || "").replace(/\s/g, "");
     if (last4 && !/^\d{4}$/.test(last4)){ toast("Only the last four digits, please."); f.querySelector("[name=last4]").focus(); return; }
     const was = UI.cardEdit, oldL = was && (S.loans || []).find(x => x.id === was), oldD = was && (S.cards || []).find(x => x.id === was), id = was || uid();
-    const fee = numv(fd.get("fee")) || 0, base = {id, name: String(fd.get("name") || "").trim().slice(0, 40), card: String(fd.get("card") || "Visa"), last4, fee, feeOn: fee ? mdToIso(fd, "feeOn", (oldL || oldD || {}).feeOn) : ""};
+    const fee = numv(fd.get("fee")) || 0, color = CARD_COLORS.some(x => x[0] === fd.get("color")) ? String(fd.get("color")) : "", base = {id, name: String(fd.get("name") || "").trim().slice(0, 40), card: String(fd.get("card") || "Visa"), color, last4, fee, feeOn: fee ? mdToIso(fd, "feeOn", (oldL || oldD || {}).feeOn) : ""};
     S.loans = (S.loans || []).filter(x => x.id !== id); S.cards = (S.cards || []).filter(x => x.id !== id);
     if (t === "credit") loanList().push(Object.assign(oldL || {}, base, {kind: "card", every: "mo", end: (oldL && oldL.end) || "", left: (oldL && oldL.left) || 0, limit: numv(fd.get("limit")) || 0, total: numv(fd.get("balance")) || 0, pay: numv(fd.get("pay")) || 0, due: +fd.get("due") || 0}));
     else debitList().push(Object.assign(base, {charge: numv(fd.get("charge")) || 0, day: +fd.get("day") || 0}));
