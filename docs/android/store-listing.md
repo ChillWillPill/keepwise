@@ -31,12 +31,14 @@ BILLS AND SUBSCRIPTIONS
 CARDS AND STATEMENTS
 • Credit and debit cards with limits, payments and yearly fees
 • Log a payment and see what is available on each card
-• Car insurance and loans, with what is left on each
+• Loans and car insurance: what is left, when it ends, and how much paying a little more saves
+• Log each payment and keep its history
 • Import a bank statement (CSV, PDF or photo) and see it sorted
 • Monthly statements and trends by day, week, month or year
 
 TRIPS AND EVENTS
 • Give a trip its own budget and log spending as you go
+• Add your flights: booking and seat on a boarding-pass card, with a checklist before you go
 • Your month stays untouched until you decide
 
 SPLITS

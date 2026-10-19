@@ -485,7 +485,7 @@ async def plan_envelopes_lines_priority(ctx):
     await pg.click("form[data-form=exp] [type=submit]"); await pg.wait_for_timeout(150)
     assert await pg.locator("[data-exp]").count() == n0 + 1 and "Parking" in await text(pg, "[data-out=envelopes]")
     # every line edits as a card: Edit, then Save, Remove or Cancel
-    await pg.locator("[data-exp]").last.locator("[data-exp-edit]").click(); await pg.wait_for_timeout(100)
+    await pg.locator("[data-exp]", has_text="Parking").locator("[data-exp-edit]").click(); await pg.wait_for_timeout(100)
     await pg.fill("form[data-form=exp] [name=amount]", "60"); await pg.select_option("form[data-form=exp] [name=env]", "misc"); await pg.click("form[data-form=exp] [type=submit]"); await pg.wait_for_timeout(150)
     last = (await state(pg))["expenses"][-1]; assert last["name"] == "Parking" and last["amount"] == 60 and last["env"] == "misc"
     await open_misc(pg); park = pg.locator("[data-exp]", has_text="Parking")
@@ -1759,7 +1759,7 @@ async def trips_keep_their_own_budget_until_you_decide(ctx):
     await pg.evaluate("document.activeElement.blur()"); await pg.wait_for_timeout(250); assert await pg.input_value(f + "[name=name]") == "Miami weekend", "leaving a field keeps the card"
     assert await pg.input_value(f + "[name=end]") == "2026-10-12" and "cannot come before the start" in await pg.inner_text("#toast"), "an end before the start is moved to the start at once"
     await pg.fill(f + "[name=start]", "2026-10-10"); await pg.fill(f + "[name=end]", "2026-10-12"); await pg.fill(f + "[name=budget]", "600"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(200)
-    card = await text(pg, "[data-trips]"); assert "Miami weekend" in card and "Oct 10 to Oct 12" in card and "Starts in 2 days" in card and "$600 left of $600" in card, card
+    card = await text(pg, "[data-trips]"); assert "Miami weekend" in card and "Oct 10 to Oct 12" in card and "Starts in 2 days" in card and "left of budget $600" in card.lower() and "$0 spent of $600" in card, card
     # before the trip, "add ..." in the Ask box has nowhere to go and says so; ordinary questions still work
     await ask_type(pg, "add uber $20"); await pg.wait_for_timeout(150)
     assert "Added to this month under Miscellaneous, one time: Uber, $20." in await text(pg, "#ask-out") and (await state(pg))["trips"][0]["items"] == []
@@ -1779,14 +1779,14 @@ async def trips_keep_their_own_budget_until_you_decide(ctx):
     # the trip's own box works the same way, and "and" only splits when both sides have an amount
     await pg.fill("form[data-form=tripAdd] [name=q]", "bed and breakfast 480; museum 15 and taxi 12"); await pg.click("form[data-form=tripAdd] [type=submit]"); await pg.wait_for_timeout(200)
     names = [x["name"] for x in (await state(pg))["trips"][0]["items"]]; assert names[-3:] == ["Bed and breakfast", "Museum", "Taxi"], names
-    card = await text(pg, "[data-trips]"); assert "$581.50" in card and "$18.50 left of $600" in card, card
+    card = await text(pg, "[data-trips]"); assert "$581.50" in card and "left of budget $18.50" in card.lower(), card
     await pg.fill("form[data-form=tripAdd] [name=q]", "souvenirs 40"); await pg.click("form[data-form=tripAdd] [type=submit]"); await pg.wait_for_timeout(200)
-    assert "$21.50 over the $600 budget" in await text(pg, "[data-trips]")
+    assert "over budget $21.50" in (await text(pg, "[data-trips]")).lower()
     assert abs(money(await kept()) - kept0) < 0.01, "while the trip runs, the month is untouched"
     # details list every line by day; a line can be removed
     await open_trip(pg); await pg.wait_for_timeout(150); d = await text(pg, "[data-trips]"); assert "Oct 11 · $621.50" in d and "Souvenirs" in d, d
     await pg.locator("[data-trip-item]", has_text="Souvenirs").locator("[data-trip-item-del]").click(); await pg.wait_for_timeout(200)
-    assert "$18.50 left of $600" in await text(pg, "[data-trips]")
+    assert "left of budget $18.50" in (await text(pg, "[data-trips]")).lower()
     # the statement shows the trip apart, and says it is not in the totals
     await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(150)
     st = await text(pg, "[data-st-trips]"); assert "TRIPS KEPT APART" in st.upper() and "Miami weekend" in st and "$581.50 of $600" in st and "not decided yet" in st and "Not included in Out or Kept" in st, st
@@ -6226,6 +6226,36 @@ async def you_can_choose_your_country_for_prices_and_offers(ctx):
     assert await sel.count() == 1 and await sel.input_value() == "US"
     await sel.select_option(""); await pg.wait_for_timeout(300); assert "country" not in (await state(pg)), "back to matching the currency"
     assert "Match my currency" in await pg.locator("[data-set-money] select[data-country] option").first.inner_text()
+    assert not pg.errors, pg.errors
+
+@test
+async def loans_log_payments_and_trips_carry_flights(ctx):
+    pg = await open_app(ctx, month_tabs=True)
+    import datetime as _d
+    t = _d.date.today(); f4 = (t + _d.timedelta(days=4)).isoformat(); f6 = (t + _d.timedelta(days=6)).isoformat()
+    await seed(pg, f"s.loans = [{{id:'L1',kind:'car',name:'Car loan',pay:310,every:'mo',total:14800,borrowed:21000,since:'2025-03-05',apr:6.9}}]; s.trips = [{{id:'t1',name:'Miami weekend',start:'{f4}',end:'{f6}',budget:600,items:[]}}]")
+    await tab(pg, "plan"); card = pg.locator("[data-loan=L1]"); v = (await card.inner_text()).lower()
+    assert "6.9% apr" in v and "left to pay" in v and "$14,800" in v and "of $21,000" in v and "paid off by" in v and "interest still to pay" in v and "sooner" in v, v
+    await card.locator("[data-loan-pay]").click(); await pg.wait_for_timeout(200)
+    f = pg.locator("form[data-form=loanPay]"); await f.locator("[name=amount]").fill("400"); await pg.wait_for_timeout(100)
+    assert "$14,400" in await f.locator("[data-pay-owed]").inner_text(), "what is owed after the payment shows as it is typed"
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    st = await state(pg); assert st["loans"][0]["total"] == 14400 and st["loanPays"][0]["amount"] == 400 and st["paid"]["on"]["l:L1"]
+    await pg.locator("[data-loan=L1] [data-loan-hist]").click(); await pg.wait_for_timeout(150)
+    assert "$400" in await pg.locator("[data-loan=L1] [data-debt-hist]").inner_text() and "$90 extra" in await pg.locator("[data-loan=L1] [data-debt-hist]").inner_text()
+    # a flight on the trip: a boarding pass on the trip and a line in Coming up, with the booking number
+    tr = pg.locator("[data-trip=t1]"); await tr.locator("[data-flight-add]").click(); await pg.wait_for_timeout(150)
+    ff = pg.locator("form[data-form=flight]"); await ff.locator("[name=no]").fill("hello"); await ff.locator("[type=submit]").click(); await pg.wait_for_timeout(100)
+    assert "flight number" in await pg.inner_text("#toast")
+    await ff.locator("[name=no]").fill("aa1234"); await ff.locator("[name=date]").fill(f4); await ff.locator("[name=time]").fill("08:05"); await ff.locator("[name=from]").fill("jfk"); await ff.locator("[name=to]").fill("mia"); await ff.locator("[name=ref]").fill("qx7p2l")
+    await ff.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    bp = await pg.locator("[data-trip=t1] .bp").inner_text(); assert "AA 1234" in bp and "JFK" in bp and "MIA" in bp and "QX7P2L" in bp, bp
+    assert "AA1234" in await pg.locator("[data-trip=t1] .bp a").get_attribute("href")
+    await pg.click("[data-tab=month]"); await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(200)
+    up = await pg.inner_text("[data-out=comingUp]"); assert "AA 1234" in up and "QX7P2L" in up, up
+    # once it has left it is gone
+    await seed(pg, f"s.trips[0].flights[0].date = '{(t - _d.timedelta(days=1)).isoformat()}'")
+    await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(150); assert "AA 1234" not in await pg.inner_text("[data-out=comingUp]")
     assert not pg.errors, pg.errors
 
 @test

@@ -439,13 +439,70 @@ details summary::-webkit-details-marker{display:none}
 .cmp-labels{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:center;color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){.cmp-bar{animation:grow .4s ease-out both;transform-origin:bottom}@keyframes grow{from{transform:scaleY(.2)}to{transform:scaleY(1)}}}
 .env-row{padding:0}
+.env-cards{background:none;border:0;box-shadow:none;overflow:visible;display:flex;flex-direction:column;gap:12px}
+.env-cards>.env-row{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--lift);overflow:hidden}
+.env-top{align-items:center!important;gap:12px}
+.env-ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;flex:none;background:var(--chip);color:var(--ink)}
+.env-ic svg{width:21px;height:21px}
+.env-save .env-ic{background:color-mix(in srgb,var(--green) 14%,var(--card));color:var(--green)}
+.env-misc .env-ic{background:color-mix(in srgb,var(--rust) 14%,var(--card));color:var(--rust)}
+[data-loans-row] .env-ic{background:color-mix(in srgb,var(--gold) 18%,var(--card));color:color-mix(in srgb,var(--gold) 70%,var(--ink))}
+.env-t{flex:1 1 auto;min-width:0}.env-t .name{font-size:1.08rem}
+.env-amt{text-align:right;flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:1px}.env-amt .name{font:600 1.2rem/1.15 var(--display);letter-spacing:-.01em}
+.env-amt .pill{margin-top:4px}
+.env-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%}
+.env-foot .env-hint{color:var(--green);font-weight:600;flex:none}
+.plan-card{display:flex;flex-direction:column;gap:12px}.plan-card h2{margin:0}
+.plan-legend b{color:var(--ink);font-weight:650}
 .env-head{appearance:none;border:0;background:none;width:100%;text-align:left;font:inherit;color:inherit;padding:14px 18px;display:flex;flex-direction:column;gap:8px;cursor:pointer}
 .env-head>.row-top,.env-head>.meter{width:100%;box-sizing:border-box;flex:none}  /* Safari does not stretch the children of a button, so the bar had no width */
 .env-head:focus-visible{outline:2px solid var(--green);outline-offset:-3px;border-radius:14px}
-.env-hint{display:inline-flex;align-items:center;gap:4px;align-self:flex-end}
+.env-hint{display:inline-flex;align-items:center;gap:4px}
 .env-row.open .env-hint svg{transform:rotate(180deg)}
 .env-body{padding:0 18px 16px;display:flex;flex-direction:column;gap:0}
 .env-body > .btn.primary{margin-bottom:10px}
+.env-grp{display:flex;justify-content:space-between;gap:10px;font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:14px 0 6px;border-top:1px solid var(--line)}
+.env-body>.env-grp:first-child{border-top:0;padding-top:4px}
+.env-grp+.line,.env-grp+.spend-g,.env-grp+.env-subs{border-top:0}
+.ln{gap:10px}.ln>.tick+.ln-ic{margin-left:2px}
+.ln-ic{width:32px;height:32px;border-radius:10px;background:var(--chip);display:grid;place-items:center;flex:none;color:var(--ink)}.ln-ic.emo{font-size:17px;line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}.debt-emo{width:38px;height:38px;border-radius:12px;font-size:19px!important}.debt-top{align-items:center}.ln-ic svg{width:17px;height:17px}
+.ln-t{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:1px}
+.ln-v{font-weight:600}
+.ln-bar{height:4px;border-radius:4px;background:var(--chip);overflow:hidden;margin-top:5px;max-width:220px}.ln-bar i{display:block;height:100%;border-radius:4px;background:var(--green)}.ln-bar i.over{background:var(--bad,#b5523a)}
+.ln-edit{appearance:none;border:0;background:none;color:var(--muted);padding:6px 0 6px 2px;margin:-6px 0;cursor:pointer;display:grid;place-items:center;flex:none}.ln-edit:focus-visible{outline:2px solid var(--green);border-radius:8px}
+.env-subs{appearance:none;font:inherit;color:inherit;text-align:left;width:100%;display:flex;align-items:center;gap:10px;background:var(--bg);border:0;border-radius:14px;padding:10px 12px;margin:2px 0 4px;cursor:pointer}
+.env-subs .ln-ic{background:var(--card)}.env-subs .ln-t b{font-weight:600}.env-subs>svg{color:var(--muted);flex:none}
+.env-tip{margin:4px 0 6px}
+.env-over{background:color-mix(in srgb,var(--rust) 13%,var(--card));color:color-mix(in srgb,var(--rust) 75%,var(--ink));margin:2px 0 8px}
+.loan-mini{appearance:none;font:inherit;color:inherit;text-align:left;width:100%;display:flex;align-items:center;gap:10px;background:none;border:0;border-top:1px solid var(--line);padding:11px 0;cursor:pointer}.loan-mini .ln-t small{color:var(--muted);font-size:.8rem}.loan-mini .v{text-align:right;font-weight:600}.loan-mini .v small{display:block;font-weight:500;color:var(--muted);font-size:.76rem}.loan-mini>svg{color:var(--muted);flex:none}
+.debt{gap:10px}.debt-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.debt-top .name{font:600 1.12rem var(--display)}
+.debt-owed{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:2px}.debt-owed>div:first-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.debt-owed .lbl{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.debt-big{font:700 1.9rem/1.05 var(--display);letter-spacing:-.02em;white-space:nowrap}
+.debt-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.dt{background:color-mix(in srgb,var(--ink) 5%,transparent);border-radius:13px;padding:9px 11px;display:flex;flex-direction:column;gap:2px;min-width:0}.dt small{color:var(--muted);font-size:.74rem}.dt b{font-size:.92rem;font-weight:650;overflow-wrap:anywhere}
+.debt-tip{margin:0;background:color-mix(in srgb,var(--green) 12%,var(--card));color:color-mix(in srgb,var(--green) 70%,var(--ink));border-radius:13px;padding:10px 12px;font-size:.86rem}
+.debt-note{margin:0;background:var(--bg);border-radius:13px;padding:10px 12px}
+.debt-acts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.debt-main{width:100%;justify-content:center}.debt-links{justify-content:center;gap:18px}
+.debt.done{opacity:.85}
+.pay-after{display:flex;flex-direction:column;gap:6px}.pay-after>div{display:flex;justify-content:space-between;align-items:baseline;background:var(--bg);border-radius:12px;padding:10px 12px}.pay-after b{font-size:1rem}
+.debt-hist .line{padding:9px 0}.debt-hist .line:first-child{border-top:0}
+.ins-steps{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:5px}.ins-steps i{font-style:normal;text-align:center;font-size:.72rem;font-weight:700;padding:7px 0;border-radius:9px;background:var(--chip);color:var(--muted)}.ins-steps i.on{background:var(--green);color:#fff}
+.trip-card{gap:10px}
+.bp{border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,color-mix(in srgb,var(--green) 7%,var(--card)),var(--card));position:relative}
+.bp::before,.bp::after{content:"";position:absolute;top:58%;width:14px;height:14px;border-radius:50%;background:var(--card);border:1px solid var(--line)}.bp::before{left:-8px;clip-path:inset(0 0 0 50%)}.bp::after{right:-8px;clip-path:inset(0 50% 0 0)}
+.bp-top{display:flex;justify-content:space-between;align-items:center}.bp-no{display:inline-flex;align-items:center;gap:6px;color:var(--green)}.bp-no b{color:var(--ink);font-size:1rem;letter-spacing:.02em}
+.bp-route{display:flex;align-items:center;gap:10px}.bp-route>b{font:700 1.6rem/1 var(--display);letter-spacing:.02em}
+.bp-line{flex:1;display:flex;align-items:center;gap:6px;color:var(--green)}.bp-line i{flex:1;border-top:2px dashed color-mix(in srgb,var(--muted) 45%,transparent)}
+.bp-meta{display:flex;gap:18px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:10px}.bp-meta div{display:flex;flex-direction:column;gap:1px}.bp-meta small{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700}.bp-meta b{font-size:.92rem}.bp-ref{letter-spacing:.08em}
+.bp-acts{display:flex;justify-content:space-between;align-items:center}
+.trip-addfl{display:inline-flex;align-items:center;gap:6px;align-self:flex-start}
+.trip-check{background:var(--bg);border-radius:14px;padding:4px 12px}.trip-check-h{appearance:none;border:0;background:none;font:inherit;color:inherit;width:100%;display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;text-align:left}.trip-check-h>span:first-child{flex:none}.trip-check-h svg{color:var(--muted);flex:none;margin-left:auto}
+.trip-check-h[aria-expanded=true] svg{transform:rotate(90deg)}.trip-check-b{padding:0 0 10px}.trip-check-b .line{padding:9px 0}.trip-check-b .line:first-child{border-top:0}
+.up-flight .name svg{vertical-align:-2px;color:var(--green)}
+.pct-in{display:flex}.pct-in input{flex:1;min-width:0}.pct-in em{order:2;padding:0 12px 0 0}
+.env-goals{display:flex;flex-direction:column;gap:12px;background:var(--bg);border-radius:14px;padding:12px}.env-goals .prog-row{display:flex;flex-direction:column;gap:6px}.env-goals p{margin:0}
 .line{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
 .line .inline{flex-wrap:nowrap}
 /* a bill ticked as paid this month, and one-tap repeat spending */
@@ -3128,13 +3185,13 @@ ${progress}`;
 // Two cards that always have something to say, so the first screen is never bare once the week's charges have passed:
 // how far the month's bills have got, and how the savings are building.
 OUT.billsCard = () => { const C = compute();
-  const items = [...S.expenses.filter(e => e.env === "needs").map(e => { const w = swapFor("expense", e.id); return ["e:" + e.id, +(w ? w.altCost : e.amount) || 0]; }), ...(S.loans || []).filter(l => !loanDone(l)).map(l => ["l:" + l.id, loanMonthly(l)])];
+  const items = [...S.expenses.filter(e => e.env === "needs" && !expEveryday(e, C.planKey)).map(e => { const w = swapFor("expense", e.id); return ["e:" + e.id, +(w ? w.altCost : e.amount) || 0]; }), ...(S.loans || []).filter(l => !loanDone(l)).map(l => ["l:" + l.id, loanMonthly(l)])];
   if (!items.length) return "";
   const done = items.filter(([id]) => paidOn(id, C.planKey)), total = r2(items.reduce((a, x) => a + x[1], 0)), paid = r2(done.reduce((a, x) => a + x[1], 0)), all = done.length === items.length;
   return `<section class="card prog-card" data-bills-card><button type="button" class="prog-head" data-bills-open aria-label="Bills this month, open the list"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Bills this month</h2><span class="small ${all ? "good" : "muted"} tnum" data-bills-count>${done.length} of ${items.length} paid</span></div>
     <div class="meter"><i style="width:${total > 0 ? Math.min(100, paid / total * 100).toFixed(1) : 0}%"></i></div>
     <p class="small muted">${all ? "Everything is paid for this month." : done.length ? `<b class="tnum">${fmt(paid)}</b> paid · <b class="tnum">${fmt(r2(total - paid))}</b> still to go` : `${fmt(total)} to pay this month. Tick each bill once it is paid.`}</p></button></section>`; };
-OUT.saveCard = () => { const C = compute(), rows = [];
+function saveRows(C){ const rows = [];
   if (C.efTarget > 0){ const full = S.efSaved >= C.efTarget;
     rows.push(`<div class="prog-row" data-save-ef><div class="inline" style="justify-content:space-between;align-items:baseline"><span class="name">Emergency fund</span><span class="small tnum muted">${fmt(S.efSaved)} of ${fmt(C.efTarget)}</span></div>
       <div class="meter"><i style="width:${Math.min(100, S.efSaved / C.efTarget * 100).toFixed(1)}%"></i></div>
@@ -3143,6 +3200,8 @@ OUT.saveCard = () => { const C = compute(), rows = [];
     rows.push(`<div class="prog-row" data-save-goal><div class="inline" style="justify-content:space-between;align-items:baseline"><span class="name">${esc(S.goalName || "Your goal")}</span><span class="small tnum muted">${fmt(S.goalAmt)}</span></div>
       <div class="meter"><i class="debt" style="width:${Math.min(100, C.toGoal / S.goalAmt * 100).toFixed(1)}%"></i></div>
       <p class="small muted">${C.toGoal > 0 ? `${fmt(C.toGoal)} this month. At this pace it takes about ${n} month${n > 1 ? "s" : ""}.` : "Nothing goes to it this month."}</p></div>`); }
+  return rows; }
+OUT.saveCard = () => { const C = compute(), rows = saveRows(C);
   return rows.length ? `<section class="card prog-card" data-save-card><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Savings</h2><button class="link plain small" type="button" data-save-go>Change</button></div>${rows.join("")}</section>` : ""; };
 OUT.planNote = () => esc(compute().planNote);
 OUT.sym = () => esc(sym());
@@ -3163,8 +3222,9 @@ OUT.stack = () => {
   const C = compute(), tot = Math.max(C.income, C.needs + C.misc, 1);
   const s = Math.max(0, C.savings);
   const ex = r2(C.needs - C.loans), parts = [["Expenditures", ex, "var(--ink)"], ...(C.loans > 0 ? [["Loans", C.loans, "var(--gold)"]] : []), ["Misc", C.misc, "var(--rust)"], ["Savings", s, "var(--green)"]];
-  return `<div class="stack" role="img" aria-label="${parts.map(([n, v]) => `${n} ${fmt(v)}`).join(", ")}">${parts.map(([, v, c]) => `<i style="width:${v/tot*100}%;background:${c}"></i>`).join("")}</div>
-  <div class="legend tnum" style="margin-top:10px">${parts.map(([n, v, c]) => `<span style="--c:${c}">${n} ${fmt(v)}</span>`).join("")}</div>`;
+  return `<section class="card plan-card" data-plan-card><div class="inline" style="justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 10px"><h2>${esc(C.planMonth)} plan</h2><span class="muted small tnum">from ${fmt(C.income)} coming in</span></div>
+  <div class="stack" role="img" aria-label="${parts.map(([n, v]) => `${n} ${fmt(v)}`).join(", ")}">${parts.map(([, v, c]) => `<i style="width:${v/tot*100}%;background:${c}"></i>`).join("")}</div>
+  <div class="legend plan-legend tnum" style="--n:${parts.length > 3 ? 2 : parts.length}">${parts.map(([n, v, c]) => `<span style="--c:${c}">${n} <b>${fmt(v)}</b></span>`).join("")}</div></section>`;
 };
 // Where the month goes, as a ring: the biggest lines each get a slice with its share, the rest are gathered as Other,
 // and what you keep is the green slice. Drawn on the device from the same numbers as the rest of Month.
@@ -3258,6 +3318,21 @@ OUT.dropCard = () => {
 };
 // What is typed in "Add a line" is kept here until it is added, so redrawing the list (after tapping away or closing the keyboard) never wipes it.
 const LINE_DRAFT = {};
+// Each envelope says one thing at a glance (over, room to spare, or ahead), with a short line about what is inside.
+const ENV_IC = {save: () => I.cash, needs: () => I.home, misc: () => I.bag};
+function envSummary(k, C){
+  if (k === "save"){ const ef = C.efTarget > 0 ? Math.min(100, Math.round(S.efSaved / C.efTarget * 100)) : 0, goal = S.goalName && +S.goalAmt > 0 ? S.goalName : "";
+    return C.efTarget > 0 ? `Emergency fund ${ef}%${goal ? ` · ${esc(goal)} ${S.priority === "goal" ? "first" : "next"}` : ""}` : goal ? `Saving for ${esc(goal)}` : "Set aside on payday"; }
+  const exp = S.expenses.filter(e => e.env === k);
+  if (k === "needs"){ const b = exp.filter(e => !expEveryday(e, C.planKey)), done = b.filter(e => paidOn("e:" + e.id, C.planKey)).length, used = r2(exp.filter(e => expEveryday(e, C.planKey)).reduce((a, e) => a + billSpendIn(e.id, C.planKey), 0));
+    return [b.length ? `${done} of ${b.length} bills paid` : "", used > 0.005 ? `${fmt(used)} spent on everyday` : ""].filter(Boolean).join(" · ") || "Nothing here yet"; }
+  const spent = r2(exp.reduce((a, e) => a + billSpendIn(e.id, C.planKey), 0) + (C.spends || 0)), subs = C.liveSubs.filter(x => x.env === "misc").length;
+  return [spent > 0.005 ? `${fmt(spent)} spent so far` : "", subs ? `${subs} subscription${subs === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ") || "Nothing here yet";
+}
+function envPill(k, v, env, C){
+  if (k === "save") return C.savings < 0 ? `<span class="pill flag">${fmt(-C.savings)} short</span>` : v > env + 0.005 ? `<span class="pill ok">${fmt(r2(v - env))} ahead</span>` : v < env - 0.005 ? `<span class="pill grey">${fmt(r2(env - v))} under target</span>` : `<span class="pill ok">On target</span>`;
+  return v > env + 0.005 ? `<span class="pill flag">${fmt(r2(v - env))} over</span>` : `<span class="pill ok">${fmt(r2(env - v))} free</span>`;
+}
 OUT.envelopes = () => {
   const C = compute();
   const rows = [
@@ -3265,14 +3340,14 @@ OUT.envelopes = () => {
     ["needs","Expenditures","Bills, food, getting around", r2(C.needs - C.loans), C.envNeeds, false],   // loans have their own row below, so they are never counted twice
     ["misc","Miscellaneous","The rest of life", C.misc, C.envMisc, false]
   ];
-  return `<div class="rows">${rows.map(([k, n, d, v, env, isSave]) => {
+  return `<div class="rows env-cards">${rows.map(([k, n, d, v, env, isSave]) => {
     const over = !isSave && v > env + 0.005, pct = Math.min(100, env > 0 ? v / env * 100 : 0), open = UI.openEnv === k;
-    return `<div class="row env-row${open ? " open" : ""}">
+    return `<div class="row env-row env-${k}${open ? " open" : ""}">
       <button type="button" class="env-head" data-env-open="${k}" aria-expanded="${open}">
-        <div class="row-top"><div><div class="name" style="font-size:1.1rem">${n}</div><div class="muted small">${d}</div></div>
-        <div><div class="name tnum ${over ? "bad" : ""}" style="font-size:1.1rem">${fmt(v)}</div><div class="small tnum muted">of ${fmt(env)}</div></div></div>
+        <div class="row-top env-top"><span class="env-ic" aria-hidden="true">${ENV_IC[k]()}</span><div class="env-t"><div class="name">${n}</div><div class="muted small">${d}</div></div>
+        <div class="env-amt"><div class="name tnum ${over ? "bad" : ""}">${fmt(v)}</div><div class="small tnum muted">${isSave ? "target " : "of "}${fmt(env)}</div>${envPill(k, v, env, C)}</div></div>
         <div class="meter"><i class="${over ? "over" : ""}" style="width:${pct}%"></i></div>
-        <span class="env-hint small muted">${open ? "Hide details" : "Details"}<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span>
+        <div class="env-foot"><span class="small muted">${envSummary(k, C)}</span><span class="env-hint small">${open ? "Hide details" : "Details"}<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span></div>
       </button>
       ${open ? envDetail(k, C) : ""}</div>`;}).join("")}${loansRow(C)}</div>`;
 };
@@ -3282,10 +3357,10 @@ function loansRow(C){
   const share = C.income > 0 ? C.loans / C.income * 100 : 0, open = UI.openEnv === "loans", owed = r2(live.reduce((a, l) => a + (+l.total || 0), 0));
   return `<div class="row env-row${open ? " open" : ""}" data-loans-row>
     <button type="button" class="env-head" data-env-open="loans" aria-expanded="${open}">
-      <div class="row-top"><div><div class="name" style="font-size:1.1rem">Loans & debts</div><div class="muted small">${live.length} repayment${live.length === 1 ? "" : "s"} each month</div></div>
-      <div><div class="name tnum" style="font-size:1.1rem">${fmt(C.loans)}</div><div class="small tnum muted">${C.income > 0 ? `${share < 1 ? "under 1" : Math.round(share)}% of income` : "a month"}</div></div></div>
+      <div class="row-top env-top"><span class="env-ic" aria-hidden="true">${I.bank}</span><div class="env-t"><div class="name">Loans & debts</div><div class="muted small">${live.length} repayment${live.length === 1 ? "" : "s"} each month</div></div>
+      <div class="env-amt"><div class="name tnum">${fmt(C.loans)}</div><div class="small tnum muted">${C.income > 0 ? `${share < 1 ? "under 1" : Math.round(share)}% of income` : "a month"}</div>${owed > 0 ? `<span class="pill grey">${fmt(owed)} owed</span>` : ""}</div></div>
       <div class="meter"><i class="debt" style="width:${Math.min(100, share)}%"></i></div>
-      <span class="env-hint small muted">${open ? "Hide details" : "Details"}<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span>
+      <div class="env-foot"><span class="small muted">${live.filter(l => paidOn("l:" + l.id, C.planKey)).length} of ${live.length} paid this month</span><span class="env-hint small">${open ? "Hide details" : "Details"}<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span></div>
     </button>
     ${open ? `<div class="env-body">${paidSum(live.map(l => ["l:" + l.id, loanMonthly(l)]), C.planKey)}${live.map(l => { const f = loanFinish(l), pd = paidOn("l:" + l.id, C.planKey); return `<div class="line${pd ? " paid" : ""}">${tickBtn("l:" + l.id, l.name || loanKind(l.kind), C.planKey)}<div><div>${esc(l.name || loanKind(l.kind))}</div><div class="muted small">${pd ? `Paid ${shortDate(pd)}` : esc(loanKind(l.kind)) + (f ? ` · ${f.est ? "about " : "ends "}${monthYear(f.date)}` : "")}</div></div><span class="tnum">${fmt(loanMonthly(l))}</span></div>`; }).join("")}
       ${owed > 0 ? `<p class="muted small">You owe ${fmt(owed)} in total.</p>` : ""}
@@ -3325,23 +3400,43 @@ function spendRow(g){
 function envDetail(k, C){
   if (k === "save"){
     const deps = (S.deposits || []).slice().sort((a,b) => (b.date||"").localeCompare(a.date||""));
+    const goals = saveRows(C), pri = S.priority === "goal" ? `${esc(S.goalName || "your goal")} first` : S.priority === "ef" ? "the emergency fund first" : "both, half each";
     return `<div class="env-body">
+      ${goals.length ? `<div class="env-grp" style="border-top:0;padding-top:4px"><span>Goals</span><button class="link plain small" type="button" data-save-go>Change</button></div><p class="small" style="margin:0 0 6px">This month’s savings go to ${pri}.</p><div class="env-goals">${goals.join("")}</div><div class="env-grp"><span>This month</span></div>` : ""}
       ${C.toSetAside > 0 ? `<button class="btn primary" type="button" data-set-aside>Set aside ${fmt(C.toSetAside)}</button>` : C.savings > 0 ? `<p class="good small">All of ${C.planMonth}’s ${fmt(C.savings)} is set aside.</p>` : `<p class="err">Nothing to set aside: ${C.planMonth} spends more than comes in.</p>`}
-      <p class="muted small">Account balance ${fmt(S.efSaved)}${C.efTarget ? ` of your ${fmt(C.efTarget)} emergency fund target` : ""}.</p>
+      ${goals.length ? "" : `<p class="muted small">Account balance ${fmt(S.efSaved)}${C.efTarget ? ` of your ${fmt(C.efTarget)} emergency fund target` : ""}.</p>`}
       ${deps.length ? deps.map(x => `<div class="line" data-dep="${x.id}"><div><div>Set aside for ${esc(x.label || "")}</div><div class="muted small">${shortDate(x.date)}</div></div><div class="inline"><span class="tnum good">+${fmt(x.amount)}</span><button class="link danger-link" type="button" data-undo-dep>Undo</button></div></div>`).join("") : `<p class="muted">Nothing in this account yet.</p>`}
     </div>`;
   }
   const exp = S.expenses.filter(e => e.env === k);
   const subs = C.liveSubs.filter(s => s.env === k), subsNow = subs.filter(sb => sb.cycle !== "yr" || subCostIn(sb, C.planKey));
+  const CHEV = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
+  const grp = (label, total) => `<div class="env-grp"><span>${label}</span>${total != null ? `<span class="tnum">${fmt(total)}</span>` : ""}</div>`;
+  const cost = e => { const w = swapFor("expense", e.id); return +(w ? w.altCost : e.amount) || 0; };
+  const line = e => { if (UI.expEdit === e.id) return `<div class="inc-row editing" data-exp="${e.id}">${expForm(e)}</div>`;
+    const w = swapFor("expense", e.id), pd = k === "needs" ? paidOn("e:" + e.id, C.planKey) : "", plan = +e.amount || 0, u = billSpendIn(e.id, C.planKey);
+    const sub = pd ? `Paid ${shortDate(pd)}` : w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : e.due ? `Due on the ${ordinal(e.due)}` : "";
+    return `<div class="line ln${pd ? " paid" : ""}" data-exp="${e.id}">${k === "needs" && !everyday(e) ? tickBtn("e:" + e.id, e.name, C.planKey) : ""}<span class="ln-ic emo" aria-hidden="true">${emoFor(e.name)}</span><div class="ln-t"><div>${esc(e.name)}</div>${sub ? `<div class="muted small">${sub}</div>` : ""}${u > 0 ? `<div class="small ${u > plan ? "bad" : "muted"}" data-bill-used>${fmt(u)} of ${fmt(plan)} used${u > plan ? `, ${fmt(r2(u - plan))} over` : `, ${fmt(r2(plan - u))} left`}</div>` : everyday(e) && !sub ? `<div class="small muted">Nothing spent yet</div>` : ""}${everyday(e) ? `<div class="ln-bar"><i class="${u > plan ? "over" : ""}" style="width:${plan > 0 ? Math.min(100, u / plan * 100) : u > 0 ? 100 : 0}%"></i></div>` : ""}${billTag(e)}</div><span class="tnum ln-v">${fmt(cost(e))}</span><button class="ln-edit" type="button" data-exp-edit aria-label="Edit ${esc(e.name)}">${CHEV}</button></div>`; };
+  const everyday = e => k === "misc" || expEveryday(e, C.planKey);
+  const bills = k === "needs" ? exp.filter(e => !everyday(e)) : [], days = exp.filter(everyday);
+  const sum = list => r2(list.reduce((a, e) => a + cost(e), 0));
+  const spends = k === "misc" ? spendGroups(C.planKey) : [], counted = k === "misc" ? (S.trips || []).filter(t => t.settled === "counted" && t.countKey === C.planKey) : [];
+  const gives = k === "misc" && GIVING_ON ? (S.giving || []).filter(g => g.every !== "yr" || !g.on || giveCostIn(g, C.planKey)) : [];
+  const subTot = r2(subsNow.reduce((a, sb) => a + subCostIn(sb, C.planKey), 0)), flagged = subsNow.filter(sb => C.flagged.includes(sb)), yearly = subsNow.filter(sb => sb.cycle === "yr");
+  const subNames = subsNow.slice(0, 3).map(sb => sb.name).join(", ") + (subsNow.length > 3 ? ` and ${subsNow.length - 3} more` : "");
   return `<div class="env-body">
-    ${k === "misc" ? spendGroups(C.planKey).map(spendRow).join("") : ""}
-    ${k === "misc" && GIVING_ON ? (S.giving || []).filter(g => g.every !== "yr" || !g.on || giveCostIn(g, C.planKey)).map(g => `<div class="line" data-give-line="${g.id}"><div><div>${esc(g.name || giveCause(g.cause))}</div><div class="muted small">Giving · ${g.every === "yr" ? `yearly, ${fmt(g.amount)} · ${giveCostIn(g, C.planKey) && g.on ? "given this month" : g.on ? `next ${dateWithYear(nextAnniv(g.on), true)}` : "add the date"}` : esc(giveEvery(g.every)[1])}</div></div><div class="inline"><span class="tnum">${fmt(giveCostIn(g, C.planKey))}</span><button class="link plain" type="button" data-go="plan">Edit</button></div></div>`).join("") : ""}
-    ${k === "needs" ? paidSum(exp.map(e => { const w = swapFor("expense", e.id); return ["e:" + e.id, +(w ? w.altCost : e.amount) || 0]; }), C.planKey) : ""}
-    ${exp.map(e => { if (UI.expEdit === e.id) return `<div class="inc-row editing" data-exp="${e.id}">${expForm(e)}</div>`;
-      const w = swapFor("expense", e.id), pd = k === "needs" ? paidOn("e:" + e.id, C.planKey) : ""; return `<div class="line${pd ? " paid" : ""}" data-exp="${e.id}">${k === "needs" ? tickBtn("e:" + e.id, e.name, C.planKey) : ""}<div><div>${esc(e.name)}</div>${pd || w || e.due ? `<div class="muted small">${pd ? `Paid ${shortDate(pd)}` : w ? `Using ${esc(w.alt)} (was ${fmt(e.amount)})` : `Due on the ${ordinal(e.due)}`}</div>` : ""}${(u => u > 0 ? `<div class="small ${u > (+e.amount || 0) ? "bad" : "muted"}" data-bill-used>${fmt(u)} of ${fmt(+e.amount || 0)} used${u > (+e.amount || 0) ? `, ${fmt(r2(u - (+e.amount || 0)))} over` : ""}</div>` : "")(billSpendIn(e.id, C.planKey))}${billTag(e)}</div><div class="inline"><span class="tnum">${fmt(w ? w.altCost : e.amount)}</span><button class="link plain small" type="button" data-exp-edit aria-label="Edit ${esc(e.name)}">Edit</button></div></div>`; }).join("")}
-    ${subsNow.map(sb => `<div class="line"><div><div>${esc(sb.name)}</div><div class="muted small">${sb.cycle === "yr" ? `Yearly, ${fmt(sb.price)} · ${subCharged(sb, C.planKey) ? "charged this month" : nextRenewal(sb) ? `next ${shortDate(isoOf(nextRenewal(sb)))}` : "paid for the year"}` : "Subscription"}</div></div><div class="inline"><span class="tnum">${fmt(subCostIn(sb, C.planKey))}</span><button class="link" type="button" data-go="subs">Manage</button></div></div>`).join("")}
-    ${k === "misc" ? (S.trips || []).filter(t => t.settled === "counted" && t.countKey === C.planKey).map(t => `<div class="line"><div><div>Trip: ${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))} · counted this month only</div></div><span class="tnum">${fmt(tripTotal(t))}</span></div>`).join("") : ""}
-    ${!exp.length && !subsNow.length && !(k === "misc" && (C.trips > 0 || C.spends > 0)) ? `<p class="muted">Nothing here yet.</p>` : ""}
+    ${spends.length || counted.length ? grp("This month only", r2(spends.reduce((a, g) => a + g.items.reduce((b, x) => b + x.amount, 0), 0) + counted.reduce((a, t) => a + tripTotal(t), 0))) : ""}
+    ${spends.map(spendRow).join("")}
+    ${counted.map(t => `<div class="line"><div><div>Trip: ${esc(t.name)}</div><div class="muted small">${esc(tripRange(t))} · counted this month only</div></div><span class="tnum">${fmt(tripTotal(t))}</span></div>`).join("")}
+    ${(() => { if (k !== "needs") return ""; const v = r2(C.needs - C.loans), over = r2(v - C.envNeeds); if (over <= 0.005) return ""; const flex = days.slice().sort((a, b) => cost(b) - cost(a))[0];
+      return `<p class="debt-tip env-over" data-env-over>${fmt(over)} over the plan.${flex ? ` Biggest flexible line: <b>${esc(flex.name)}, ${fmt(cost(flex))}</b>.` : ""}</p>`; })()}
+    ${k === "needs" && bills.length ? paidSum(bills.map(e => ["e:" + e.id, cost(e)]), C.planKey) : ""}
+    ${bills.length ? grp("Bills", sum(bills)) + bills.map(line).join("") : ""}
+    ${days.length ? grp(k === "needs" ? "Everyday · spent so far" : "Everyday", sum(days)) + days.map(line).join("") : ""}
+    ${gives.length ? grp("Giving") + gives.map(g => `<div class="line" data-give-line="${g.id}"><div><div>${esc(g.name || giveCause(g.cause))}</div><div class="muted small">Giving · ${g.every === "yr" ? `yearly, ${fmt(g.amount)} · ${giveCostIn(g, C.planKey) && g.on ? "given this month" : g.on ? `next ${dateWithYear(nextAnniv(g.on), true)}` : "add the date"}` : esc(giveEvery(g.every)[1])}</div></div><div class="inline"><span class="tnum">${fmt(giveCostIn(g, C.planKey))}</span><button class="link plain" type="button" data-go="plan">Edit</button></div></div>`).join("") : ""}
+    ${subsNow.length ? grp("Subscriptions", subTot) + `<button class="env-subs" type="button" data-go="subs" data-env-subs><span class="ln-ic emo" aria-hidden="true">${EMO.subs}</span><span class="ln-t"><b>${subsNow.length} subscription${subsNow.length === 1 ? "" : "s"}</b><span class="muted small">${esc(subNames)}${yearly.some(sb => subCharged(sb, C.planKey)) ? ` · ${esc(yearly.filter(sb => subCharged(sb, C.planKey)).map(sb => sb.name).join(", "))} charged this month` : ""}</span></span>${flagged.length ? `<span class="pill flag">${flagged.length} flagged</span>` : ""}${CHEV}</button>
+      ${flagged.length ? `<p class="small good env-tip">Dropping the ${flagged.length === 1 ? "flagged one" : `${flagged.length} flagged ones`} keeps ${fmt(r2(flagged.reduce((a, sb) => a + subCostIn(sb, C.planKey), 0)))} a month.</p>` : ""}` : ""}
+    ${!exp.length && !subsNow.length && !spends.length && !counted.length && !gives.length ? `<p class="muted">Nothing here yet.</p>` : ""}
     <div class="inline add-line" data-add-line="${k}"><input data-new-name placeholder="Add a line" aria-label="New line name" enterkeyhint="next" value="${esc((LINE_DRAFT[k]||{}).n||"")}" style="flex:2 1 140px"><input data-new-amt inputmode="decimal" placeholder="0" aria-label="Amount per month" enterkeyhint="done" value="${esc((LINE_DRAFT[k]||{}).a||"")}" style="flex:1 1 80px"><button class="btn" type="button" data-add-line-btn>Add</button></div>
     ${UI.expAdd === k ? `<div class="inc-row editing">${expForm(null, k)}</div>` : `<button class="link plain small" type="button" data-add-exp="${k}" style="align-self:flex-start">More options</button>`}
   </div>`;
@@ -3867,16 +3962,35 @@ function cardPayForm(c){
 }
 function cardTile(c, credit){
   const lim = +c.limit || 0, owed = +c.total || 0, paidNow = credit ? cardPaidIn(c.id, planPeriodNow().key) : 0, pct = lim > 0 ? Math.min(100, owed / lim * 100) : 0;
-  const fee = +c.fee > 0 ? `Yearly fee ${fmt(+c.fee)}${c.feeOn ? ` on ${dayMonth(new Date(c.feeOn + "T00:00:00"))}` : ""}` : "";
-  const due = credit ? (+c.pay > 0 ? `${fmt(+c.pay)} a month${c.due ? `, due on the ${ordinal(+c.due)}` : ""}` : "") : (+c.charge > 0 ? `${fmt(+c.charge)} a month${c.day ? ` on the ${ordinal(+c.day)}` : ""}` : "");
+  const fee = +c.fee > 0 ? `${fmt(+c.fee)}${c.feeOn ? ` · ${dayMonth(new Date(c.feeOn + "T00:00:00"))}` : ""}` : "";
   if (UI.cardEdit === c.id) return `<div class="inc-row editing" data-card="${c.id}">${cardForm(c, credit)}</div>`;
-  return `<div class="card-item" data-card="${c.id}">
-    <div class="cc ${credit ? "cc-credit" : "cc-debit"}" style="${ccBg(c, credit)}"><div class="cc-top"><span class="cc-kind">${credit ? "Credit" : "Debit"}</span><span class="cc-net">${esc(NET_MARK[c.card] || c.card || "")}</span></div>
-      <div class="cc-name">${esc(c.name || c.card || "Card")}</div><div class="cc-num tnum">•••• ${esc(c.last4 || "····")}</div></div>
-    ${credit && lim > 0 ? `<div class="meter cc-meter${pct >= 90 ? " over" : ""}"><i style="width:${pct}%"></i></div><div class="inline cc-row"><span class="small tnum">${fmt(owed)} used</span><span class="small tnum ${owed > lim ? "bad" : "muted"}">${owed > lim ? `${fmt(r2(owed - lim))} over the ${fmt(lim)} limit` : `${fmt(r2(lim - owed))} available of ${fmt(lim)}`}</span></div>` : credit && owed > 0 ? `<p class="small tnum" style="margin:0">${fmt(owed)} owed</p>` : ""}
-    ${due || fee ? `<p class="muted small" style="margin:0">${[due, fee].filter(Boolean).join(" · ")}</p>` : ""}
-    ${credit && paidNow > 0 ? `<p class="small good tnum" style="margin:0" data-card-paid>Paid ${fmt(paidNow)} this month</p>` : ""}
-    ${credit && UI.cardPay === c.id ? cardPayForm(c) : `<div class="cc-acts">${credit ? `<button class="link plain small" type="button" data-card-pay="pay">Log a payment</button><button class="link plain small" type="button" data-card-pay="charge">Add a charge</button>` : ""}<button class="link plain small" type="button" data-card-edit>Edit</button></div>`}</div>`;
+  const plate = `<div class="cc ${credit ? "cc-credit" : "cc-debit"}" style="${ccBg(c, credit)}"><div class="cc-top"><span class="cc-kind">${credit ? "Credit" : "Debit"}</span><span class="cc-net">${esc(NET_MARK[c.card] || c.card || "")}</span></div>
+      <div class="cc-name">${esc(c.name || c.card || "Card")}</div><div class="cc-num tnum">•••• ${esc(c.last4 || "····")}</div></div>`;
+  if (!credit){ const nd = c.day ? dayNext(c.day) : null;
+    return `<div class="card-item" data-card="${c.id}">${plate}
+      ${+c.charge > 0 ? `<div class="debt-owed"><div><span class="lbl">Monthly charge</span><b class="tnum debt-big">${fmt(+c.charge)}</b></div><div class="muted small tnum" style="text-align:right">${fmt(r2(+c.charge * 12 + (+c.fee || 0)))} a year</div></div>` : ""}
+      ${nd || fee ? `<div class="debt-tiles">${nd ? tile("Next charge", `${fmt(+c.charge)} · ${dayMonth(nd)}`) : ""}${fee ? tile("Yearly fee", fee) : ""}</div>` : ""}
+      ${+c.charge > 0 ? `<p class="debt-tip">Many banks drop this fee with a minimum balance or direct deposit. Worth asking: ${fmt(r2(+c.charge * 12))} a year.</p>` : ""}
+      <div class="debt-acts"><span class="inline" style="gap:16px;margin-left:auto"><button class="link plain small" type="button" data-card-edit>Edit</button></span></div></div>`; }
+  const F = debtFacts(c), nd = c.due ? dayNext(c.due) : null, hist = debtHist(c), open = UI.loanHist === c.id, f = !F.end && owed > 0 && +c.pay > 0 ? Math.ceil(owed / c.pay) : 0;
+  const tiles = [
+    tile("Next payment", `${+c.pay > 0 ? fmt(+c.pay) : "Log it"}${nd ? ` · ${dayMonth(nd)}` : ""}`),
+    paidNow > 0 ? tile("Paid this month", fmt(paidNow)) : F.intMonth > 0 ? tile("Interest this month", `${fmt(F.intMonth)} · ${F.rate.apr}% APR`) : null,
+    F.end ? tile("Paid off by", monthYear(F.end)) : f ? tile("Paid off by", `about ${monthYear(new Date(todayMid().getFullYear(), todayMid().getMonth() + f, 1))}`) : null,
+    F.base && !F.base.never && F.rate.apr > 0 ? tile("Interest until then", fmt(Math.round(F.base.interest))) : fee ? tile("Yearly fee", fee) : null].filter(Boolean);
+  const tip = F.tip && F.rate.apr > 0 ? `<p class="debt-tip">Pay <b>${fmt(r2(+c.pay + F.tip.x))}</b> a month instead: paid off <b>${spanText(F.tip.saveM)} sooner</b>, saving <b>${fmt(Math.round(F.tip.saveI))}</b>.</p>`
+    : F.base && F.base.never ? `<p class="small bad">At ${fmt(+c.pay)} a month the interest is more than the payment, so the balance keeps growing.</p>`
+    : owed > 0 && !F.rate ? `<p class="debt-note muted small">Add the card’s interest rate to see what it costs and how to finish sooner. <button class="link small" type="button" data-card-edit>Add APR</button></p>` : "";
+  return `<div class="card-item" data-card="${c.id}">${plate}
+    ${lim > 0 ? `<div class="debt-owed"><div><span class="lbl">Owed</span><b class="tnum debt-big">${fmt(owed)}</b></div><div class="small tnum ${owed > lim ? "bad" : "muted"}" style="text-align:right">${owed > lim ? `${fmt(r2(owed - lim))} over the ${fmt(lim)} limit` : `${fmt(r2(lim - owed))} available<br>of ${fmt(lim)}`}</div></div>
+      <div class="meter cc-meter${pct >= 90 ? " over" : ""}"><i style="width:${pct}%"></i></div><div class="cc-row sr-only"><span class="small tnum">${fmt(owed)} used</span><span class="small tnum">${owed > lim ? `${fmt(r2(owed - lim))} over the ${fmt(lim)} limit` : `${fmt(r2(lim - owed))} available of ${fmt(lim)}`}</span></div>`
+      : owed > 0 ? `<div class="debt-owed"><div><span class="lbl">Owed</span><b class="tnum debt-big">${fmt(owed)}</b></div><div class="muted small" style="text-align:right">${fmt(owed)} owed</div></div>` : ""}
+    <div class="debt-tiles">${tiles.join("")}</div>${tip}
+    ${paidNow > 0 ? `<p class="small good tnum" style="margin:0" data-card-paid>Paid ${fmt(paidNow)} this month</p>` : ""}
+    ${UI.cardPay === c.id ? (UI.cardPayMode === "charge" ? cardPayForm(c) : payForm(c)) : ""}
+    ${open ? debtHistList(c) : ""}
+    ${UI.cardPay === c.id ? "" : `<button class="btn small primary debt-main" type="button" data-card-pay="pay">Log a payment</button>`}
+    <div class="cc-acts debt-links"><button class="link plain small" type="button" data-card-pay="charge">Add a charge</button><button class="link plain small" type="button" data-loan-hist aria-expanded="${open}">${open ? "Hide history" : `History${hist.length ? ` (${hist.length})` : ""}`}</button><button class="link plain small" type="button" data-card-edit>Edit</button></div></div>`;
 }
 function cardForm(c, credit){
   const t = c ? (credit ? "credit" : "debit") : (UI.cardNew || "credit"), v = k => c && c[k] != null && c[k] !== 0 ? esc(c[k]) : "";
@@ -3890,8 +4004,9 @@ function cardForm(c, credit){
       <label class="field"><span>Last four <small class="muted">optional</small></span><input name="last4" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="1234" value="${v("last4")}"></label></div>
     <label class="field"><span>Name <small class="muted">optional</small></span><input name="name" enterkeyhint="next" placeholder="e.g. Chase Freedom" value="${v("name")}"></label>
     <div class="field"><span>Colour <small class="muted">optional</small></span><div class="cc-colors" role="radiogroup" aria-label="Card colour">${CARD_COLORS.map(([k, n, a, b]) => `<label class="cc-color" title="${n}"><input type="radio" name="color" value="${k}" ${(c && c.color) === k ? "checked" : ""} aria-label="${n}"><i style="background:linear-gradient(135deg,${a},${b})"></i></label>`).join("")}</div></div>
-    <div class="grid2" data-only="credit"><label class="field"><span>Limit <small class="muted">optional</small></span>${money("limit")}</label><label class="field"><span>Balance <small class="muted">optional</small></span>${money("balance")}</label></div>
-    <div class="grid2" data-only="credit"><label class="field"><span>Payment a month <small class="muted">optional</small></span>${money("pay")}</label><label class="field"><span>Due on</span>${days("due", c && c.due)}</label></div>
+    <div class="grid2" data-only="credit"><label class="field"><span>Credit limit <small class="muted">optional</small></span>${money("limit")}</label><label class="field"><span>Owed on it now <small class="muted">optional</small></span>${money("balance")}</label></div>
+    <div class="grid2" data-only="credit"><label class="field"><span>Usual payment <small class="muted">optional</small></span>${money("pay")}</label><label class="field"><span>Due on</span>${days("due", c && c.due)}</label></div>
+    <label class="field" data-only="credit"><span>Interest rate (APR) <small class="muted">optional, from your statement</small></span><span class="money-in pct-in"><input name="apr" inputmode="decimal" enterkeyhint="next" placeholder="e.g. 24.9" value="${c && c.apr != null && c.apr !== "" ? esc(c.apr) : ""}"><em>%</em></span></label>
     <div class="grid2" data-only="debit"><label class="field"><span>Monthly charge <small class="muted">optional</small></span>${money("charge")}</label><label class="field"><span>Charged on</span>${days("day", c && c.day)}</label></div>
     <label class="field"><span>Yearly fee <small class="muted">optional</small></span>${money("fee")}</label>
     <div class="field" data-card-feeon><span>Fee charged every year on</span>${mdPick("feeOn", c && c.feeOn, "Yearly fee date")}</div>
@@ -4511,6 +4626,8 @@ OUT.comingUp = () => {
         <div class="up-main"><div class="name">Payday</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">+${fmt(+S.pay.amount || 0)}</div></div>`}));
   (S.extras || []).map(x => ({x, d: nextIncome(x)})).filter(v => v.d && daysUntil(v.d) <= 7 && !incomeLogged(v.x, isoOf(v.d))).forEach(({x, d}) => items.push({d, o: 3, html: `<div class="up-row in">${dateCell(d)}
         <div class="up-main"><div class="name">${esc(x.name)}</div><div class="small good">${whenLabel(daysUntil(d))} · money in</div></div><div class="tnum name good">${extraFixed(x) ? "+" + fmt(x.amount) : `<span class="small">amount varies</span>`}</div></div>`}));
+  (S.trips || []).forEach(t => flightsAhead(t).filter(x => daysUntil(new Date(x.at.getFullYear(), x.at.getMonth(), x.at.getDate())) <= 7).forEach(({f, at}) => { const d = new Date(at.getFullYear(), at.getMonth(), at.getDate());
+    items.push({d, o: 4, html: `<div class="up-row up-flight" data-up-flight="${f.id}">${dateCell(d)}<div class="up-main"><div class="name">${PLANE} ${esc(flightNo(f.no))}${f.from || f.to ? ` · ${esc(f.from || "?")} → ${esc(f.to || "?")}` : ""}</div><div class="small muted">${esc(flightWhen(at))}${f.ref ? ` · Booking ${esc(f.ref)}` : ""}${f.seat ? ` · Seat ${esc(f.seat)}` : ""} · ${esc(t.name)}</div></div><a class="link small" href="${flightCheckUrl(f)}" target="_blank" rel="noopener">Check</a></div>`}); }));
   (S.trips || []).filter(t => tripSoon(t) && daysUntil(isoDate(t.start)) <= 7).forEach(t => { const d = isoDate(t.start), b = +t.budget || 0; items.push({d, o: 4, html: `<div class="up-row" data-up-trip="${t.id}">${dateCell(d)}
         <div class="up-main"><div class="name">${esc(t.name)}</div><div class="small muted">${whenLabel(daysUntil(d))} · ${isEvent(t) ? "event" : "trip"} starts, its own budget</div></div><div class="tnum name">${b > 0 ? fmt(b) : ""}</div></div>`}); });
   if (plusOn() && S.biz){   // KeepWise Plus: business money due soon
@@ -5326,6 +5443,45 @@ async function placeSearch(inp){
 const placeChip = t => !t.place ? "" : t.geo && isFinite(t.geo.lat) && isFinite(t.geo.lon)
   ? `<a class="place-chip" data-place-chip href="https://www.openstreetmap.org/?mlat=${t.geo.lat}&mlon=${t.geo.lon}#map=13/${t.geo.lat}/${t.geo.lon}" target="_blank" rel="noopener" aria-label="${esc(t.place)}, open on the map">${MAP_PIN}<span>${esc(t.place)}</span></a>`
   : `<span class="place-chip" data-place-chip>${MAP_PIN}<span>${esc(t.place)}</span></span>`;
+
+/* ---- Flights on a trip ----
+   Typed in by you: flight number, when it leaves, from and to, booking or ticket number, seat. Shown like a boarding pass
+   on the trip and in Coming up for the week before, and gone once it has left. KeepWise has no live flight data, so
+   "Check flight" opens a search for that flight's current status. */
+const FLIGHT_RE = /^[A-Z0-9]{2}\s?\d{1,4}[A-Z]?$/i;
+const flightNo = n => String(n || "").toUpperCase().replace(/^([A-Z0-9]{2})\s*(\d)/, "$1 $2").trim();
+const flightAt = f => { const [d, tm] = [String(f.date || ""), String(f.time || "00:00")]; if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null; const [y, m, dd] = d.split("-").map(Number), [h, mi] = tm.split(":").map(Number); return new Date(y, m - 1, dd, h || 0, mi || 0); };
+const flightsAhead = t => (t.flights || []).map(f => ({f, at: flightAt(f)})).filter(x => x.at && x.at.getTime() > Date.now()).sort((a, b) => a.at - b.at);
+const flightWhen = at => { const n = daysUntil(new Date(at.getFullYear(), at.getMonth(), at.getDate())), tm = at.toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"}); return n === 0 ? `Today, ${tm}` : n === 1 ? `Tomorrow, ${tm}` : `${at.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})}, ${tm}`; };
+const flightCheckUrl = f => `https://www.google.com/search?q=${encodeURIComponent(flightNo(f.no).replace(/\s/g, "") + " flight status")}`;
+const PLANE = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
+function flightForm(t, f){ const d = f || {};
+  return `<form class="inc-form flight-form" data-form="flight" data-flight-id="${f ? f.id : ""}"><div class="grid2"><label class="field"><span>Flight number</span><input name="no" value="${esc(d.no || "")}" placeholder="e.g. AA 1234" autocapitalize="characters" autocomplete="off" maxlength="8" enterkeyhint="next"></label>
+      <label class="field"><span>Seat <small class="muted">optional</small></span><input name="seat" value="${esc(d.seat || "")}" placeholder="14C" maxlength="5" autocapitalize="characters" autocomplete="off" enterkeyhint="next"></label></div>
+    <div class="grid2"><label class="field"><span>Date</span><input name="date" type="date" value="${esc(d.date || t.start || "")}"></label><label class="field"><span>Leaves at</span><input name="time" type="time" value="${esc(d.time || "")}"></label></div>
+    <div class="grid2"><label class="field"><span>From <small class="muted">airport</small></span><input name="from" value="${esc(d.from || "")}" placeholder="JFK" maxlength="4" autocapitalize="characters" autocomplete="off" enterkeyhint="next"></label><label class="field"><span>To</span><input name="to" value="${esc(d.to || "")}" placeholder="MIA" maxlength="4" autocapitalize="characters" autocomplete="off" enterkeyhint="next"></label></div>
+    <label class="field"><span>Booking or ticket number <small class="muted">optional</small></span><input name="ref" value="${esc(d.ref || "")}" placeholder="e.g. ABC123" maxlength="20" autocapitalize="characters" autocomplete="off" enterkeyhint="done"></label>
+    <div class="grid2">${f ? `<button class="btn danger" type="button" data-flight-del>Remove</button>` : `<button class="btn" type="button" data-flight-cancel>Cancel</button>`}<button class="btn primary" type="submit">${f ? "Save" : "Add flight"}</button></div>
+    ${f ? `<button class="link plain small" type="button" data-flight-cancel style="align-self:center">Cancel</button>` : ""}</form>`; }
+function boardingPass(t, f, at){ const n = daysUntil(new Date(at.getFullYear(), at.getMonth(), at.getDate()));
+  return `<div class="bp" data-flight="${f.id}"><div class="bp-top"><span class="bp-no">${PLANE}<b>${esc(flightNo(f.no))}</b></span><span class="pill ${n <= 1 ? "gold" : "grey"}">${n === 0 ? "Today" : n === 1 ? "Tomorrow" : `In ${n} days`}</span></div>
+    <div class="bp-route"><b>${esc(f.from || "···")}</b><span class="bp-line" aria-hidden="true"><i></i>${PLANE}<i></i></span><b>${esc(f.to || "···")}</b></div>
+    <div class="bp-meta"><div><small>Leaves</small><b>${esc(flightWhen(at))}</b></div>${f.ref ? `<div><small>Booking</small><b class="bp-ref">${esc(f.ref)}</b></div>` : ""}${f.seat ? `<div><small>Seat</small><b>${esc(f.seat)}</b></div>` : ""}</div>
+    ${n <= 1 ? `<p class="small" style="margin:0">${n === 0 ? "Have your boarding pass ready." : "Online check-in is usually open now."}</p>` : ""}
+    <div class="bp-acts"><a class="link small" href="${flightCheckUrl(f)}" target="_blank" rel="noopener">Check flight status</a><button class="link plain small" type="button" data-flight-edit>Edit</button></div></div>`; }
+function tripFlights(t){ const st = tripState(t); if (st === "counted" || st === "separate" || st === "ended") return "";
+  const list = flightsAhead(t), editing = UI.flightEdit && (t.flights || []).find(f => f.id === UI.flightEdit);
+  return `${list.map(({f, at}) => editing && editing.id === f.id ? flightForm(t, f) : boardingPass(t, f, at)).join("")}${UI.flightAdd === t.id ? flightForm(t, null) : `<button class="link small trip-addfl" type="button" data-flight-add>${PLANE} Add a flight</button>`}`; }
+/* A short checklist for getting ready, from two weeks before until the trip ends. Your own items can be added. */
+const CHECK_FLY = ["Passport or ID", "Check in online, usually 24 hours before", "Boarding pass on your phone", "Bags packed and weighed", "Ride to the airport"];
+const CHECK_TRIP = ["Bookings confirmed", "Bags packed", "Card works where you are going"];
+const CHECK_EVENT = ["Gift or tickets sorted", "Outfit ready", "Getting there planned"];
+const tripChecks = t => t.check || (isEvent(t) ? CHECK_EVENT : (t.flights || []).length ? CHECK_FLY : CHECK_TRIP).map((x, i) => ({id: "d" + i, t: x, done: false}));
+function tripChecklist(t, st, toGo){ if (!(st === "active" || (st === "upcoming" && toGo <= 14))) return "";
+  const list = tripChecks(t), done = list.filter(x => x.done).length, open = UI.checkOpen === t.id;
+  return `<div class="trip-check" data-trip-check><button class="trip-check-h" type="button" data-check-open aria-expanded="${open}"><span><b>Checklist</b> <span class="muted small">${done} of ${list.length} done</span></span><span class="ln-bar" style="flex:1;max-width:120px;margin:0"><i style="width:${list.length ? done / list.length * 100 : 0}%"></i></span>${I.chev}</button>
+    ${open ? `<div class="trip-check-b">${list.map(x => `<div class="line${x.done ? " paid" : ""}" data-check="${x.id}"><button class="tick" type="button" data-check-tick aria-pressed="${!!x.done}" aria-label="${x.done ? "Done: " : "Mark done: "}${esc(x.t)}">${TICK_SVG}</button><div style="flex:1;min-width:0">${esc(x.t)}</div><button class="link danger-link small" type="button" data-check-del aria-label="Remove ${esc(x.t)}">Remove</button></div>`).join("")}
+      <form class="inline" data-form="checkAdd" style="gap:8px;margin-top:8px"><input name="q" placeholder="Add to the list" aria-label="Add to the checklist" maxlength="60" enterkeyhint="done" autocomplete="off" style="flex:1 1 150px"><button class="btn small" type="submit">Add</button></form></div>` : ""}</div>`; }
 function tripForm(t, draft){
   const today = isoOf(todayMid()), ev = isEvent(t) || (!t && draft && draft.kind === "event");
   const d = t || {name: "", start: today, end: ev ? today : isoOf(dayPlus(todayMid(), 6)), budget: "", cur: "", etype: "wedding", place: "", people: "", ...(draft || {})};
@@ -5349,9 +5505,21 @@ function tripCard(t){
   const tag = st === "active" ? `<span class="pill ok">${tripDays(t) === 1 ? "Today" : `Day ${dayNo} of ${tripDays(t)}`}</span>` : st === "upcoming" ? `<span class="pill grey">${toGo === 1 ? "Starts tomorrow" : `Starts in ${toGo} days`}</span>`
     : st === "ended" ? `<span class="pill gold">Ended</span>` : st === "counted" ? `<span class="pill grey">Counted in ${esc(keyLabel(t.countKey).split(" ")[0])}</span>` : `<span class="pill grey">Kept separate</span>`;
   const days = {}; (t.items || []).forEach(x => (days[x.date] = days[x.date] || []).push(x));
-  return `<div class="inc-row" data-trip="${t.id}"><div class="row-top"><div style="min-width:0"><div class="name">${esc(t.name)}</div>${t.place ? `<div>${placeChip(t)}</div>` : ""}${about ? `<div class="small" data-event-about>${esc(about)}</div>` : ""}<div class="muted small">${esc(tripRange(t))}${t.cur && t.cur !== S.cur ? ` · paying in ${esc(t.cur)}` : ""}</div></div><div style="text-align:right">${tag}</div></div>
-    <div class="row-top"><div class="muted small">${b > 0 ? (over ? `${fmt(r2(tot - b))} over the ${fmt(b)} budget` : `${fmt(r2(b - tot))} left of ${fmt(b)}`) : "No budget set"}</div><div class="name tnum ${over ? "bad" : ""}">${fmt(tot)}<span class="muted small"> spent</span></div></div>
+  const left = r2(b - tot), daysLeft = st === "active" ? Math.max(1, tripDays(t) - dayNo + 1) : tripDays(t), big = (t.items || []).slice().sort((x, y) => y.amount - x.amount)[0];
+  const sumOn = iso => r2((t.items || []).filter(x => x.date === iso).reduce((a, x) => a + x.amount, 0)), tIso = isoOf(todayMid()), yIso = isoOf(dayPlus(todayMid(), -1));
+  const weeks = st === "upcoming" ? Math.max(1, Math.ceil(toGo / 7)) : 0;
+  const tiles = [
+    st === "active" && b > 0 && !over ? tile("Per day left", `${fmt(r2(left / daysLeft))} · ${daysLeft} day${daysLeft === 1 ? "" : "s"}`) : null,
+    st === "upcoming" && b > 0 && toGo > 7 ? tile("Set aside each week", `${fmt(r2(b / weeks))} · ${weeks} weeks`) : null,
+    big ? tile("Biggest", `${esc(big.name)} · ${fmt(big.amount)}`) : null,
+    st === "active" && dayNo > 1 ? tile("Yesterday", fmt(sumOn(yIso))) : null,
+    st === "active" ? tile("Today", fmt(sumOn(tIso))) : null,
+    null].filter(Boolean).slice(0, 4);
+  return `<div class="inc-row trip-card" data-trip="${t.id}"><div class="debt-top"><span class="ln-ic emo debt-emo" aria-hidden="true">${ev ? "🎉" : "✈️"}</span><div style="min-width:0;flex:1"><div class="name">${esc(t.name)}</div>${t.place ? `<div>${placeChip(t)}</div>` : ""}${about ? `<div class="small" data-event-about>${esc(about)}</div>` : ""}<div class="muted small">${esc(tripRange(t))}${t.cur && t.cur !== S.cur ? ` · paying in ${esc(t.cur)}` : ""}</div></div><div style="text-align:right;flex:none">${tag}</div></div>
+    <div class="debt-owed"><div><span class="lbl">${b > 0 ? (over ? "Over budget" : "Left of budget") : "Spent"}</span><b class="tnum debt-big ${over ? "bad" : ""}">${b > 0 ? fmt(Math.abs(left)) : fmt(tot)}</b></div><div class="muted small tnum" style="text-align:right" data-trip-sum>${b > 0 ? `${fmt(tot)} spent<br>of ${fmt(b)}` : "No budget set"}</div></div>
     ${b > 0 ? `<div class="meter"><i class="${over ? "over" : ""}" style="width:${Math.min(100, tot / b * 100)}%"></i></div>` : ""}
+    ${tiles.length ? `<div class="debt-tiles">${tiles.join("")}</div>` : ""}
+    ${tripFlights(t)}${tripChecklist(t, st, toGo)}
     ${ev && ppl > 1 && (tot > 0 || b > 0) ? `<div class="muted small tnum" data-event-each>${tot > 0 ? `${fmt(r2(tot / ppl))} a person so far` : ""}${tot > 0 && b > 0 ? " · " : ""}${b > 0 ? `${fmt(r2(b / ppl))} a person budgeted` : ""}</div>` : ""}
     ${st === "ended" ? `<div class="part-help" style="border-radius:14px"><b>This ${noun} is over. What should happen to the ${fmt(tot)}?</b><p class="muted small">Count it and it comes out of what you keep in ${esc(C.planMonth)}. Keep it separate and your month is untouched. You can change this later.</p>
       <div class="grid2"><button class="btn small" type="button" data-trip-settle="separate">Keep it separate</button><button class="btn small primary" type="button" data-trip-settle="counted">Count it in ${esc(C.planMonth)}</button></div></div>` : ""}
@@ -5441,8 +5609,14 @@ OUT.yearlyDue = () => { const list = yearlyDue(); if (!list.length) return "";
   return `<section class="card" data-yearly-due><h2 style="font-size:1.2rem">Once a year</h2>
     ${list.map(v => `<div class="inc-row" data-yr-due="${esc(v.x.key)}" data-yr-date="${isoOf(v.date)}"><div class="row-top"><div><h3 class="name" style="font-size:1rem;margin:0">${esc(YR_ASK[v.x.kind](v.x.name))}</h3><div class="muted small">${v.x.kind === "giving" ? "Yearly giving" : v.x.kind === "fee" ? "Yearly card fee" : "Yearly payment"} · was due ${dayMonth(v.date)}</div></div><div class="name tnum">${fmt(v.x.amount)}</div></div>
       <div class="grid2"><button class="btn small" type="button" data-yr-no>Not yet</button><button class="btn small primary" type="button" data-yr-yes>${v.x.kind === "giving" ? "Yes, given" : "Yes, paid"}</button></div></div>`).join("")}</section>`; };
-OUT.billsDue = () => { const list = billsDue(); if (!list.length) return "";
+// A loan with a due day: from the day after, KeepWise asks once whether the payment went out. Yes logs it.
+function loansDue(){ const t = todayMid(); return (S.loans || []).filter(l => l.kind !== "card" && l.kind !== "carins" && +l.day > 0 && l.every !== "yr" && !loanDone(l)).map(l => {
+    for (let i = 1; i <= 7; i++){ const d = dayPlus(t, -i); if (d.getDate() === Math.min(+l.day, daysInMonth(d.getFullYear(), d.getMonth()))) return {l, date: d}; } return null; })
+  .filter(v => v && isoOf(v.date) >= (v.l.dueSince || isoOf(t)) && !((v.l.ans || "") >= isoOf(v.date))); }
+OUT.billsDue = () => { const list = billsDue(), ll = loansDue(); if (!list.length && !ll.length) return "";
   return `<section class="card" data-bills-due><h2 style="font-size:1.2rem">Did you pay it?</h2>
+    ${ll.map(v => `<div class="inc-row" data-loan-due="${v.l.id}" data-loan-date="${isoOf(v.date)}"><div class="row-top"><div><div class="name">${esc(v.l.name || loanKind(v.l.kind))}</div><div class="muted small">${esc(loanKind(v.l.kind))} · was due ${dayMonth(v.date)}</div></div><div class="name tnum">${fmt(v.l.pay)}</div></div>
+      <div class="grid2"><button class="btn small" type="button" data-loan-no>Not yet</button><button class="btn small primary" type="button" data-loan-yes>Yes, it went out</button></div></div>`).join("")}
     ${list.map(v => `<div class="inc-row" data-bill-due="${v.e.id}" data-bill-date="${isoOf(v.date)}"><div class="row-top"><div><div class="name">${esc(v.e.name)}</div><div class="muted small">Was due ${dayMonth(v.date)}</div></div><div class="name tnum">${fmt(v.e.amount)}</div></div>
       <div class="grid2"><button class="btn small" type="button" data-bill-no>Not yet</button><button class="btn small primary" type="button" data-bill-yes>Yes, paid</button></div></div>`).join("")}</section>`; };
 OUT.arrived = () => { const list = arrivals(); if (!list.length) return "";
@@ -5667,6 +5841,12 @@ const cardName = c => c.name || `${c.card || "Card"}${c.last4 ? " ••" + c.la
 const EXP_QUICK = [["cart", "Groceries", /grocer/i], ["fuel", "Fuel and transit", /fuel|gas\b|petrol|transit|commute|metro|train|bus/i], ["home", "Rent", /rent|mortgage|housing/i], ["bolt", "Utilities", /utilit|electric|water|power|heating/i],
   ["phone", "Phone", /phone|mobile|cell/i], ["wifi", "Internet", /internet|wifi|broadband|fiber/i], ["shield", "Insurance", /insur/i], ["kid", "Childcare", /child|daycare|nanny|school/i], ["health", "Health", /health|medical|doctor|dental/i]];
 const expFor = q => { const ex = S.expenses.filter(e => e.env === "needs"); return ex.find(e => e.name.toLowerCase() === q[1].toLowerCase()) || ex.find(e => q[2].test(e.name)); };
+// Friendly emoji for lines in Budget, loans and trips (the owl and the tab bar keep KeepWise's own drawn icons).
+const EMO = {food: "🍽️", cart: "🛒", coffee: "☕", drink: "🥤", bag: "🛍️", shirt: "👕", beauty: "💄", fuel: "⛽", car: "🚗", travel: "✈️", home: "🏠", health: "💊", phone: "📱", fun: "🎉", film: "🎬", gift: "🎁", family: "👪", smoke: "🚬", work: "💼", kid: "🧸", paw: "🐾", book: "📚", gym: "🏋️", game: "🎮", bolt: "⚡", park: "🅿️", wifi: "🌐", shield: "🛡️", receipt: "🧾", subs: "✂️"};
+const emoFor = name => { const n = String(name || "").toLowerCase(); if (/internet|wifi|broadband|fiber/.test(n)) return EMO.wifi; if (/insur/.test(n)) return /car|auto/.test(n) ? EMO.car : EMO.shield; if (/meal kit|meal/.test(n)) return "🥗"; if (/electric|utilit|water|power|heating|\bgas and electric|electric and gas/.test(n)) return EMO.bolt; return EMO[spendIconKey(name)] || EMO.receipt; };
+const LOAN_EMO = {card: "💳", car: "🚗", student: "🎓", home: "🏠", personal: "🤝", bank: "🏦", carins: "🛡️", other: "🧾"};
+// Everyday lines (groceries, fuel, eating out) are spent bit by bit; bills go out once and get a paid tick.
+const expEveryday = (e, k) => e.env === "misc" || billSpendIn(e.id, k) > 0 || (/grocer|food|fuel|petrol|transit|commut|meal|household|toiletr|pharm|uber|taxi|\bgas\b/i.test(e.name || "") && !/electric|utilit|water|power|heating|internet|phone|insur|rent|mortgage/i.test(e.name || ""));
 const billSpendIn = (id, k) => r2((S.billSpends || []).filter(x => x.e === id && x.k === k).reduce((a, x) => a + (+x.amount || 0), 0));
 const billOver = k => r2(S.expenses.reduce((a, e) => { const used = billSpendIn(e.id, k), plan = +e.amount || 0; return a + Math.max(0, used - plan); }, 0));
 const loansMonthly = () => r2((S.loans || []).filter(l => !loanDone(l)).reduce((a, l) => a + loanMonthly(l), 0));
@@ -5699,6 +5879,75 @@ const loanRateNote = l => { const r = loanRate(l); return !r ? "Fill in the paym
   : r.apr === 0 ? "Your payments add up to exactly the amount left, so there is no interest." : `You will pay ${fmt(r.paid)} in all, which is ${fmt(r.cost)} in interest.`; };
 const loanRateText = l => { const r = loanRate(l); return !r ? "" : r.short ? "Check the numbers" : `${r.apr}% a year`; };
 const monthYear = d => d.toLocaleDateString("en-US", {month: "short", year: "numeric"});
+document.addEventListener("input", e => { const t = e.target; if (t && t.name === "amount" && t.form && /^(loanPay|cardPay)$/.test(t.form.dataset.form || "")) payAfter(t.form); });
+// While a payment is typed, what will be owed (and what will be free on a card) updates under it.
+function payAfter(fm){ if (!fm) return; const owed = +fm.dataset.owed || 0, lim = +fm.dataset.limit || 0, a = numv((fm.querySelector("[name=amount]") || {}).value) || 0, left = r2(Math.max(0, owed - a));
+  const o = fm.querySelector("[data-pay-owed]"), v = fm.querySelector("[data-pay-avail]"); if (o) o.textContent = fmt(left); if (v) v.textContent = `${fmt(r2(Math.max(0, lim - left)))} of ${fmt(lim)}`; }
+// A payment on a loan: kept in its history, lowers what is owed, counts one installment, and ticks it as paid this month.
+function logLoanPay(l, amt, date){
+  loanPays().push({id: uid(), l: l.id, date, k: planPeriodNow().key, at: Date.now(), amount: amt});
+  if (+l.total > 0) l.total = r2(Math.max(0, l.total - amt));
+  if (+l.left > 0 && amt >= (+l.pay || 0) - 0.005) l.left = l.left - 1;
+  const k = compute().planKey; if (!S.paid || S.paid.key !== k) S.paid = {key: k, on: {}}; S.paid.on = S.paid.on || {}; S.paid.on["l:" + l.id] = date;
+}
+/* ---- Debt details: interest, payoff and payments ----
+   The rate is the one KeepWise works out from the numbers when it can, or the APR typed in. Nothing is guessed: with no
+   rate, the interest tiles and tips stay hidden. Payments logged on a loan lower what is owed and are kept as its history. */
+const loanPays = () => S.loanPays || (S.loanPays = []);
+const loanAprOf = l => { const r = loanRate(l); if (r && !r.short) return {apr: r.apr, auto: true}; return l.apr != null && l.apr !== "" && +l.apr >= 0 ? {apr: +l.apr} : null; };
+// Payments needed to clear P paying A each period at a yearly rate (in %), with the interest paid on the way.
+function payoff(P, A, apr, ppy){ P = +P || 0; A = +A || 0; if (!(P > 0) || !(A > 0)) return null; const r = (+apr || 0) / 100 / (ppy || 12);
+  if (r > 0 && A <= P * r + 0.005) return {never: true};
+  let b = P, n = 0, int = 0; while (b > 0.005 && n < 2400){ const i = b * r; int += i; b = b + i - A; n++; } return n >= 2400 ? {never: true} : {n, interest: r2(int)}; }
+const periodsToDate = (n, ppy) => { const t = todayMid(); return ppy === 12 ? new Date(t.getFullYear(), t.getMonth() + n, 1) : dayPlus(t, Math.round(n * 365 / ppy)); };
+const niceExtra = a => { const x = a * .3; return x < 25 ? Math.max(10, Math.round(x / 5) * 5) : x < 150 ? Math.round(x / 10) * 10 : x < 600 ? Math.round(x / 50) * 50 : Math.round(x / 100) * 100; };
+const spanText = m => m >= 24 ? `${Math.round(m / 12)} years` : `${m} month${m === 1 ? "" : "s"}`;
+function debtFacts(l){
+  const P = +l.total || 0, A = l.kind === "card" ? +l.pay || 0 : +l.pay || 0, ppy = l.kind === "card" ? 12 : LOAN_PPY[l.every] || 12, rate = loanAprOf(l);
+  const base = rate && P > 0 && A > 0 ? payoff(P, A, rate.apr, ppy) : null, out = {rate, ppy, P, A, base};
+  if (rate && P > 0) out.intMonth = r2(P * rate.apr / 100 / 12);
+  if (base && !base.never){ out.end = periodsToDate(base.n, ppy); out.months = Math.round(base.n * 12 / ppy);
+    const x = niceExtra(A), more = payoff(P, A + x, rate.apr, ppy);
+    if (more && !more.never){ const saveM = out.months - Math.round(more.n * 12 / ppy), saveI = r2(base.interest - more.interest);
+      if (saveM >= 1 && (rate.apr === 0 || saveI >= 1)) out.tip = {x, saveM, saveI, end: periodsToDate(more.n, ppy)}; } }
+  return out;
+}
+const debtHist = l => (l.kind === "card" ? (S.cardPays || []).filter(x => x.c === l.id) : (S.loanPays || []).filter(x => x.l === l.id)).slice().sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.at || 0) - (a.at || 0));
+function debtHistList(l){ const h = debtHist(l); if (!h.length) return `<p class="muted small" style="margin:0" data-debt-hist>No payments logged yet. Each one you log shows here.</p>`;
+  return `<div class="debt-hist" data-debt-hist>${h.slice(0, 24).map(x => `<div class="line"><span class="muted">${esc(shortDate(x.date))}</span><span class="tnum">${fmt(x.amount)}${+l.pay > 0 && x.amount > +l.pay + 0.005 ? ` <span class="small good">${fmt(r2(x.amount - l.pay))} extra</span>` : ""}</span></div>`).join("")}</div>`; }
+function payForm(l){ const card = l.kind === "card", owed = +l.total || 0, usual = +l.pay || 0, lim = card ? +l.limit || 0 : 0;
+  const chips = [usual > 0 && (!owed || usual < owed) ? ["Usual", usual] : null, owed > 0 ? [card ? "Full balance" : "All of it", owed] : null].filter(Boolean);
+  return `<form class="cc-pay debt-pay" data-form="${card ? "cardPay" : "loanPay"}" data-mode="pay" data-owed="${owed}" data-limit="${lim}"><label class="field"><span>Payment made today</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="${usual > 0 ? r2(usual) : owed > 0 ? r2(owed) : "0"}" autocomplete="off"></span></label>
+    ${chips.length ? `<div class="chips">${chips.map(([n, v]) => `<button class="chip" type="button" data-card-pay-fill="${r2(v)}">${n} ${fmt(v)}</button>`).join("")}</div>` : ""}
+    ${owed > 0 ? `<div class="pay-after" data-pay-after><div><span class="muted small">Owed after this</span><b class="tnum" data-pay-owed>${fmt(owed)}</b></div>${lim > 0 ? `<div><span class="muted small">Available after this</span><b class="tnum" data-pay-avail>${fmt(r2(Math.max(0, lim - owed)))} of ${fmt(lim)}</b></div>` : ""}</div>` : ""}
+    <div class="grid2"><button class="btn" type="button" data-card-pay-cancel>Cancel</button><button class="btn primary" type="submit">Log payment</button></div></form>`; }
+const tile = (k, v) => `<div class="dt"><small>${k}</small><b class="tnum">${v}</b></div>`;
+function debtCard(l){
+  const done = loanDone(l), F = debtFacts(l), f = loanFinish(l), ev = (LOAN_EVERY.find(x => x[0] === l.every) || LOAN_EVERY[0])[2], nm = esc(l.name || loanKind(l.kind));
+  const chip = done ? `<span class="pill ok">Paid off</span>` : F.rate ? (F.rate.apr === 0 ? `<span class="pill ok">No interest</span>` : `<span class="pill gold">${F.rate.apr}% APR</span>`) : "";
+  const P = +l.total || 0, B = +l.borrowed || 0, mth = loanMonthly(l), hist = debtHist(l), open = UI.loanHist === l.id;
+  const tiles = done ? [] : [
+    l.since ? tile("Started", monthYear(isoDate(l.since))) : null,
+    F.end ? tile("Paid off by", monthYear(F.end)) : f ? tile(f.est ? "Paid off by" : "Ends", `${f.est ? "about " : ""}${monthYear(f.date)}`) : null,
+    tile(l.every === "yr" ? "This year" : "In your plan", `${fmt(mth)}${loanYearly(l) ? " this month" : "/mo"}${l.day ? ` · ${ordinal(l.day)}` : ""}`),
+    F.base && !F.base.never && F.rate.apr > 0 ? tile("Interest still to pay", fmt(Math.round(F.base.interest))) : F.intMonth > 0 ? tile("Interest this month", fmt(F.intMonth)) : +l.left > 0 ? tile("Installments left", String(l.left)) : null].filter(Boolean);
+  const note = done ? `<p class="muted small">Ended ${shortDate(l.end)}. It no longer counts in your plan.</p>`
+    : F.base && F.base.never ? `<p class="small bad">At ${fmt(l.pay)} ${ev} the interest is more than the payment, so this never gets paid off. Pay more each time to bring it down.</p>`
+    : !F.end && f && f.est ? `<p class="small muted">About ${f.months} month${f.months === 1 ? "" : "s"} to go at this pace, around ${monthYear(f.date)}. Interest is not included${F.rate ? "" : ". Add the interest rate to see the real date"}.</p>`
+    : !F.end && f && !f.est ? `<p class="small">${f.months === 0 ? `Ends ${shortDate(l.end)}.` : `Ends ${monthYear(f.date)}, ${f.months} month${f.months === 1 ? "" : "s"} from now.`}</p>` : "";
+  const facts = !done && (+l.left > 0 || (F.rate && F.rate.auto)) ? `<p class="small muted" style="margin:0">${[+l.left > 0 ? `${l.left} installment${+l.left === 1 ? "" : "s"} left` : "", F.rate && F.rate.auto ? `interest about ${F.rate.apr}% a year` : ""].filter(Boolean).join(" · ").replace(/^./, c => c.toUpperCase())}</p>` : "";
+  const tip = done || !F.tip ? "" : F.rate.apr === 0 ? `<p class="debt-tip">No interest, so paying more only saves time: ${fmt(F.tip.x)} more ${ev} finishes by ${monthYear(F.tip.end)}.</p>`
+    : `<p class="debt-tip">Add <b>${fmt(F.tip.x)}</b> ${ev}: done <b>${spanText(F.tip.saveM)} sooner</b>, saving <b>${fmt(Math.round(F.tip.saveI))}</b>.</p>`;
+  return `<div class="inc-row debt${done ? " done" : ""}" data-loan="${l.id}">
+    <div class="debt-top"><span class="ln-ic emo debt-emo" aria-hidden="true">${LOAN_EMO[l.kind] || LOAN_EMO.other}</span><div style="min-width:0;flex:1"><div class="name">${nm}</div><div class="muted small">${esc(loanKind(l.kind))} · ${fmt(l.pay)} ${ev}</div></div>${chip}</div>
+    ${P > 0 && !done ? `<div class="debt-owed"><div><span class="lbl">Left to pay</span><b class="tnum debt-big">${fmt(P)}</b></div><div class="muted small tnum" style="text-align:right">${B > P ? `of ${fmt(B)}<br>borrowed` : `${fmt(P)} left`}</div></div>${B > P ? `<div class="meter"><i style="width:${Math.min(100, (B - P) / B * 100).toFixed(1)}%"></i></div>` : ""}` : ""}
+    ${!(P > 0) && !done ? `<div class="row-top"><span class="muted small">Add the amount left to see when it is paid off.</span><span class="name tnum">${fmt(mth)}<span class="muted small">${loanYearly(l) ? " this month" : "/mo"}</span></span></div>` : ""}
+    ${tiles.length ? `<div class="debt-tiles">${tiles.join("")}</div>` : ""}${facts}${note}${tip}
+    ${UI.loanPay === l.id ? payForm(l) : ""}
+    ${open ? debtHistList(l) : ""}
+    <div class="debt-acts">${done || UI.loanPay === l.id ? "" : `<button class="btn small primary" type="button" data-loan-pay>Log a payment</button>`}<span class="inline" style="gap:16px;margin-left:auto"><button class="link plain small" type="button" data-loan-hist aria-expanded="${open}">${open ? "Hide history" : `History${hist.length ? ` (${hist.length})` : ""}`}</button><button class="link plain small" type="button" data-loan-edit aria-label="Edit ${nm}">Edit</button></span></div></div>`;
+}
+
 function loanForm(l){
   const d = UI.loanDraft, cardSel = !d.card ? "Visa" : CARD_TYPES.includes(d.card) ? d.card : "Other", sel = (name, list, v) => `<select name="${name}">${list.map(([k, n]) => `<option value="${k}" ${v === k ? "selected" : ""}>${n}</option>`).join("")}</select>`;
   return `<form class="inc-form" data-form="loan"><div class="grid2"><label class="field"><span>Type</span>${sel("kind", LOAN_KINDS.filter(x => x[0] !== "card" || d.kind === "card"), d.kind)}</label>
@@ -5719,6 +5968,10 @@ function loanForm(l){
     <div class="field" data-yr-only ${d.every === "yr" ? "" : "hidden"}><span>Paid every year on</span>${mdPick("on", d.on, "Paid every year on")}</div>
     <div class="grid2"><label class="field"><span>Left to pay <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="total" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.total)}"></span></label>
       <label class="field"><span>Installments left <small class="muted">optional</small></span><input name="left" inputmode="numeric" enterkeyhint="next" placeholder="e.g. 24" value="${esc(d.left || "")}"></label></div>
+    <div class="grid2"><label class="field"><span>Borrowed at the start <small class="muted">optional</small></span><span class="money-in"><em>${esc(sym())}</em><input name="borrowed" inputmode="decimal" enterkeyhint="next" placeholder="0" value="${esc(d.borrowed || "")}"></span></label>
+      <label class="field"><span>Started <small class="muted">optional</small></span><input name="since" type="date" max="${isoDaysAgo(0)}" value="${esc(d.since || "")}"></label></div>
+    <div class="grid2"><label class="field"><span>Interest rate (APR) <small class="muted">optional</small></span><span class="money-in pct-in"><input name="apr" inputmode="decimal" enterkeyhint="next" placeholder="e.g. 6.9" value="${esc(d.apr != null ? d.apr : "")}"><em>%</em></span></label>
+      <label class="field"><span>Due on <small class="muted">optional</small></span><select name="day"><option value="">No set day</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+d.day === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label></div>
     <div class="grid2"><label class="field"><span>End date <small class="muted">optional</small></span><input name="end" type="date"${dFrom(d.end)} value="${esc(d.end || "")}"></label>
       <label class="field"><span>Interest</span><input name="rate" readonly tabindex="-1" class="calc" placeholder="Worked out for you" value="${esc(loanRateText(d))}" aria-label="Interest, worked out from your numbers"></label></div>
     <p class="muted small" data-loan-ratenote>${loanRateNote(d)}</p></div>
@@ -5726,32 +5979,34 @@ function loanForm(l){
     ${l ? `<button class="link plain small" type="button" data-loan-cancel style="align-self:center">Cancel</button>` : ""}</form>`;
 }
 function insRow(l){
-  const P = insTerm(l), left = insLeft(l), now = insThisMonth(l), soon = P && !P.ahead ? daysUntil(P.to) : null, nm = esc(l.name || "Car insurance");
-  const sub = `Car insurance · ${P ? P.T : (+l.term === 12 ? 12 : 6)}-month policy · ${l.plan === "full" ? `paid in full, ${fmt(l.premium)}` : `${fmt(insEach(l))} a month${+l.fee > 0 ? ` with a ${fmt(l.fee)} fee` : ""}`}`;
+  const P = insTerm(l), left = insLeft(l), now = insThisMonth(l), soon = P && !P.ahead ? daysUntil(P.to) : null, nm = esc(l.name || "Car insurance"), T = P ? P.T : (+l.term === 12 ? 12 : 6);
+  const sub = `Car insurance · ${T}-month policy · ${l.plan === "full" ? `paid in full, ${fmt(l.premium)}` : `${fmt(insEach(l))} a month${+l.fee > 0 ? ` with a ${fmt(l.fee)} fee` : ""}`}`;
   const facts = !P ? "" : P.ahead ? `Starts ${shortDate(isoOf(P.from))}.` : l.plan === "full" ? `Paid until ${shortDate(isoOf(P.to))}. The next ${fmt(l.premium)} is due then.` : `${left.n} of ${P.T} payments left · ${fmt(left.amount)} left this term · renews ${shortDate(isoOf(P.to))}`;
-  return `<div class="inc-row" data-loan="${l.id}" data-carins><div class="row-top"><div><div class="name">${nm}</div><div class="muted small">${sub}</div></div>
-      <div style="text-align:right"><div class="name tnum">${fmt(now)}<span class="muted small"> this month</span></div></div></div>
-    ${P && !P.ahead && l.plan !== "full" ? `<div class="meter"><i class="debt" style="width:${((P.T - left.n) / P.T * 100).toFixed(1)}%"></i></div>` : ""}
-    ${facts ? `<p class="small">${facts}</p>` : ""}
-    ${soon != null && soon <= 30 ? `<p class="small" data-ins-renew><span class="pill gold">Renews in ${soon} day${soon === 1 ? "" : "s"}</span> Prices change at renewal. Compare a few quotes before ${shortDate(isoOf(P.to))}.</p>` : ""}
-    <button class="link plain small" type="button" data-loan-edit aria-label="Edit ${nm}" style="align-self:flex-end">Edit</button></div>`;
+  const termTot = r2(insEach(l) * T), steps = P && !P.ahead && l.plan !== "full" ? Array.from({length: P.T}, (_, k) => { const d = addMonths(P.from, k); return `<i class="${k < P.T - left.n ? "on" : ""}">${d.toLocaleDateString("en-US", {month: "short"})}</i>`; }).join("") : "";
+  const feeSave = l.plan !== "full" && +l.fee > 0 ? r2(+l.fee * T) : 0;
+  return `<div class="inc-row debt" data-loan="${l.id}" data-carins>
+    <div class="debt-top"><span class="ln-ic emo debt-emo" aria-hidden="true">${LOAN_EMO.carins}</span><div style="min-width:0;flex:1"><div class="name">${nm}</div><div class="muted small">${sub}</div></div><span class="pill grey">${l.plan === "full" ? "Paid in full" : "Monthly"}</span></div>
+    ${left ? `<div class="debt-owed"><div><span class="lbl">Left this term</span><b class="tnum debt-big">${fmt(left.amount)}</b></div><div class="muted small tnum" style="text-align:right">of ${fmt(termTot)}<br>for the term</div></div>` : `<div class="debt-owed"><div><span class="lbl">This month</span><b class="tnum debt-big">${fmt(now)}</b></div></div>`}
+    ${steps ? `<div class="ins-steps" aria-hidden="true" style="--n:${P.T}">${steps}</div>` : ""}
+    <div class="debt-tiles">${tile("This month", fmt(now))}${P ? tile(P.ahead ? "Starts" : "Renews", shortDate(isoOf(P.ahead ? P.from : P.to))) : ""}</div>
+    ${facts ? `<p class="small muted" style="margin:0">${facts}</p>` : ""}
+    ${soon != null && soon <= 30 ? `<p class="small" data-ins-renew><span class="pill gold">Renews in ${soon} day${soon === 1 ? "" : "s"}</span> Prices change at renewal. Compare a few quotes before ${shortDate(isoOf(P.to))}.</p>` : feeSave > 0 ? `<p class="debt-tip">Paying the ${fmt(l.premium)} in full would skip ${fmt(feeSave)} of installment fees each term.</p>` : ""}
+    <div class="debt-acts"><span class="inline" style="gap:16px;margin-left:auto"><button class="link plain small" type="button" data-loan-edit aria-label="Edit ${nm}">Edit</button></span></div></div>`;
 }
 OUT.loans = () => {
   const list = S.loans || [], live = list.filter(l => !loanDone(l)), owed = r2(live.reduce((a, l) => a + (+l.total || 0), 0));
-  const cc = live.filter(l => l.kind === "card"), ccRow = cc.length ? `<button class="inc-row cards-link" type="button" data-cards-open><div class="row-top"><div><div class="name">Credit cards</div><div class="muted small">${cc.length} card${cc.length === 1 ? "" : "s"} · ${cc.some(l => +l.total > 0) ? `${fmt(r2(cc.reduce((a, l) => a + (+l.total || 0), 0)))} owed · ` : ""}open in Cards</div></div><div style="text-align:right"><div class="name tnum">${fmt(r2(cc.reduce((a, l) => a + loanMonthly(l), 0)))}<span class="muted small">/mo</span></div></div></div></button>` : "";
+  const cc = live.filter(l => l.kind === "card"), ccRow = cc.length ? `<button class="inc-row cards-link" type="button" data-cards-open><div class="row-top"><span class="ln-ic emo" aria-hidden="true">💳</span><div style="flex:1;min-width:0"><div class="name">Credit cards</div><div class="muted small">${cc.length} card${cc.length === 1 ? "" : "s"} · ${cc.some(l => +l.total > 0) ? `${fmt(r2(cc.reduce((a, l) => a + (+l.total || 0), 0)))} owed · ` : ""}open in Cards</div></div><div style="text-align:right"><div class="name tnum">${fmt(r2(cc.reduce((a, l) => a + loanMonthly(l), 0)))}<span class="muted small">/mo</span></div></div></div></button>` : "";
   const rows = ccRow + list.filter(l => l.kind !== "card").map(l => {
     if (UI.loanEdit === l.id) return `<div class="inc-row editing" data-loan="${l.id}">${loanForm(l)}</div>`;
     if (l.kind === "carins") return insRow(l);
-    const f = loanFinish(l), done = loanDone(l), rate = loanRate(l), ev = (LOAN_EVERY.find(x => x[0] === l.every) || LOAN_EVERY[0])[2];
-    return `<div class="inc-row" data-loan="${l.id}"><div class="row-top"><div><div class="name">${esc(l.name || loanKind(l.kind))}</div><div class="muted small">${esc(loanKind(l.kind))}${l.kind === "card" && l.card ? " · " + esc(l.card) : ""} · ${fmt(l.pay)} ${ev}${l.kind === "card" && +l.fee > 0 ? ` · ${fmt(l.fee)} yearly fee` : ""}</div></div>
-        <div style="text-align:right">${done ? `<span class="pill ok">Paid off</span>` : `<div class="name tnum">${fmt(loanMonthly(l))}<span class="muted small">${loanYearly(l) ? " this month" : "/mo"}</span></div>`}${+l.total > 0 && !done ? `<div class="muted small tnum">${fmt(l.total)} left</div>` : ""}</div></div>
-      ${!done && (+l.left > 0 || (rate && !rate.short)) ? `<p class="small">${[+l.left > 0 ? `${l.left} installment${+l.left === 1 ? "" : "s"} left` : "", rate && !rate.short ? `interest about ${rate.apr}% a year` : ""].filter(Boolean).join(" · ").replace(/^./, c => c.toUpperCase())}</p>` : ""}
-      ${done ? `<p class="muted small">Ended ${shortDate(l.end)}. It no longer counts in your plan.</p>` : f ? `<p class="small ${f.est ? "muted" : ""}">${f.est ? `About ${f.months} month${f.months === 1 ? "" : "s"} to go at this pace, around ${monthYear(f.date)}. Interest is not included.` : f.months === 0 ? `Ends ${shortDate(l.end)}.` : `Ends ${monthYear(f.date)}, ${f.months} month${f.months === 1 ? "" : "s"} from now.`}</p>` : ""}
-      <button class="link plain small" type="button" data-loan-edit aria-label="Edit ${esc(l.name || loanKind(l.kind))}" style="align-self:flex-end">Edit</button></div>`; }).join("");
+    if (list.filter(x => x.kind !== "card").length >= 4 && UI.loanOpen !== l.id && UI.loanPay !== l.id && UI.loanHist !== l.id){ const F = l.kind === "carins" ? null : debtFacts(l), fin = l.kind === "carins" ? null : loanFinish(l), done = loanDone(l);
+      return `<button class="loan-mini" type="button" data-loan="${l.id}" data-loan-open><span class="ln-ic emo" aria-hidden="true">${LOAN_EMO[l.kind] || LOAN_EMO.other}</span><span class="ln-t"><b>${esc(l.name || loanKind(l.kind))}</b><small>${done ? "Paid off" : F && F.end ? `Paid off by ${monthYear(F.end)}` : fin ? `${fin.est ? "About " : "Ends "}${monthYear(fin.date)}` : esc(loanKind(l.kind))}</small></span><span class="v tnum">${fmt(loanMonthly(l))}<small>${+l.total > 0 ? `${fmt(l.total)} left` : "a month"}</small></span>${I.chev}</button>`; }
+    if (l.kind === "carins") return insRow(l);
+    return debtCard(l); }).join("");
   return `<section class="card inc-card loan-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Loans and debt${infoBtn("loans", "About loans and debt")}</h2>${live.length ? `<span class="muted small tnum">${fmt(loansMonthly())}${live.some(loanYearly) ? " this month" : "/mo"}</span>` : ""}</div>
     ${infoTip("loans", "Loan and credit card payments come out of what you keep each month until the end date passes, and show as Loans & debts on the Month tab. A card’s yearly fee, and anything paid once a year, counts in full in the month it is charged. Interest is worked out only when the payment, amount left, installments left and end date are all filled in. With an amount left and no end date, the finish is estimated from your payments and does not include interest. Car insurance runs for its policy length: monthly installments count each month, a premium paid in full counts in the month it is paid.")}
     ${rows}${UI.loanAdd ? `<div class="inc-row editing">${loanForm(null)}</div>` : `<button class="btn" type="button" data-loan-add>${I.plus}Add a loan or car insurance</button>`}
-    ${live.length && owed > 0 ? `<p class="muted small">You owe ${fmt(owed)} in total across ${live.filter(l => +l.total > 0).length} of these.</p>` : !list.length && !UI.loanAdd ? `<p class="muted small">Bank loans, student debt and anything else you are paying back. Cards are kept in Banks › Cards.</p>` : ""}</section>`;
+    ${live.length && owed > 0 ? `<p class="muted small">You owe ${fmt(owed)} in total across ${live.filter(l => +l.total > 0).length} of these.</p>${(() => { const r = live.filter(l => +l.total > 0).map(l => ({l, a: loanAprOf(l)})).filter(x => x.a && x.a.apr > 0).sort((p, q) => q.a.apr - p.a.apr); return r.length > 1 ? `<p class="debt-tip" data-clear-first>Best to clear first: <b>${esc(r[0].l.name || loanKind(r[0].l.kind))}</b>, the highest rate at ${r[0].a.apr}%. Extra money there saves the most.</p>` : ""; })()}` : !list.length && !UI.loanAdd ? `<p class="muted small">Bank loans, student debt and anything else you are paying back. Cards are kept in Banks › Cards.</p>` : ""}</section>`;
 };
 
 /* ================= KeepWise Plus: what it adds and what it costs ================= */
@@ -5800,7 +6055,8 @@ const KW_CODES = [
   {code: "EARLY12", plan: "Monthly", offer: `${usd(PLUS_PRICE.monthlyEarly)} a month for your first ${PLUS_PRICE.earlyMonths} months, instead of ${usd(PLUS_PRICE.monthly)}`},
 ];
 const kwCodeChip = c => `<button class="code" type="button" data-copy="${c.code}" aria-label="Copy code ${c.code}">${c.code}</button>`;
-OUT.kwCodes = () => `<section class="card" data-kw-codes><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 style="font-size:1.2rem">KeepWise Plus codes</h2><span class="pill gold">Early user</span></div>
+// In the Android app Plus is not sold yet, so its codes and prices stay out of the app (Google Play sells subscriptions itself).
+OUT.kwCodes = () => window.Capacitor ? "" : `<section class="card" data-kw-codes><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 style="font-size:1.2rem">KeepWise Plus codes</h2><span class="pill gold">Early user</span></div>
   <div class="rows">${KW_CODES.map(c => `<div class="row" data-kw-code="${c.code}"><div class="row-top"><div><div class="name">${c.plan} plan</div><div class="muted small">${c.offer}</div></div><div><span class="pill ok">Eligible</span></div></div>
     <div class="inline" style="justify-content:space-between"><button class="code" type="button" data-copy="${c.code}" aria-label="Copy code ${c.code}">${c.code}</button><span class="muted small">Use it at checkout when Plus opens</span></div></div>`).join("")}</div>
   ${plusLink("See what Plus adds")}</section>`;
@@ -6914,8 +7170,11 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-card-add")){ UI.cardAdd = true; UI.cardEdit = null; UI.cardNew = "credit"; render(true); return; }
   if (b.dataset.cardPay){ const cr = b.closest("[data-card]"); UI.cardPay = cr && cr.dataset.card; UI.cardPayMode = b.dataset.cardPay; UI.cardEdit = null; render(true);
     const i = document.querySelector("[data-form=cardPay] [name=amount]"); if (i) i.focus(); return; }
-  if (b.hasAttribute("data-card-pay-cancel")){ UI.cardPay = null; render(true); return; }
-  if (b.dataset.cardPayFill){ const i = b.closest("form").querySelector("[name=amount]"); i.value = b.dataset.cardPayFill; i.focus(); return; }
+  if (b.hasAttribute("data-card-pay-cancel")){ UI.cardPay = null; UI.loanPay = null; render(true); return; }
+  if (b.dataset.cardPayFill){ const fm = b.closest("form"), i = fm.querySelector("[name=amount]"); i.value = b.dataset.cardPayFill; payAfter(fm); i.focus(); return; }
+  if (b.hasAttribute("data-loan-open")){ UI.loanOpen = b.dataset.loan; render(true); return; }
+  if (b.hasAttribute("data-loan-pay")){ const r = b.closest("[data-loan]"); UI.loanPay = r && r.dataset.loan; UI.loanEdit = null; render(true); const i = view.querySelector('form[data-form="loanPay"] [name=amount]'); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-loan-hist")){ const r = b.closest("[data-loan],[data-card]"), id = r && (r.dataset.loan || r.dataset.card); UI.loanHist = UI.loanHist === id ? null : id; render(true); return; }
   if (b.dataset.upCardPay){ UI.cardPay = b.dataset.upCardPay; UI.cardPayMode = "pay"; goTo("banks", `[data-card="${b.dataset.upCardPay}"]`);
     setTimeout(() => { const i = document.querySelector("[data-form=cardPay] [name=amount]"); if (i) i.focus(); }, 350); return; }
   if (b.hasAttribute("data-cards-open")){ goTo("banks", "[data-cards]"); return; }   // the selector opens Cards; the app lock asks first
@@ -6959,6 +7218,13 @@ view.addEventListener("click", async e => {
   const tripEl = b.closest("[data-trip]"), tripX = tripEl && tripList().find(x => x.id === tripEl.dataset.trip);
   if (tripX){
     if (b.hasAttribute("data-trip-open")){ UI.tripOpen = UI.tripOpen === tripX.id ? null : tripX.id; refreshOuts(); return; }
+    if (b.hasAttribute("data-flight-add")){ UI.flightAdd = tripX.id; UI.flightEdit = null; refreshOuts(); const i = view.querySelector('form[data-form="flight"] [name=no]'); if (i) i.focus(); return; }
+    if (b.hasAttribute("data-flight-edit")){ const fe = b.closest("[data-flight]"); UI.flightEdit = fe && fe.dataset.flight; UI.flightAdd = null; refreshOuts(); return; }
+    if (b.hasAttribute("data-flight-cancel")){ UI.flightAdd = null; UI.flightEdit = null; refreshOuts(); return; }
+    if (b.hasAttribute("data-flight-del")){ const u = undoable(), id = b.closest("form").dataset.flightId; tripX.flights = (tripX.flights || []).filter(f => f.id !== id); UI.flightEdit = null; save(); refreshOuts(); toast("Flight removed.", u); return; }
+    if (b.hasAttribute("data-check-open")){ UI.checkOpen = UI.checkOpen === tripX.id ? null : tripX.id; refreshOuts(); return; }
+    if (b.hasAttribute("data-check-tick") || b.hasAttribute("data-check-del")){ const id = b.closest("[data-check]").dataset.check; tripX.check = tripChecks(tripX).map(x => ({...x}));
+      if (b.hasAttribute("data-check-del")) tripX.check = tripX.check.filter(x => x.id !== id); else { const it = tripX.check.find(x => x.id === id); if (it) it.done = !it.done; } save(); refreshOuts(); return; }
     if (b.hasAttribute("data-trip-edit")){ UI.tripEdit = tripX.id; UI.tripAdd = false; render(true); return; }
     if (b.hasAttribute("data-trip-del")){ const u = undoable(); S.trips = tripList().filter(x => x !== tripX); UI.tripEdit = null; save(); render(true); toast(`Removed ${tripX.name}.`, u); return; }
     if (b.dataset.tripSettle){ const u = undoable(), C = compute();
@@ -6969,6 +7235,10 @@ view.addEventListener("click", async e => {
   const billRow = b.closest("[data-bill-due]");
   if (billRow && (b.hasAttribute("data-bill-yes") || b.hasAttribute("data-bill-no"))){ const e = S.expenses.find(x => x.id === billRow.dataset.billDue); if (!e) return; const u = undoable(), yes = b.hasAttribute("data-bill-yes");
     e.ans = billRow.dataset.billDate; e.ansPaid = yes; save(); refreshOuts(); toast(yes ? `${e.name} marked as paid. Next question after ${dayMonth(billNextDue(e) || todayMid())}.` : `Noted. ${e.name} shows as not paid on Budget, and we will not ask again this month.`, u); return; }
+  const ldRow = b.closest("[data-loan-due]");
+  if (ldRow && (b.hasAttribute("data-loan-yes") || b.hasAttribute("data-loan-no"))){ const l = (S.loans || []).find(x => x.id === ldRow.dataset.loanDue); if (!l) return; const u = undoable(), yes = b.hasAttribute("data-loan-yes");
+    l.ans = ldRow.dataset.loanDate; if (yes) logLoanPay(l, +l.pay || 0, ldRow.dataset.loanDate); save(); refreshOuts();
+    toast(yes ? `Logged ${fmt(l.pay)} on ${l.name || loanKind(l.kind)}.${+l.total > 0 ? ` ${fmt(l.total)} left to pay.` : ""}` : `Noted. We won’t ask again until the next one.`, u); return; }
   const yrRow = b.closest("[data-yr-due]");
   if (yrRow && (b.hasAttribute("data-yr-yes") || b.hasAttribute("data-yr-no"))){ const u = undoable(), yes = b.hasAttribute("data-yr-yes"), it = yearlyItems().find(x => x.key === yrRow.dataset.yrDue);
     S.yrAns = S.yrAns || {}; S.yrAns[yrRow.dataset.yrDue] = yrRow.dataset.yrDate; (S.yrPaid = S.yrPaid || {})[yrRow.dataset.yrDue] = yes; save(); refreshOuts();
@@ -7169,7 +7439,7 @@ view.addEventListener("click", async e => {
       const sub = n.sub && S.subs.find(x => x.id === n.sub);
       if (String(n.key).startsWith("L:a:") && S.arriveSnooze) S.arriveSnooze = null;   // asked to see it: show the card even after "ask me tomorrow"
       const loanX = n.loan && loanList().find(l => l.id === n.loan);
-      if (loanX){ UI.loanAdd = false; UI.loanEdit = loanX.id; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || "", feeOn: loanX.feeOn || "", on: loanX.on || "", premium: loanX.premium || "", term: loanX.term || 6, plan: loanX.plan || "monthly", start: loanX.start || "", insfee: loanX.kind === "carins" ? loanX.fee || "" : ""}; }   // open the loan card ready to fill in
+      if (loanX){ UI.loanAdd = false; UI.loanEdit = loanX.id; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || "", feeOn: loanX.feeOn || "", on: loanX.on || "", premium: loanX.premium || "", term: loanX.term || 6, plan: loanX.plan || "monthly", start: loanX.start || "", insfee: loanX.kind === "carins" ? loanX.fee || "" : "", apr: loanX.apr != null ? loanX.apr : "", borrowed: loanX.borrowed || "", since: loanX.since || "", day: loanX.day || ""}; }   // open the loan card ready to fill in
       if (sub && surveyDue(sub)) openSurvey(sub.id); else goTo(n.go, n.sel);
       return; } }
   if (b.hasAttribute("data-close-inbox")){ UI.inbox = false; render(false); return; }
@@ -7252,7 +7522,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-give-edit")){ UI.giveEdit = b.closest("[data-give]").dataset.give; UI.giveAdd = false; render(true); return; }
   if (b.hasAttribute("data-give-del")){ const u = undoable(), g = (S.giving || []).find(x => x.id === UI.giveEdit); S.giving = (S.giving || []).filter(x => x !== g); UI.giveEdit = null; save(); render(true); toast(`Removed ${g ? g.name || giveCause(g.cause) : "it"}.`, u); return; }
   if (b.hasAttribute("data-loan-add")){ UI.loanAdd = true; UI.loanEdit = null; UI.loanDraft = {kind: "bank", name: "", pay: "", every: "mo", total: "", end: "", left: ""}; render(true); const f = view.querySelector('form[data-form="loan"] [name=pay]'); if (f) f.focus(); return; }
-  if (b.hasAttribute("data-loan-edit") && loanX){ UI.loanEdit = loanX.id; UI.loanAdd = false; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || "", feeOn: loanX.feeOn || "", on: loanX.on || "", premium: loanX.premium || "", term: loanX.term || 6, plan: loanX.plan || "monthly", start: loanX.start || "", insfee: loanX.kind === "carins" ? loanX.fee || "" : ""}; render(true); return; }
+  if (b.hasAttribute("data-loan-edit") && loanX){ UI.loanEdit = loanX.id; UI.loanAdd = false; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || "", feeOn: loanX.feeOn || "", on: loanX.on || "", premium: loanX.premium || "", term: loanX.term || 6, plan: loanX.plan || "monthly", start: loanX.start || "", insfee: loanX.kind === "carins" ? loanX.fee || "" : "", apr: loanX.apr != null ? loanX.apr : "", borrowed: loanX.borrowed || "", since: loanX.since || "", day: loanX.day || ""}; render(true); return; }
   if (b.hasAttribute("data-loan-cancel")){ UI.loanAdd = false; UI.loanEdit = null; render(true); return; }
   if (b.hasAttribute("data-loan-del") && loanX){ const u = undoable(); S.loans = loanList().filter(x => x !== loanX); UI.loanEdit = null; save(); render(true); toast(`Removed ${loanX.name || loanKind(loanX.kind)}.`, u); return; }
   if (b.dataset.info){ UI.info = UI.info === b.dataset.info ? null : b.dataset.info; render(true); return; }
@@ -7372,6 +7642,12 @@ view.addEventListener("submit", async e => {
     const nm = q[0] === "receipt" ? "Other" : q[1], id = uid(), u = undoable(); S.spends = S.spends || []; S.spendIcons = S.spendIcons || {}; S.spendIcons[nm.toLowerCase()] = q[0];
     S.spends.push({id, date: isoDaysAgo(0), at: Date.now(), k: compute().planKey, name: nm, amount: amt}); UI.quick = null; save(); refreshOuts();
     const sh = $("asksheet"); if (sh) sh.innerHTML = askSheet(); toast(`Added ${nm}, ${fmt(amt)}, under Misc.`, u); return; }
+  if (kind === "loanPay"){
+    const l = (S.loans || []).find(x => x.id === UI.loanPay), amt = numv(fd.get("amount")); if (!l) return;
+    if (!(amt > 0)){ toast("Enter the amount."); f.querySelector("[name=amount]").focus(); return; }
+    const u = undoable(); logLoanPay(l, amt, isoDaysAgo(0));
+    UI.loanPay = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
+    toast(`Logged ${fmt(amt)} paid on ${l.name || loanKind(l.kind)}.${+l.total > 0 ? ` ${fmt(l.total)} left to pay.` : ""}`, u); return; }
   if (kind === "cardPay"){
     const id = UI.cardPay, l = (S.loans || []).find(x => x.id === id), amt = numv(fd.get("amount")); if (!l) return;
     if (!(amt > 0)){ toast("Enter the amount."); f.querySelector("[name=amount]").focus(); return; }
@@ -7386,7 +7662,9 @@ view.addEventListener("submit", async e => {
     const was = UI.cardEdit, oldL = was && (S.loans || []).find(x => x.id === was), oldD = was && (S.cards || []).find(x => x.id === was), id = was || uid();
     const fee = numv(fd.get("fee")) || 0, color = CARD_COLORS.some(x => x[0] === fd.get("color")) ? String(fd.get("color")) : "", base = {id, name: String(fd.get("name") || "").trim().slice(0, 40), card: String(fd.get("card") || "Visa"), color, last4, fee, feeOn: fee ? mdToIso(fd, "feeOn", (oldL || oldD || {}).feeOn) : ""};
     S.loans = (S.loans || []).filter(x => x.id !== id); S.cards = (S.cards || []).filter(x => x.id !== id);
-    if (t === "credit") loanList().push(Object.assign(oldL || {}, base, {kind: "card", every: "mo", end: (oldL && oldL.end) || "", left: (oldL && oldL.left) || 0, limit: numv(fd.get("limit")) || 0, total: numv(fd.get("balance")) || 0, pay: numv(fd.get("pay")) || 0, due: +fd.get("due") || 0}));
+    const aprRaw = String(fd.get("apr") || "").replace("%", "").trim(), apr = t === "credit" && aprRaw !== "" ? numv(aprRaw) : null;
+    if (apr != null && !(apr >= 0 && apr < 100)){ toast("Enter the interest rate as a yearly percent, like 24.9."); f.querySelector("[name=apr]").focus(); return; }
+    if (t === "credit") loanList().push(Object.assign(oldL || {}, base, {kind: "card", every: "mo", end: (oldL && oldL.end) || "", left: (oldL && oldL.left) || 0, limit: numv(fd.get("limit")) || 0, total: numv(fd.get("balance")) || 0, pay: numv(fd.get("pay")) || 0, due: +fd.get("due") || 0, apr}));
     else debitList().push(Object.assign(base, {charge: numv(fd.get("charge")) || 0, day: +fd.get("day") || 0}));
     UI.cardAdd = false; UI.cardEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
     toast(was ? "Card updated." : t === "credit" ? "Card added. Its payment counts with Loans & debts." : "Card added."); return; }
@@ -7395,7 +7673,10 @@ view.addEventListener("submit", async e => {
     if (!pay){ toast("Enter the payment amount."); f.querySelector("[name=pay]").focus(); return; }
     if (leftRaw && !left){ toast("Installments left should be a whole number."); f.querySelector("[name=left]").focus(); return; }
     const old = UI.loanEdit && loanList().find(x => x.id === UI.loanEdit), old0 = old;
-    const rec = {kind: fd.get("kind") || "other", name: String(fd.get("name") || "").trim(), pay, every: fd.get("every") || "mo", total: total || 0, end: end || "", left};
+    const aprRaw = String(fd.get("apr") || "").replace("%", "").trim(), apr = aprRaw === "" ? null : numv(aprRaw), since = String(fd.get("since") || "");
+    if (aprRaw !== "" && !(apr >= 0 && apr < 100)){ toast("Enter the interest rate as a yearly percent, like 6.9."); f.querySelector("[name=apr]").focus(); return; }
+    const rec = {kind: fd.get("kind") || "other", name: String(fd.get("name") || "").trim(), pay, every: fd.get("every") || "mo", total: total || 0, end: end || "", left, apr, borrowed: numv(fd.get("borrowed")) || 0, since: /^\d{4}-\d{2}-\d{2}$/.test(since) ? since : "", day: +fd.get("day") || 0};
+    if (rec.day && (!old || old.day !== rec.day)) rec.dueSince = isoDaysAgo(0);
     if (rec.kind === "card"){ rec.card = String(fd.get("card") || "Visa"); if (rec.card === "Other") rec.card = String(fd.get("cardOther") || "").trim().slice(0, 30) || "Other"; rec.fee = numv(fd.get("fee")) || 0; rec.feeOn = rec.fee ? mdToIso(fd, "feeOn", old0 && old0.feeOn) : ""; } else if (old0) { delete old0.card; delete old0.fee; delete old0.feeOn; }
     if (rec.every === "yr") rec.on = mdToIso(fd, "on", old0 && old0.on); else if (old0) delete old0.on;
     if (old) Object.assign(old, rec); else loanList().push({id: uid(), ...rec});
@@ -7428,6 +7709,17 @@ view.addEventListener("submit", async e => {
     if (got) S.settlements.push({id: sid, from: pid, to: "me", amount: amt, date: isoDaysAgo(0)});
     else S.settlements.push({id: sid, from: "me", to: pid, amount: amt, date: isoDaysAgo(0)});
     tellSettled(pid, amt, got, left); save(); render(true); mailAfterTell(); toast((got ? `Recorded ${fmt(amt)} from ${bal.p.name}.` : `Recorded ${fmt(amt)} paid to ${bal.p.name}.`) + rest + counted + " Undo it in History."); return; }
+  if (kind === "flight"){ const t = tripList().find(x => x.id === f.closest("[data-trip]").dataset.trip); if (!t) return;
+    const no = flightNo(fd.get("no")), date = String(fd.get("date") || ""), time = String(fd.get("time") || ""), ap = k => String(fd.get(k) || "").trim().toUpperCase();
+    if (!FLIGHT_RE.test(no)){ toast("Enter the flight number as on your ticket, like AA 1234."); f.querySelector("[name=no]").focus(); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)){ toast("Pick the date of the flight."); f.querySelector("[name=date]").focus(); return; }
+    if ((ap("from") && !/^[A-Z]{3,4}$/.test(ap("from"))) || (ap("to") && !/^[A-Z]{3,4}$/.test(ap("to")))){ toast("Airports are 3-letter codes, like JFK."); return; }
+    const id = f.dataset.flightId, rec = {no, date, time, from: ap("from"), to: ap("to"), ref: String(fd.get("ref") || "").trim().toUpperCase().slice(0, 20), seat: ap("seat").slice(0, 5)};
+    t.flights = t.flights || []; const old = id && t.flights.find(x => x.id === id); if (old) Object.assign(old, rec); else t.flights.push({id: uid(), ...rec});
+    UI.flightAdd = null; UI.flightEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts();
+    const at = flightAt(rec); toast(at && at.getTime() <= Date.now() ? `${no} saved. It has already left, so it isn’t shown.` : `${no} added to ${t.name}.`); return; }
+  if (kind === "checkAdd"){ const t = tripList().find(x => x.id === f.closest("[data-trip]").dataset.trip), q = String(fd.get("q") || "").trim().slice(0, 60); if (!t || !q) return;
+    t.check = tripChecks(t).map(x => ({...x})); t.check.push({id: uid(), t: q, done: false}); save(); refreshOuts(); const i = view.querySelector(`[data-trip="${t.id}"] form[data-form="checkAdd"] [name=q]`); if (i) i.focus(); return; }
   if (kind === "tripAdd"){ const t = tripList().find(x => x.id === f.closest("[data-trip]").dataset.trip); if (!t) return; const lines = parseSpend(fd.get("q"), t.cur);
     if (!lines.length){ toast("Type what you spent, like “uber 20”."); return; }
     const bad = await convertLines(lines); if (bad){ toast(FX_FAIL(bad)); return; }
