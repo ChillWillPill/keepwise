@@ -212,10 +212,10 @@ async def theme_switch_light_dark_auto(ctx):
     assert await pg.evaluate("document.querySelector('meta[name=theme-color]').content") == "#0e0f11"
     await pg.reload(); await pg.wait_for_timeout(400)
     assert await bg() == "rgb(14, 15, 17)", "dark choice must survive reload"
-    await menu_to(pg, "settings"); await pg.click("[data-theme-set=light]"); await pg.wait_for_timeout(50)
+    await menu_to(pg, "look"); await pg.click("[data-theme-set=light]"); await pg.wait_for_timeout(50)
     assert await pg.evaluate("document.documentElement.dataset.theme") == "light" and await bg() == "rgb(246, 247, 248)"
     # Auto lives in Themes; the Classic look keeps the original colours
-    await menu_to(pg, "settings"); await pg.click("[data-theme-set=system]"); await pg.click("[data-skin-set=classic]"); await pg.wait_for_timeout(80)
+    await menu_to(pg, "look"); await pg.click("[data-theme-set=system]"); await pg.click("[data-skin-set=classic]"); await pg.wait_for_timeout(80)
     assert await pg.evaluate("document.documentElement.hasAttribute('data-theme')") is False and await bg() == "rgb(243, 239, 230)"
 
 @test
@@ -923,7 +923,7 @@ async def account_email_signup_and_profile(ctx):
     await pg.click("[data-acc-verified]"); await pg.wait_for_timeout(300)
     assert "Email verified" in await text(pg, "#view")
     # the profile is one page of cards: picture, profile, password, themes, this device, sign out; delete stays quiet at the foot
-    for sel in ("[data-pf-photo]", "[data-pf-password]", "[data-set-look]", "[data-pf-devices]", "[data-acc-signout]"):
+    for sel in ("[data-pf-photo]", "[data-pf-password]", "[data-pf-devices]", "[data-acc-signout]"):
         assert await pg.locator("#view " + sel).count() == 1, sel
     assert "This device" in await text(pg, "[data-pf-devices]") and await pg.locator("#view [data-pf-ro], #view .pf-ro").count() == 1
     if os.environ.get("SHOTS"): await pg.screenshot(path=os.path.join(os.environ["SHOTS"], "15_profile.png"), full_page=False); await pg.evaluate("document.getElementById('main').scrollTop = 700"); await pg.wait_for_timeout(200); await pg.screenshot(path=os.path.join(os.environ["SHOTS"], "16_profile2.png"))
@@ -1291,13 +1291,16 @@ async def first_run_setup_flow(ctx):
     pg = await open_app(ctx, welcome=True)
     assert await pg.locator(".welcome .w-title").count() == 1 and not await pg.locator("#tabbar").is_visible(), "setup first, no tab bar"
     assert (await state(pg)) is None, "nothing saved until setup is finished"
-    await pg.click("[data-w-next]"); await pg.click("[data-w-next]")
-    assert "Enter what comes in" in await pg.inner_text("#toast"), "income is needed"
+    await pg.click("[data-w-next]"); await pg.click("[data-setup] .wiz-bar [data-w-next]")
+    assert "Enter what comes in" in await pg.inner_text("#toast"), "income is needed, or Skip for now"
+    assert await pg.evaluate("document.documentElement.dataset.theme") == "light", "setup is always in the light look"
     await pg.select_option("[data-w=cur]", "GBP"); await pg.wait_for_timeout(80)
-    assert "£" in await text(pg, ".w-big em")
-    await pg.fill("[data-w=income]", "4200"); await pg.keyboard.press("Enter"); await pg.wait_for_timeout(100)
-    await pg.fill("[data-w=home]", "1500"); await pg.click("[data-w-next]")
-    await pg.click("[data-w-finish]"); await pg.wait_for_timeout(200)
+    assert "£" in await text(pg, ".sf-amt em")
+    await pg.fill("[data-w=income]", "4200"); await pg.keyboard.press("Enter"); await pg.wait_for_timeout(150)
+    assert "£4,200" in await text(pg, "[data-setup] .wiz-done"), "the pay folds up at the top"
+    await pg.click("[data-w-bill=rent]"); await pg.fill("[data-w-amt=rent]", "1500"); await pg.click("[data-setup] .wiz-bar [data-w-next]"); await pg.wait_for_timeout(150)
+    assert "1 · £1,500" in await text(pg, "[data-setup]")
+    await pg.click("[data-setup] .wiz-bar [data-w-finish]"); await pg.wait_for_timeout(200)
     st = await state(pg)
     assert st["income"] == 4200 and st["cur"] == "GBP" and st["example"] is False and [e["amount"] for e in st["expenses"]] == [1500] and st["subs"] == []
     assert await pg.locator("#tabbar").is_visible() and "£2,700" in await tc(pg, "[data-out=headline]")
@@ -3008,26 +3011,26 @@ async def tour_walks_the_example_and_never_touches_your_numbers(ctx):
     tour = pg.locator("#tour"); assert await tour.is_visible()
     mine = await pg.evaluate("localStorage.getItem('keepwise-app-v1')"); assert "My own line" in mine   # saved once as the tour starts, then left alone
     seen = []
-    assert await pg.locator("#tour .tour-bars i").count() == 11, "a progress bar per scene, like a short video"
-    for i in range(10):
-        v = await tour.inner_text(); assert f"{i + 1} of 10" in v and "Skip" in v, v   # Skip is on every step
+    assert await pg.locator("#tour .tour-bars i").count() == 13, "a progress bar per scene, like a short video"
+    for i in range(12):
+        v = await tour.inner_text(); assert f"{i + 1} of 12" in v and "Skip" in v, v   # Skip is on every step
         seen.append(await pg.inner_text("#tour h3"))
-        if i != 8: assert await pg.locator(".tour-focus").count() == 1, f"step {i + 1} points at something"
+        if i != 10: assert await pg.locator(".tour-focus").count() == 1, f"step {i + 1} points at something"
         box = await pg.locator(".tour-focus").first.bounding_box() if await pg.locator(".tour-focus").count() else None
         if box: assert box["y"] < 500, f"step {i + 1}: what it points at is on screen"
         assert (await pg.locator("#tour [data-tour-back]").count() == 1) == (i > 0)
         await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(200)
-    assert seen == ["What you keep", "The owl", "Where it goes", "Coming up", "Budget", "Income", "Subscriptions", "Banks", "Split", "Menu"], seen
+    assert seen == ["What you keep", "The owl", "Where it goes", "Coming up", "Budget", "Income", "Subscriptions", "Accounts", "Upload a statement", "Statements", "Split", "Menu"], seen
     v = await tour.inner_text(); assert "Everything in KeepWise" in v and "exactly as you left them" in v and "Back to my month" in v and await pg.locator("#tour .tour-all span").count() == 12
     assert "My own line" not in await pg.inner_text("#app"), "the tour shows the example, not your month"
     assert await pg.evaluate("localStorage.getItem('keepwise-app-v1')") == mine, "nothing is saved during the tour"
-    await pg.click("#tour [data-tour-back]"); await pg.wait_for_timeout(150); assert "10 of 10" in await tour.inner_text()
+    await pg.click("#tour [data-tour-back]"); await pg.wait_for_timeout(150); assert "12 of 12" in await tour.inner_text()
     await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-end]"); await pg.wait_for_timeout(250)
     assert not await tour.is_visible() and await pg.locator(".tour-focus").count() == 0 and not await pg.evaluate("document.getElementById('app').classList.contains('touring')")
     assert (await state(pg))["tab"] == "month" and "My own line" in await text(pg, "[data-out=envelopes]"), "your own numbers are back, on the tab you left"
     # it can be replayed from Plan, and skipped at any step
     await menu_to(pg, "tour")
-    await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(150); assert "3 of 10" in await tour.inner_text()
+    await pg.click("#tour [data-tour-next]"); await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(150); assert "3 of 12" in await tour.inner_text()
     await pg.click("#tour [data-tour-skip]"); await pg.wait_for_timeout(250)
     assert not await tour.is_visible() and (await state(pg))["tab"] == "month" and "My own line" in await text(pg, "[data-out=envelopes]")
     await pg.reload(); await pg.wait_for_timeout(400); assert "My own line" in await pg.evaluate("localStorage.getItem('keepwise-app-v1')")
@@ -3035,12 +3038,12 @@ async def tour_walks_the_example_and_never_touches_your_numbers(ctx):
     # a first visit: the tour is offered before setup, and finishing it leads into setup
     pg = await open_app(ctx, welcome=True); await pg.evaluate("window.__kwErasing = true; localStorage.clear()"); await pg.reload(); await pg.wait_for_timeout(400)
     assert "Take the tour" in await text(pg, "#view")
-    await pg.click("[data-tour-start]"); await pg.wait_for_timeout(250); assert "1 of 10" in await pg.locator("#tour").inner_text()
+    await pg.click("[data-tour-start]"); await pg.wait_for_timeout(250); assert "1 of 12" in await pg.locator("#tour").inner_text()
     await pg.click("#tour [data-tour-skip]"); await pg.wait_for_timeout(250); assert "See what you keep" in await text(pg, "#view"), "Skip returns to where you were"
     await pg.click("[data-tour-start]"); await pg.wait_for_timeout(200)
-    for _ in range(10): await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(120)
+    for _ in range(12): await pg.click("#tour [data-tour-next]"); await pg.wait_for_timeout(120)
     assert "Set up my month" in await pg.locator("#tour").inner_text()
-    await pg.click("#tour [data-tour-end]"); await pg.wait_for_timeout(250); assert "What comes in?" in await text(pg, "#view")
+    await pg.click("#tour [data-tour-end]"); await pg.wait_for_timeout(250); assert "What comes in each month?" in await text(pg, "#view")
     assert await pg.evaluate("localStorage.getItem('keepwise-app-v1')") is None, "a tour before setup saves nothing"
     assert not pg.errors, pg.errors
 
@@ -3821,7 +3824,7 @@ async def loans_and_giving_from_a_statement_go_to_their_own_places(ctx):
     ex = [e["name"] for e in st["expenses"]]; assert not any(w in " ".join(ex) for w in ("Toyota", "Mortgage", "Chase", "Nelnet", "Loan", "Red Cross", "Savings")) and "Rent Oakview Apartments" in ex, ex
     assert [(g["name"], g["cause"], g["amount"], g["every"]) for g in st["giving"]] == [("Donation Red Cross", "relief", 25, "mo")] or [(g["name"]) for g in st["giving"]] == ["Red Cross"], st["giving"]
     # they show where a loan typed by hand would show, and are counted once
-    await tab(pg, "loans"); pl = await stx(pg, "[data-out=loans]"); assert "Rocket Mortgage" in pl and "Mortgage" in pl and "Credit cards" in pl and "$220/mo" in pl, pl
+    await tab(pg, "loans"); pl = await stx(pg, "[data-out=loans]"); q = await stx(pg, "#view [data-loans-row] .loan-quick"); assert "Rocket Mortgage" in pl and "Mortgage" in pl and "Chase" in q and "$220" in q, (pl, q)
     assert "Red Cross" in await stx(pg, "[data-out=giving]")
     await tab(pg, "month"); leg = await stx(pg, ".legend"); ex, loans, misc, sav = [money(x) for x in re.findall(r"\$[\d,.]+", leg)]
     assert "Loans" in leg and abs((ex + loans) - (900 + 80 + 60 + 310 + 1200 + 220 + 140 + 90)) < 0.5 and abs(misc - (25 + 3)) < 0.5, leg
@@ -4000,15 +4003,14 @@ async def a_bill_can_be_ticked_as_paid_this_month(ctx):
     await pg.reload(); await pg.wait_for_timeout(400); await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
     body = pg.locator("[data-env-open=needs] + .env-body"); assert await body.locator(".tick[aria-pressed=true]").count() == 1, "the tick is remembered"
     # a loan repayment is ticked the same way
-    await pg.click("[data-env-open=loans]"); await pg.wait_for_timeout(200)
-    lb = pg.locator("[data-env-open=loans] + .env-body"); await lb.locator(".tick").first.click(); await pg.wait_for_timeout(200)
-    assert "All paid this month" in await pg.locator("[data-env-open=loans] + .env-body [data-paid-sum]").inner_text()
+    lb = pg.locator("[data-loans-row] .loan-quick"); await lb.locator(".tick").first.click(); await pg.wait_for_timeout(200)   # loans are listed with their ticks without opening Details
+    assert "1 of 1 paid this month" in await pg.inner_text("[data-loans-row] .env-foot")
     assert "l:L1" in (await state(pg))["paid"]["on"]
     # tap again to undo
-    await pg.locator("[data-env-open=loans] + .env-body .tick").first.click(); await pg.wait_for_timeout(200)
+    await pg.locator("[data-loans-row] .loan-quick .tick").first.click(); await pg.wait_for_timeout(200)
     assert "l:L1" not in (await state(pg))["paid"]["on"]
     # every bill ticked
-    await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
+    if await pg.get_attribute("[data-env-open=needs]", "aria-expanded") != "true": await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
     for i in range(await pg.locator("[data-env-open=needs] + .env-body .tick[aria-pressed=false]").count()):
         await pg.locator("[data-env-open=needs] + .env-body .tick[aria-pressed=false]").first.click(); await pg.wait_for_timeout(120)
     assert "paid this month" in await pg.locator("[data-env-open=needs] + .env-body [data-paid-sum]").inner_text()
@@ -4341,7 +4343,7 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator('[data-out="comingUp"].tour-focus').count() == 1
     assert not await pg.locator("#wise").is_visible() and await pg.evaluate("document.getElementById('wise').style.cssText") == "", "then it steps back"
     await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator('[data-out="envelopes"].tour-focus').count() == 1 and await pg.locator("[data-mseg=budget]").get_attribute("aria-pressed") == "true"
-    await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator('[data-out="payBox"].tour-focus').count() == 1 and await pg.locator("[data-mseg=more]").get_attribute("aria-pressed") == "true", "each part of Month in turn"
+    await pg.click("[data-tour-next]"); await pg.wait_for_timeout(200); assert await pg.locator('.tour-focus [for="m-income"]').count() == 1 and await pg.locator("[data-mseg=more]").get_attribute("aria-pressed") == "true", "each part of Month in turn"
     await pg.click("[data-tour-skip]"); await pg.wait_for_timeout(200)
     assert not pg.errors, pg.errors
     # a computer has the room: one page, no switch
@@ -5440,7 +5442,7 @@ async def the_side_menu_opens_each_place(ctx):
     await _menu(pg, "close"); assert await pg.locator("#sidenav").is_hidden()
     # each row goes to its own place
     await _menu(pg, "settings"); assert await pg.locator("#view h1").inner_text() == "Settings" and await pg.locator("[data-set-backup]").count() == 0 and await pg.locator("[data-lock-card]").count() == 0
-    t = await pg.inner_text("#view"); assert "Look" in t and "Replay the tour" not in t, "the tour has its own row in the menu, so it is not repeated here"
+    t = await pg.inner_text("#view"); assert await pg.locator("#view [data-skin-set]").count() == 0 and "Replay the tour" not in t, "themes live in Look and the tour has its own menu row, so neither is repeated here"
     await _menu(pg, "security"); assert await pg.locator("#view h1").inner_text() == "Security & privacy" and await pg.locator("[data-lock-card]").count() == 1 and await pg.locator("[data-set-backup]").count() == 0
     await pg.click("[data-lock-set]"); await pg.wait_for_timeout(150); assert await pg.locator("form[data-form=lockSet]").count() == 1, "the passcode form opens on the Security screen"
     await pg.click("[data-lock-cancel]"); await pg.wait_for_timeout(100)
@@ -5455,7 +5457,7 @@ async def the_side_menu_opens_each_place(ctx):
     await _menu(pg, "profile"); assert await pg.locator("#view").inner_text() != "" and await pg.locator(".hero").count() == 0, "the account screen opens"
     await tab(pg, "month")
     # appearance is chosen in Settings: Auto, Light or Dark
-    await _menu(pg, "settings"); await pg.click("[data-theme-set=dark]"); await pg.wait_for_timeout(150)
+    await _menu(pg, "look"); await pg.click("[data-theme-set=dark]"); await pg.wait_for_timeout(150)
     assert await pg.evaluate("document.documentElement.dataset.theme || ''") == "dark" and await pg.get_attribute("[data-theme-set=dark]", "aria-pressed") == "true"
     await pg.click("[data-theme-set=system]"); await pg.wait_for_timeout(150)
     # Security & privacy and Your data & backups each carry enough to be worth a screen
@@ -5930,7 +5932,7 @@ async def first_screen_offers_the_tour_and_an_account(ctx):
     assert await pg.locator(".welcome [data-acc-start=create]").count() == 1 and await pg.locator(".welcome [data-acc-start=signin]").count() == 1
     assert "Continue without an account" in v and not await pg.locator("#tabbar").is_visible()
     await pg.click(".welcome [data-w-next]"); await pg.wait_for_timeout(150)
-    assert await pg.locator(".welcome [data-w=income]").count() == 1, "without an account, setup starts"
+    assert await pg.locator("[data-setup] [data-w=income]").count() == 1, "without an account, setup starts"
     assert not pg.errors, pg.errors
 
 @test
@@ -6022,7 +6024,7 @@ async def giving_can_be_ticked_with_what_was_given(ctx):
 @test
 async def themes_switch_light_dark_and_the_look(ctx):
     pg = await open_app(ctx)
-    await menu_to(pg, "settings"); await pg.click("[data-theme-set=dark]"); await pg.wait_for_timeout(100)
+    await menu_to(pg, "look"); await pg.click("[data-theme-set=dark]"); await pg.wait_for_timeout(100)
     assert await pg.evaluate("document.documentElement.dataset.theme") == "dark"
     await pg.click("[data-theme-set=light]"); await pg.wait_for_timeout(100)
     assert await pg.evaluate("document.documentElement.dataset.theme") == "light"
@@ -6140,10 +6142,11 @@ async def cards_have_colours_payments_and_live_only_in_cards(ctx):
     assert "Paid $150" in await text(pg, "[data-up-card]:has-text('Gold card')")
     # Loans and debt shows one line for cards that opens Cards
     await tab(pg, "loans"); await pg.wait_for_timeout(150)
-    loans = pg.locator(".loan-card"); assert await loans.locator("[data-loan]", has_text="Gold card").count() == 0 and await loans.locator("[data-cards-open]").count() == 1
-    assert "$150/mo" in await loans.locator("[data-cards-open]").inner_text(), "a payment with no plan counts this month"
+    loans = pg.locator(".loan-card"); assert await loans.locator("[data-loan]", has_text="Gold card").count() == 0
+    q = pg.locator("#view [data-loans-row]"); qt = await q.inner_text(); assert await q.locator(".lq-cards").count() == 1 and "$150" in qt, qt
+    loans = q
     assert "Add a loan or car insurance" in await loans.inner_text()
-    await loans.locator("[data-cards-open]").click(); await pg.wait_for_timeout(250)
+    await loans.locator(".lq-cards").click(); await pg.wait_for_timeout(250)
     assert await pg.locator("[data-cards]").count() == 1 and await pg.locator("[data-bankseg=cards][aria-pressed=true]").count() == 1
     assert not pg.errors, pg.errors
 
@@ -6169,11 +6172,11 @@ async def android_app_shows_no_plus_prices_and_the_play_badge_waits(ctx):
 async def the_tour_plays_by_itself_and_pauses(ctx):
     pg = await open_app(ctx, month_tabs=True)
     await pg.click("#acct-btn"); await pg.wait_for_timeout(280); await pg.click("#sidenav [data-menu=tour]"); await pg.wait_for_timeout(300)
-    assert "1 of 10" in await pg.inner_text("#tour") and await pg.evaluate("document.documentElement.dataset.skin") == "blue", "the tour runs in the Blue look"
+    assert "1 of 12" in await pg.inner_text("#tour") and await pg.evaluate("document.documentElement.dataset.skin") == "blue", "the tour runs in the Blue look"
     bg = await pg.evaluate("[getComputedStyle(document.getElementById('tour')).backgroundColor, getComputedStyle(document.querySelector('#tour .tour-go')).backgroundColor]")
     assert bg == ["rgb(255, 255, 255)", "rgb(36, 87, 214)"], ("blue and white", bg)
-    await pg.wait_for_timeout(6400); assert "2 of 10" in await pg.inner_text("#tour"), "the next scene follows on its own"
-    await pg.click("#tour [data-tour-pause]"); await pg.wait_for_timeout(6400); assert "2 of 10" in await pg.inner_text("#tour"), "paused stays put"
+    await pg.wait_for_timeout(6400); assert "2 of 12" in await pg.inner_text("#tour"), "the next scene follows on its own"
+    await pg.click("#tour [data-tour-pause]"); await pg.wait_for_timeout(6400); assert "2 of 12" in await pg.inner_text("#tour"), "paused stays put"
     assert await pg.get_attribute("#tour [data-tour-pause]", "aria-label") == "Play"
     await pg.click("#tour [data-tour-skip]"); await pg.wait_for_timeout(200); assert await pg.locator("#tour").is_hidden()
     assert await pg.evaluate("document.documentElement.dataset.skin") != "blue", "your own look comes back"
@@ -6230,11 +6233,11 @@ async def every_way_into_banks_asks_for_the_app_lock(ctx):
     await menu_to(pg, "security"); await pg.click("[data-lock-set]"); f = "form[data-form=lockSet] "
     await pg.fill(f + "[name=pin]", "2468"); await pg.fill(f + "[name=pin2]", "2468"); await pg.click(f + "[type=submit]"); await pg.wait_for_timeout(600)
     await tab(pg, "loans"); await pg.wait_for_timeout(150)
-    await pg.click(".loan-card [data-cards-open]"); await pg.wait_for_timeout(250)
+    await pg.click("#view [data-loans-row] .lq-cards"); await pg.wait_for_timeout(250)
     assert await locked() and "Unlock your banks" in await pg.inner_text("#lockscreen"), "the Credit cards line asks for the passcode first"
     assert await pg.locator("#view [data-cards]").count() == 0
     await pg.click("[data-lock-cancel]"); await pg.wait_for_timeout(200); assert not await locked() and await pg.locator("#view [data-cards]").count() == 0, "cancel stays out"
-    await pg.click(".loan-card [data-cards-open]"); await pg.wait_for_timeout(250); await tap("2468")
+    await pg.click("#view [data-loans-row] .lq-cards"); await pg.wait_for_timeout(250); await tap("2468")
     assert not await locked() and await pg.locator("#view [data-cards]").count() == 1 and await pg.locator("[data-bankseg=cards][aria-pressed=true]").count() == 1, "then Cards opens"
     await pg.click("[data-tab=month]"); await pg.wait_for_timeout(150); await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(250)
     assert not await locked(), "unlocked a moment ago, Banks does not ask again"
@@ -6464,14 +6467,36 @@ async def owl_sheet_repeats_favourites_and_shows_history(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def weekly_subscriptions_and_bills_count_each_charge(ctx):
+    # a weekly or 2-weekly subscription or bill counts every charge that falls in the month, and says what one charge costs
+    pg = await open_app(ctx, month_tabs=True)
+    await tab(pg, "subs"); await pg.click("text=Add a subscription"); f = pg.locator("form[data-form=addSub]")
+    assert [o.strip() for o in await f.locator("[name=cycle] option").all_inner_texts()] == ["Weekly", "Every 2 weeks", "Monthly", "Yearly"]
+    await f.locator("[name=name]").fill("Gym"); await f.locator("[name=price]").fill("10"); await f.locator("[name=cycle]").select_option("wk")
+    assert await f.locator("[data-renew-yr]").is_visible(), "a weekly one asks for its next charge date"
+    await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    row = pg.locator("[data-sub]", has_text="Gym"); t = await row.inner_text(); assert "/wk" in t and "a month" in t, t
+    st = await state(pg); g = [s for s in st["subs"] if s["name"] == "Gym"][0]; assert g["cycle"] == "wk" and g.get("renewDate"), g
+    await tab(pg, "plan")
+    if await pg.get_attribute("[data-env-open=needs]", "aria-expanded") != "true": await pg.click("[data-env-open=needs]")
+    await pg.wait_for_timeout(150); await pg.click(".env-body [data-add-exp]"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=exp]"); await f.locator("[name=name]").fill("Daycare"); await f.locator("[name=amount]").fill("100"); await f.locator("[name=every]").select_option("wk"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    e = [x for x in (await state(pg))["expenses"] if x["name"] == "Daycare"][0]
+    assert e["every"] == "wk" and e["per"] == 100 and e["amount"] in (400, 500), e
+    assert "$100 every week" in await pg.locator(".env-body [data-exp]", has_text="Daycare").inner_text()
+    assert not pg.errors, pg.errors
+
+@test
 async def setup_can_be_skipped_at_every_step(ctx):
     # getting in is easy: every setup step has Skip for now, landing on a usable month that says what to do next
     pg = await open_app(ctx, welcome=True)
     await pg.click(".welcome [data-w-next]"); await pg.wait_for_timeout(150)
-    assert await pg.locator(".welcome [data-w-skipall]").count() == 1, "the pay step can be skipped"
-    await pg.fill(".welcome [data-w=income]", "2000"); await pg.click(".welcome [data-w-next]"); await pg.wait_for_timeout(150)
-    assert await pg.locator(".welcome [data-w-skipall]").count() == 1, "the home step can be skipped"
-    await pg.click(".welcome [data-w-skipall]"); await pg.wait_for_timeout(250)
+    assert await pg.locator("[data-setup] .wiz-skip").count() == 1, "the pay step can be skipped"
+    await pg.fill("[data-setup] [data-w=income]", "2000"); await pg.click("[data-setup] .wiz-bar [data-w-next]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-setup] .wiz-skip").count() == 1, "the bills step can be skipped"
+    await pg.click("[data-setup] .wiz-skip"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-setup] .wiz-skip").count() == 1, "and so can subscriptions"
+    await pg.click("[data-setup] [data-w-skipall]"); await pg.wait_for_timeout(250)
     st = await state(pg); assert st and st["example"] is False and st["income"] == 2000 and await pg.locator(".welcome").count() == 0
     assert "Set up your month whenever you like" in await pg.inner_text("#toast") and await pg.locator("#tabbar").is_visible()
     assert not pg.errors, pg.errors
