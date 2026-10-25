@@ -36,7 +36,7 @@
 /* Layout: an app shell pinned to the visible screen (sized from visualViewport in JS): header, one scrolling column, tab bar flush to the bottom edge. */
 :root{
   --bg:#f3efe6; --card:#fbf8f2; --ink:#1c2420; --muted:#4d564e; --line:#e0d5c5; --chip:#efe4d4;
-  --green:#1b6843; --green-soft:#e4f2ea; --rust:#a84b34; --rust-soft:#f6e2da; --gold:#9a7417; --gold-soft:#f3e9cc;
+  --green:#1b6843; --green-soft:#e4f2ea; --on-green:#f3faf6; --rust:#a84b34; --rust-soft:#f6e2da; --gold:#9a7417; --gold-soft:#f3e9cc;
   --av-s:42%; --av-l:86%; --av-fg:28%; --brand-teal:#0e8571; --brand-gold:#a57d2c;
   --lift:0 1px 2px rgba(28,36,32,.04),0 6px 18px -12px rgba(28,36,32,.18);
   --display:"Fraunces", ui-serif, Georgia, serif;
@@ -44,17 +44,17 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27;
-  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}}
+  --green:#79c79b; --green-soft:#1f3326; --on-green:#0c1611; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}}
 :root[data-theme="light"]{color-scheme:light}
 :root[data-theme="dark"]{
   --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27;
-  --green:#79c79b; --green-soft:#1f3326; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}
+  --green:#79c79b; --green-soft:#1f3326; --on-green:#0c1611; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}
 
 /* Themes: each look has a light and a dark side; Classic is the original cream and forest look. */
 :root[data-skin="ledger"]{--bg:#f6f1e7; --card:#fffdf8; --ink:#1d1a16; --muted:#6b6255; --line:#e5d9c2; --chip:#f1e8d6; --green:#1f7a4d; --green-soft:#e2efe6; --gold:#9a7424; }
 :root[data-skin="ledger"][data-theme="dark"]{--bg:#17140f; --card:#211d16; --ink:#f3ead9; --muted:#b5a88f; --line:#3a3326; --chip:#2a251c; --green:#6fc79b; --green-soft:#1d3226; --gold:#d8b25a; --sheet:#2c271d; --sheet-line:#6b5d43; --sheet-in:#17140f; color-scheme:dark}
 @media (prefers-color-scheme: dark){:root[data-skin="ledger"]:not([data-theme="light"]){--bg:#17140f; --card:#211d16; --ink:#f3ead9; --muted:#b5a88f; --line:#3a3326; --chip:#2a251c; --green:#6fc79b; --green-soft:#1d3226; --gold:#d8b25a; --sheet:#2c271d; --sheet-line:#6b5d43; --sheet-in:#17140f; color-scheme:dark}}
-:root[data-skin="terminal"],:root[data-skin="terminal"][data-theme="dark"],:root[data-skin="terminal"][data-theme="light"]{--bg:#04080a; --card:#091110; --ink:#d9ffe9; --muted:#76ad91; --line:#173a2c; --chip:#0d1c16; --green:#39ff88; --green-soft:#0d2a1c; --gold:#e8c35a; --bad:#ff6b5a; --sheet:#0f241b; --sheet-line:#2a6b4b; --sheet-in:#04080a; color-scheme:dark}
+:root[data-skin="terminal"],:root[data-skin="terminal"][data-theme="dark"],:root[data-skin="terminal"][data-theme="light"]{--bg:#04080a; --card:#091110; --ink:#d9ffe9; --muted:#76ad91; --line:#173a2c; --chip:#0d1c16; --green:#39ff88; --green-soft:#0d2a1c; --on-green:#03140b; --gold:#e8c35a; --gold-soft:#2b2410; --rust:#ff7a66; --rust-soft:#2c1611; --bad:#ff6b5a; --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --sheet:#0f241b; --sheet-line:#2a6b4b; --sheet-in:#04080a; color-scheme:dark}
 /* Terminal: a trading-screen look. Numbers in a monospace face; Glow (Off / On / Max) lights the figures and the card edges. */
 :root[data-skin="terminal"] .tnum,:root[data-skin="terminal"] .big,:root[data-skin="terminal"] .env-amt .name,:root[data-skin="terminal"] .debt-big{font-family:ui-monospace,"SF Mono","Roboto Mono",Menlo,Consolas,monospace!important;letter-spacing:-.01em}
 :root[data-skin="terminal"][data-glow="on"] .big,:root[data-skin="terminal"][data-glow="on"] .debt-big,:root[data-skin="terminal"][data-glow="on"] .good{text-shadow:0 0 8px rgba(57,255,136,.45)}
@@ -175,7 +175,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .wise-fab[hidden]{display:none}.wise-fab img{width:44px;height:44px;border-radius:50%;pointer-events:none}
 .wise-fab{width:64px;height:64px;border:2.5px solid var(--green);box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 18%,transparent),0 10px 24px rgba(0,0,0,.28)}
 .wise-fab img{width:52px;height:52px}
-.app:not(.touring) .view{padding-bottom:max(24px,var(--view-pb,0px))}
+.app:not(.touring) .view{padding-bottom:max(96px,var(--view-pb,0px))}
 .wise-fab::after{content:"+";position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:var(--green);color:var(--card);font:700 16px/22px var(--body);text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .wise-fab.moving{transform:scale(1.12);box-shadow:0 10px 26px rgba(0,0,0,.28);cursor:grabbing}
 .app.typing .wise-fab,.app.welcoming .wise-fab,.app.touring .wise-fab{display:none}
@@ -289,7 +289,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-o
 .home-link{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none;border-radius:12px;-webkit-tap-highlight-color:transparent}
 .home-link:focus-visible{outline:2px solid var(--green);outline-offset:3px}
 .btn:focus-visible,.link:focus-visible,.chip:focus-visible{outline:2px solid var(--green);outline-offset:2px}
-.btn.primary{background:var(--green);border-color:var(--green);color:#f3faf6;width:100%;padding:14px;font-size:1rem;border-radius:16px}
+.btn.primary{background:var(--green);border-color:var(--green);color:var(--on-green);width:100%;padding:14px;font-size:1rem;border-radius:16px}
 a.btn{display:block;text-decoration:none}
 .btn.small{padding:8px 12px;min-height:36px;font-size:.84rem;border-radius:10px}
 .btn.danger{color:var(--rust)}
@@ -358,9 +358,9 @@ a.btn{display:block;text-decoration:none}
 .seg.sub-seg[data-pseg-switch]{grid-template-columns:1fr 1fr}
 [data-pseg-switch]~.card .inc-row:not(.editing){padding:10px 14px;gap:4px}
 [data-pseg-switch]~.card .inc-row:not(.editing)>.row-top+[data-exp-edit]{margin-top:-24px}
-.view:has([data-pseg-switch]){gap:12px;padding-top:12px;padding-bottom:24px}
+.view:has([data-pseg-switch]){gap:12px;padding-top:12px;padding-bottom:96px}
 [data-pseg-switch]~[data-out] .card,[data-pseg-switch]~.card{padding:14px 16px;gap:8px;border-radius:18px}
-.view:has([data-mseg-switch]){gap:12px;padding-top:12px;padding-bottom:24px}
+.view:has([data-mseg-switch]){gap:12px;padding-top:12px;padding-bottom:96px}
 [data-mseg-switch]~.hero{padding:14px 14px 12px;gap:2px;border-radius:20px}
 [data-mseg-switch]~.hero h1{font-size:1.1rem}
 [data-mseg-switch]~.hero .big{font-size:min(2.35rem,11.5vw)!important;margin-top:2px!important}
@@ -378,9 +378,9 @@ a.btn{display:block;text-decoration:none}
 
 .pill{display:inline-block;font-size:.76rem;font-weight:600;border-radius:99px;padding:3px 9px;white-space:nowrap}
 .pill.flag{background:var(--rust-soft);color:var(--rust)}
-.pill.ok{background:var(--green-soft);color:var(--green)}
+.pill.ok{background:var(--green-soft);color:color-mix(in srgb,var(--green) 85%,var(--ink))}
 .pill svg{width:12px;height:12px;vertical-align:-1px;margin-right:4px}
-.pill.gold{background:var(--gold-soft);color:var(--gold)}
+.pill.gold{background:var(--gold-soft);color:color-mix(in srgb,var(--gold) 72%,var(--ink))}
 .pill.grey{background:var(--chip);color:var(--muted)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;flex:none}
 .seg button{appearance:none;border:0;background:none;font:600 .85rem var(--body);color:var(--muted);padding:7px 12px;min-height:36px;cursor:pointer}
@@ -539,7 +539,7 @@ details summary::-webkit-details-marker{display:none}
 .wiz-card > label.field:first-of-type > input:placeholder-shown:not(:focus),.wiz-card .sf-amt:has(input:placeholder-shown){box-shadow:0 0 0 2px color-mix(in srgb,var(--green) 30%,transparent)}
 .coach{background:var(--card);border:1px solid color-mix(in srgb,var(--green) 28%,var(--line));border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--lift)}.coach-h{display:flex;align-items:center;gap:8px}.coach-h b{flex:1;font-size:.95rem}.coach-ic{width:28px;height:28px;border-radius:9px;background:var(--green-soft);display:grid;place-items:center;font-size:.9rem}
 .coach-cards{display:flex;align-items:flex-start;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -14px;padding:2px 14px 4px}.coach-cards::-webkit-scrollbar{display:none}
-.coach-card{flex:0 0 74%;scroll-snap-align:start;background:var(--bg);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}.coach-n{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:var(--muted)}.coach-n i{font-style:normal;width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:.66rem}
+.coach-card{flex:0 0 74%;scroll-snap-align:start;background:var(--bg);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}.coach-n{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:var(--muted)}.coach-n i{font-style:normal;width:18px;height:18px;border-radius:50%;background:var(--green);color:var(--on-green);display:grid;place-items:center;font-size:.66rem}
 .coach-end .coach-n i{background:var(--gold)}.coach-res{background:var(--green-soft);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.coach-res span{font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.coach-res b{font:600 1.35rem/1.15 var(--display);color:var(--green)}.coach-res small{font-size:.72rem;color:var(--muted)}.coach-bar{display:flex;height:7px;border-radius:9px;overflow:hidden;background:var(--chip);margin-top:6px}.coach-bar i{display:block;height:100%}
 .coach-demo{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.82rem;color:var(--muted)}.coach-demo b{color:var(--ink);text-align:right;font-size:.88rem;display:flex;flex-direction:column}.coach-demo small{font-weight:500;color:var(--muted);font-size:.7rem}
 .cf-back{position:fixed;inset:0;z-index:62;background:rgba(10,14,12,.46);display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));animation:cfIn .16s ease}@keyframes cfIn{from{opacity:0}to{opacity:1}}
@@ -547,7 +547,7 @@ details summary::-webkit-details-marker{display:none}
 .cf-ic{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:1.35rem;background:var(--chip)}.cf-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.cf-btns .btn{min-height:48px;border-radius:14px}.cf-col{display:flex;flex-direction:column;gap:8px;margin-top:6px}.cf-col .btn{min-height:48px;border-radius:14px}.cf-sheet .btn.danger{background:var(--rust);border-color:var(--rust);color:#fff}
 .cf-back .cf-back{background:rgba(10,14,12,.2)}
 .dtiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}.dtile{appearance:none;font:inherit;color:var(--ink);text-align:left;display:flex;flex-direction:column;gap:3px;padding:14px;border:1px solid var(--line);border-radius:18px;background:var(--card);cursor:pointer;box-shadow:var(--lift);min-height:112px}.dtile b{font-size:.95rem;margin-top:6px}.dtile small{color:var(--muted);font-size:.76rem;line-height:1.3}.dtile:active{transform:scale(.98)}
-.dt-ic{width:40px;height:40px;border-radius:13px;background:var(--chip);display:grid;place-items:center;font-size:1.2rem;flex:none}.dtile.primary{background:var(--green);border-color:var(--green);color:#fff}.dtile.primary small{color:color-mix(in srgb,#fff 78%,transparent)}.dtile.primary .dt-ic{background:rgba(255,255,255,.16)}
+.dt-ic{width:40px;height:40px;border-radius:13px;background:var(--chip);display:grid;place-items:center;font-size:1.2rem;flex:none}.dtile.primary{background:var(--green);border-color:var(--green);color:var(--on-green)}.dtile.primary small{color:color-mix(in srgb,#fff 78%,transparent)}.dtile.primary .dt-ic{background:rgba(255,255,255,.16)}
 .data-hero{background:var(--green-soft);border-color:color-mix(in srgb,var(--green) 22%,transparent)}.dh-top{display:flex;align-items:center;gap:12px}.dh-top h2{margin:0}.dh-top .dt-ic{background:var(--card)}.data-hero .sum-cell{background:var(--card)}.dt-label{margin:6px 0 -4px}.dt-over{display:grid;grid-template-columns:1fr 1fr;gap:10px}.data-hero .sum-cell{padding:10px 12px}
 .wiz-opts{display:flex;flex-direction:column}.wiz-opt{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--line);cursor:pointer}.wiz-opt:first-child{border-top:0}.wiz-opt input{width:20px;height:20px;accent-color:var(--green)}
 .wiz-bar{display:flex;justify-content:space-between;gap:10px;position:sticky;bottom:0;z-index:5;background:var(--card);padding:10px 0 4px;margin-top:-4px;box-shadow:0 -10px 12px -10px rgba(0,0,0,.12)}.wiz-bar .btn{min-width:96px}.wiz-quick{margin:-2px 0 0}
@@ -567,7 +567,8 @@ details summary::-webkit-details-marker{display:none}
 .loan-quick{display:flex;flex-direction:column;padding:0 18px 6px}.lq-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.lq-row .ln-ic{flex:none}.lq-t{flex:1;min-width:0;display:flex;flex-direction:column}.lq-t b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lq-t small{font-size:.78rem}.lq-amt{font-weight:600}.lq-row.paid .lq-amt{color:var(--muted)}
 .in-env .cards-link{display:none}.lq-group{margin:4px 18px 10px;border:1px solid var(--line);border-radius:16px;background:var(--bg);overflow:hidden}.lq-head{appearance:none;font:inherit;color:inherit;width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:none;border:0;cursor:pointer;text-align:left}.lq-head svg{color:var(--muted);flex:none}.lq-amt small{font-size:.72rem;font-weight:500}.lq-sub{padding:0 12px 4px}.lq-sub .lq-row{border-top:1px solid var(--line);padding:9px 0}
 .loan-quick:empty{display:none}
-.amt-hide .tnum,.amt-hide .debt-owed b,.amt-hide .pill.grey{filter:blur(7px);user-select:none}
+.amt-hide .tnum,.amt-hide .debt-owed b,.amt-hide .pill.grey,.amt-hide .debt-tip b{filter:blur(7px);user-select:none}
+.amt-eye.in-h{position:static;transform:none;flex:none}
 
 .in-env>.loan-card{padding:0!important;border:0!important;box-shadow:none!important;background:none!important;border-radius:0!important}.in-env .inc-row{border:0;border-radius:0;background:none;padding:12px 0 0}.in-env .loan-card>.inc-row:first-of-type{padding-top:0}.env-body>.in-env:last-child{margin-top:-8px}.in-env .inc-row+.inc-row,.in-env .loan-mini+.inc-row,.in-env .inc-row+.loan-mini{border-top:1px solid var(--line)}
 .add-btn{width:100%;justify-content:center;margin-top:10px}
@@ -594,7 +595,7 @@ details summary::-webkit-details-marker{display:none}
 .debt.done{opacity:.85}
 .pay-after{display:flex;flex-direction:column;gap:6px}.pay-after>div{display:flex;justify-content:space-between;align-items:baseline;background:var(--bg);border-radius:12px;padding:10px 12px}.pay-after b{font-size:1rem}
 .debt-hist .line{padding:9px 0}.debt-hist .line:first-child{border-top:0}
-.ins-steps{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:5px}.ins-steps i{font-style:normal;text-align:center;font-size:.72rem;font-weight:700;padding:7px 0;border-radius:9px;background:var(--chip);color:var(--muted)}.ins-steps i.on{background:var(--green);color:#fff}
+.ins-steps{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:5px}.ins-steps i{font-style:normal;text-align:center;font-size:.72rem;font-weight:700;padding:7px 0;border-radius:9px;background:var(--chip);color:var(--muted)}.ins-steps i.on{background:var(--green);color:var(--on-green)}
 .trip-card{gap:10px}
 .bp{border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,color-mix(in srgb,var(--green) 7%,var(--card)),var(--card));position:relative}
 .bp::before,.bp::after{content:"";position:absolute;top:58%;width:14px;height:14px;border-radius:50%;background:var(--card);border:1px solid var(--line)}.bp::before{left:-8px;clip-path:inset(0 0 0 50%)}.bp::after{right:-8px;clip-path:inset(0 50% 0 0)}
@@ -621,6 +622,8 @@ details summary::-webkit-details-marker{display:none}
 .line.paid>.tick+div,.line.paid .tnum{color:var(--muted)}
 .paid-sum{margin:0;padding:10px 0 12px;border-top:1px solid var(--line)}
 .spend-g{border-top:1px solid var(--line)}.spend-g>.line{border-top:0}
+.spend-g [data-spend-again]{border-radius:99px;background:var(--green-soft);color:var(--green);border-color:transparent;font-weight:700;white-space:nowrap;padding-inline:12px}
+.spend-g [data-spend-again] span{font-size:1.05em;margin-right:2px}
 .spend-open{appearance:none;border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;flex:1 1 0;min-width:0;cursor:pointer;display:flex;align-items:center;gap:11px}
 .sp-ic{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--green-soft);color:var(--green)}.sp-ic svg{width:20px;height:20px}
 .sp-txt{min-width:0;flex:1}
@@ -895,7 +898,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .inc-pays .line{padding:8px 0}
 .pill-btn{border:0;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:4px}.pill-btn .pill-chev{transition:transform .2s}.pill-btn[aria-expanded=true] .pill-chev{transform:rotate(180deg)}
 .inc-avg{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;background:var(--gold-soft);border-radius:12px;padding:8px 12px}
-.up-row.in .up-date{background:var(--green-soft);color:var(--green)}.up-date.up-av{background:none!important;padding:0;justify-content:center}.up-av .avatar{width:40px;height:40px;font-size:.9rem}
+.up-row.in .up-date{background:var(--green-soft);color:var(--green)}.up-date.up-av{background:none!important;padding:0;justify-content:center}.up-av .avatar{width:40px;height:40px;font-size:.9rem;font-weight:700;color:hsl(var(--h) 45% var(--av-fg));letter-spacing:.02em}
 .close-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--gold-soft) 55%,var(--card)),var(--card))}
 .pay-line>.link{white-space:nowrap;flex:none}
 .part-help{padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--chip)}
@@ -933,12 +936,59 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .st-d small{font-size:.72rem}
 .st-count{font-size:.95rem}
 .st-confirm{border-color:var(--rust)}
+/* Statement review: one full screen, like a step flow */
+.st-wiz{gap:12px}.st-wiz .sf-top{position:sticky;top:0;z-index:6;background:var(--bg);margin:-14px 0 0;padding:12px 0 8px}
+.st-title{display:flex;flex-direction:column;align-items:center;min-width:0}.st-title b{font:700 1.08rem var(--body)}.st-title small{font-size:.76rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.st-wiz .import-body{gap:12px;padding-bottom:4px}
+.st-wiz .card{padding:14px 14px 6px;border-radius:20px}
+.st-wiz .st-h{margin-bottom:2px}.st-wiz .st-h h2{font:800 1.02rem var(--body)!important;letter-spacing:-.01em}.st-wiz .st-h h2 .small{font-weight:600;margin-left:3px}
+.st-tot{font-weight:800;font-size:.95rem;white-space:nowrap}.st-tot small,.st-a small{font-size:.72em;font-weight:600;color:var(--muted);margin-left:1px}
+.st-hero{background:var(--green);border:0;color:var(--on-green);text-align:left;padding:16px 16px 14px;gap:4px}
+.st-hero .label{color:inherit;opacity:.82}.st-hero .big{font-size:clamp(2rem,10vw,2.5rem)!important;color:inherit!important;line-height:1.1}.st-hero .big span{font:700 .5em var(--body);opacity:.9}
+.st-meter{height:8px;border-radius:9px;background:color-mix(in srgb,var(--on-green) 22%,transparent);overflow:hidden;margin:8px 0 6px}.st-meter i{display:block;height:100%;background:var(--on-green);border-radius:9px}
+.st-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:.8rem}.st-stats span{opacity:.9}.st-stats span:nth-child(2){text-align:center}.st-stats span:last-child{text-align:right}.st-stats b{display:block;font-size:1rem;opacity:1}
+.st-taxon{margin:4px 0 0;font-size:.8rem;opacity:.85}
+.st-wiz .st-ask{background:var(--gold-soft);border-color:color-mix(in srgb,var(--gold) 35%,var(--line))}.st-ask h2{display:flex;gap:8px;align-items:center;font:800 1rem var(--body)!important}
+.st-qn{background:var(--gold);color:var(--card);font-size:.7rem;font-weight:800}
+.st-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+.st-main{appearance:none;border:0;background:none;font:inherit;color:inherit;text-align:left;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;cursor:pointer;min-width:0}
+.st-tile{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:.95rem;flex:none;background:var(--green-soft);color:var(--green)}
+.t-s{background:color-mix(in srgb,#8a4fb8 16%,var(--card));color:color-mix(in srgb,#8a4fb8 75%,var(--ink))}.t-b{background:color-mix(in srgb,#3a6fc4 15%,var(--card));color:color-mix(in srgb,#3a6fc4 75%,var(--ink))}
+.t-o{background:var(--rust-soft);color:color-mix(in srgb,var(--rust) 85%,var(--ink))}.t-l,.t-g{background:var(--gold-soft);color:color-mix(in srgb,var(--gold) 72%,var(--ink))}.t-m{background:var(--chip);color:var(--muted)}
+.st-txt{display:flex;flex-direction:column;min-width:0}.st-n{font-weight:700;font-size:.95rem;line-height:1.25;overflow-wrap:anywhere}.st-n .pill{font-size:.64rem;vertical-align:1px}.st-txt small{font-size:.8rem;margin-top:1px;overflow-wrap:anywhere}
+.st-a{font-weight:800;font-size:.95rem;white-space:nowrap;text-align:right}
+.st-ck{width:30px;height:30px;display:grid;place-items:center;cursor:pointer;position:relative}
+.st-ck input{appearance:none;-webkit-appearance:none;margin:0;width:24px;height:24px;border-radius:50%;border:2px solid color-mix(in srgb,var(--muted) 55%,var(--line));background:var(--card);cursor:pointer}
+.st-ck input:checked{background:var(--green);border-color:var(--green)}.st-ck i{position:absolute;pointer-events:none;width:7px;height:12px;border:solid var(--on-green);border-width:0 2.5px 2.5px 0;transform:translate(0,-1px) rotate(45deg);opacity:0}.st-ck input:checked+i{opacity:1}
+.st-ck input:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.st-row .st-nocount{margin:0 3px}
+.st-item.off .st-n,.st-item.off .st-a{color:var(--muted)}.st-item.off .st-tile{filter:grayscale(1);opacity:.6}
+.st-wiz .st-item{padding-bottom:0}
+.st-foot{display:flex;justify-content:flex-end;border-top:1px solid var(--line);padding:6px 0 4px}
+.st-moves .st-grp{border:0;border-top:1px solid var(--line);border-radius:0;padding:6px 0 4px;margin:6px 0 0}.st-moves .st-grp:first-of-type{border-top:0;margin-top:0}
+.st-moves .st-grp .st-h h2,.st-moves .st-grp h2{font:800 .86rem var(--body)!important;color:var(--muted)}
+.st-sheet-back{position:fixed;inset:0;z-index:30;border:0;background:rgba(10,14,12,.42);cursor:pointer;animation:cfIn .18s ease}
+.st-sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;max-height:86dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--card);border-radius:24px 24px 0 0;padding:10px max(18px,calc((100vw - 560px)/2)) calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;box-shadow:0 -20px 50px -20px rgba(0,0,0,.5);animation:stUp .22s ease}
+@keyframes stUp{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+.st-sheet .grab{width:40px;height:5px;border-radius:9px;background:var(--line);align-self:center;margin-bottom:4px}
+.st-sh-h{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:12px;align-items:center}.st-sh-h .st-tile{width:46px;height:46px;font-size:1.1rem}.st-sh-h b{font-size:1.08rem}.st-sh-h .st-a{font-size:1.08rem}
+.st-raw{margin:2px 0 0;align-self:flex-start;font:600 .76rem ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.02em;color:var(--muted);background:var(--chip);border-radius:8px;padding:5px 8px;overflow-wrap:anywhere}
+.st-sheet .lbl{margin:8px 0 0;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.st-sheet .chips .chip{font-size:.86rem;padding:8px 13px}.st-sheet .st-tx{max-height:none;margin:0}.st-sheet>.btn.primary{margin-top:8px}
+.st-bar{flex-direction:column;align-items:stretch;gap:6px;background:var(--bg);box-shadow:none;padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px));margin-top:auto;border-top:1px solid var(--line)}
+.st-bar .st-count{margin:0;text-align:center;font-size:.8rem;color:var(--muted)}.st-bar .st-count b{color:var(--ink)}.st-bar .btn.primary{width:100%}
+.st-alt{align-self:center;font-size:.9rem;min-height:36px}.st-alt:disabled{opacity:.45}
+.st-wait,.st-mergenote{margin:0;text-align:center}
+.st-wiz .note{margin:0}
+.st-title small{font-family:var(--body)}.st-hero .st-taxon{text-align:left}
+.st-wiz [data-out=stCheck]{font-size:.8rem;text-align:center;color:var(--muted);margin:-4px 0 -6px}.st-wiz [data-out=stCheck] p{margin:0}
+.st-wiz .st-t .st-day{margin:0;padding:0;background:none;border-radius:0}
 .st-h h2{min-width:0}
 .st-t.out .st-d,.st-t.out .tnum{text-decoration:line-through;color:var(--muted)}
 .link.st-change{grid-column:1/-1;justify-self:start;padding:4px 0 0;font-size:.8rem;font-weight:600;color:var(--green)}
 .st-acts>.chip{align-self:flex-start}
 .st-acts{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;padding:6px 0 4px}.st-acts p{margin:0}.st-acts .chip,.st-dir .chip,.st-ask .chips .chip{font-size:.84rem;padding:8px 13px}
-.chip.on{background:var(--green);color:#fff}
+.chip.on{background:var(--green);color:var(--on-green)}
 .st-dir{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .st-ask{border-color:color-mix(in srgb,var(--gold) 55%,var(--line))}
 @media (max-width:430px){.st-t{grid-template-columns:1fr auto}.st-day{grid-column:1/-1}.st-links{padding-left:34px;gap:12px}}
@@ -1203,7 +1253,7 @@ h2.hint-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 <div class="lockscreen" id="lockscreen" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <div id="busy" role="status" aria-live="polite" hidden><div class="busy-card"><span class="busy-owl"><img alt="" id="busy-owl"></span><b id="busy-title">Reading your statement</b><p id="busy-msg">On this phone only. Nothing is uploaded.</p></div></div>
-<input type="file" id="stmt" accept=".csv,.pdf,text/csv,application/pdf,image/*" class="sr" tabindex="-1" aria-hidden="true">
+<input type="file" id="stmt" accept=".csv,.txt,.tsv,.pdf,text/csv,text/comma-separated-values,text/plain,text/tab-separated-values,application/csv,application/vnd.ms-excel,application/pdf,image/*" class="sr" tabindex="-1" aria-hidden="true">
 <input type="file" id="restore-in" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true" aria-label="Backup file">
 <input type="file" id="vcf" accept=".vcf,text/vcard,text/x-vcard" class="sr" tabindex="-1" aria-hidden="true">
 
@@ -2601,11 +2651,11 @@ V.importReview = () => {
   if (!R) return "";
   const k = STMT.fx && STMT.fx.mode === "convert" ? numv(STMT.fx.rate) || 1 : 1;
   FMT_CUR = STMT.fx && STMT.fx.mode === "switch" ? STMT.fx.from : null;
-  const html = `<div class="inline" style="justify-content:space-between"><h1>Your statement</h1><button class="btn small" type="button" data-import-cancel>Cancel</button></div>
-  <p class="muted" style="text-align:center">${esc(R.fileName)} · ${R.count} transactions · ${monthsLabel(R.first)} to ${monthsLabel(R.last)} (${R.months} month${R.months > 1 ? "s" : ""}). Read on this phone only.</p>
+  const html = `<div class="wiz sf st-wiz"><div class="wiz-top sf-top"><button class="icon-btn" type="button" data-import-cancel aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button><span class="st-title"><b>Your statement</b><small class="muted">${R.count} lines · ${(() => { const a = monthsLabel(R.first), b = monthsLabel(R.last); return a === b ? a : a.split(" ")[1] === b.split(" ")[1] ? `${a.split(" ")[0]} – ${b}` : `${a} – ${b}`; })()}</small></span><button class="icon-btn" type="button" data-import-cancel aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
+  <p class="sr">${esc(R.fileName)} · ${R.count} transactions · ${monthsLabel(R.first)} to ${monthsLabel(R.last)} (${R.months} month${R.months > 1 ? "s" : ""}). Read on this phone only.</p>
   <div data-out="stCheck">${OUT.stCheck()}</div>
   <div data-out="fxCard">${fxCard()}</div>
-  <div data-out="importBody" class="import-body">${OUT.importBody()}</div>`;
+  <div data-out="importBody" class="import-body">${OUT.importBody()}</div></div>`;
   FMT_CUR = null; return html;
 };
 OUT.fxCard = fxCard;
@@ -2625,12 +2675,30 @@ function stTx(list, where, acts){
     ${list.length > cap ? `<p class="muted small">And ${list.length - cap} more.</p>` : ""}</div>`;
 }
 const stExact = x => { const names = [...new Set(x.tx.map(t => t.desc))]; return names.length === 1 ? names[0] : `${names[0]} · and ${names.length - 1} other wording${names.length === 2 ? "" : "s"}`; };
+const ST_SEC = {in: ["income", "i"], sub: ["sub", "s"], bill: ["bill", "b"], tax: ["bill", "b"], loan: ["loan", "l"], give: ["give", "g"], spend: ["spend", "o"], sent: ["", "m"], received: ["", "m"], cash: ["", "m"]};
+const stAmtH = a => String(a).replace(/(\/mo|\/yr|\/wk| every 2 wks)$/, "<small>$1</small>");
+const stTile = (title, cls) => `<span class="st-tile t-${cls || "m"}" aria-hidden="true">${esc((String(title).replace(/^[^A-Za-z0-9]+/, "")[0] || "•").toUpperCase())}</span>`;
 function stItem(x, title, sub, amount, o){
-  o = o || {}; const open = STMT.open.has(x.id), n = x.tx.length, pick = o.pick !== false;
-  return `<div class="st-item" data-st-item="${esc(x.id)}">
-    <label class="move-row">${pick ? `<input type="checkbox" data-st-pick="${esc(x.id)}" ${x.on ? "checked" : ""} aria-label="Count ${esc(title)}">` : `<span class="st-nocount" data-st-nocount aria-hidden="true"></span>`}<span class="move-txt"><span>${esc(title)}${x.ask && !(x.id in STMT.pick) ? ` <span class="pill gold" data-st-askpill>Check this</span>` : x.moved ? ` <span class="pill grey">Moved by you</span>` : ""}${STMT.have && STMT.have.has(x.id) ? ` <span class="pill grey" data-st-have>In your plan</span>` : ""}</span>${o.exact === false ? "" : `<small class="st-exact">${esc(stExact(x))}</small>`}<small class="muted">${sub}</small></span><span class="tnum">${amount}</span></label>
-    <div class="st-links"><button class="link plain small" type="button" data-st-open="${esc(x.id)}" aria-expanded="${open}">${open ? "Hide" : n === 1 ? "Show the transaction" : `Show ${n} transactions`}</button>${!pick && !open ? `<span class="muted small" data-st-howcount>Tap Change on a line to count it</span>` : ""}${o.me ? `<button class="link plain small" type="button" data-st-me="${esc(o.me)}">This is me</button>` : ""}</div>
-    ${open ? stTx(x.tx, false, true) : ""}</div>`;
+  o = o || {}; const open = STMT.open.has(x.id), pick = o.pick !== false, sec = ST_SEC[String(x.id).split(":")[0]] || ["", "m"];
+  const tags = `${x.ask && !(x.id in STMT.pick) ? ` <span class="pill gold" data-st-askpill>Check this</span>` : x.moved ? ` <span class="pill grey">Moved by you</span>` : ""}${STMT.have && STMT.have.has(x.id) ? ` <span class="pill ok" data-st-have>In your plan</span>` : ""}`;
+  return `<div class="st-item${pick && !x.on ? " off" : ""}" data-st-item="${esc(x.id)}">
+    <div class="st-row"><button class="st-main" type="button" data-st-open="${esc(x.id)}" aria-expanded="${open}" aria-haspopup="dialog">${stTile(title, sec[1])}<span class="st-txt"><span class="st-n">${esc(title)}${tags}</span><small class="muted">${pick ? sub : `${sub} · tap to count it`}</small></span><span class="tnum st-a">${stAmtH(amount)}</span></button>
+    ${pick ? `<label class="st-ck"><input type="checkbox" data-st-pick="${esc(x.id)}" ${x.on ? "checked" : ""} aria-label="Count ${esc(title)}"><i aria-hidden="true"></i></label>` : `<span class="st-nocount" data-st-nocount aria-hidden="true"></span>`}</div>
+    ${open ? stSheet(x, title, amount, o, sec) : ""}</div>`;
+}
+// Tapping a row opens it in a sheet: the bank's own wording, where it is counted, and every transaction to change one by one.
+function stSheet(x, title, amount, o, sec){
+  const t0 = x.tx.find(t => t.mk) || x.tx[0] || {}, mk = t0.mk || "", n = x.tx.length;
+  const opts = mk ? (t0.amt > 0 ? (mk.startsWith("card:") ? [["income", "Money coming in"], ["other", "One-off money in"]] : MOVE_IN) : MOVE_OUT) : [], cur = mk ? (STMT.move[mk] || sec[0]) : "";
+  const total = x.tx.reduce((a, t) => a + Math.abs(t.amt), 0);
+  return `<button class="st-sheet-back" type="button" data-st-done="${esc(x.id)}" aria-label="Close"></button>
+  <div class="st-sheet" role="dialog" aria-label="${esc(title)}"><span class="grab" aria-hidden="true"></span>
+    <div class="st-sh-h">${stTile(title, sec[1])}<span class="st-txt"><b>${esc(title)}</b><small class="muted">${fmt(r2(total))} in this statement</small></span><span class="tnum st-a">${stAmtH(amount)}</span></div>
+    ${o.exact === false ? "" : `<p class="st-raw">${esc(stExact(x))}</p>`}
+    ${opts.length ? `<p class="lbl">Counted as</p><div class="chips">${opts.map(([k, label]) => `<button class="chip${cur === k ? " on" : ""}" type="button" data-st-move="${k}" data-mk="${esc(mk)}" aria-pressed="${cur === k}">${label}</button>`).join("")}${STMT.move[mk] ? `<button class="chip" type="button" data-st-move="" data-mk="${esc(mk)}">Let KeepWise decide</button>` : ""}</div>` : ""}
+    ${o.me ? `<div class="chips"><button class="chip" type="button" data-st-me="${esc(o.me)}">This is me</button></div>` : ""}
+    <p class="lbl">${n === 1 ? "1 transaction" : `${n} transactions`}</p>${stTx(x.tx, false, true)}
+    <button class="btn primary" type="button" data-st-done="${esc(x.id)}">Done</button></div>`;
 }
 // Asked first: lines whose direction the statement did not show, and, when the bank printed no account holder, which names are the person's own.
 function stAskCard(R){
@@ -2638,7 +2706,7 @@ function stAskCard(R){
   if (!A.length && !names.length) return "";
   const line = t => `<div class="st-t st-q" data-st-q="${t.i}"><span class="st-day muted">${stDay(t.date)}</span><span class="st-d">${esc(t.desc)}</span><span class="tnum">${fmt(Math.abs(t.amt))}</span>
       <span class="st-dir" role="group" aria-label="Which way did this go?"><button class="chip${D[t.i] === 1 ? " on" : ""}" type="button" data-st-dir="${t.i}:1" aria-pressed="${D[t.i] === 1}">Money in</button><button class="chip${D[t.i] === -1 ? " on" : ""}" type="button" data-st-dir="${t.i}:-1" aria-pressed="${D[t.i] === -1}">Money out</button></span></div>`;
-  return `<section class="card st-ask" data-st="ask"><h2>Needs your answer</h2>
+  return `<section class="card st-ask" data-st="ask"><h2><span class="pill st-qn">${(A.length ? 1 : 0) + (names.length ? 1 : 0) === 1 ? "1 question" : "2 questions"}</span> Needs your answer</h2>
     ${A.length ? `<p class="muted small" data-keep>Your statement does not show whether ${A.length === 1 ? "this line was" : `these ${A.length} lines were`} money in or money out. ${R.waiting ? `${R.waiting === 1 ? "It is" : "They are"} left out until you say.` : "All answered. You can still change them."}</p>
       ${A.length >= 2 ? `<div class="chips"><button class="chip" type="button" data-st-dirall="-1">All of them are money out</button><button class="chip" type="button" data-st-dirall="1">All of them are money in</button></div>` : ""}
       <div class="st-tx">${A.slice(0, 250).map(line).join("")}</div>` : ""}
@@ -2646,7 +2714,9 @@ function stAskCard(R){
       <div class="chips" data-st-names>${names.map(x => `<button class="chip" type="button" data-st-me="${esc(x.key)}">${esc(x.name)}</button>`).join("")}</div>` : ""}</section>`;
 }
 const stAll = (key, list) => list.length >= 3 ? `<button class="link plain small st-all" type="button" data-st-all="${key}">${list.some(x => x.on) ? "Untick all" : "Tick all"}</button>` : "";
-const stHead = (title, key, list, info, tip) => `<div class="inline st-h" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">${title}${list ? ` <span class="muted small">(${list.length})</span>` : ""}${info ? infoBtn(info, "About " + title.toLowerCase()) : ""}</h2>${list ? stAll(key, list) : ""}</div>${info ? infoTip(info, tip) : ""}`;
+const stHead = (title, key, list, info, tip, tot) => `<div class="inline st-h" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">${title}${list ? ` <span class="muted small">(${list.length})</span>` : ""}${info ? infoBtn(info, "About " + title.toLowerCase()) : ""}</h2>${tot != null ? `<span class="tnum st-tot">${fmt(r2(tot))}<small>/mo</small></span>` : ""}</div>${info ? infoTip(info, tip) : ""}`;
+const stFoot = (key, list) => list && list.length >= 3 ? `<div class="st-foot">${stAll(key, list)}</div>` : "";
+const stOnSum = list => (list || []).filter(x => x.on).reduce((a, x) => a + (+x.monthly || 0), 0);
 const stTimes = x => x.regular ? `${x.count} time${x.count === 1 ? "" : "s"} · ${fmt(x.total)} in this statement${STMT.result && STMT.result.months > 1 ? " · every month" : ""}` : `${x.count} time${x.count === 1 ? "" : "s"} · adds ${fmt(x.monthly)}/mo if ticked`;
 const stMoved = x => x.regular ? `${fmt(x.monthly)}/mo` : fmt(x.total);
 // Transfers: what you sent and what you received are shown apart, and money moved between your own accounts is shown
@@ -2654,25 +2724,27 @@ const stMoved = x => x.regular ? `${fmt(x.monthly)}/mo` : fmt(x.total);
 function movesCards(M){
   if (!M) return "";
   const cards = [], any = M.sent.length || M.received.length || M.ownOut.count || M.ownIn.count;
-  if (any) cards.push(`<section class="card" data-moves="name"><label class="field"><span>Your name on this statement</span><input data-stmt-holder value="${esc(M.holder)}" placeholder="As your bank writes it" autocomplete="off" autocapitalize="words" enterkeyhint="done"></label>
-    <p class="muted small" data-keep>Transfers under this name are yours, so they are shown apart and never counted. You can also tap “This is me” on any name below.</p></section>`);
-  if (M.sent.length || M.cashOut.count) cards.push(`<section class="card" data-moves="out">${stHead("Money you sent", "sent", M.sent, "movesOut", "Transfers to other people, and cash you took out. Tick the ones that are real spending, such as rent or money for family. Leave one-off transfers unticked.")}
+  const nameCard = !any ? "" : (`<div class="st-grp" data-moves="name"><label class="field"><span>Your name on this statement</span><input data-stmt-holder value="${esc(M.holder)}" placeholder="As your bank writes it" autocomplete="off" autocapitalize="words" enterkeyhint="done"></label>
+    <p class="muted small" data-keep>Transfers under this name are yours, so they are shown apart and never counted. You can also open any name and tap “This is me”.</p></div>`);
+  if (M.sent.length || M.cashOut.count) cards.push(`<div class="st-grp" data-moves="out">${stHead("Money you sent", "sent", M.sent, "movesOut", "Transfers to other people, and cash you took out. Tick the ones that are real spending, such as rent or money for family. Leave one-off transfers unticked.")}
     ${M.sent.map(x => stItem(x, x.name, stTimes(x), stMoved(x), {me: x.key === "UNNAMED" ? "" : x.key})).join("")}
     ${M.cashOut.count ? stItem(M.cashOut, "Cash withdrawals", `${M.cashOut.count} time${M.cashOut.count === 1 ? "" : "s"} · ${fmt(M.cashOut.total)} in this statement`, `${fmt(M.cashOut.monthly)}/mo`, {exact: false}) : ""}
-    <p class="muted small" data-keep>Ticked lines count as spending in your plan.</p></section>`);
-  if (M.received.length || M.cashIn.count) cards.push(`<section class="card" data-moves="in">${stHead("Money you received", "received", M.received, "movesIn", "Transfers from other people and from abroad. Tick the ones you can count on, and they are added as other income. Leave refunds, gifts and one-off payments unticked.")}
+    ${stFoot("sent", M.sent)}<p class="muted small" data-keep>Ticked lines count as spending in your plan.</p></div>`);
+  if (M.received.length || M.cashIn.count) cards.push(`<div class="st-grp" data-moves="in">${stHead("Money you received", "received", M.received, "movesIn", "Transfers from other people and from abroad. Tick the ones you can count on, and they are added as other income. Leave refunds, gifts and one-off payments unticked.")}
     ${M.received.map(x => stItem(x, x.name, `${x.abroad ? "From abroad · " : ""}${stTimes(x)}`, stMoved(x), {me: x.key === "UNNAMED" ? "" : x.key})).join("")}
     ${M.cashIn.count ? stItem(M.cashIn, "Cash deposits", `Not counted · ${fmt(M.cashIn.total)} in this statement`, `${fmt(M.cashIn.monthly)}/mo`, {pick: false, exact: false}) : ""}
-    <p class="muted small" data-keep>Ticked lines are added to Other income.</p></section>`);
-  const own = (dir, L, title) => L.count ? `<section class="card" data-moves="own-${dir}">${stHead(title, "", null, "movesOwn" + dir, "Money moved between accounts in your own name is neither income nor spending, so it is never counted.")}
+    ${stFoot("received", M.received)}<p class="muted small" data-keep>Ticked lines are added to Other income.</p></div>`);
+  const own = (dir, L, title) => L.count ? `<div class="st-grp" data-moves="own-${dir}">${stHead(title, "", null, "movesOwn" + dir, "Money moved between accounts in your own name is neither income nor spending, so it is never counted.")}
     <p class="label">${M.holder ? esc(M.holder) + " · " : ""}${L.count} transfer${L.count === 1 ? "" : "s"} · not counted</p>
     ${stTx(L.tx)}
-    <div class="line"><b>Total</b><span class="tnum"><b>${fmt(L.total)}</b></span></div></section>` : "";
+    <div class="line"><b>Total</b><span class="tnum"><b>${fmt(L.total)}</b></span></div></div>` : "";
   cards.push(own("out", M.ownOut, "Money you sent to yourself"), own("in", M.ownIn, "Money you received from yourself"));
   const names = M.ownKeys.filter(k => k && k !== "UNNAMED");
-  if (names.length || M.notMe.length) cards.push(`<section class="card" data-moves="me"><p class="label">Counted as you</p><div class="chips">${names.map(k => `<button class="chip" type="button" data-st-notme="${esc(k)}" aria-label="${esc(titleCase(k))} is not me">${esc(titleCase(k))} ✕</button>`).join("") || `<span class="muted small">No names</span>`}</div>
-    ${M.notMe.length ? `<p class="label">Not you</p><div class="chips">${M.notMe.map(k => `<button class="chip" type="button" data-st-isme="${esc(k)}">${esc(titleCase(k))} · undo</button>`).join("")}</div>` : ""}</section>`);
-  return cards.join("");
+  if (names.length || M.notMe.length) cards.push(`<div class="st-grp" data-moves="me"><p class="label">Counted as you</p><div class="chips">${names.map(k => `<button class="chip" type="button" data-st-notme="${esc(k)}" aria-label="${esc(titleCase(k))} is not me">${esc(titleCase(k))} ✕</button>`).join("") || `<span class="muted small">No names</span>`}</div>
+    ${M.notMe.length ? `<p class="label">Not you</p><div class="chips">${M.notMe.map(k => `<button class="chip" type="button" data-st-isme="${esc(k)}">${esc(titleCase(k))} · undo</button>`).join("")}</div>` : ""}</div>`);
+  if (nameCard) cards.push(nameCard);
+  const body = cards.filter(Boolean).join("");
+  return body ? `<section class="card st-moves" data-st="moves"><div class="inline st-h" style="justify-content:space-between;align-items:baseline"><h2>Transfers</h2><span class="muted small">not counted unless ticked</span></div>${body}</section>` : "";
 }
 OUT.importBody = () => {
   const R = fxScaled(STMT.result), fx = STMT.fx; FMT_CUR = fx && fx.mode === "switch" ? fx.from : null;
@@ -2683,38 +2755,40 @@ OUT.importBody = () => {
   const html = `  ${stAskCard(R)}
   ${mine ? `<p class="note st-mine" data-st-mine><b>You already have a plan.</b> Lines marked “In your plan” are already there. “Add what’s missing” at the bottom keeps your plan and adds only the rest.</p>` : ""}
   ${R.card ? `<p class="note" data-st-cardnote><b>Read as a credit card statement.</b> Charges count as money out. Payments to the card and refunds are credits, shown on their own and not counted as income. Cash back and rewards are credited to you, so they count as money coming in.</p>` : ""}
-  <section class="hero"><p class="label">A typical month</p>
-    <div class="big tnum" style="${fitSize(fmt(left), 3, 88)}${left < 0 ? ";color:var(--rust)" : ""}">${fmt(left)}</div>
-    <p class="muted">${fmt(inAll)} comes in, ${fmt(outAll)} goes out${R.taxOn ? `, including ${fmt(R.taxOn)} of tax payments` : ""}. Only ticked lines are counted.</p></section>
-  <section class="card" data-st="income">${stHead("Money coming in", "income", R.income)}
+  <section class="hero st-hero"><p class="label">A typical month</p>
+    <div class="big tnum">${fmt(Math.abs(left))} <span>${left < 0 ? "short" : "left"}</span></div>
+    <div class="st-meter" aria-hidden="true"><i style="width:${inAll > 0 ? Math.min(100, Math.round(outAll / inAll * 100)) : 100}%"></i></div>
+    <div class="st-stats"><span><b class="tnum">${fmt(inAll)}</b> comes in</span><span><b class="tnum">${fmt(outAll)}</b> goes out</span><span><b class="tnum">${R.picked} of ${R.pickable}</b> counted</span></div>
+    ${R.taxOn ? `<p class="st-taxon">Including ${fmt(R.taxOn)} of tax payments.</p>` : ""}</section>
+  <section class="card" data-st="income">${stHead("Coming in", "income", R.income, "", "", stOnSum(R.income))}
     ${R.income.length ? R.income.map(s => stItem(s, s.name, s.back ? `Credited to you · ${s.count} line${s.count === 1 ? "" : "s"} · ${fmt(s.total)} in this statement` : s.count === 1 ? `One deposit${s.payday ? `, on the ${ordinal(s.payday)}` : ""}` : `${s.cadence === "irregular" ? "Irregular" : s.cadence[0].toUpperCase() + s.cadence.slice(1)}${s.payday ? ` · usually on the ${ordinal(s.payday)}` : ""} · ${s.count} deposits`, `${fmt(s.monthly)}/mo`)).join("") : `<p class="muted">No regular salary found. You can type your income on the Month tab.</p>`}
-    ${R.otherCredits.count ? stItem(R.otherCredits, "Refunds and one-off money in", `Not counted · ${R.otherCredits.count} line${R.otherCredits.count === 1 ? "" : "s"} · ${fmt(R.otherCredits.total)} in this statement`, `${fmt(R.otherCredits.monthly)}/mo`, {pick: false, exact: false}) : ""}</section>
+    ${R.otherCredits.count ? stItem(R.otherCredits, "Refunds and one-off money in", `Not counted · ${R.otherCredits.count} line${R.otherCredits.count === 1 ? "" : "s"} · ${fmt(R.otherCredits.total)} in this statement`, `${fmt(R.otherCredits.monthly)}/mo`, {pick: false, exact: false}) : ""}${stFoot("income", R.income)}</section>
   ${R.card && (R.card.pay.count || R.card.back.count) ? `<section class="card" data-st="card"><h2 class="h-info">Credits on this card${infoBtn("stCard", "About credits on a card")}</h2>
     ${infoTip("stCard", "This is a credit card statement. Charges are money you spent. Credits are payments you made to the card, refunds and reversals, so they are not income and are not counted. Cash back and rewards are different: that money is yours, so it is listed under Money coming in. If one really was money coming in, open it and choose where it belongs.")}
     ${R.card.pay.count ? stItem(R.card.pay, "Payments to this card", `Not income · ${R.card.pay.count} payment${R.card.pay.count === 1 ? "" : "s"} · ${fmt(R.card.pay.total)} in this statement`, `+${fmt(R.card.pay.total)}`, {pick: false}) : ""}
     ${R.card.back.count ? stItem(R.card.back, "Refunds and reversals", `Not income · ${R.card.back.count} line${R.card.back.count === 1 ? "" : "s"} · ${fmt(R.card.back.total)} back on the card`, `+${fmt(R.card.back.total)}`, {pick: false}) : ""}</section>` : ""}
-  <section class="card" data-st="subs">${stHead("Subscriptions", "subs", R.subs)}
-    ${R.subs.length ? R.subs.map(s => stItem(s, s.name, `${paidFor(s)}${s.known ? "" : ` · charged ${s.cadence}`}`, fmt(s.price) + (s.cycle === "yr" ? "/yr" : "/mo"))).join("") : `<p class="muted">No subscriptions found.</p>`}
-    ${R.subs.length ? `<p class="small" data-keep><b>${fmt(R.subs.filter(s => s.on).reduce((a, s) => a + s.monthly, 0))}</b> a month, <b>${fmt(R.subs.filter(s => s.on).reduce((a, s) => a + s.paid, 0))}</b> paid in this statement.</p>` : ""}</section>
-  <section class="card" data-st="bills">${stHead("Bills", "bills", R.bills)}${R.bills.length ? R.bills.map(b => stItem(b, b.name, `${b.cat} · ${b.count} payment${b.count === 1 ? "" : "s"}`, `${fmt(b.monthly)}/mo`)).join("") : `<p class="muted">No regular bills found.</p>`}
-    ${R.tax ? stItem(R.tax, "Tax payments", `Tax · ${fmt(R.tax.total)} in this statement`, `${fmt(R.tax.monthly)}/mo`) : ""}</section>
+  <section class="card" data-st="subs">${stHead("Subscriptions", "subs", R.subs, "", "", stOnSum(R.subs))}
+    ${R.subs.length ? R.subs.map(s => stItem(s, s.name, `${s.charges || s.count} charge${(s.charges || s.count) === 1 ? "" : "s"}${s.since ? ` since ${monthsLabel(s.since).split(" ")[0]}` : ""}${s.known ? "" : ` · charged ${s.cadence}`}`, fmt(s.price) + (s.cycle === "yr" ? "/yr" : "/mo"))).join("") : `<p class="muted">No subscriptions found.</p>`}
+    ${stFoot("subs", R.subs)}</section>
+  <section class="card" data-st="bills">${stHead("Bills", "bills", R.bills, "", "", stOnSum(R.bills) + (R.tax && R.tax.on ? +R.tax.monthly || 0 : 0))}${R.bills.length ? R.bills.map(b => stItem(b, b.name, `${b.cat} · ${b.count} payment${b.count === 1 ? "" : "s"}`, `${fmt(b.monthly)}/mo`)).join("") : `<p class="muted">No regular bills found.</p>`}
+    ${R.tax ? stItem(R.tax, "Tax payments", `Tax · ${fmt(R.tax.total)} in this statement`, `${fmt(R.tax.monthly)}/mo`) : ""}${stFoot("bills", R.bills)}</section>
   ${R.loans.length ? `<section class="card" data-st="loans">${stHead("Loans and debt", "loans", R.loans, "stLoans", "Payments on a loan, a mortgage, a credit card or an installment plan. Ticked ones are added to Loans and debt on Month · Budget, not to your bills. You can add the amount left and the end date there.")}
-    ${R.loans.map(l => stItem(l, l.name, `${loanKind(l.kind)} · ${l.count} payment${l.count === 1 ? "" : "s"} · ${fmt(l.total)} in this statement`, `${fmt(l.pay)}${l.every === "mo" ? "/mo" : l.every === "yr" ? "/yr" : l.every === "wk" ? "/wk" : " every 2 wks"}`)).join("")}</section>` : ""}
+    ${R.loans.map(l => stItem(l, l.name, `${loanKind(l.kind)} · ${l.count} payment${l.count === 1 ? "" : "s"} · ${fmt(l.total)} in this statement`, `${fmt(l.pay)}${l.every === "mo" ? "/mo" : l.every === "yr" ? "/yr" : l.every === "wk" ? "/wk" : " every 2 wks"}`)).join("")}${stFoot("loans", R.loans)}</section>` : ""}
   ${R.giving.length ? `<section class="card" data-st="giving">${stHead("Giving", "giving", R.giving, "stGiving", "Donations and money given to charity or a place of worship. Ticked ones are added to Giving on Month · Budget.")}
-    ${R.giving.map(g => stItem(g, g.name, `${giveCause(g.cause)} · ${g.count} time${g.count === 1 ? "" : "s"} · ${fmt(g.total)} in this statement`, `${fmt(g.monthly)}/mo`)).join("")}</section>` : ""}
-  <section class="card" data-st="spending">${stHead("Everyday spending", "spending", R.spending)}${R.spending.length ? R.spending.map(s => stItem(s, s.name, `${s.cat === "Savings" ? "Not spending, left out unless you tick it" : s.env === "needs" ? "Expenditures" : "Miscellaneous"} · ${s.count} payment${s.count === 1 ? "" : "s"}${s.top && s.top.length ? ` · mostly ${s.top.join(", ")}` : ""}`, `${fmt(s.monthly)}/mo`, {exact: false})).join("") : `<p class="muted">Nothing else found.</p>`}</section>
+    ${R.giving.map(g => stItem(g, g.name, `${giveCause(g.cause)} · ${g.count} time${g.count === 1 ? "" : "s"} · ${fmt(g.total)} in this statement`, `${fmt(g.monthly)}/mo`)).join("")}${stFoot("giving", R.giving)}</section>` : ""}
+  <section class="card" data-st="spending">${stHead("Everyday spending", "spending", R.spending, "", "", stOnSum(R.spending))}${R.spending.length ? R.spending.map(s => stItem(s, s.name, `${s.cat === "Savings" ? "Not spending, left out unless you tick it" : s.env === "needs" ? "Expenditures" : "Miscellaneous"} · ${s.count} payment${s.count === 1 ? "" : "s"}${s.top && s.top.length ? ` · mostly ${s.top.join(", ")}` : ""}`, `${fmt(s.monthly)}/mo`, {exact: false})).join("") : `<p class="muted">Nothing else found.</p>`}${stFoot("spending", R.spending)}</section>
   ${movesCards(M)}
-  <section class="card" data-st="all"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Every line</h2><button class="link plain small" type="button" data-st-open="all" aria-expanded="${allOpen}">${allOpen ? "Hide" : `Show all ${R.count}`}</button></div>
+  <section class="card st-all-card" data-st="all"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Every line</h2><button class="link plain small" type="button" data-st-open="all" aria-expanded="${allOpen}">${allOpen ? "Hide" : `Show all ${R.count}`}</button></div>
     <p class="muted small" data-keep>Each transaction as your bank wrote it, and where KeepWise put it. Tap Change on a line to leave it out or move it.</p>${allOpen ? stTx(R.all, true, true) : ""}</section>
   ${R.leftOut.length ? `<section class="card" data-st="left"><h2>Left out by you <span class="muted small">(${R.leftOut.length})</span></h2><div class="st-tx">${R.leftOut.map(t => `<div class="st-t"><span class="st-day muted">${stDay(t.date)}</span><span class="st-d">${esc(t.desc)}</span><span class="tnum${t.amt > 0 ? " good" : ""}">${stAmt(t)}</span><button class="link plain small st-change" type="button" data-st-skip="${t.i}">Put back</button></div>`).join("")}</div></section>` : ""}
   ${fxReady() ? "" : `<p class="err" style="text-align:center">Type the exchange rate above, or pick another option, before adding this to your plan.</p>`}
-  <p class="st-count" style="text-align:center" data-st-count><b>${R.picked} of ${R.pickable}</b> lines are ticked. Nothing is added until you choose below.${R.toCheck ? `<br><span data-st-tocheck>${R.toCheck} marked “Check this” ${R.toCheck === 1 ? "is" : "are"} unticked, because KeepWise was not sure. Tick ${R.toCheck === 1 ? "it if it is" : "the ones that are"} right.</span>` : ""}${R.waiting ? `<br><span data-st-waiting>${R.waiting} line${R.waiting === 1 ? " is" : "s are"} waiting for your answer at the top and ${R.waiting === 1 ? "is" : "are"} left out.</span>` : ""}</p>
-  ${STMT.confirm ? `<section class="card st-confirm" role="alertdialog" aria-label="Replace your plan"><p><b>Replace your plan?</b></p><p class="muted small" data-keep>Your current income, monthly lines and subscriptions are removed and the ${R.picked} ticked lines take their place. Splits, codes and savings stay.</p>
-    <div class="grid2"><button class="btn" type="button" data-st-confirm="no">Keep my plan</button><button class="btn primary" type="button" data-import-apply="replace" data-sure>Yes, replace it</button></div></section>`
-  : mine ? `<div class="grid2"><button class="btn primary" type="button" data-import-apply="merge" style="padding:10px" ${fxReady() && R.picked ? "" : "disabled"}>Add what’s missing</button><button class="btn" type="button" data-import-apply="replace" data-ask ${fxReady() && R.picked ? "" : "disabled"}>Replace my plan</button></div>
-  <p class="muted small" style="text-align:center" data-st-mergenote>“Add what’s missing” keeps your plan as it is and adds ${newN === 1 ? "the 1 ticked line" : `the ${newN} ticked lines`} it does not have yet${haveN ? `; ${haveN} already in your plan ${haveN === 1 ? "is" : "are"} left alone` : ""}. “Replace my plan” swaps your income, lines and subscriptions for the ticked ones.</p>`
-  : `<div class="grid2"><button class="btn" type="button" data-import-apply="merge" ${fxReady() && R.picked ? "" : "disabled"}>Add to my plan</button><button class="btn primary" type="button" data-import-apply="replace" style="padding:10px" ${fxReady() && R.picked ? "" : "disabled"}>Use this as my plan</button></div>
-  <p class="muted small" style="text-align:center">“Add to my plan” keeps what you have and adds the ticked lines. “Use this as my plan” replaces your income, lines and subscriptions.</p>`}`;
+  ${R.toCheck || R.waiting ? `<p class="note st-wait">${R.toCheck ? `<span data-st-tocheck>${R.toCheck} marked “Check this” ${R.toCheck === 1 ? "is" : "are"} unticked, because KeepWise was not sure. Tick ${R.toCheck === 1 ? "it if it is" : "the ones that are"} right.</span>` : ""}${R.toCheck && R.waiting ? " " : ""}${R.waiting ? `<span data-st-waiting>${R.waiting} line${R.waiting === 1 ? " is" : "s are"} waiting for your answer at the top and ${R.waiting === 1 ? "is" : "are"} left out.</span>` : ""}</p>` : ""}
+  ${mine ? `<p class="muted small st-mergenote" data-st-mergenote>“Add what’s missing” keeps your plan as it is and adds ${newN === 1 ? "the 1 ticked line" : `the ${newN} ticked lines`} it does not have yet${haveN ? `; ${haveN} already in your plan ${haveN === 1 ? "is" : "are"} left alone` : ""}.</p>` : ""}
+  ${STMT.confirm ? `<div class="cf-back st-cf"><div class="cf-sheet st-confirm" role="alertdialog" aria-label="Replace your plan"><span class="cf-ic" aria-hidden="true">↺</span><h3>Replace your plan?</h3><p class="muted" data-keep>Your current income, monthly lines and subscriptions are removed and the ${R.picked} ticked lines take their place. Splits, codes and savings stay.</p>
+    <div class="cf-btns"><button class="btn primary" type="button" data-import-apply="replace" data-sure>Yes, replace it</button><button class="btn" type="button" data-st-confirm="no">Keep my plan</button></div></div></div>` : ""}
+  <div class="wiz-bar st-bar"><p class="st-count" data-st-count><b>${R.picked} of ${R.pickable}</b> ticked · nothing is added until you tap below</p>
+    ${mine ? `<button class="btn primary" type="button" data-import-apply="merge" ${fxReady() && R.picked ? "" : "disabled"}>Add what’s missing${newN ? ` · ${newN}` : ""}</button><button class="link plain st-alt" type="button" data-import-apply="replace" data-ask ${fxReady() && R.picked ? "" : "disabled"}>Replace my plan instead</button>`
+    : `<button class="btn primary" type="button" data-import-apply="replace" ${fxReady() && R.picked ? "" : "disabled"}>Use this as my plan</button><button class="link plain st-alt" type="button" data-import-apply="merge" ${fxReady() && R.picked ? "" : "disabled"}>Add to my plan instead</button>`}</div>`;
   FMT_CUR = null; return html;
 };
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th","st","nd","rd"][n % 10] || "th");
@@ -3556,8 +3630,8 @@ function spendRow(g){
     ? `<form data-form="spendEdit" data-spend="${x.id}"><input name="amount" inputmode="decimal" enterkeyhint="done" value="${Math.abs(x.amount)}" aria-label="Amount"><input name="date" type="date" value="${esc(x.date || "")}" max="${isoDaysAgo(0)}" aria-label="Date"><button class="btn small primary" type="submit">Save</button><button class="btn small" type="button" data-spend-cancel>Cancel</button></form>`
     : `<div class="line" data-spend="${x.id}"><div class="muted">${esc(spendWhen(x))}${x.ocur ? ` · ${esc(fmtIn(x.orig, x.ocur))}` : ""}</div><div class="inline"><span class="tnum ${back ? "good" : ""}">${back ? "+" + fmt(-x.amount) : fmt(x.amount)}</span><button class="link plain" type="button" data-spend-edit>Edit</button><button class="link danger-link" type="button" data-spend-del>Remove</button></div></div>`;
   return `<div class="spend-g${open ? " open" : ""}" data-spend-g="${esc(g.key)}"><div class="line" data-spend="${last.id}">
-      <button class="spend-open" type="button" data-spend-open aria-expanded="${open}" aria-label="${esc(last.name)}, ${n === 1 ? "logged once" : "logged " + n + " times"}. ${open ? "Hide" : "Show"} the details"><span class="sp-ic" data-sp-ic="${spendIconKey(last.name)}" aria-hidden="true">${I[spendIconKey(last.name)]}</span><span class="sp-txt"><div>${esc(last.name)}${n === 1 && last.ocur ? ` <span class="muted small">${esc(fmtIn(last.orig, last.ocur))}</span>` : ""}</div><div class="muted small">${n === 1 ? `${shortDate(last.date)} · ${back ? "money back" : "one time"}` : `${n} times this month · last ${shortDate(last.date)}`}</div></span></button>
-      <div class="inline"><span class="tnum ${back ? "good" : ""}">${back ? "+" + fmt(-total) : fmt(total)}</span>${again ? `<button class="btn small" type="button" data-spend-again aria-label="Log ${esc(last.name)} again, ${fmt(last.amount)}">+ ${fmt(last.amount)}</button>` : ""}</div></div>
+      <button class="spend-open" type="button" data-spend-open aria-expanded="${open}" aria-label="${esc(last.name)}, ${n === 1 ? "logged once" : "logged " + n + " times"}. ${open ? "Hide" : "Show"} the details"><span class="sp-ic" data-sp-ic="${spendIconKey(last.name)}" aria-hidden="true">${I[spendIconKey(last.name)]}</span><span class="sp-txt"><div>${esc(last.name)}${n === 1 && last.ocur ? ` <span class="muted small">${esc(fmtIn(last.orig, last.ocur))}</span>` : ""}</div><div class="muted small">${n === 1 ? `${shortDate(last.date)} · ${back ? "money back" : "one time"}` : `${n} times this month · ${g.items.every(x => x.amount === last.amount) ? fmt(Math.abs(last.amount)) + " each" : "last " + fmt(Math.abs(last.amount))}`}</div></span></button>
+      <div class="inline"><span class="tnum ${back ? "good" : ""}">${back ? "+" + fmt(-total) : fmt(total)}</span>${again ? `<button class="btn small" type="button" data-spend-again aria-label="Log ${esc(last.name)} again, ${fmt(last.amount)}"><span aria-hidden="true">↻</span> Again</button>` : ""}</div></div>
     ${open ? `<div class="spend-log"><div class="sp-pick" role="group" aria-label="Icon for ${esc(last.name)}"><span class="muted small">Icon</span><div class="sp-icons">${SPEND_ICONS.map(([k, label]) => `<button type="button" class="icon-opt" data-spend-icon="${k}" aria-pressed="${spendIconKey(last.name) === k}" aria-label="${label}" title="${label}">${I[k]}</button>`).join("")}</div></div>${g.items.map(entry).join("")}</div>` : ""}</div>`;
 }
 function envDetail(k, C){
@@ -4161,7 +4235,7 @@ function cardTile(c, credit){
   return `<div class="card-item" data-card="${c.id}">${plate}
     ${lim > 0 ? `<div class="debt-owed"><div><span class="lbl">Owed</span><b class="tnum debt-big">${fmt(owed)}</b></div><div class="small tnum ${owed > lim ? "bad" : "muted"}" style="text-align:right">${owed > lim ? `${fmt(r2(owed - lim))} over the ${fmt(lim)} limit` : `${fmt(r2(lim - owed))} available<br>of ${fmt(lim)}`}</div></div>
       <div class="meter cc-meter${pct >= 90 ? " over" : ""}"><i style="width:${pct}%"></i></div><div class="cc-row sr-only"><span class="small tnum">${fmt(owed)} used</span><span class="small tnum">${owed > lim ? `${fmt(r2(owed - lim))} over the ${fmt(lim)} limit` : `${fmt(r2(lim - owed))} available of ${fmt(lim)}`}</span></div>`
-      : owed > 0 ? `<div class="debt-owed"><div><span class="lbl">Owed</span><b class="tnum debt-big">${fmt(owed)}</b></div><div class="muted small" style="text-align:right">${fmt(owed)} owed</div></div>` : ""}
+      : owed > 0 ? `<div class="debt-owed"><div><span class="lbl">Owed</span><b class="tnum debt-big">${fmt(owed)}</b></div></div>` : ""}
     <div class="debt-tiles">${tiles.join("")}</div>${tip}
     ${paidNow > 0 ? `<p class="small good tnum" style="margin:0" data-card-paid>Paid ${fmt(paidNow)} this month</p>` : ""}
     ${UI.cardPay === c.id ? (UI.cardPayMode === "charge" ? cardPayForm(c) : payForm(c)) : ""}
@@ -4192,7 +4266,7 @@ function cardForm(c, credit){
 }
 function cardsView(){
   const cr = creditCards(), db = S.cards || [], lim = cr.reduce((a, l) => a + (+l.limit || 0), 0), used = cr.filter(l => +l.limit > 0).reduce((a, l) => a + (+l.total || 0), 0);
-  return `<section class="card inc-card" data-cards><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Cards</h2>${lim > 0 ? `<span class="muted small tnum" data-cards-use>${Math.round(used / lim * 100)}% of credit used</span>` : ""}</div>
+  return `<section class="card inc-card${S.hideLoans ? " amt-hide" : ""}" data-cards><div class="inline cards-h" style="justify-content:space-between;align-items:center"><h2>Cards</h2><span class="inline" style="gap:4px">${lim > 0 ? `<span class="muted small tnum" data-cards-use>${Math.round(used / lim * 100)}% of credit used</span>` : ""}${cr.length || db.length ? `<button type="button" class="amt-eye in-h" data-amt-eye="cards" aria-pressed="${!!S.hideLoans}" aria-label="${S.hideLoans ? "Show amounts" : "Hide amounts"}" title="${S.hideLoans ? "Show amounts" : "Hide amounts"}">${S.hideLoans ? EYE_OFF : EYE_ON}</button>` : ""}</span></div>
     ${cr.map(l => cardTile(l, true)).join("")}${db.map(c => cardTile(c, false)).join("")}
     ${UI.cardAdd ? `<div class="inc-row editing">${cardForm(null)}</div>` : `<button class="btn" type="button" data-card-add>${I.plus}Add a card</button>`}
     ${!cr.length && !db.length && !UI.cardAdd ? `<p class="muted small" style="margin:0">Add your credit and debit cards: limits, payments and fees, with reminders before they are due.</p>` : ""}</section>`;
@@ -5172,7 +5246,7 @@ document.addEventListener("focusin", e => { const t = e.target; if (!t || !t.mat
 if (window.visualViewport) visualViewport.addEventListener("resize", () => { const t = document.activeElement; if (t && t.matches && t.matches("input,select,textarea")) t.dispatchEvent(new FocusEvent("focusin", {bubbles: true})); });
 // Important, hard-to-undo actions ask in a calm sheet that rises from the bottom: what happens, then two clear buttons.
 const cfSheet = (ic, title, body, btns) => `<div class="cf-back" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="cf-sheet"><span class="cf-ic" aria-hidden="true">${ic}</span><h3>${title}</h3><p class="muted">${body}</p><div class="cf-btns">${btns}</div></div></div>`;
-document.addEventListener("click", e => { if (e.target.classList && e.target.classList.contains("cf-back")){ const no = e.target.querySelector(":scope > .cf-sheet [data-reset-no], :scope > .cf-sheet [data-restore-no], :scope > .cf-sheet [data-del-toggle]"); if (no) no.click(); } });   // a tap outside the sheet keeps everything as it is
+document.addEventListener("click", e => { if (e.target.classList && e.target.classList.contains("cf-back")){ const no = e.target.querySelector(":scope > .cf-sheet [data-reset-no], :scope > .cf-sheet [data-restore-no], :scope > .cf-sheet [data-del-toggle], :scope > .cf-sheet [data-st-confirm]"); if (no) no.click(); } });   // a tap outside the sheet keeps everything as it is
 // Set up your month: one calm screen per step, the answers so far folded at the top, Clear and Next at the bottom.
 const SETUP_BILLS = [["rent", "🏠", "Rent"], ["util", "💡", "Utilities"], ["groc", "🛒", "Groceries"], ["phone", "📱", "Phone"], ["net", "🌐", "Internet"], ["car", "🚗", "Car"], ["family", "👪", "Family"], ["ins", "🛡️", "Insurance"]];
 const SETUP_SUBS = [["Netflix", "🎬", 15.49], ["Spotify", "🎵", 11.99], ["YouTube Premium", "▶️", 13.99], ["iCloud+", "☁️", 2.99], ["Disney+", "✨", 9.99], ["Amazon Prime", "📦", 14.99], ["Hulu", "📺", 9.99], ["Gym", "💪", 30]];
@@ -7825,7 +7899,8 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-bank-review")){ await bankReview(b.dataset.bankReview); return; }
   if (b.hasAttribute("data-bank-off")){ try { localStorage.removeItem(BANK_KEY); } catch(e){} delete S.bank; BANK.cache = null; BANK.err = ""; save(); render(true); toast("Disconnected. To end it fully, also remove KeepWise in your SimpleFIN account."); return; }
   if (b.hasAttribute("data-import-cancel")){ STMT.result = null; STMT.fx = null; STMT.tx = null; render(false); return; }
-  if (b.dataset.stOpen && STMT.result){ const k = b.dataset.stOpen; if (STMT.open.has(k)) STMT.open.delete(k); else STMT.open.add(k); refreshOuts(); return; }
+  if (b.dataset.stOpen && STMT.result){ const k = b.dataset.stOpen; if (STMT.open.has(k)) STMT.open.delete(k); else { if (k !== "all") [...STMT.open].forEach(x => { if (x !== "all") STMT.open.delete(x); }); STMT.open.add(k); } STMT.act = null; refreshOuts(); return; }
+  if (b.dataset.stDone && STMT.result){ STMT.open.delete(b.dataset.stDone); STMT.act = null; refreshOuts(); return; }
   if (b.dataset.stAll && STMT.result){ const R = STMT.result, list = {income: R.income, subs: R.subs, bills: R.bills, loans: R.loans, giving: R.giving, spending: R.spending, sent: R.moves.sent, received: R.moves.received}[b.dataset.stAll] || [], to = !list.some(x => x.on);
     list.forEach(x => { STMT.pick[x.id] = to; }); stPicks(R); STMT.confirm = false; refreshOuts(); return; }
   if (b.dataset.stDir && STMT.result){ const [i, d] = b.dataset.stDir.split(":").map(Number); if (STMT.dir[i] === d) delete STMT.dir[i]; else STMT.dir[i] = d; STMT.confirm = false; reanalyze(); refreshOuts(); return; }
@@ -7837,6 +7912,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.stAct && STMT.result){ const i = +b.dataset.stAct; STMT.act = STMT.act === i ? null : i; refreshOuts(); return; }
   if (b.dataset.stSkip && STMT.result){ const i = +b.dataset.stSkip; if (STMT.skip.has(i)) STMT.skip.delete(i); else STMT.skip.add(i); STMT.act = null; STMT.confirm = false; reanalyze(); refreshOuts(); toast(STMT.skip.has(i) ? "Left out. It is listed at the bottom if you want it back." : "Put back."); return; }
   if (b.hasAttribute("data-st-move") && STMT.result){ const mk = b.dataset.mk, to = b.dataset.stMove; if (to) STMT.move[mk] = to; else delete STMT.move[mk]; STMT.act = null; STMT.confirm = false; reanalyze(); refreshOuts(); toast(to ? "Moved." : "Back where KeepWise put it."); return; }
+  if ((b.dataset.stMe || b.hasAttribute("data-st-move")) && STMT.result) [...STMT.open].forEach(x => { if (x !== "all") STMT.open.delete(x); });   // the line has moved: its sheet closes
   if (b.dataset.stMe && STMT.result){ STMT.me.delete("!" + b.dataset.stMe); STMT.me.add(b.dataset.stMe); reanalyze(); refreshOuts(); toast("Shown as your own account, and not counted."); return; }
   if (b.dataset.stNotme && STMT.result){ STMT.me.delete(b.dataset.stNotme); STMT.me.add("!" + b.dataset.stNotme); reanalyze(); refreshOuts(); return; }
   if (b.dataset.stIsme && STMT.result){ STMT.me.delete("!" + b.dataset.stIsme); reanalyze(); refreshOuts(); return; }

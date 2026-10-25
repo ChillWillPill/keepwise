@@ -754,8 +754,8 @@ async def check_statement_review(pg):
     assert "Acme Corp" in v and "$4,200/mo" in v and "usually on the 25th" in v, "salary and payday"
     for name in ["Netflix", "Spotify", "Planet Fitness", "Adobe Creative", "iCloud", "Disney Plus"]:
         assert name.lower() in v.lower(), f"subscription {name} missing"
-    assert "Paying since Apr 2026 · 6 charges · $107.94 so far" in v, "Netflix history"
-    assert "Paying since Jun 2026 · 4 charges" in v, "Disney+ history"
+    assert "6 charges since Apr" in v, "Netflix history"
+    assert "4 charges since Jun" in v, "Disney+ history"
     for bill in ["Rent Oakview", "Con Ed", "Verizon Wireless", "Geico Auto"]:
         assert bill.lower() in v.lower(), f"bill {bill} missing"
     assert "$700 in this statement" in v, "tax payments"
@@ -2324,7 +2324,7 @@ async def plus_connects_a_bank_through_plaid(ctx):
     # review reads the account like a statement, without the pending line
     await pg.click("[data-acct='p:a1'] [data-acct-menu]"); await pg.click("[data-acct='p:a1'] [data-acct-review]"); await pg.wait_for_timeout(1500)
     v = await pg.inner_text("#view"); assert "Your statement" in v and "Netflix" in v and "Pending Shop" not in v, v[:500]
-    await pg.click("button:has-text('Cancel')"); await pg.wait_for_timeout(300)
+    await pg.click(".st-wiz [data-import-cancel][aria-label=Close]"); await pg.wait_for_timeout(300)
     # refresh asks again with the cursor
     await pg.click("[data-plaid-refresh]"); await pg.wait_for_timeout(400)
     assert calls[-1] == ("/plaid/sync", {"item": "SEALED-BLOB", "cursor": "c1"})
@@ -2693,7 +2693,7 @@ async def a_us_bank_connects_through_simplefin_on_the_phone(ctx):
     # reviewing an account reads its 90 days like a statement, without the pending line
     await pg.click("[data-acct='s:chk'] [data-acct-menu]"); await pg.click("[data-acct='s:chk'] [data-acct-review]"); await pg.wait_for_timeout(1500)
     v = await pg.inner_text("#view"); assert "Your statement" in v and "Everyday Checking" in v and "Netflix" in v.title() and "PENDING SHOP" not in v.upper(), v[:600]
-    await pg.click("button:has-text('Cancel')"); await pg.wait_for_timeout(300)
+    await pg.click(".st-wiz [data-import-cancel][aria-label=Close]"); await pg.wait_for_timeout(300)
     # refresh asks SimpleFIN again; when the link is turned off there, it says so
     n = calls["acct"]; assert await pg.inner_text("#view h1") == "Banks & statements", "Cancel goes back to the Banks screen"
     await pg.click("[data-bank-refresh]"); await pg.wait_for_timeout(500); assert calls["acct"] > n and "up to date" in await pg.inner_text("#toast")
@@ -3581,7 +3581,7 @@ async def nothing_from_a_statement_is_added_until_it_is_ticked(ctx):
     pg = await open_app(ctx)
     await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
     before = await state(pg); assert len(before["subs"]) == 10 and before["income"] == 5200, "reading a statement changes nothing by itself"
-    c = await stx(pg, "[data-st-count]"); m = re.search(r"(\d+) of (\d+) lines are ticked", c); assert m and "Nothing is added until you choose below" in c, c
+    c = await stx(pg, "[data-st-count]"); m = re.search(r"(\d+) of (\d+) ticked", c); assert m and "nothing is added until you tap below" in c, c
     picked, total = int(m.group(1)), int(m.group(2)); assert 0 < picked <= total
     # every subscription, bill, spending group and pay line has its own tick
     for sec in ("income", "subs", "bills", "spending"): assert await pg.locator(f"[data-st={sec}] [data-st-pick]").count() >= 1, sec
@@ -3637,17 +3637,20 @@ async def every_statement_line_is_shown_exactly_as_the_bank_wrote_it(ctx):
     tin = sum(float(r[2]) for r in rows if float(r[2]) > 0); tout = -sum(float(r[2]) for r in rows if float(r[2]) < 0)
     chk = await stx(pg, ".st-check"); assert f"Money in ${tin:,.2f}".replace(".00", "") in chk.replace(".00", "") and f"money out ${tout:,.2f}" in chk, (chk, tin, tout)
     # the bank's own wording sits under the tidy name
-    nf = await stx(pg, "[data-st-item='sub:NETFLIX']"); assert "Netflix" in nf and "NETFLIX.COM" in nf and "$17.99/mo" in nf, nf
+    nf = await stx(pg, "[data-st-item='sub:NETFLIX']"); assert "Netflix" in nf and "$17.99/mo" in nf, nf
     assert await pg.locator("[data-st-item='sub:NETFLIX'] .st-t").count() == 0
     await pg.click("[data-st-open='sub:NETFLIX']"); await pg.wait_for_timeout(150)
+    assert "NETFLIX.COM" in await stx(pg, "[data-st-item='sub:NETFLIX'] .st-raw"), "the bank's own wording, in the row's sheet"
     lines = await pg.locator("[data-st-item='sub:NETFLIX'] .st-t").all_inner_texts(); assert len(lines) == 6, lines
     assert "Apr 5, 2026" in lines[0] and "NETFLIX.COM" in lines[0] and "$17.99" in lines[0], lines[0]
-    assert "Hide" in await stx(pg, "[data-st-item='sub:NETFLIX']")
-    await pg.click("[data-st-open='sub:NETFLIX']"); await pg.wait_for_timeout(120); assert await pg.locator("[data-st-item='sub:NETFLIX'] .st-t").count() == 0
+    assert "Done" in await stx(pg, "[data-st-item='sub:NETFLIX'] .st-sheet")
+    await pg.click("[data-st-item='sub:NETFLIX'] .st-sheet [data-st-done]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-st-item='sub:NETFLIX'] .st-t").count() == 0
     # a spending group opens to the payments inside it
     await pg.click("[data-st-open='spend:Groceries']"); await pg.wait_for_timeout(150)
     g = await pg.locator("[data-st-item='spend:Groceries'] .st-t").all_inner_texts(); want = [r for r in rows if "TRADER JOE" in r[1]]
     assert len(g) == len(want) and all("TRADER JOE'S #552" in x for x in g), (len(g), len(want))
+    await pg.click("[data-st-item='spend:Groceries'] .st-sheet-back", position={"x": 20, "y": 20}); await pg.wait_for_timeout(150)
+    assert await pg.locator(".st-sheet").count() == 0, "a tap outside closes the sheet"
     # every line of the file, with where it went
     assert f"Show all {len(rows)}" in await stx(pg, "[data-st=all]")
     await pg.click("[data-st-open=all]"); await pg.wait_for_timeout(200)
@@ -3672,6 +3675,7 @@ async def you_can_say_which_names_on_a_statement_are_you(ctx):
     assert "Ali Raza" not in await stx(pg, "[data-moves=out]") and (await stx(pg, "[data-moves=own-out]")).count("IBFT TO ALI RAZA KHAN MEEZAN BANK") == 3
     assert (await stx(pg, "[data-moves=own-in]")).count("IBFT FROM ALI RAZA KHAN UBL") == 3
     # "This is me" on any other name does the same for that name
+    await pg.click("[data-st-open='sent:SARA NOOR']"); await pg.wait_for_timeout(150)
     await pg.click("[data-st-me='SARA NOOR']"); await pg.wait_for_timeout(250)
     assert "Sara" not in await stx(pg, "[data-moves=out]") and "Sara" not in await stx(pg, "[data-moves=in]")
     assert "RAAST TO SARA NOOR" in await stx(pg, "[data-moves=own-out]") and "IBFT FROM SARA NOOR" in await stx(pg, "[data-moves=own-in]")
@@ -3899,7 +3903,10 @@ async def subscriptions_are_found_properly_in_a_statement(ctx):
     assert "1 charge " in by["sub:GRAMMARLY"] + " ", by.get("sub:GRAMMARLY")
     # coffee every week, a pharmacy, a friend and a one-off shop are not subscriptions
     assert len(by) == 5 and not any(k in " ".join(by) for k in ("COFFEE", "PHARMACY", "DANA", "GADGET")), list(by)
-    sub = await stx(pg, "[data-st=subs]"); assert "APPLE.COM/BILL" in sub and "(5)" in sub, sub
+    sub = await stx(pg, "[data-st=subs]"); assert "(5)" in sub, sub
+    await pg.locator("[data-st=subs] [data-st-open^='sub:APPLE']").first.click(); await pg.wait_for_timeout(150)
+    assert "APPLE.COM/BILL" in await stx(pg, "[data-st=subs] .st-raw"), "the bank's wording is in the row's sheet"
+    await pg.click("[data-st=subs] .st-sheet [data-st-done]"); await pg.wait_for_timeout(120)
     await use_as_plan(pg); await pg.wait_for_timeout(300)
     st = await state(pg); assert sorted(s["name"] for s in st["subs"]) == ["Apple 10.99", "Apple 2.99", "Grammarly", "Hulu", "Quiet Books Club"], [s["name"] for s in st["subs"]]
     assert not pg.errors, pg.errors
@@ -4067,12 +4074,12 @@ async def a_line_the_statement_leaves_unclear_is_asked_about(ctx):
     qs = ask.locator("[data-st-q]"); assert await qs.count() == 2, await ask.inner_text()
     a = await stx(pg, "[data-st=ask]"); assert "JOES HARDWARE" in a and "BLUE LANTERN" in a and "NETFLIX" not in a and "left out until you say" in a, a
     chk = await stx(pg, "[data-out=stCheck]"); assert "Money in $2,000" in chk and "money out $75.99" in chk, chk
-    assert "2 lines are waiting for your answer" in await stx(pg, "[data-st-count]")
+    assert "2 lines are waiting for your answer" in await stx(pg, "[data-st-waiting]")
     j = " ## ".join(rows); assert "JOES HARDWARE | Waiting for your answer | $45.10" in j, rows
     # one line answered
     await qs.first.locator("[data-st-dir$=':-1']").click(); await pg.wait_for_timeout(250)
     chk = await stx(pg, "[data-out=stCheck]"); assert "money out $121.09" in chk, chk
-    assert "1 line is waiting" in await stx(pg, "[data-st-count]")
+    assert "1 line is waiting" in await stx(pg, "[data-st-waiting]")
     # the rest in one tap, then one changed back
     await pg.click("[data-st-dirall='1']"); await pg.wait_for_timeout(250)
     chk = await stx(pg, "[data-out=stCheck]"); assert "Money in $2,057.10" in chk and "money out $75.99" in chk, chk
@@ -4122,15 +4129,16 @@ async def a_credit_card_statement_reads_charges_and_credits_the_right_way(ctx):
     # the exact wording is shown, and any line can be turned round
     await pg.locator("[data-st=card] [data-st-open]").first.click(); await pg.wait_for_timeout(150)
     assert "PAYMENT THANK YOU" in await stx(pg, "[data-st=card]")
+    await pg.click("[data-st=card] .st-sheet [data-st-done]"); await pg.wait_for_timeout(150)
     line = pg.locator("[data-st=all] .st-t", has_text="WHOLE FOODS"); await line.locator("[data-st-act]").click(); await pg.wait_for_timeout(200)
     await pg.locator("[data-st=all] [data-st-acts] [data-st-flip]").first.click(); await pg.wait_for_timeout(250)
-    assert "WHOLE FOODS" in await stx(pg, "[data-st=card]") and "Turned round by you" in await stx(pg, "[data-st=all]")
+    assert "208.14" in await stx(pg, "[data-st=card]") and "Turned round by you" in await stx(pg, "[data-st=all]"), "the turned line joins the refunds"
     await pg.locator("[data-st=all] [data-st-acts] [data-st-unflip]").click(); await pg.wait_for_timeout(250)
-    assert "WHOLE FOODS" not in await stx(pg, "[data-st=card]") and "Turned round by you" not in await stx(pg, "[data-st=all]")
+    assert "208.14" not in await stx(pg, "[data-st=card]") and "Turned round by you" not in await stx(pg, "[data-st=all]")
     # a credit that really was money in can be moved there
     line = pg.locator("[data-st=all] .st-t", has_text="PAYMENT THANK YOU"); await line.locator("[data-st-act]").click(); await pg.wait_for_timeout(200)
     await pg.locator("[data-st=all] [data-st-acts] [data-st-move=income]").click(); await pg.wait_for_timeout(250)
-    inc = await stx(pg, "[data-st=income]"); assert "PAYMENT THANK YOU" in inc and "Moved by you" in inc and "Payments to this card" not in await stx(pg, "[data-st=card]"), inc
+    inc = await stx(pg, "[data-st=income]"); assert "Thank You" in inc and "Moved by you" in inc and "Payments to this card" not in await stx(pg, "[data-st=card]"), inc
     assert not pg.errors, pg.errors
 
 @test
@@ -4170,7 +4178,7 @@ async def changing_a_line_low_in_the_list_opens_it_right_there(ctx):
     # a group that is not counted shows no checkbox that looks tappable, and says how to count it
     oc = pg.locator("[data-st=income] .st-item", has_text="Refunds and one-off money in")
     assert await oc.locator("input[type=checkbox]").count() == 0 and await oc.locator("[data-st-nocount]").count() == 1
-    assert "Tap Change" in await oc.inner_text()
+    assert "tap to count it" in await oc.inner_text()
     box = pg.locator("[data-st=all] .st-tx").first
     await box.evaluate("b => { b.scrollTop = b.scrollHeight; }"); await pg.wait_for_timeout(150)
     top0 = await box.evaluate("b => b.scrollTop"); assert top0 > 200, top0
@@ -4914,7 +4922,7 @@ async def bigger_screens_use_their_width(ctx):
     # a focused screen (a statement to check) stays one readable column
     await pg.set_input_files("#stmt", os.path.join(FIX, "sample-bank-statement.csv")); await pg.wait_for_timeout(500)
     assert not await pg.evaluate("document.getElementById('view').classList.contains('wide')") and (await box("#view"))[2] <= 800 and await pg.evaluate(fits)
-    await pg.click("[data-import-cancel]"); await pg.wait_for_timeout(200)
+    await pg.click("[data-import-cancel] >> nth=0"); await pg.wait_for_timeout(200)
     # shrink the window to a phone and the phone layout is back; widen it and the columns return
     await pg.set_viewport_size({"width": 390, "height": 844}); await pg.wait_for_timeout(350)
     tb = await box("#tabbar"); assert tb[1] > 700 and tb[2] == 390 and await pg.evaluate("document.querySelectorAll('#view .cols').length") == 0 and await pg.evaluate(fits), tb
@@ -5948,6 +5956,18 @@ async def banks_keeps_cards_with_limits_and_reminders(ctx):
     await pg.fill(f + " [name=limit]", "5000"); await pg.fill(f + " [name=balance]", "1250"); await pg.fill(f + " [name=pay]", "120"); await pg.select_option(f + " [name=due]", str(due))
     await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(200)
     t = await text(pg, "[data-cards]"); assert "Travel card" in t and "4821" in t and "$1,250 used" in t and "$3,750 available of $5,000" in t, t
+    # the eye hides the amounts on Cards, and Loans & debts follows it
+    await pg.click("[data-cards] [data-amt-eye]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-cards].amt-hide").count() == 1 and (await state(pg))["hideLoans"] is True
+    assert await pg.get_attribute("[data-cards] [data-amt-eye]", "aria-pressed") == "true" and "4821" in await text(pg, "[data-cards]")
+    await pg.click("[data-cards] [data-amt-eye]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-cards].amt-hide").count() == 0 and not (await state(pg))["hideLoans"]
+    # the eye hides the amounts on Cards, and Loans & debts follows it
+    await pg.click("[data-cards] [data-amt-eye]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-cards].amt-hide").count() == 1 and (await state(pg))["hideLoans"] is True
+    assert await pg.get_attribute("[data-cards] [data-amt-eye]", "aria-pressed") == "true" and "4821" in await text(pg, "[data-cards]")
+    await pg.click("[data-cards] [data-amt-eye]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("[data-cards].amt-hide").count() == 0 and not (await state(pg))["hideLoans"]
     c = [l for l in (await state(pg))["loans"] if l.get("last4") == "4821"][0]; assert c["kind"] == "card" and c["limit"] == 5000 and c["pay"] == 120 and c["due"] == due
     # a debit card with its own monthly charge
     await pg.click("[data-card-add]"); await pg.click(f + " [data-card-type=debit]"); await pg.fill(f + " [name=last4]", "0457"); await pg.fill(f + " [name=charge]", "5"); await pg.select_option(f + " [name=day]", str(due))
@@ -6543,11 +6563,11 @@ async def statements_from_more_banks_read_right(ctx):
     v = await text(pg, "#view")
     assert "$2,650 comes in" in v and "Chase Crd Autopay" not in await text(pg, "[data-st=spending]"), ("the card bill is not everyday spending and the refund is not income", v[:1500])
     ln = await text(pg, "[data-st=loans]"); assert "Chase" in ln and "Credit card" in ln and "Refunds and one-off money in" in v, ("the card bill is a card payment under Loans and debt", ln, v[:1500])
-    await pg.click("[data-import-cancel]"); await pg.wait_for_timeout(200)
+    await pg.click("[data-import-cancel] >> nth=0"); await pg.wait_for_timeout(200)
     e = "Buchungstag;Verwendungszweck;Betrag\n" + "".join(f"01.{m:02d}.2026;GEHALT FIRMA GMBH;2.450,00\n03.{m:02d}.2026;NETFLIX INTERNATIONAL;-12,99\n05.{m:02d}.2026;MIETE WOHNUNG;-850,00\n10.{m:02d}.2026;REWE MARKT;-62,40\n" for m in (8, 9, 10))
     await pg.set_input_files("#stmt", {"name": "e.csv", "mimeType": "text/csv", "buffer": e.encode()}); await pg.wait_for_timeout(1500)
     v = await text(pg, "#view")
-    assert "Gehalt Firma" in v and "$2,450/mo" in v and "Miete Wohnung" in v and "Housing" in v and "Rewe Markt" in v and "Paying since Aug 2026" in v, v[:2000]
+    assert "Gehalt Firma" in v and "$2,450/mo" in v and "Miete Wohnung" in v and "Housing" in v and "Rewe Markt" in v and "since Aug" in v, v[:2000]
     assert not pg.errors, pg.errors
 
 @test
