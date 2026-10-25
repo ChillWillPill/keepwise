@@ -506,12 +506,19 @@ details summary::-webkit-details-marker{display:none}
 .sf-more{align-self:flex-start}.sf-clear{color:var(--rust)}.sf-import{border-bottom:1px solid var(--line);padding-bottom:12px}
 .fsteps .fs:not(.on){display:none}.fsteps .grid2[hidden]{display:none}
 .app.flowing .app-header,.app.flowing .tabbar,.app.flowing .wise-fab{display:none!important}
-.wiz-card .field:first-of-type input:placeholder-shown:not(:focus),.wiz-card .sf-amt:has(input:placeholder-shown){box-shadow:0 0 0 2px color-mix(in srgb,var(--green) 30%,transparent)}
+.wiz-card > label.field:first-of-type > input:placeholder-shown:not(:focus),.wiz-card .sf-amt:has(input:placeholder-shown){box-shadow:0 0 0 2px color-mix(in srgb,var(--green) 30%,transparent)}
 .coach{background:var(--card);border:1px solid color-mix(in srgb,var(--green) 28%,var(--line));border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--lift)}.coach-h{display:flex;align-items:center;gap:8px}.coach-h b{flex:1;font-size:.95rem}.coach-ic{width:28px;height:28px;border-radius:9px;background:var(--green-soft);display:grid;place-items:center;font-size:.9rem}
-.coach-cards{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -14px;padding:2px 14px 4px}.coach-cards::-webkit-scrollbar{display:none}
+.coach-cards{display:flex;align-items:flex-start;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -14px;padding:2px 14px 4px}.coach-cards::-webkit-scrollbar{display:none}
 .coach-card{flex:0 0 74%;scroll-snap-align:start;background:var(--bg);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}.coach-n{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:var(--muted)}.coach-n i{font-style:normal;width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:.66rem}
 .coach-end .coach-n i{background:var(--gold)}.coach-res{background:var(--green-soft);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.coach-res span{font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.coach-res b{font:600 1.35rem/1.15 var(--display);color:var(--green)}.coach-res small{font-size:.72rem;color:var(--muted)}.coach-bar{display:flex;height:7px;border-radius:9px;overflow:hidden;background:var(--chip);margin-top:6px}.coach-bar i{display:block;height:100%}
 .coach-demo{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.82rem;color:var(--muted)}.coach-demo b{color:var(--ink);text-align:right;font-size:.88rem;display:flex;flex-direction:column}.coach-demo small{font-weight:500;color:var(--muted);font-size:.7rem}
+.cf-back{position:fixed;inset:0;z-index:62;background:rgba(10,14,12,.46);display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));animation:cfIn .16s ease}@keyframes cfIn{from{opacity:0}to{opacity:1}}
+.cf-sheet{background:var(--card);color:var(--ink);border-radius:24px;padding:20px;width:100%;max-width:440px;display:flex;flex-direction:column;gap:10px;box-shadow:0 24px 60px -12px rgba(0,0,0,.55);animation:wizIn .22s ease}.cf-sheet h3{margin:2px 0 0;font-size:1.2rem}.cf-sheet p{margin:0;line-height:1.45}
+.cf-ic{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:1.35rem;background:var(--chip)}.cf-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.cf-btns .btn{min-height:48px;border-radius:14px}.cf-col{display:flex;flex-direction:column;gap:8px;margin-top:6px}.cf-col .btn{min-height:48px;border-radius:14px}.cf-sheet .btn.danger{background:var(--rust);border-color:var(--rust);color:#fff}
+.cf-back .cf-back{background:rgba(10,14,12,.2)}
+.dtiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}.dtile{appearance:none;font:inherit;color:var(--ink);text-align:left;display:flex;flex-direction:column;gap:3px;padding:14px;border:1px solid var(--line);border-radius:18px;background:var(--card);cursor:pointer;box-shadow:var(--lift);min-height:112px}.dtile b{font-size:.95rem;margin-top:6px}.dtile small{color:var(--muted);font-size:.76rem;line-height:1.3}.dtile:active{transform:scale(.98)}
+.dt-ic{width:40px;height:40px;border-radius:13px;background:var(--chip);display:grid;place-items:center;font-size:1.2rem;flex:none}.dtile.primary{background:var(--green);border-color:var(--green);color:#fff}.dtile.primary small{color:color-mix(in srgb,#fff 78%,transparent)}.dtile.primary .dt-ic{background:rgba(255,255,255,.16)}
+.data-hero{background:var(--green-soft);border-color:color-mix(in srgb,var(--green) 22%,transparent)}.dh-top{display:flex;align-items:center;gap:12px}.dh-top h2{margin:0}.dh-top .dt-ic{background:var(--card)}.data-hero .sum-cell{background:var(--card)}.dt-label{margin:6px 0 -4px}.dt-over{display:grid;grid-template-columns:1fr 1fr;gap:10px}.data-hero .sum-cell{padding:10px 12px}
 .wiz-opts{display:flex;flex-direction:column}.wiz-opt{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--line);cursor:pointer}.wiz-opt:first-child{border-top:0}.wiz-opt input{width:20px;height:20px;accent-color:var(--green)}
 .wiz-bar{display:flex;justify-content:space-between;gap:10px;position:sticky;bottom:0;z-index:5;background:var(--card);padding:10px 0 4px;margin-top:-4px;box-shadow:0 -10px 12px -10px rgba(0,0,0,.12)}.wiz-bar .btn{min-width:96px}.wiz-quick{margin:-2px 0 0}
 .quick-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.quick-top .seg{flex:1 1 150px}.quick-view button{font-size:.86rem}.quick-rep{margin:10px 0 2px}.rep-chip{display:inline-flex;gap:6px;align-items:center;white-space:nowrap}.rep-chip b{font-weight:700}
@@ -526,9 +533,10 @@ details summary::-webkit-details-marker{display:none}
 .note-seg{display:grid;grid-template-columns:1fr 1fr;width:100%}.note-seg small{opacity:.7;margin-left:4px}
 .in-env>.loan-card{box-shadow:none;border:0;padding:6px 0 0;background:none;margin:0}.in-env>.loan-card>.inline:first-child,.in-env>.loan-card>.info-tip{display:none}.loan-tick{margin-top:2px}
 .amt-eye{position:absolute;left:50%;transform:translateX(-50%);appearance:none;border:0;background:none;color:var(--muted);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;cursor:pointer;z-index:2}.amt-eye:hover{background:var(--chip)}
-.env-hw{position:relative;width:100%}.env-hw>.env-head{width:100%}.env-hw>.amt-eye{bottom:9px}
+.env-hw{position:relative;width:100%}.env-head-static{cursor:default}.env-hw>.env-head{width:100%}.env-hw>.amt-eye{bottom:6px;left:auto;right:10px;transform:none}
 .loan-quick{display:flex;flex-direction:column;padding:0 18px 6px}.lq-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.lq-row .ln-ic{flex:none}.lq-t{flex:1;min-width:0;display:flex;flex-direction:column}.lq-t b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lq-t small{font-size:.78rem}.lq-amt{font-weight:600}.lq-row.paid .lq-amt{color:var(--muted)}
-.in-env .cards-link{display:none}.lq-cards{align-self:flex-end;margin:-2px 18px 8px auto;display:block}.loan-quick:empty{display:none}
+.in-env .cards-link{display:none}.lq-group{margin:4px 18px 10px;border:1px solid var(--line);border-radius:16px;background:var(--bg);overflow:hidden}.lq-head{appearance:none;font:inherit;color:inherit;width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:none;border:0;cursor:pointer;text-align:left}.lq-head svg{color:var(--muted);flex:none}.lq-amt small{font-size:.72rem;font-weight:500}.lq-sub{padding:0 12px 4px}.lq-sub .lq-row{border-top:1px solid var(--line);padding:9px 0}
+.loan-quick:empty{display:none}
 .amt-hide .tnum,.amt-hide .debt-owed b,.amt-hide .pill.grey{filter:blur(7px);user-select:none}
 
 .in-env>.loan-card{padding:0!important;border:0!important;box-shadow:none!important;background:none!important;border-radius:0!important}.in-env .inc-row{border:0;border-radius:0;background:none;padding:12px 0 0}.in-env .loan-card>.inc-row:first-of-type{padding-top:0}.env-body>.in-env:last-child{margin-top:-8px}.in-env .inc-row+.inc-row,.in-env .loan-mini+.inc-row,.in-env .inc-row+.loan-mini{border-top:1px solid var(--line)}
@@ -3475,18 +3483,19 @@ OUT.envelopes = () => {
 const loansLive = () => (S.loans || []).some(l => !loanDone(l));
 function loansRow(C){
   const live = (S.loans || []).filter(l => !loanDone(l)); if (!live.length) return "";
-  const share = C.income > 0 ? C.loans / C.income * 100 : 0, open = UI.openEnv === "loans", owed = r2(live.reduce((a, l) => a + (+l.total || 0), 0));
+  const share = C.income > 0 ? C.loans / C.income * 100 : 0, open = true, owed = r2(live.reduce((a, l) => a + (+l.total || 0), 0));
   return `<div class="row env-row${open ? " open" : ""}${S.hideLoans ? " amt-hide" : ""}" data-loans-row>
-    <div class="env-hw"><button type="button" class="env-head" data-env-open="loans" aria-expanded="${open}">
+    <div class="env-hw"><div class="env-head env-head-static" data-env-open="loans" aria-expanded="true">
       <div class="row-top env-top"><span class="env-ic" aria-hidden="true">${I.bank}</span><div class="env-t"><div class="name">Loans & debts</div><div class="muted small">${live.length} repayment${live.length === 1 ? "" : "s"} each month</div></div>
       <div class="env-amt"><div class="name tnum">${fmt(C.loans)}</div><div class="small tnum muted">${C.income > 0 ? `${share < 1 ? "under 1" : Math.round(share)}% of income` : "a month"}</div>${owed > 0 ? `<span class="pill grey">${fmt(owed)} owed</span>` : ""}</div></div>
       <div class="meter"><i class="debt" style="width:${Math.min(100, share)}%"></i></div>
-      <div class="env-foot"><span class="small muted">${live.filter(l => paidOn("l:" + l.id, C.planKey)).length} of ${live.length} paid this month</span><span class="env-hint small">${open ? "Hide details" : "Details"}<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span></div>
-    </button>
+      <div class="env-foot"><span class="small muted">${live.filter(l => paidOn("l:" + l.id, C.planKey)).length} of ${live.length} paid this month</span></div>
+    </div>
     <button type="button" class="amt-eye" data-amt-eye="loans" aria-pressed="${!!S.hideLoans}" aria-label="${S.hideLoans ? "Show amounts" : "Hide amounts"}" title="${S.hideLoans ? "Show amounts" : "Hide amounts"}">${S.hideLoans ? EYE_OFF : EYE_ON}</button></div>
-    <div class="loan-quick">${live.filter(l => loanMonthly(l) > 0 && (!open || l.kind === "card")).map(l => { const pd = paidOn("l:" + l.id, C.planKey), nm = l.name || loanKind(l.kind);
-      return `<div class="lq-row${pd ? " paid" : ""}" data-lq="${l.id}">${tickBtn("l:" + l.id, nm, C.planKey)}<span class="ln-ic emo" aria-hidden="true">${LOAN_EMO[l.kind] || LOAN_EMO.other}</span><div class="lq-t"><b>${esc(nm)}</b><small class="${pd ? "good" : "muted"}">${pd ? `Paid ${shortDate(pd)}` : esc(loanKind(l.kind))}</small></div><span class="tnum lq-amt">${fmt(loanMonthly(l))}</span></div>`; }).join("")}</div>
-    ${live.some(l => l.kind === "card") ? (() => { const cc = live.filter(l => l.kind === "card"), ow = r2(cc.reduce((a, l) => a + (+l.total || 0), 0)); return `<button class="link small lq-cards" type="button" data-cards-open>${cc.length} card${cc.length === 1 ? "" : "s"}${ow > 0 ? ` · ${fmt(ow)} owed` : ""} · open in Cards ›</button>`; })() : ""}
+    ${(() => { const cc = live.filter(l => l.kind === "card"); if (!cc.length) return ""; const ow = r2(cc.reduce((a, l) => a + (+l.total || 0), 0)), mo = r2(cc.reduce((a, l) => a + loanMonthly(l), 0));
+      const rows = cc.filter(l => loanMonthly(l) > 0).map(l => { const pd = paidOn("l:" + l.id, C.planKey), nm = l.name || loanKind(l.kind);
+        return `<div class="lq-row${pd ? " paid" : ""}" data-lq="${l.id}">${tickBtn("l:" + l.id, nm, C.planKey)}<div class="lq-t"><b>${esc(nm)}</b><small class="${pd ? "good" : "muted"}">${pd ? `Paid ${shortDate(pd)}` : "Card payment"}</small></div><span class="tnum lq-amt">${fmt(loanMonthly(l))}</span></div>`; }).join("");
+      return `<div class="lq-group"><button class="lq-head lq-cards" type="button" data-cards-open><span class="ln-ic emo" aria-hidden="true">💳</span><span class="lq-t"><b>Credit cards</b><small class="muted">${cc.length} card${cc.length === 1 ? "" : "s"}${ow > 0 ? ` · <span class="tnum">${fmt(ow)}</span> owed` : ""}</small></span><span class="tnum lq-amt">${fmt(mo)}<small class="muted">/mo</small></span>${I.chev}</button>${rows ? `<div class="lq-sub">${rows}</div>` : ""}</div>`; })()}
     ${open ? `<div class="env-body"><div class="in-env" data-out="loans">${OUT.loans()}</div></div>` : ""}</div>`;
 }
 // ---- paid this month ----
@@ -4002,10 +4011,9 @@ function planFind(sel){
   UI.pseg = was; UI.expAll = all; render(false); return null;
 }
 const dataCard = (inBanks) => `<section class="card" data-your-data><p class="muted small">${plusOn() ? "Your money data is kept on this device. Plus features that reach your bank, Stripe, PayPal or email pass only what they need through the KeepWise server, which doesn’t store it." : "Your money data stays on this device and is never uploaded."} KeepWise gives estimates, not financial advice.</p>
-    <button class="btn" type="button" data-history>Monthly statements</button>
-    ${inBanks ? "" : `<button class="btn primary" type="button" data-import-open>Import a bank statement (CSV, PDF or photo)</button>`}
+    <div class="dtiles"><button class="dtile" type="button" data-history><span class="dt-ic" aria-hidden="true">🧾</span><b>Monthly statements</b><small>Every month, closed or open</small></button>${inBanks ? "" : `<button class="dtile primary" type="button" data-import-open><span class="dt-ic" aria-hidden="true">📄</span><b>Import a statement</b><small>CSV, PDF or a photo</small></button>`}</div>
     ${inBanks ? "" : `${S.example ? `<button class="btn primary" type="button" data-w-start>Set up my month</button>` : ""}
-    <div class="inline" style="justify-content:space-between"><button class="btn" type="button" data-reset="example">Load example again</button><button class="btn danger" type="button" data-reset="blank" style="margin-left:auto">Start empty</button></div>
+    <p class="label dt-label">Start over</p><div class="dt-over"><button class="btn" type="button" data-reset="example">Load example</button><button class="btn danger" type="button" data-reset="blank">Start empty</button></div>
     <div id="reset-confirm"></div>`}
     <p class="small legal-links"><a href="https://mykeepwise.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> · <a href="https://mykeepwise.com/terms.html" target="_blank" rel="noopener">Terms of Use</a></p></section>`;
 // Plan's cards now live on Month: how pay splits and savings goals on Income, the bills and loans on Budget.
@@ -4748,7 +4756,7 @@ V.statement = () => {
   const open = s.key === currentKey(), out = s.needs + s.misc;
   const row = (a, b, cls) => `<div class="st-line"><span>${a}</span><span class="tnum ${cls || ""}">${b}</span></div>`;
   const live = s.subs.filter(x => x.k !== "drop"), dropped = s.subs.filter(x => x.k === "drop");
-  return `<div class="inline no-print" style="justify-content:space-between"><button class="btn small" type="button" data-stmt-back>${I.chevl}Statements</button><button class="btn small" type="button" data-stmt-print>${IN_APP ? "Download" : "Print or save PDF"}</button></div>
+  return `<div class="inline no-print" style="justify-content:space-between"><button class="btn small" type="button" data-stmt-back>${I.chevl}Statements</button><span class="inline" style="gap:8px"><button class="btn small" type="button" data-stmt-pdf>PDF</button><button class="btn small" type="button" data-stmt-csv>CSV</button></span></div>
   <article class="stmt" aria-label="Statement for ${esc(keyLabel(s.key))}">
     <header class="st-head"><div class="st-brand"><b class="wordmark">Keep<span>Wise</span></b><span class="muted small">Monthly statement</span></div>
       <h2 class="st-title">${esc(keyLabel(s.key))}</h2>${s.range ? `<span class="muted small">${esc(s.range)}</span>` : ""}<span class="st-status small ${open ? "open" : ""}">${open ? `In progress · updated ${esc(shortDate(s.updated))}` : `Closed · final numbers from ${esc(shortDate(s.updated))}`}</span></header>
@@ -4781,6 +4789,26 @@ V.statement = () => {
     <footer class="st-foot muted small">Written by KeepWise on your device from the numbers in your plan. Estimates, not financial advice.</footer>
   </article>`;
 };
+// The statement as rows (section, item, amount), read from what is on screen, so the CSV and the PDF match it line for line.
+function statementRows(){ const art = document.querySelector(".stmt"); if (!art) return []; const out = [];
+  art.querySelectorAll(".st-sum > div, .st-line, .st-tx").forEach(el => { const amt = [...el.querySelectorAll(".tnum")].map(x => x.textContent.trim()).filter(Boolean).pop() || "";
+    const lab = [...el.childNodes].map(n => n.nodeType === 3 ? n.textContent : n.classList && n.classList.contains("tnum") ? "" : n.textContent).join(" ").replace(amt, "").replace(/\s+/g, " ").trim();
+    const g = el.closest(".st-grp"), sec = el.closest(".st-sum") ? "Summary" : g ? (() => { const h = g.querySelector(".st-gh"); if (!h) return ""; const c = h.cloneNode(true); c.querySelectorAll(".tnum").forEach(x => x.remove()); return c.textContent.replace(/\s+/g, " ").trim(); })() : ((el.closest("section") || art).querySelector("h2,h3") || {}).textContent || "";
+    if (lab || amt) out.push([sec.trim(), lab, amt]); });
+  return out; }
+function statementCsv(){ const rows = statementRows(), q = v => /[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v;
+  const csv = [["Section", "Item", "Amount"], ...rows].map(r => r.map(q).join(",")).join("\n");
+  saveFile(new Blob(["\ufeff" + csv], {type: "text/csv"}), `keepwise-statement-${UI.stmt}.csv`); toast("Statement saved as CSV."); }
+// PDF: the browser prints the statement on light paper (choose Save as PDF); inside the app a PDF file is made directly.
+async function statementPdf(){
+  if (!IN_APP){ window.print(); return; }
+  try { if (!window.jspdf){ await new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"; sc.onload = ok; sc.onerror = no; document.head.append(sc); }); }
+    const doc = new window.jspdf.jsPDF({unit: "pt", format: "letter"}), rows = statementRows(); let y = 56, sec = "";
+    doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.text(`KeepWise statement · ${keyLabel(UI.stmt)}`, 48, y); y += 28;
+    rows.forEach(([g, l, a]) => { if (y > 740){ doc.addPage(); y = 56; } if (g !== sec){ sec = g; y += 8; doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.text(g || "", 48, y); y += 18; }
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(doc.splitTextToSize(l, 380)[0] || "", 56, y); doc.text(a, 564, y, {align: "right"}); y += 15; });
+    saveFile(doc.output("blob"), `keepwise-statement-${UI.stmt}.pdf`); toast("Statement saved as PDF.");
+  } catch(e){ statementFile(); toast("Saved as a page you can print to PDF."); } }
 function statementFile(){
   const css = [...document.querySelectorAll("style")].map(x => x.textContent).join("\n");
   const art = document.querySelector(".stmt"); if (!art) return;
@@ -4939,11 +4967,10 @@ function readBackup(text){
   return {data: d, made: j.made};
 }
 OUT.backupBox = () => {
-  if (UI.restore) return `<div class="note"><p><b>Replace everything on this device</b> with the backup from ${esc(new Date(UI.restore.made || Date.now()).toLocaleDateString("en-US", {month:"long", day:"numeric", year:"numeric"}))}?</p>
-    <div class="inline" style="margin-top:10px"><button class="btn" type="button" data-restore-no>Keep what’s here</button><button class="btn primary" type="button" data-restore-yes>Restore backup</button></div></div>`;
+  if (UI.restore) return cfSheet("🗂️", "Restore this backup?", `Everything on this phone is replaced with the backup from ${esc(new Date(UI.restore.made || Date.now()).toLocaleDateString("en-US", {month:"long", day:"numeric", year:"numeric"}))}.`, `<button class="btn" type="button" data-restore-no>Keep what’s here</button><button class="btn primary" type="button" data-restore-yes>Restore backup</button>`);
   const b = S.lastBackup, d = b ? daysSince(b) : null;
   return `<div class="backup ${b && d <= 30 ? "" : "due"}"><div><b>${b ? `Last backup ${d === 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`}` : "No backup yet"}</b><span class="muted small">A backup is a file with everything in KeepWise. Restore it on any phone or browser.</span></div>
-    <div class="grid2"><button class="btn" type="button" data-backup>${I.download}Download a backup</button><button class="btn" type="button" data-restore>Restore from a backup</button></div>
+    <div class="dtiles"><button class="dtile" type="button" data-backup><span class="dt-ic" aria-hidden="true">⬇️</span><b>Download a backup</b><small>Everything in one file</small></button><button class="dtile" type="button" data-restore><span class="dt-ic" aria-hidden="true">🗂️</span><b>Restore a backup</b><small>From a saved file</small></button></div>
     ${IS_IOS && !IN_APP && !STANDALONE && hasRealData() ? `<button class="link small" type="button" data-move-copy style="align-self:flex-start">${UI.moveCopied ? "✓ Copied. Paste it in the Home Screen app" : "Copy my data for the Home Screen app"}</button>` : ""}</div>`;
 };
 // iPhone clears website data after about a week away unless the site is on the Home Screen.
@@ -5105,6 +5132,17 @@ const COACH_END = {
 function coach(k, title){ if (!coachOn(k)) return ""; const d = COACH_DEMO[k] || [], E = COACH_END[k];
   return `<div class="coach" data-coach="${k}"><div class="coach-h"><span class="coach-ic" aria-hidden="true">✨</span><b>${title}</b><button class="link small" type="button" data-coach-ok="${k}">Got it</button></div>
     <div class="coach-cards" data-scroll-x>${d.map(([step, l, v, sub], i) => `<div class="coach-card"><span class="coach-n"><i>${i + 1}</i>${step}</span><div class="coach-demo"><span>${l}</span><b>${v}<small>${sub}</small></b></div></div>`).join("")}${E ? `<div class="coach-card coach-end"><span class="coach-n"><i>★</i>What you get</span><div class="coach-res"><span>${E[0]}</span><b>${E[1]}</b><small>${E[2]}</small><div class="coach-bar">${E[3].map(([n, w, c]) => `<i style="width:${w}%;background:${c}" title="${n}"></i>`).join("")}</div></div></div>` : ""}</div></div>`; }
+// Anywhere in the app the keyboard takes the bottom half: the field being typed in is brought up into the space left (above Next on a step screen).
+document.addEventListener("focusin", e => { const t = e.target; if (!t || !t.matches || !t.matches("input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea")) return;
+  const w = t.closest(".wiz") || t.closest(".ask-panel"); if (!w) return;   // the rest of the app already keeps its fields above the keyboard
+  const lift = () => { const vv = window.visualViewport, vb = vv ? vv.offsetTop + vv.height : innerHeight, bar = w.classList.contains("wiz") ? w.querySelector(".wiz-bar") : null, r = t.getBoundingClientRect(), wr = w.getBoundingClientRect();
+    const bottom = Math.min(bar ? bar.getBoundingClientRect().top : wr.bottom, vb) - 12, top = Math.max(wr.top, 0) + (w.id === "main" ? 70 : 60);
+    if (r.bottom > bottom) w.scrollTop += r.bottom - bottom; else if (r.top < top) w.scrollTop -= top - r.top; };
+  setTimeout(lift, 60); setTimeout(lift, 350); setTimeout(lift, 700); });
+if (window.visualViewport) visualViewport.addEventListener("resize", () => { const t = document.activeElement; if (t && t.matches && t.matches("input,select,textarea")) t.dispatchEvent(new FocusEvent("focusin", {bubbles: true})); });
+// Important, hard-to-undo actions ask in a calm sheet that rises from the bottom: what happens, then two clear buttons.
+const cfSheet = (ic, title, body, btns) => `<div class="cf-back" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="cf-sheet"><span class="cf-ic" aria-hidden="true">${ic}</span><h3>${title}</h3><p class="muted">${body}</p><div class="cf-btns">${btns}</div></div></div>`;
+document.addEventListener("click", e => { if (e.target.classList && e.target.classList.contains("cf-back")){ const no = e.target.querySelector(":scope > .cf-sheet [data-reset-no], :scope > .cf-sheet [data-restore-no], :scope > .cf-sheet [data-del-toggle]"); if (no) no.click(); } });   // a tap outside the sheet keeps everything as it is
 // Set up your month: one calm screen per step, the answers so far folded at the top, Clear and Next at the bottom.
 const SETUP_BILLS = [["rent", "🏠", "Rent"], ["util", "💡", "Utilities"], ["groc", "🛒", "Groceries"], ["phone", "📱", "Phone"], ["net", "🌐", "Internet"], ["car", "🚗", "Car"], ["family", "👪", "Family"], ["ins", "🛡️", "Insurance"]];
 const SETUP_SUBS = [["Netflix", "🎬", 15.49], ["Spotify", "🎵", 11.99], ["YouTube Premium", "▶️", 13.99], ["iCloud+", "☁️", 2.99], ["Disney+", "✨", 9.99], ["Amazon Prime", "📦", 14.99], ["Hulu", "📺", 9.99], ["Gym", "💪", 30]];
@@ -5780,8 +5818,9 @@ function tripWizard(draft){
   const keep = ["name", "place", "lat", "lon", "geoFor", "start", "end", "budget", "cur", ...(ev ? ["etype", "people"] : ["stay"])].filter(k => !{what: ["etype", "people", "name"], where: ev ? ["place", "lat", "lon", "geoFor"] : ["name", "place", "lat", "lon", "geoFor"], when: ["start", "end"], budget: ["budget", "cur"], stay: ["stay"]}[cur].includes(k));
   const hv = {lat: d.geo ? d.geo.lat : (d.lat || ""), lon: d.geo ? d.geo.lon : (d.lon || ""), geoFor: d.geo ? d.place : (d.geoFor || "")};
   const last = i === steps.length - 1, optional = cur === "budget" || cur === "stay" || (ev && cur === "where");
-  return `<form class="wiz" data-form="trip" data-wiz>${ev ? `<input type="hidden" name="kind" value="event">` : ""}${keep.map(k => `<input type="hidden" name="${k}" value="${esc(String(hv[k] != null ? hv[k] : d[k] == null ? "" : d[k]))}">`).join("")}
-    <div class="wiz-top"><b>${ev ? "New event" : "New trip"}</b><span class="wiz-dots" aria-label="Step ${i + 1} of ${steps.length}">${steps.map((_, j) => `<i class="${j === i ? "on" : j < i ? "done" : ""}"></i>`).join("")}</span><button class="icon-btn" type="button" data-trip-cancel aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
+  return `<form class="wiz sf" data-form="trip" data-wiz>${ev ? `<input type="hidden" name="kind" value="event">` : ""}${keep.map(k => `<input type="hidden" name="${k}" value="${esc(String(hv[k] != null ? hv[k] : d[k] == null ? "" : d[k]))}">`).join("")}
+    <div class="wiz-top sf-top"><button class="icon-btn" type="button" ${i ? `data-wiz-go="${i - 1}"` : "data-trip-cancel"} aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button><b>${ev ? "New event" : "New trip"}</b><button class="icon-btn" type="button" data-trip-cancel aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
+    <span class="wiz-dots sf-dots" aria-label="Step ${i + 1} of ${steps.length}">${steps.map((_, j) => `<i class="${j === i ? "on" : j < i ? "done" : ""}"></i>`).join("")}</span>
     ${i === 0 ? coach(ev ? "event" : "trip", "Four quick steps") : ""}
     ${steps.slice(0, i).map((k, j) => `<button class="wiz-done" type="button" data-wiz-go="${j}"><span>${LBL[k]}</span><b>${val(k)}</b></button>`).join("")}
     <div class="wiz-card">${body[cur]}${optional && !last ? `<button class="link small wiz-skip" type="button" data-wiz-skip>Skip for now</button>` : optional && last ? `<button class="link small wiz-skip" type="submit" data-wiz-skip-last>Skip and finish</button>` : ""}</div>
@@ -6973,7 +7012,7 @@ const setToggle = (on, attr, label) => `<button class="switch" type="button" rol
 function dataSummary(){
   const months = statementKeys ? statementKeys().length : 0, live = (S.loans || []).filter(l => !loanDone(l)).length;
   const cell = (n, w) => `<div class="sum-cell"><b class="tnum">${n}</b><small class="muted">${w}</small></div>`;
-  return `<section class="card" data-data-sum><h2>What KeepWise keeps</h2><div class="sum-grid">${cell(S.expenses.length, S.expenses.length === 1 ? "monthly bill" : "monthly bills")}${cell(S.subs.filter(x => x.keep !== "drop").length, "subscriptions")}${cell(live, live === 1 ? "loan or policy" : "loans and policies")}${cell(months, months === 1 ? "month of statements" : "months of statements")}</div>
+  return `<section class="card data-hero" data-data-sum><div class="dh-top"><span class="dt-ic" aria-hidden="true">🔒</span><div><h2>What KeepWise keeps</h2><small class="muted">On this phone only</small></div></div><div class="sum-grid">${cell(S.expenses.length, S.expenses.length === 1 ? "monthly bill" : "monthly bills")}${cell(S.subs.filter(x => x.keep !== "drop").length, "subscriptions")}${cell(live, live === 1 ? "loan or policy" : "loans and policies")}${cell(months, months === 1 ? "month of statements" : "months of statements")}</div>
     <p class="muted small">${S.imported ? `Last statement: ${esc(S.imported.file)}, ${monthsLabel(S.imported.from)} to ${monthsLabel(S.imported.to)}. ` : ""}All of it is on this phone only.</p></section>`;
 }
 V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")}
@@ -6990,11 +7029,11 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")
   ${dataSummary()}
   <section class="card" data-set-backup><h2>Backups</h2><div data-out="backupBox">${OUT.backupBox()}</div></section>
   <section class="card" data-set-move><h2 class="h-info">Move to another browser or the app${infoBtn("move", "About moving your data")}</h2>${infoTip("move", "Copy my data puts everything on the clipboard as one block of text. Open KeepWise where you want it, in another browser or the installed app, and tap Paste my data. Nothing is sent anywhere on the way.")}
-    <div class="grid2"><button class="btn" type="button" data-move-copy>${UI.moveCopied ? "✓ Copied" : "Copy my data"}</button><button class="btn" type="button" data-move-paste>Paste my data</button></div>
+    <div class="dtiles"><button class="dtile" type="button" data-move-copy><span class="dt-ic" aria-hidden="true">📋</span><b>${UI.moveCopied ? "✓ Copied" : "Copy my data"}</b><small>To paste somewhere else</small></button><button class="dtile" type="button" data-move-paste><span class="dt-ic" aria-hidden="true">📥</span><b>Paste my data</b><small>From another browser</small></button></div>
     ${UI.movePaste ? moveBox() : ""}</section>
   ${dataCard()}
-  ${ACC.user && ACC.profile && !UI.delOpen ? `<button class="link small quiet-del" type="button" data-del-acct>Delete account</button>` : UI.delOpen ? `<div class="note" data-del-box><p><b>Delete account and data?</b> Erasing this phone clears your budget here for good. Deleting your account erases your profile.</p><div class="inline" style="margin-top:10px;flex-wrap:wrap"><button class="btn danger" type="button" data-reset="blank">Erase this phone</button>${ACC.user && ACC.profile ? `<button class="btn danger" type="button" data-del-acct>Delete my account</button>` : ""}<button class="btn" type="button" data-del-toggle>Keep everything</button></div><div id="reset-confirm"></div></div>`
-    : `<button class="link small quiet-del" type="button" data-del-toggle>Erase data on this phone</button>`}`
+  ${ACC.user && ACC.profile && !UI.delOpen ? `<button class="link small quiet-del" type="button" data-del-acct>Delete account</button>` : UI.delOpen ? `<div class="cf-back" data-del-box role="dialog" aria-modal="true" aria-label="Erase or delete"><div class="cf-sheet"><span class="cf-ic" aria-hidden="true">⚠️</span><h3>Erase or delete?</h3><p class="muted">Erasing this phone clears your budget here for good. Deleting your account erases your profile.</p><div class="cf-col"><button class="btn danger" type="button" data-reset="blank">Erase this phone</button>${ACC.user && ACC.profile ? `<button class="btn danger" type="button" data-del-acct>Delete my account</button>` : ""}<button class="btn" type="button" data-del-toggle>Keep everything</button></div><div id="reset-confirm"></div></div></div>`
+    : ""}`   // Start empty above already clears this phone, so there is one way to do it
   : UI.settings === "look" ? `${setHead("Look")}
   ${themesCard(true)}`
   : `${setHead("Settings")}
@@ -7593,8 +7632,8 @@ view.addEventListener("click", async e => {
   const spendEl = b.closest("[data-spend]");
   if (spendEl && b.hasAttribute("data-spend-edit")){ UI.spendEdit = spendEl.dataset.spend; render(true); const i = view.querySelector('form[data-form="spendEdit"] [name=amount]'); if (i){ i.focus(); i.select(); } return; }
   if (spendEl && b.hasAttribute("data-spend-del")){ const u = undoable(), gone = (S.spends || []).find(x => x.id === spendEl.dataset.spend); S.spends = (S.spends || []).filter(x => x !== gone); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; }
-  if (b.hasAttribute("data-event-add")){ UI.tripAdd = true; UI.tripEdit = null; UI.tripStep = 0; UI.tripDraft = {kind: "event"}; render(true); const i = view.querySelector('form[data-form="trip"] [name=etype]'); if (i) i.focus(); return; }
-  if (b.hasAttribute("data-trip-add")){ UI.tripAdd = true; UI.tripEdit = null; UI.tripDraft = null; UI.tripStep = 0; render(true); const i = view.querySelector('form[data-form="trip"] [name=name]'); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-event-add")){ UI.tripAdd = true; UI.tripEdit = null; UI.tripStep = 0; UI.tripDraft = {kind: "event"}; render(true); return; }
+  if (b.hasAttribute("data-trip-add")){ UI.tripAdd = true; UI.tripEdit = null; UI.tripDraft = null; UI.tripStep = 0; render(true); return; }
   { const wf = b.closest("form[data-wiz]");
     if (wf && (b.hasAttribute("data-wiz-next") || b.hasAttribute("data-wiz-skip") || b.dataset.wizGo != null || b.hasAttribute("data-wiz-clear") || b.dataset.wizDates)){
       const fd = new FormData(wf), dr = UI.tripDraft = {...(UI.tripDraft || {})};
@@ -7614,7 +7653,7 @@ view.addEventListener("click", async e => {
   const tripEl = b.closest("[data-trip]"), tripX = tripEl && tripList().find(x => x.id === tripEl.dataset.trip);
   if (tripX){
     if (b.hasAttribute("data-trip-open")){ UI.tripOpen = UI.tripOpen === tripX.id ? null : tripX.id; refreshOuts(); return; }
-    if (b.hasAttribute("data-flight-add")){ UI.flightAdd = tripX.id; UI.flightEdit = null; refreshOuts(); const i = view.querySelector('form[data-form="flight"] [name=no]'); if (i) i.focus(); return; }
+    if (b.hasAttribute("data-flight-add")){ UI.flightAdd = tripX.id; UI.flightEdit = null; refreshOuts(); return; }
     if (b.hasAttribute("data-flight-edit")){ const fe = b.closest("[data-flight]"); UI.flightEdit = fe && fe.dataset.flight; UI.flightAdd = null; refreshOuts(); return; }
     if (b.hasAttribute("data-flight-cancel")){ UI.flightAdd = null; UI.flightEdit = null; refreshOuts(); return; }
     if (b.hasAttribute("data-flight-del")){ const u = undoable(), id = b.closest("form").dataset.flightId; tripX.flights = (tripX.flights || []).filter(f => f.id !== id); UI.flightEdit = null; save(); refreshOuts(); toast("Flight removed.", u); return; }
@@ -7657,7 +7696,7 @@ view.addEventListener("click", async e => {
     if (yes){ (x.got = x.got || []).push({id: uid(), date: iso, amount: +x.amount || 0}); save(); refreshOuts(); toast(`Logged ${fmt(x.amount)} from ${x.name}.`, u); }
     else { x.skip = iso; save(); refreshOuts(); toast(`Okay. ${x.name} is skipped this time.`, u); }
     return; }
-  if (b.hasAttribute("data-inc-add")){ UI.incAdd = true; UI.incEdit = null; UI.incLog = null; UI.incDraft = blankInc(); refreshOuts(); const i = view.querySelector('form[data-form="income"] [name=name]'); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-inc-add")){ UI.incAdd = true; UI.incEdit = null; UI.incLog = null; UI.incDraft = blankInc(); refreshOuts(); return; }
   if (b.hasAttribute("data-inc-cancel")){ UI.incAdd = false; UI.incEdit = null; refreshOuts(); return; }
   const incRow = b.closest("[data-inc]"), incX = incRow && extras().find(x => x.id === incRow.dataset.inc);
   if (incX){
@@ -7684,6 +7723,8 @@ view.addEventListener("click", async e => {
   if (b.dataset.stmt){ UI.stmt = b.dataset.stmt; UI.history = true; render(false); return; }
   if (b.hasAttribute("data-stmt-back")){ UI.stmt = null; render(false); return; }
   if (b.hasAttribute("data-stmt-print")){ if (IN_APP) statementFile(); else window.print(); return; }
+  if (b.hasAttribute("data-stmt-pdf")){ statementPdf(); return; }
+  if (b.hasAttribute("data-stmt-csv")){ statementCsv(); return; }
   // ---- backup and keeping data safe
   if (b.hasAttribute("data-backup")){ downloadBackup(); return; }
   if (b.hasAttribute("data-backup-later")){ S.backupSnooze = isoDaysAgo(0); save(); refreshOuts(); return; }
@@ -7821,7 +7862,7 @@ view.addEventListener("click", async e => {
   }
   const er = b.closest("[data-exp]");
   if (er && b.hasAttribute("data-del-exp")){ UI.expEdit = null; const u = undoable(), gone = S.expenses.find(x => x.id === er.dataset.exp); S.expenses = S.expenses.filter(x => x.id !== er.dataset.exp); S.swaps = S.swaps.filter(w => w.link !== `expense:${er.dataset.exp}`); save(); render(true); toast(`Removed ${gone ? gone.name : "the line"}.`, u); return; }
-  if (b.hasAttribute("data-add-exp")){ UI.expAdd = b.dataset.addExp || "needs"; UI.expEdit = null; render(true); const i = view.querySelector('form[data-form="exp"] [name=name]'); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-add-exp")){ UI.expAdd = b.dataset.addExp || "needs"; UI.expEdit = null; render(true); return; }
   if (b.hasAttribute("data-exp-cancel")){ UI.expAdd = false; UI.expEdit = null; render(true); return; }
   if (b.hasAttribute("data-sub-open")){ const id = b.closest("[data-sub]").dataset.sub; UI.subOpen = UI.subOpen === id ? null : id; render(true); return; }
   if (b.hasAttribute("data-give-part")){ const gid = b.closest("[data-give-tick]").dataset.giveTick; UI.giveLog = UI.giveLog === gid ? null : gid; render(true); if (UI.giveLog){ const i = view.querySelector(`form[data-form="giveGift"][data-g="${gid}"] [name=amount]`); if (i) i.focus({preventScroll: true}); } return; }
@@ -7833,7 +7874,8 @@ view.addEventListener("click", async e => {
   if (er && b.dataset.billSpendDel){ const x = (S.billSpends || []).find(y => y.id === b.dataset.billSpendDel); if (!x) return; const u = undoable(); S.billSpends = S.billSpends.filter(y => y !== x); save(); render(true); toast(`Removed ${fmt(x.amount)} from ${shortDate(x.date)}.`, u); return; }
   if (er && b.hasAttribute("data-exp-edit")){ UI.expEdit = er.dataset.exp; UI.expAdd = false; render(true); return; }
   if (b.dataset.reset){ const kind = b.dataset.reset;
-    $("reset-confirm").innerHTML = `<div class="note" style="margin-top:10px"><p>${kind === "blank" ? "Clear everything and start empty?" : "Replace your numbers with the example?"} This can’t be undone.</p><div class="inline" style="margin-top:10px"><button class="btn" type="button" data-reset-no>Keep my data</button><button class="btn danger" type="button" data-reset-yes="${kind}">${kind === "blank" ? "Clear it" : "Load example"}</button></div></div>`; return; }
+    const box = $("reset-confirm") || (() => { const d = document.createElement("div"); d.id = "reset-confirm"; view.append(d); return d; })();
+    box.innerHTML = cfSheet(kind === "blank" ? "🧹" : "📋", kind === "blank" ? "Start empty?" : "Load the example again?", `${kind === "blank" ? "Everything on this phone is cleared and you start with a blank month." : "Your numbers are replaced with the example month."} This can’t be undone. A backup first keeps a copy.`, `<button class="btn" type="button" data-reset-no>Keep my data</button><button class="btn danger" type="button" data-reset-yes="${kind}">${kind === "blank" ? "Clear it" : "Load example"}</button>`); return; }
   if (b.hasAttribute("data-reset-no")){ $("reset-confirm").innerHTML = ""; return; }
   if (b.dataset.resetYes){ const ex = example();
     if (b.dataset.resetYes === "blank") blankOut(ex);
@@ -7930,7 +7972,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-receipt-plus")){ UI.receiptInfo = true; render(true); return; }
   if (b.hasAttribute("data-receipt-close")){ UI.receiptInfo = false; render(true); return; }
   const loanRow = b.closest("[data-loan]"), loanX = loanRow && loanList().find(x => x.id === loanRow.dataset.loan);
-  if (b.hasAttribute("data-give-add")){ UI.giveAdd = true; UI.giveEdit = null; render(true); const i = view.querySelector('form[data-form="give"] [name=name]'); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-give-add")){ UI.giveAdd = true; UI.giveEdit = null; render(true); return; }
   if (b.hasAttribute("data-give-cancel")){ UI.giveAdd = false; UI.giveEdit = null; render(true); return; }
   if (b.hasAttribute("data-give-edit")){ UI.giveEdit = b.closest("[data-give]").dataset.give; UI.giveAdd = false; render(true); return; }
   if (b.hasAttribute("data-give-del")){ const u = undoable(), g = (S.giving || []).find(x => x.id === UI.giveEdit); S.giving = (S.giving || []).filter(x => x !== g); UI.giveEdit = null; save(); render(true); toast(`Removed ${g ? g.name || giveCause(g.cause) : "it"}.`, u); return; }

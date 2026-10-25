@@ -1330,7 +1330,10 @@ async def monthly_statements(ctx):
     await pg.locator(".stmt-row").nth(2).click(); await pg.wait_for_timeout(150)
     v = await text(pg, ".stmt")
     assert "Monthly statement" in v and "Closed" in v and "example statement" in v and "Rent" in v
-    assert await pg.locator("[data-stmt-print]").count() == 1
+    assert await pg.locator("[data-stmt-pdf]").count() == 1 and await pg.locator("[data-stmt-csv]").count() == 1, "PDF and CSV"
+    async with pg.expect_download() as dl: await pg.click("[data-stmt-csv]")
+    path = await (await dl.value).path(); csv = open(path, encoding="utf-8-sig").read()
+    assert csv.startswith("Section,Item,Amount") and "Rent" in csv and "$" in csv, csv[:300]
     await pg.click("[data-stmt-back]"); await pg.click("[data-history-close]"); await pg.wait_for_timeout(100)
     assert await pg.locator("[data-out=headline]").count() == 1
     await pg.locator("[data-out=historyCard] .hist-col").last.click(); await pg.wait_for_timeout(150)
@@ -1360,7 +1363,7 @@ async def backup_download_and_restore(ctx):
     await pg.set_input_files("#restore-in", bad); await pg.wait_for_timeout(200)
     assert "isn’t a KeepWise backup" in await pg.inner_text("#toast") and (await state(pg))["income"] == 99
     await pg.set_input_files("#restore-in", await d.path()); await pg.wait_for_timeout(200)
-    assert "Replace everything" in await text(pg, "[data-out=backupBox]")
+    assert "Restore this backup?" in await text(pg, "[data-out=backupBox]") and "replaced with the backup" in await text(pg, "[data-out=backupBox]")
     await pg.click("[data-restore-no]"); await pg.wait_for_timeout(100); assert (await state(pg))["income"] == 99
     await pg.set_input_files("#restore-in", await d.path()); await pg.wait_for_timeout(200)
     await pg.click("[data-restore-yes]"); await pg.wait_for_timeout(200)
@@ -3824,7 +3827,7 @@ async def loans_and_giving_from_a_statement_go_to_their_own_places(ctx):
     ex = [e["name"] for e in st["expenses"]]; assert not any(w in " ".join(ex) for w in ("Toyota", "Mortgage", "Chase", "Nelnet", "Loan", "Red Cross", "Savings")) and "Rent Oakview Apartments" in ex, ex
     assert [(g["name"], g["cause"], g["amount"], g["every"]) for g in st["giving"]] == [("Donation Red Cross", "relief", 25, "mo")] or [(g["name"]) for g in st["giving"]] == ["Red Cross"], st["giving"]
     # they show where a loan typed by hand would show, and are counted once
-    await tab(pg, "loans"); pl = await stx(pg, "[data-out=loans]"); q = await stx(pg, "#view [data-loans-row] .loan-quick"); assert "Rocket Mortgage" in pl and "Mortgage" in pl and "Chase" in q and "$220" in q, (pl, q)
+    await tab(pg, "loans"); pl = await stx(pg, "[data-out=loans]"); q = await stx(pg, "#view [data-loans-row] .lq-group"); assert "Rocket Mortgage" in pl and "Mortgage" in pl and "Chase" in q and "$220" in q, (pl, q)
     assert "Red Cross" in await stx(pg, "[data-out=giving]")
     await tab(pg, "month"); leg = await stx(pg, ".legend"); ex, loans, misc, sav = [money(x) for x in re.findall(r"\$[\d,.]+", leg)]
     assert "Loans" in leg and abs((ex + loans) - (900 + 80 + 60 + 310 + 1200 + 220 + 140 + 90)) < 0.5 and abs(misc - (25 + 3)) < 0.5, leg
@@ -4003,11 +4006,11 @@ async def a_bill_can_be_ticked_as_paid_this_month(ctx):
     await pg.reload(); await pg.wait_for_timeout(400); await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
     body = pg.locator("[data-env-open=needs] + .env-body"); assert await body.locator(".tick[aria-pressed=true]").count() == 1, "the tick is remembered"
     # a loan repayment is ticked the same way
-    lb = pg.locator("[data-loans-row] .loan-quick"); await lb.locator(".tick").first.click(); await pg.wait_for_timeout(200)   # loans are listed with their ticks without opening Details
+    lb = pg.locator("#view [data-loans-row]"); await lb.locator(".tick").first.click(); await pg.wait_for_timeout(200)   # loans are listed with their ticks without opening Details
     assert "1 of 1 paid this month" in await pg.inner_text("[data-loans-row] .env-foot")
     assert "l:L1" in (await state(pg))["paid"]["on"]
     # tap again to undo
-    await pg.locator("[data-loans-row] .loan-quick .tick").first.click(); await pg.wait_for_timeout(200)
+    await pg.locator("#view [data-loans-row] .tick").first.click(); await pg.wait_for_timeout(200)
     assert "l:L1" not in (await state(pg))["paid"]["on"]
     # every bill ticked
     if await pg.get_attribute("[data-env-open=needs]", "aria-expanded") != "true": await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
@@ -5489,16 +5492,11 @@ async def settings_leave_plan_and_delete_sits_quietly_at_the_foot(ctx):
     assert abs(a["y"] - b["y"]) < 2 and card["x"] + card["width"] - (b["x"] + b["width"]) < 30, "Start empty sits at the right edge of the card"
     await pg.set_viewport_size({"width": 360, "height": 760})
     await _menu(pg, "data")
-    link = pg.locator("#view [data-del-toggle]"); assert await link.inner_text() == "Erase data on this phone"
-    last = await pg.evaluate("document.querySelector('#view').lastElementChild.matches('[data-del-toggle]')"); assert last, "it is the last thing on the screen"
-    style = await link.evaluate("e => [getComputedStyle(e).color, getComputedStyle(document.querySelector('.btn.danger') || e).color, parseFloat(getComputedStyle(e).fontSize)]")
-    assert style[2] < 15, "small and quiet, not a red button"
-    await link.click(); await pg.wait_for_timeout(200)
-    box = await pg.inner_text("[data-del-box]"); assert "Erase this phone" in box and "Keep everything" in box and "Delete my account" not in box, "signed out, only the phone can be erased"
-    await pg.click("[data-del-box] [data-del-toggle]"); await pg.wait_for_timeout(150); assert await pg.locator("[data-del-box]").count() == 0 and (await state(pg))["expenses"], "Keep everything keeps everything"
-    await pg.click("#view [data-del-toggle]"); await pg.click("[data-del-box] [data-reset=blank]"); await pg.wait_for_timeout(150)
-    assert "can’t be undone" in await pg.inner_text("#reset-confirm"), "erasing asks first"
-    await pg.click("[data-reset-no]"); await pg.wait_for_timeout(100); assert (await state(pg))["expenses"]
+    assert await pg.locator("#view [data-del-toggle]").count() == 0, "signed out, Start empty is the one way to clear this phone"
+    await pg.click("[data-reset=blank]"); await pg.wait_for_timeout(150)
+    sheet = await pg.inner_text("#reset-confirm .cf-sheet"); assert "Start empty?" in sheet and "can’t be undone" in sheet, "it asks first, in a sheet"
+    await pg.locator("#reset-confirm .cf-back").click(position={"x": 10, "y": 10}); await pg.wait_for_timeout(150)
+    assert await pg.locator("#reset-confirm .cf-back").count() == 0 and (await state(pg))["expenses"], "a tap outside keeps everything"
     # going to a tab leaves the settings screen
     await tab(pg, "split"); assert await pg.locator("#view [data-del-toggle]").count() == 0
     assert not pg.errors, pg.errors
@@ -6494,6 +6492,9 @@ async def a_new_loan_is_added_step_by_step_without_the_keyboard_jumping_up(ctx):
     f = pg.locator("form[data-form=loan]"); assert await f.evaluate("e => e.classList.contains('wiz')") and await pg.locator("#tabbar").is_hidden(), "a full screen, no tabs behind it"
     assert await pg.evaluate("document.activeElement === document.body || !document.activeElement.matches('input,select,textarea')"), "the keyboard waits for a tap"
     await f.locator("[data-fs-kind=car]").click(); await pg.wait_for_timeout(150); await f.locator("[name=name]").fill("Toyota")
+    await pg.set_viewport_size({"width": 390, "height": 420}); await pg.wait_for_timeout(900)   # the keyboard is up: what is typed stays in view, above Next
+    seen = await pg.evaluate("(() => { const i = document.querySelector('form[data-form=loan] [name=name]').getBoundingClientRect(), b = document.querySelector('form[data-form=loan] .wiz-bar').getBoundingClientRect(); return i.bottom <= b.top + 1 && i.top >= 0; })()")
+    assert seen, "the name field shows while typing"; await pg.set_viewport_size({"width": 390, "height": 844}); await pg.wait_for_timeout(200)
     await f.locator("[data-fs-next]").click(); await pg.wait_for_timeout(150)
     assert "Toyota" in await f.locator(".wiz-done").first.inner_text(), "the first answer folds up"
     await f.locator("[data-fs-next]").click(); await pg.wait_for_timeout(150); assert "Enter the payment amount" in await pg.inner_text("#toast")
