@@ -526,7 +526,7 @@ async def plan_envelopes_lines_priority(ctx):
     assert not any(e["name"] == "Parking" for e in (await state(pg))["expenses"])
     await pg.select_option("select[data-bind=priority]", "goal"); await pg.wait_for_timeout(80)
     t = await text(pg, "[data-out=saveSplit]"); assert "to New laptop" in t
-    assert abs(money(t.split("emergency fund, ")[1]) - 1200) < 0.01, t
+    assert abs(money(t.split("emergency fund, ")[1]) - 900) < 0.01, t   # goal first gets what the goal still needs: $1,200 less the $300 already set aside
 
 @test
 async def plan_reset_confirm_flow(ctx):
@@ -5201,18 +5201,50 @@ async def month_start_check_in(ctx):
         await p2.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;"); await p2.set_viewport_size({"width": 390, "height": 844}); await p2.goto(URL); await p2.wait_for_timeout(400)
         return p2
     p2 = await later()
-    card = await text(p2, "[data-out=monthClose]"); assert "is closed" in card.lower() and "You planned to keep" in card and "Did you?" in card
-    await p2.click("[data-close-other]"); await p2.fill("form[data-form=closeMonth] [name=amount]", "1000"); await p2.click("form[data-form=closeMonth] button[type=submit]"); await p2.wait_for_timeout(200)
-    st = await state(p2); assert abs(st["efSaved"] - (saved + 1000)) < 0.01
+    card = await text(p2, "[data-out=monthClose]"); assert "is done" in card and "left over" in card and "Came in" in card, card
+    tot = lambda st: (st["efSaved"] or 0) + (st.get("goalSaved") or 0)
+    assert abs(float(await p2.input_value("form[data-form=closeMonth] [name=amount]")) - kept) < 0.01, "the amount left is suggested"
+    # the amount can be changed before it is set aside, and the split follows as it is typed
+    await p2.fill("form[data-form=closeMonth] [name=amount]", "1000"); await p2.wait_for_timeout(100)
+    assert "Set aside $1,000" in await text(p2, "[data-close-yes]") and "To emergency fund" in await text(p2, "[data-close-live]")
+    await p2.click("form[data-form=closeMonth] button[type=submit]"); await p2.wait_for_timeout(200)
+    st = await state(p2); assert abs(tot(st) - (saved + 300 + 1000)) < 0.01, (st["efSaved"], st.get("goalSaved"))
     closed = [v for v in st["statements"].values() if v.get("actual") == 1000]; assert len(closed) == 1 and abs(closed[0]["kept"] - kept) < 0.01
     assert await text(p2, "[data-out=monthClose]") == "", "asked once"
     await p2.click("#toast .toast-undo"); await p2.wait_for_timeout(200)
-    assert abs((await state(p2))["efSaved"] - saved) < 0.01 and "is closed" in (await text(p2, "[data-out=monthClose]")).lower(), "undo brings the question back"
+    assert abs(tot(await state(p2)) - (saved + 300)) < 0.01 and "is done" in await text(p2, "[data-out=monthClose]"), "undo brings the question back"
     await p2.click("[data-close-yes]"); await p2.wait_for_timeout(200)
-    assert abs((await state(p2))["efSaved"] - (saved + kept)) < 0.01 and "Added" in await p2.inner_text("#toast")
+    assert abs(tot(await state(p2)) - (saved + 300 + kept)) < 0.01 and "Set aside" in await p2.inner_text("#toast")
     await p2.click("[data-history]"); await p2.wait_for_timeout(150)
     assert "Closed" in await text(p2, ".stmt-row:nth-child(2)")
 
+
+@test
+async def on_payday_whats_left_is_set_aside_for_the_goal(ctx):
+    # paid on the 5th: October's money is asked about on November 5, not on the 1st, and goes to the goal first
+    pg = await open_at(ctx, (2026, 10, 10, 10, 0))
+    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
+    await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("4200"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); Object.assign(s, {goalName: 'Umrah', goalAmt: 4000, goalSaved: 0, priority: 'goal', efSaved: 0}); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(400)
+    sv = await text(pg, "[data-save-goal]"); assert "$0 of $4,000" in sv and "planned for October" in sv and "to go" in sv, sv
+    assert await pg.locator("[data-save-goal] .meter i").evaluate("e => parseFloat(e.style.width)") == 0, "nothing saved yet, so the bar is empty"
+    await pg.close()
+    p1 = await open_at(ctx, (2026, 11, 3, 10, 0)); assert await text(p1, "[data-out=monthClose]") == "", "not before payday"; await p1.close()
+    p2 = await open_at(ctx, (2026, 11, 5, 10, 0)); card = await text(p2, "[data-out=monthClose]")
+    assert "PAYDAY · NOV 5" in card.upper() and "October is done" in card and "To Umrah" in card, card
+    await p2.fill("form[data-form=closeMonth] [name=amount]", "200"); await p2.wait_for_timeout(100)
+    live = await text(p2, "[data-close-live]"); assert "To Umrah $200" in live and "To emergency fund $0" in live, live
+    await p2.click("[data-close-yes]"); await p2.wait_for_timeout(250)
+    st = await state(p2); assert st["goalSaved"] == 200 and st["efSaved"] == 0, (st["goalSaved"], st["efSaved"])
+    assert "Set aside $200 for Umrah" in await p2.inner_text("#toast")
+    assert "$200 of $4,000" in await text(p2, "[data-save-goal]")
+    # a month that ran short says so, and offers nothing to set aside
+    await p2.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); const k = s.statements['2026-10']; k.kept = -85; delete k.confirmed; delete k.actual; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await p2.reload(); await p2.wait_for_timeout(400)
+    card = await text(p2, "[data-out=monthClose]"); assert "ran $85 short" in card and "Nothing to set aside" in card, card
+    await p2.click("[data-close-zero]"); await p2.wait_for_timeout(200); assert await text(p2, "[data-out=monthClose]") == "" and (await state(p2))["goalSaved"] == 200
+    assert not p2.errors, p2.errors
 
 @test
 async def keepwise_never_flags_itself(ctx):
@@ -5332,7 +5364,7 @@ async def month_can_start_on_payday(ctx):
     assert "$80 of $300" in await text(pg, ".inc-card")
     await pg.close()
     p2 = await open_at(ctx, (2026, 10, 26, 10, 0))
-    assert "is closed" in (await text(p2, "[data-out=monthClose]")).lower(), "the month closes on the 24th, not the 31st"
+    assert "October" in (await text(p2, "[data-out=monthClose]")), "the month closes on the 24th, not the 31st"
     assert "days left in your month, Oct 25 to Nov 24." in await text(p2, "[data-out=planNote]"), await text(p2, "[data-out=planNote]")
     # two days before the month ends the plan moves on, and says so with dates rather than a month name
     p3 = await open_at(ctx, (2026, 11, 23, 10, 0)); n3 = await text(p3, "[data-out=planNote]")

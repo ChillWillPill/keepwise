@@ -870,6 +870,16 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .inc-avg{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;background:var(--gold-soft);border-radius:12px;padding:8px 12px}
 .up-row.in .up-date{background:var(--green-soft);color:var(--green)}.up-date.up-av{background:none!important;padding:0;justify-content:center}.up-av .avatar{width:40px;height:40px;font-size:.9rem;font-weight:700;color:hsl(var(--h) 45% var(--av-fg));letter-spacing:.02em}
 .close-card{border-color:color-mix(in srgb,var(--gold) 45%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--gold-soft) 55%,var(--card)),var(--card))}
+.close-k{margin:0;font-size:.74rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--gold) 80%,var(--ink))}
+.close-card h3{margin:2px 0 0;font:700 1.12rem/1.3 var(--body)!important;letter-spacing:-.01em}.close-math .tnum{white-space:nowrap}.close-card>p{margin:0}
+.close-math{background:var(--bg);border-radius:14px;padding:8px 12px;font-size:.88rem}.close-math>div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.close-math .t{border-top:1px solid var(--line);margin-top:3px;padding-top:7px;font-weight:800}
+.close-form{display:flex;flex-direction:column;gap:10px}
+.close-amt{display:flex;align-items:center;gap:8px;border:2px solid var(--green);border-radius:16px;padding:8px 12px;background:var(--card);cursor:text}.close-amt:focus-within{box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 18%,transparent)}
+.close-cur{font-weight:800;font-size:1.2rem;color:var(--muted)}.close-amt input{flex:1;min-width:0;border:0;background:none;outline:0;font:800 1.6rem var(--body);color:var(--ink);padding:0}
+.close-ed{font-size:.74rem;font-weight:700;color:var(--green);background:var(--green-soft);padding:4px 9px;border-radius:99px;white-space:nowrap}.close-amt:focus-within .close-ed{display:none}
+.close-split{display:flex;gap:8px}.close-split>div{flex:1;border-radius:12px;padding:7px 10px;background:var(--bg);font-size:.76rem;color:var(--muted);display:flex;flex-direction:column}.close-split b{font-size:.98rem;color:var(--ink)}
+.close-split .g{background:var(--gold-soft)}.close-split .g b{color:color-mix(in srgb,var(--gold) 72%,var(--ink))}
+.close-warn{margin:0 0 8px;font-size:.82rem;color:color-mix(in srgb,var(--gold) 70%,var(--ink));background:var(--gold-soft);border-radius:10px;padding:7px 10px}
 .pay-line>.link{white-space:nowrap;flex:none}
 .part-help{padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--chip)}
 .h-info{display:flex;align-items:center;gap:6px}
@@ -1305,7 +1315,7 @@ function example(){
   const dayIn = n => { const d = todayMid(); d.setDate(d.getDate() + n); return d.getDate(); };
   const ex = {
     v:1, tab:"month", cur:"USD", income:5200, env:{needs:60, misc:20, save:20},
-    efSaved:2400, efMonths:3, goalName:"New laptop", goalAmt:1200, priority:"ef", ruleDays:45, filter:"All",
+    efSaved:2400, efMonths:3, goalName:"New laptop", goalAmt:1200, goalSaved:300, priority:"ef", ruleDays:45, filter:"All",
     expenses:[
       {id:"rent", name:"Rent", amount:1850, env:"needs"},
       {id:"groc", name:"Groceries", amount:520, env:"needs"},
@@ -1479,7 +1489,7 @@ function compute(){
   let toEF = 0, toGoal = 0;
   const pos = Math.max(0, savings);
   if (S.priority === "ef"){ toEF = Math.min(pos, efGap); toGoal = pos - toEF; }
-  else if (S.priority === "goal"){ toGoal = Math.min(pos, S.goalAmt || pos); toEF = pos - toGoal; }
+  else if (S.priority === "goal"){ toGoal = Math.min(pos, +S.goalAmt > 0 ? goalGap() : pos); toEF = pos - toGoal; }
   else { toEF = Math.min(pos / 2, efGap); toGoal = pos - toEF; }
   const efMonthsLeft = toEF > 0 ? Math.ceil(efGap / toEF) : null;
   const inactiveSwaps = S.swaps.map(w => ({w, save: swapSaving(w)})).filter(x => !x.w.on && x.save > 0).sort((a,b) => b.save - a.save);
@@ -3393,15 +3403,28 @@ OUT.billsCard = () => { const C = compute();
     <div class="meter"><i style="width:${total > 0 ? Math.min(100, paid / total * 100).toFixed(1) : 0}%"></i></div>
     <div class="bills-list bills-left">${show.map(x => `<div class="bl-row">${tickBtn(x.id, x.n, C.planKey)}<span class="bl-n">${esc(x.n)}<small class="muted">${x.due ? ` · due the ${ordinal(x.due)}` : ""}</small></span><span class="tnum">${fmt(x.a)}</span></div>`).join("")}</div>
     <div class="bl-foot"><span class="small muted"><b class="tnum">${fmt(r2(total - paid))}</b> still to go${done.length ? ` · <span class="tnum">${fmt(paid)}</span> paid` : ""}</span><button class="link small" type="button" data-bills-open>${left.length > show.length ? `${left.length - show.length} more · ` : ""}See all ›</button></div></section>`; };
+// Money actually set aside is split the way the person chose: the goal first, the emergency fund first, or half each.
+// The emergency fund is S.efSaved and the goal is S.goalSaved, so each bar shows only real money.
+const goalGap = () => Math.max(0, r2((+S.goalAmt || 0) - (+S.goalSaved || 0)));
+function splitSave(x){
+  x = r2(Math.max(0, +x || 0)); const goalOn = +S.goalAmt > 0, gGap = goalOn ? goalGap() : 0, eGap = Math.max(0, r2(compute().efTarget - (+S.efSaved || 0)));
+  let g = !goalOn ? 0 : S.priority === "goal" ? Math.min(x, gGap) : S.priority === "ef" ? Math.min(Math.max(0, x - eGap), gGap) : Math.min(x / 2, gGap);
+  g = r2(g); let e = r2(x - g);
+  if (goalOn && e > eGap && g < gGap){ const mv = r2(Math.min(e - eGap, gGap - g)); g = r2(g + mv); e = r2(e - mv); }   // a full emergency fund passes the rest to the goal
+  return {goal: g, ef: e};
+}
+function addSave(x){ const sp = splitSave(x); S.efSaved = r2((+S.efSaved || 0) + sp.ef); S.goalSaved = r2((+S.goalSaved || 0) + sp.goal); return sp; }
+const splitText = sp => [sp.goal > 0 ? `${fmt(sp.goal)} to ${S.goalName || "your goal"}` : "", sp.ef > 0 || sp.goal <= 0 ? `${fmt(sp.ef)} to the emergency fund` : ""].filter(Boolean).join(" and ");
+const setAsideMsg = (x, sp) => sp.goal > 0 && sp.ef > 0 ? `Set aside ${fmt(x)}: ${splitText(sp)}.` : `Set aside ${fmt(x)} for ${sp.goal > 0 ? (S.goalName || "your goal") : "the emergency fund"}.`;
 function saveRows(C){ const rows = [];
   if (C.efTarget > 0){ const full = S.efSaved >= C.efTarget;
     rows.push(`<div class="prog-row" data-save-ef><div class="inline" style="justify-content:space-between;align-items:baseline"><span class="name">Emergency fund</span><span class="small tnum muted">${fmt(S.efSaved)} of ${fmt(C.efTarget)}</span></div>
       <div class="meter"><i style="width:${Math.min(100, S.efSaved / C.efTarget * 100).toFixed(1)}%"></i></div>
-      <p class="small muted">${full ? "Full. Well done." : C.toEF > 0 ? `${fmt(C.toEF)} goes in this month${C.efMonthsLeft ? `, full in about ${C.efMonthsLeft} month${C.efMonthsLeft > 1 ? "s" : ""}` : ""}.` : "Nothing goes in this month."}</p></div>`); }
-  if (+S.goalAmt > 0){ const n = C.toGoal > 0 ? Math.ceil(S.goalAmt / C.toGoal) : 0;
-    rows.push(`<div class="prog-row" data-save-goal><div class="inline" style="justify-content:space-between;align-items:baseline"><span class="name">${esc(S.goalName || "Your goal")}</span><span class="small tnum muted">${fmt(S.goalAmt)}</span></div>
-      <div class="meter"><i class="debt" style="width:${Math.min(100, C.toGoal / S.goalAmt * 100).toFixed(1)}%"></i></div>
-      <p class="small muted">${C.toGoal > 0 ? `${fmt(C.toGoal)} this month. At this pace it takes about ${n} month${n > 1 ? "s" : ""}.` : "Nothing goes to it this month."}</p></div>`); }
+      <p class="small muted">${full ? "Full. Well done." : C.toEF > 0 ? `${fmt(C.toEF)} planned for ${esc(C.planMonth)}${C.efMonthsLeft ? ` · full in about ${C.efMonthsLeft} month${C.efMonthsLeft > 1 ? "s" : ""}` : ""}.` : +S.goalAmt > 0 && S.priority === "goal" && goalGap() > 0 ? `Nothing planned for it this month: ${esc(S.goalName || "your goal")} comes first.` : "Nothing planned for it this month."}</p></div>`); }
+  if (+S.goalAmt > 0){ const saved = +S.goalSaved || 0, gap = goalGap(), n = C.toGoal > 0 ? Math.ceil(gap / C.toGoal) : 0;
+    rows.push(`<div class="prog-row" data-save-goal><div class="inline" style="justify-content:space-between;align-items:baseline"><span class="name">${esc(S.goalName || "Your goal")}</span><span class="small tnum muted">${fmt(saved)} of ${fmt(S.goalAmt)}</span></div>
+      <div class="meter"><i class="debt" style="width:${Math.min(100, saved / S.goalAmt * 100).toFixed(1)}%"></i></div>
+      <p class="small muted">${gap <= 0 ? "Reached. Well done." : C.toGoal > 0 ? `${fmt(C.toGoal)} planned for ${esc(C.planMonth)} · about ${n} month${n > 1 ? "s" : ""} to go.` : "Nothing planned for it this month."}</p></div>`); }
   return rows; }
 OUT.saveCard = () => { const C = compute(), rows = saveRows(C);
   return rows.length ? `<section class="card prog-card" data-save-card><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Savings</h2><button class="link plain small" type="button" data-save-go>Change</button></div>${rows.join("")}</section>` : ""; };
@@ -3768,7 +3791,7 @@ function answerMore(t, C){
     return soon.length ? list([`${soon.length} charge${soon.length === 1 ? "" : "s"} in the next 7 days, ${fmt(soon.reduce((a, v) => a + v.x.price, 0))} in all:`, ...soon.map(v => `${v.x.name}: ${fmt(v.x.price)}, ${whenLabel(daysUntil(v.d)).toLowerCase()}`)]) : "Nothing is due to be charged in the next 7 days."; }
   if (/(how much|total|cost).*(subscri)|subscri.*(cost|total|how much)/.test(t)){ const p = subPer(C.liveSubs), now = r2(C.liveSubs.reduce((a, x) => a + subCostIn(x, C.planKey), 0)); return C.liveSubs.length ? `${C.liveSubs.length} subscription${C.liveSubs.length === 1 ? "" : "s"} cost ${subsKeep(C.liveSubs)}.${p.yr ? ` Charged in ${C.planMonth}: ${fmt(now)}.` : ""}` : "You have no subscriptions on your list yet."; }
   if (/notification|attention|to do|todo|remind|anything new|what.s new/.test(t)){ const n = allNotes().filter(x => !noteRead(x)); return n.length ? list([`${n.length} thing${n.length === 1 ? "" : "s"} to look at:`, ...n.map(x => x.text)]) : "Nothing needs your attention right now."; }
-  if (/\b(goal|saving for|target)\b/.test(t) && S.goalName){ return `${S.goalName}: ${fmt(C.toGoal)} goes to it this month${+S.goalAmt > 0 && C.toGoal > 0 ? `, so ${fmt(S.goalAmt)} takes about ${Math.ceil(S.goalAmt / C.toGoal)} months` : ""}.`; }
+  if (/\b(goal|saving for|target)\b/.test(t) && S.goalName){ return `${S.goalName}: ${fmt(C.toGoal)} goes to it this month${+S.goalAmt > 0 ? `. ${fmt(+S.goalSaved || 0)} of ${fmt(S.goalAmt)} is set aside${C.toGoal > 0 && goalGap() > 0 ? `, about ${Math.ceil(goalGap() / C.toGoal)} months to go` : ""}` : ""}.`; }
   if (/\b(codes?|promo)\b/.test(t)) return S.codes.length ? `You have ${S.codes.length} code${S.codes.length === 1 ? "" : "s"} saved: ${S.codes.slice(0, 5).map(c => c.store).join(", ")}.` : "You have no codes saved yet.";
   if (/last month|previous month|statement/.test(t)){ const keys = statementKeys().filter(k => k !== C.planKey); return keys.length ? `${keyLabel(keys[0])}: ${fmt(keptOf(S.statements[keys[0]]))} kept. See every month under Monthly statements.` : "Your first monthly statement is still in progress."; }
   const sp0 = spendAnswer(t, C, true); if (sp0) return sp0;
@@ -5018,7 +5041,7 @@ async function saveFile(blob, name){
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); return true;
 }
-const blankOut = ex => Object.assign(ex, {income:0, efSaved:0, expenses:[], loans:[], giving:[], ins:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0, example:false, statements:{}, extras:[], cards:[], cardPays:[], spends:[], billSpends:[]});
+const blankOut = ex => Object.assign(ex, {income:0, efSaved:0, goalSaved:0, expenses:[], loans:[], giving:[], ins:[], subs:[], swaps:[], codes:[], splits:[], settlements:[], people:[{id:"me",name:"You"}], goalName:"", goalAmt:0, example:false, statements:{}, extras:[], cards:[], cardPays:[], spends:[], billSpends:[]});
 // A copy of everything, before an account is deleted: the profile from the account and the money data on this phone, in one file.
 async function downloadMyData(){
   const data = JSON.parse(JSON.stringify(S)); delete data.tab;
@@ -5451,27 +5474,44 @@ function monthToClose(){
   const k = statementKeys().find(x => x < cur && x < real && !S.statements[x].example && S.statements[x].confirmed == null);
   if (!k) return null; const s = S.statements[k];
   if (s.kept > 0 && s.setAside >= s.kept - 0.005){ s.confirmed = isoDaysAgo(0); s.actual = s.kept; return monthToClose(); }  // already set aside in full
+  // Asked on payday: with a pay schedule, the month just ended waits until the first payday of the new month.
+  // Without one, it is asked as the new month starts (the 1st, or the day the month is set to start).
+  const P = periodOf(new Date());
+  if (payOn() && P.key === shiftKey(k, 1)){ const d = paydaysBetween(P.start, dayPlus(P.start, 34))[0]; if (d && todayMid() < d) return null; }
   return s;
 }
+// What to set aside: the money actually left from the month, less anything set aside during it.
+const closeRest = s => r2(Math.max(0, (+s.kept || 0) - (+s.setAside || 0)));
 OUT.monthClose = () => {
   const s = monthToClose(); if (!s) return "";
-  const name = keyLabel(s.key).split(" ")[0], rest = r2(Math.max(0, s.kept - s.setAside));
-  if (UI.closeOther) return `<section class="card close-card" data-close="${s.key}"><p class="label">${esc(name)} is closed</p><h3>What did you actually keep in ${esc(name)}?</h3>
-    <form class="inline" data-form="closeMonth"><span class="money-in" style="flex:1 1 140px"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" aria-label="Amount kept in ${esc(name)}"></span><button class="btn primary" type="submit" style="width:auto;padding:10px 18px">Save</button></form>
-    <button class="link plain small" type="button" data-close-back style="align-self:center">Back</button></section>`;
-  return `<section class="card close-card" data-close="${s.key}"><p class="label">${esc(name)} is closed</p>
-    ${s.kept > 0 ? `<h3>You planned to keep ${fmt(s.kept)}. Did you?</h3>${s.setAside > 0 ? `<p class="muted">You already set aside ${fmt(s.setAside)} of it.</p>` : ""}
-      <button class="btn primary" type="button" data-close-yes>Yes, add ${fmt(rest)} to my savings</button>`
-    : `<h3>Your plan for ${esc(name)} was ${fmt(-s.kept)} short.</h3><p class="muted">If the month went better than planned, say what you kept.</p>
-      <button class="btn primary" type="button" data-close-zero>That’s right, nothing kept</button>`}
-    <div class="inline" style="justify-content:space-between"><button class="link small" type="button" data-close-other>I kept a different amount</button><button class="link plain small" type="button" data-close-skip>Skip</button></div></section>`;
+  const name = keyLabel(s.key).split(" ")[0], rest = closeRest(s), inc = r2(+s.income || 0), out = r2(inc - (+s.kept || 0)), short = (+s.kept || 0) <= 0;
+  const today = todayMid(), payday = payOn() && paydaysBetween(today, today).length > 0;
+  const when = `${payday ? "Payday" : "New month"} · ${dayMonth(today)}`;
+  const math = `<div class="close-math"><div><span>Came in</span><span class="tnum">${fmt(inc)}</span></div><div><span>Bills, subscriptions and spending</span><span class="tnum">−${fmt(Math.max(0, out))}</span></div>
+    <div class="t"><span>${short ? "Short" : "Left over"}</span><span class="tnum${short ? " bad" : ""}">${short ? "−" + fmt(Math.abs(+s.kept || 0)) : fmt(+s.kept || 0)}</span></div>${s.setAside > 0 ? `<div><span>Already set aside in ${esc(name)}</span><span class="tnum">−${fmt(s.setAside)}</span></div>` : ""}</div>`;
+  if (short && !UI.closeOther) return `<section class="card close-card" data-close="${s.key}"><p class="close-k">${esc(when)}</p>
+    <h3>${esc(name)} ran ${fmt(Math.abs(+s.kept || 0))} short.</h3><p class="muted small" data-keep>Nothing to set aside this time. That’s OK, it happens.</p>${math}
+    <button class="btn primary" type="button" data-close-zero>Got it</button>
+    <div class="inline" style="justify-content:space-between"><button class="link plain small" type="button" data-close-other>I kept something anyway</button><button class="link small" type="button" data-close-see>See ${esc(name)}</button></div></section>`;
+  const v = UI.closeAmt != null ? UI.closeAmt : String(short ? "" : rest), n = numv(v), sp = splitSave(n);
+  return `<section class="card close-card" data-close="${s.key}"><p class="close-k">${esc(when)}</p>
+    <h3>${short ? `What did you keep from ${esc(name)}?` : `${esc(name)} is done. ${fmt(rest)} is left over.`}</h3>${short ? "" : `<p class="muted small" data-keep>Set it aside before the new month starts spending it?</p>${math}`}
+    <form data-form="closeMonth" class="close-form"><label class="close-amt"><span class="close-cur">${esc(sym())}</span><input name="amount" inputmode="decimal" enterkeyhint="done" value="${esc(v)}" placeholder="0" aria-label="Amount to set aside from ${esc(name)}" data-close-amt autocomplete="off"><span class="close-ed" aria-hidden="true">✎ Edit</span></label>
+      <div data-close-live>${closeLive(n, rest, short)}</div>
+      <button class="btn primary" type="submit" data-close-yes ${n > 0 ? "" : "disabled"}>Set aside ${fmt(n)}</button></form>
+    <div class="inline" style="justify-content:space-between"><button class="link plain small" type="button" data-close-skip>Not this time</button><button class="link small" type="button" data-close-see>See ${esc(name)}</button></div></section>`;
 };
-function closeMonth(key, actual){
+function closeLive(n, rest, short){
+  const sp = splitSave(n), goalOn = +S.goalAmt > 0;
+  return `${!short && n > rest + 0.005 ? `<p class="close-warn">That’s ${fmt(r2(n - rest))} more than is left. It would come out of this month.</p>` : ""}
+    <div class="close-split">${goalOn ? `<div class="g"><span>To ${esc(S.goalName || "your goal")}</span><b class="tnum">${fmt(sp.goal)}</b></div>` : ""}<div><span>To emergency fund</span><b class="tnum">${fmt(sp.ef)}</b></div></div>`;
+}
+function closeMonth(key, amount){
   const s = S.statements[key]; if (!s) return; const u = undoable();
-  const add = r2(actual - (s.setAside || 0));
-  S.efSaved = r2(Math.max(0, (+S.efSaved || 0) + add)); s.actual = r2(actual); s.confirmed = isoDaysAgo(0); UI.closeOther = false;
+  const x = r2(Math.max(0, +amount || 0)), sp = addSave(x);
+  s.actual = r2((+s.setAside || 0) + x); s.confirmed = isoDaysAgo(0); UI.closeOther = false; UI.closeAmt = null;
   save(); render(true);
-  toast(add > 0 ? `Added ${fmt(add)} to your savings. Your balance is ${fmt(S.efSaved)}.` : add < 0 ? `Savings adjusted by ${fmt(add)}. Your balance is ${fmt(S.efSaved)}.` : `${keyLabel(key).split(" ")[0]} is recorded.`, u);
+  toast(x > 0 ? setAsideMsg(x, sp) : `${keyLabel(key).split(" ")[0]} is recorded.`, u);
 }
 
 /* ================= your month and your paydays ================= */
@@ -6325,6 +6365,12 @@ const loanRateNote = l => { const r = loanRate(l); return !r ? "Fill in the paym
 const loanRateText = l => { const r = loanRate(l); return !r ? "" : r.short ? "Check the numbers" : `${r.apr}% a year`; };
 const monthYear = d => d.toLocaleDateString("en-US", {month: "short", year: "numeric"});
 document.addEventListener("input", e => { const t = e.target; if (t && t.name === "amount" && t.form && /^(loanPay|cardPay)$/.test(t.form.dataset.form || "")) payAfter(t.form); });
+// The payday card: the split and the button follow the amount as it is typed, without redrawing the box being typed in.
+document.addEventListener("input", e => { const t = e.target; if (!t || !t.matches || !t.matches("[data-close-amt]")) return;
+  const card = t.closest("[data-close]"), st = card && S.statements[card.dataset.close]; if (!st) return;
+  UI.closeAmt = t.value; const n = numv(t.value), live = card.querySelector("[data-close-live]"), btn = card.querySelector("[data-close-yes]");
+  if (live) live.innerHTML = closeLive(n, closeRest(st), (+st.kept || 0) <= 0);
+  if (btn){ btn.textContent = `Set aside ${fmt(n)}`; btn.disabled = !(n > 0); } });
 // While a payment is typed, what will be owed (and what will be free on a card) updates under it.
 function payAfter(fm){ if (!fm) return; const owed = +fm.dataset.owed || 0, lim = +fm.dataset.limit || 0, a = numv((fm.querySelector("[name=amount]") || {}).value) || 0, left = r2(Math.max(0, owed - a));
   const o = fm.querySelector("[data-pay-owed]"), v = fm.querySelector("[data-pay-avail]"); if (o) o.textContent = fmt(left); if (v) v.textContent = `${fmt(r2(Math.max(0, lim - left)))} of ${fmt(lim)}`; }
@@ -7785,11 +7831,10 @@ view.addEventListener("click", async e => {
   // ---- month-start check-in
   const closeCard = b.closest("[data-close]");
   if (closeCard){ const key = closeCard.dataset.close, st = S.statements[key]; if (!st) return;
-    if (b.hasAttribute("data-close-yes")){ closeMonth(key, st.kept); return; }
-    if (b.hasAttribute("data-close-zero")){ closeMonth(key, st.setAside || 0); return; }
-    if (b.hasAttribute("data-close-other")){ UI.closeOther = true; refreshOuts(); const i = view.querySelector('form[data-form="closeMonth"] [name=amount]'); if (i) i.focus(); return; }
-    if (b.hasAttribute("data-close-back")){ UI.closeOther = false; refreshOuts(); return; }
-    if (b.hasAttribute("data-close-skip")){ st.confirmed = "skip"; UI.closeOther = false; save(); refreshOuts(); return; }
+    if (b.hasAttribute("data-close-zero")){ closeMonth(key, 0); return; }
+    if (b.hasAttribute("data-close-other")){ UI.closeOther = true; UI.closeAmt = ""; refreshOuts(); return; }
+    if (b.hasAttribute("data-close-see")){ UI.history = true; UI.stmt = key; render(false); return; }
+    if (b.hasAttribute("data-close-skip")){ st.confirmed = "skip"; UI.closeOther = false; UI.closeAmt = null; save(); refreshOuts(); toast(`Skipped. ${keyLabel(key).split(" ")[0]}’s money stays in your account.`); return; }
   }
   // ---- statements
   if (b.hasAttribute("data-history")){ UI.history = true; UI.stmt = null; render(false); return; }
@@ -7824,9 +7869,9 @@ view.addEventListener("click", async e => {
     const now = view.querySelector(`[data-env-open="${key}"]`), m = $("main"); if (now && m) m.scrollTop += now.getBoundingClientRect().top - was;
     return; }
   if (b.hasAttribute("data-set-aside")){ const C = compute(), amt = C.toSetAside; if (amt <= 0) return;
-    (S.deposits = S.deposits || []).push({id:uid(), amount:amt, month:C.planKey, label:C.planMonth, date:isoDaysAgo(0)}); S.efSaved = r2(S.efSaved + amt); save(); refreshOuts(); toast(`Set aside ${fmt(amt)}. Your account is at ${fmt(S.efSaved)}.`); return; }
+    const sp = addSave(amt); (S.deposits = S.deposits || []).push({id:uid(), amount:amt, goal: sp.goal, month:C.planKey, label:C.planMonth, date:isoDaysAgo(0)}); save(); refreshOuts(); toast(setAsideMsg(amt, sp)); return; }
   if (b.hasAttribute("data-undo-dep")){ const id = b.closest("[data-dep]").dataset.dep, x = (S.deposits || []).find(d => d.id === id); if (!x) return;
-    S.deposits = S.deposits.filter(d => d !== x); S.efSaved = r2(Math.max(0, S.efSaved - x.amount)); save(); refreshOuts(); toast(`Undid ${fmt(x.amount)}.`); return; }
+    S.deposits = S.deposits.filter(d => d !== x); const g = +x.goal || 0; S.efSaved = r2(Math.max(0, S.efSaved - (x.amount - g))); S.goalSaved = r2(Math.max(0, (+S.goalSaved || 0) - g)); save(); refreshOuts(); toast(`Undid ${fmt(x.amount)}.`); return; }
   if (b.hasAttribute("data-add-line-btn")){ const box = b.closest("[data-add-line]"), name = box.querySelector("[data-new-name]").value.trim(), amt = numv(box.querySelector("[data-new-amt]").value);
     if (!name){ toast("Give the line a name."); box.querySelector("[data-new-name]").focus(); return; }
     S.expenses.push({id:uid(), name, amount:amt, env:box.dataset.addLine}); delete LINE_DRAFT[box.dataset.addLine]; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Added ${name}.`); return; }
@@ -8249,7 +8294,7 @@ view.addEventListener("submit", async e => {
   if (kind === "incomeLog"){ const x = extras().find(v => v.id === f.closest("[data-inc]").dataset.inc), a = numv(fd.get("amount")); if (!x) return;
     if (!a){ toast("Enter the amount you received."); return; }
     (x.got = x.got || []).push({id: uid(), date: String(fd.get("date") || isoDaysAgo(0)), amount: a}); UI.incLog = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Logged ${fmt(a)} from ${x.name}.`); return; }
-  if (kind === "closeMonth"){ const key = f.closest("[data-close]").dataset.close; closeMonth(key, numv(fd.get("amount"))); return; }
+  if (kind === "closeMonth"){ const key = f.closest("[data-close]").dataset.close, x = numv(fd.get("amount")); if (!(x > 0)) return; closeMonth(key, x); return; }
   if (kind === "settle"){ const pid = f.dataset.settle, bal = myBalances().find(x => x.p.id === pid), amt = r2(numv(fd.get("amount"))); if (!bal) return;
     const owed = r2(Math.abs(bal.net)), got = bal.net > 0, left = r2(owed - amt);
     if (!(amt > 0)){ toast("Enter the amount that was paid."); return; }
