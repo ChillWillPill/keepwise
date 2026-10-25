@@ -501,9 +501,17 @@ details summary::-webkit-details-marker{display:none}
 .sf-seg{display:grid;grid-template-columns:repeat(3,1fr)}.sf-seg button{font-size:.84rem;white-space:nowrap;padding-inline:4px}
 .sf-row{appearance:none;font:inherit;color:inherit;display:flex;align-items:center;gap:12px;padding:8px 2px;background:none;border:0;cursor:pointer;position:relative;text-align:left;width:100%}.sf-t{flex:1;display:flex;flex-direction:column}.sf-t small{font-size:.76rem}.sf-row select{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 .sf-chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sf-chip{appearance:none;font:500 .95rem var(--body);color:var(--ink);display:flex;align-items:center;gap:8px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);cursor:pointer;text-align:left}.sf-chip[aria-pressed=true]{border-color:var(--green);background:var(--green-soft)}
-.sf-list{display:flex;flex-direction:column}.sf-line{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.sf-line:first-child{border-top:0}.sf-n{flex:1}.sf-name{flex:1;min-width:0}.sf-in{display:flex;align-items:center;gap:2px;width:118px;flex:none}.sf-in em{font-style:normal;color:var(--muted)}.sf-in input{text-align:right;min-height:40px;padding:6px 10px}
+.sf-list{display:flex;flex-direction:column}.sf-line{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.sf-line:first-child{border-top:0}.sf-n{flex:1}.sf-name{flex:1;min-width:0}.sf-in{display:flex;align-items:center;gap:2px;width:124px;flex:none;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 10px;min-height:44px}.sf-in:focus-within{border-color:var(--green);box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 18%,transparent)}.sf-in em{font-style:normal;color:var(--muted)}.sf-in input{text-align:right;min-height:40px;padding:6px 0;border:0!important;background:transparent!important;box-shadow:none!important;outline:0;font-size:16px;width:100%;min-width:0}
+.sf .sf-line input{font-size:16px}.wiz{overflow-x:hidden}.sf-chips{grid-template-columns:repeat(2,minmax(0,1fr))}.sf-name{font-size:16px}
 .sf-more{align-self:flex-start}.sf-clear{color:var(--rust)}.sf-import{border-bottom:1px solid var(--line);padding-bottom:12px}
 .fsteps .fs:not(.on){display:none}.fsteps .grid2[hidden]{display:none}
+.app.flowing .app-header,.app.flowing .tabbar,.app.flowing .wise-fab{display:none!important}
+.wiz-card .field:first-of-type input:placeholder-shown:not(:focus),.wiz-card .sf-amt:has(input:placeholder-shown){box-shadow:0 0 0 2px color-mix(in srgb,var(--green) 30%,transparent)}
+.coach{background:var(--card);border:1px solid color-mix(in srgb,var(--green) 28%,var(--line));border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--lift)}.coach-h{display:flex;align-items:center;gap:8px}.coach-h b{flex:1;font-size:.95rem}.coach-ic{width:28px;height:28px;border-radius:9px;background:var(--green-soft);display:grid;place-items:center;font-size:.9rem}
+.coach-cards{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -14px;padding:2px 14px 4px}.coach-cards::-webkit-scrollbar{display:none}
+.coach-card{flex:0 0 74%;scroll-snap-align:start;background:var(--bg);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}.coach-n{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:var(--muted)}.coach-n i{font-style:normal;width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:.66rem}
+.coach-end .coach-n i{background:var(--gold)}.coach-res{background:var(--green-soft);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.coach-res span{font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.coach-res b{font:600 1.35rem/1.15 var(--display);color:var(--green)}.coach-res small{font-size:.72rem;color:var(--muted)}.coach-bar{display:flex;height:7px;border-radius:9px;overflow:hidden;background:var(--chip);margin-top:6px}.coach-bar i{display:block;height:100%}
+.coach-demo{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.82rem;color:var(--muted)}.coach-demo b{color:var(--ink);text-align:right;font-size:.88rem;display:flex;flex-direction:column}.coach-demo small{font-weight:500;color:var(--muted);font-size:.7rem}
 .wiz-opts{display:flex;flex-direction:column}.wiz-opt{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--line);cursor:pointer}.wiz-opt:first-child{border-top:0}.wiz-opt input{width:20px;height:20px;accent-color:var(--green)}
 .wiz-bar{display:flex;justify-content:space-between;gap:10px;position:sticky;bottom:0;z-index:5;background:var(--card);padding:10px 0 4px;margin-top:-4px;box-shadow:0 -10px 12px -10px rgba(0,0,0,.12)}.wiz-bar .btn{min-width:96px}.wiz-quick{margin:-2px 0 0}
 .quick-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.quick-top .seg{flex:1 1 150px}.quick-view button{font-size:.86rem}.quick-rep{margin:10px 0 2px}.rep-chip{display:inline-flex;gap:6px;align-items:center;white-space:nowrap}.rep-chip b{font-weight:700}
@@ -3229,10 +3237,10 @@ function monthFind(sel){
 V.month = () => {
   if (UI.biz) return spaceSwitch() + (plusOn() ? bizSpace() : bizPreview());
   const C = compute(), tabs = monthTabs(), on = k => !tabs || (UI.mseg || "now") === k;
-  const top = `${spaceSwitch()}${S.hideNote || TOUR.on ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on Budget, or import a bank statement. Everything stays on this device." : "Add your other bills on Budget and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
+  const top = `${spaceSwitch()}${S.hideNote || TOUR.on || coachOn("month") ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on Budget, or import a bank statement. Everything stays on this device." : "Add your other bills on Budget and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>`;
-  const now = `  <div data-out="autoCard">${OUT.autoCard()}</div>
+  const now = `${coach("month", "Your month at a glance")}  <div data-out="autoCard">${OUT.autoCard()}</div>
   <div data-out="monthClose">${OUT.monthClose()}</div>
   <div data-out="keepSafe">${OUT.keepSafe()}</div>
   <div data-out="needs">${OUT.needs()}</div>`;
@@ -3716,7 +3724,7 @@ function answer(q){
 
 // ---- Subs ----
 V.subs = () => `
-  ${subSeg()}
+  ${subSeg()}${coach("subs", "Pay less for subscriptions")}
   <div class="subs-head"><h1>Subscriptions</h1><button class="icon-btn" type="button" data-import-open aria-label="Find subscriptions in a bank statement" title="Find subscriptions in a bank statement">${STMT_IC}</button></div>
   <div data-out="reviewCard">${OUT.reviewCard()}</div>
   <div data-out="subsSummary">${OUT.subsSummary()}</div>
@@ -4159,7 +4167,7 @@ V.bankTab = () => (UI.bankSeg || "accounts") === "cards" ? `${bankSeg()}${cardsV
   <div data-out="trends">${OUT.trends()}</div>
   <div data-out="historyCard">${OUT.historyCard()}</div>
   <div data-out="dropCard">${OUT.dropCard()}</div>`
-  : `${bankSeg()}${autoOn() ? `<div data-out="autoCard">${OUT.autoCard()}</div>` : ""}${V.banks()}
+  : `${bankSeg()}${coach("banks", "Your banks in one place")}${autoOn() ? `<div data-out="autoCard">${OUT.autoCard()}</div>` : ""}${V.banks()}
   <button class="w-choice plus-entry" type="button" data-plus-open><span class="pill gold">Plus</span><span><b>KeepWise Plus</b><span class="muted small">Live splits with friends, every device, and more.</span></span>${I.chev}</button>`;
 // The three shares always total 100: Expenditures and Miscellaneous are chosen, Savings is what is left. If the two
 // chosen ones would pass 100, the one not being edited gives way.
@@ -4248,7 +4256,7 @@ V.split = () => {
   const list = c.splits.filter(x => S.filter === "All" || x.tag === S.filter).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0) || (b.date||"").localeCompare(a.date||""));
   return `
   <h1>Split</h1>
-  ${modeSwitch()}
+  ${modeSwitch()}${coach("split", "Share a bill in three taps")}
   <div data-out="splitSum">${OUT.splitSum()}</div>
   ${c.kind === "local" && UI.tell && !(UI.tell.at && list.some(x => x.id === UI.tell.at)) ? tellCard() : ""}
   ${splitDraft && !splitDraft.editId ? splitForm() : `<button class="btn primary" type="button" data-new-split>${I.plus}New split</button>`}
@@ -5069,6 +5077,34 @@ V.welcome = () => {
     ${IS_IOS && STANDALONE ? (UI.movePaste ? moveBox() : `<button class="link small w-alt" type="button" data-move-paste>I already use KeepWise in my browser</button>`) : ""}</div>`; }
   return setupFlow(step);
 };
+
+// First time on a screen or in a step-by-step flow: one calm card that names the steps, shown once, gone with "Got it".
+const coachOn = k => !(S.coach && S.coach[k]) && !(navigator.webdriver && !window.KEEPWISE_COACH) && !(typeof TOUR !== "undefined" && TOUR.on) && (!S.example || k === "setup");
+// Each step as a small card filled with example answers, so it is clear what the step asks before starting. Swipe across.
+const COACH_DEMO = {
+  setup: [["Your pay", "Pay", "$1,422", "monthly · on the 1st"], ["Regular bills", "Bills", "3 · $845", "Rent, utilities, groceries"], ["Subscriptions", "Subscriptions", "2 · $27.48", "Netflix, Spotify"]],
+  loan: [["What it is", "What", "🚗 Toyota", "Car loan"], ["The payment", "Payment", "$310 a month", "due on the 5th"], ["What is left", "Left to pay", "$8,000", "paid off by Dec 2028"]],
+  trip: [["Where", "Where", "✈️ Miami weekend", "Miami Beach"], ["When", "When", "Nov 7 – Nov 9", "3 days"], ["Budget", "Budget", "$600", "its own budget"], ["Staying", "Staying", "🏨 Hotel", "or skip it"]],
+  event: [["What", "Event", "💍 Wedding", "Sara and Ali"], ["Where", "Where", "Grand Hall", "or skip it"], ["When", "When", "Dec 12", "one day"], ["Budget", "Budget", "$1,500", "its own budget"]],
+  month: [["What you keep", "You’ll have saved", "$1,456", "if the plan holds"], ["What is coming up", "Rent · Oct 26", "$1,850", "tomorrow"], ["Tap any card", "Groceries", "$340 of $320", "3 charges · $20 over"]],
+  subs: [["Tap one", "Netflix", "$15.49/mo", "renews Oct 28 ›"], ["Flags", "Hulu", "Unused 52 days", "drop it to keep $18.99"], ["Cheaper", "Spotify", "Family plan", "save $6 a month"]],
+  banks: [["Your accounts", "Checking", "$2,140", "Bank of America"], ["Upload a statement", "statement.pdf", "42 lines read", "tick what to add"], ["Your trends", "This month", "$1,381 kept", "+$31 on August"]],
+  split: [["New split", "🍕 Dinner", "$84.60", "you paid"], ["Pick the people", "Who", "You, Jordan, Mom", "split equally"], ["KeepWise does the maths", "Jordan owes you", "$28.20", "Mom owes you $28.20"]]
+};
+// The last card shows what it all becomes: the finished, filled-in result, so the steps feel worth doing.
+const COACH_END = {
+  setup: ["You’ll have saved", "$577", "this month", [["Bills", 59, "#2f6fd6"], ["Subs", 2, "#c9a13a"], ["Keep", 39, "var(--green)"]]],
+  loan: ["Left to pay", "$8,000", "paid off by Dec 2028 · $310/mo", [["Paid", 22, "var(--gold)"], ["Left", 78, "var(--chip)"]]],
+  trip: ["Miami weekend", "$420 of $600", "Nov 7 – 9 · $180 left", [["Spent", 70, "var(--green)"], ["Left", 30, "var(--chip)"]]],
+  event: ["Wedding", "$900 of $1,500", "Dec 12 · $600 left", [["Spent", 60, "var(--green)"], ["Left", 40, "var(--chip)"]]],
+  month: ["You’ll have saved", "$1,456", "October · 6 days left", [["Bills", 36, "#2f6fd6"], ["Misc", 22, "#b5502f"], ["Keep", 28, "var(--green)"]]],
+  subs: ["Kept by dropping 3", "$52 a month", "$624 a year back in your pocket", [["Kept", 100, "var(--green)"]]],
+  banks: ["This month", "$1,381 kept", "+$31 more than August", [["Aug", 48, "#9fbfae"], ["Sep", 52, "var(--green)"]]],
+  split: ["You’re owed", "$56.40", "by Jordan and Mom", [["Jordan", 50, "#2f6fd6"], ["Mom", 50, "#c9a13a"]]]
+};
+function coach(k, title){ if (!coachOn(k)) return ""; const d = COACH_DEMO[k] || [], E = COACH_END[k];
+  return `<div class="coach" data-coach="${k}"><div class="coach-h"><span class="coach-ic" aria-hidden="true">✨</span><b>${title}</b><button class="link small" type="button" data-coach-ok="${k}">Got it</button></div>
+    <div class="coach-cards" data-scroll-x>${d.map(([step, l, v, sub], i) => `<div class="coach-card"><span class="coach-n"><i>${i + 1}</i>${step}</span><div class="coach-demo"><span>${l}</span><b>${v}<small>${sub}</small></b></div></div>`).join("")}${E ? `<div class="coach-card coach-end"><span class="coach-n"><i>★</i>What you get</span><div class="coach-res"><span>${E[0]}</span><b>${E[1]}</b><small>${E[2]}</small><div class="coach-bar">${E[3].map(([n, w, c]) => `<i style="width:${w}%;background:${c}" title="${n}"></i>`).join("")}</div></div></div>` : ""}</div></div>`; }
 // Set up your month: one calm screen per step, the answers so far folded at the top, Clear and Next at the bottom.
 const SETUP_BILLS = [["rent", "🏠", "Rent"], ["util", "💡", "Utilities"], ["groc", "🛒", "Groceries"], ["phone", "📱", "Phone"], ["net", "🌐", "Internet"], ["car", "🚗", "Car"], ["family", "👪", "Family"], ["ins", "🛡️", "Insurance"]];
 const SETUP_SUBS = [["Netflix", "🎬", 15.49], ["Spotify", "🎵", 11.99], ["YouTube Premium", "▶️", 13.99], ["iCloud+", "☁️", 2.99], ["Disney+", "✨", 9.99], ["Amazon Prime", "📦", 14.99], ["Hulu", "📺", 9.99], ["Gym", "💪", 30]];
@@ -5101,14 +5137,14 @@ function setupFlow(step){
       <div class="sf-chips">${SETUP_SUBS.map(([n, ic, pr]) => `<button type="button" class="sf-chip" data-w-sub="${esc(n)}" aria-pressed="${DRAFT.subs.includes(n)}"><span aria-hidden="true">${ic}</span>${esc(n)}</button>`).join("")}</div>
       ${(DRAFT.subx || []).length ? `<div class="sf-list">${DRAFT.subx.map((x, i) => `<div class="sf-line"><span aria-hidden="true">${emoFor(x.n || "")}</span><input class="sf-name" data-w-sn="${i}" placeholder="Name" value="${esc(x.n || "")}" aria-label="Subscription name"><span class="sf-in"><em>${esc(setupSym())}</em><input data-w-sa="${i}" inputmode="decimal" placeholder="a month" value="${esc(x.a || "")}" aria-label="Price a month"></span></div>`).join("")}</div>` : ""}
       <button class="link small sf-more" type="button" data-w-subx>+ Something else</button>${skip}</div>`;
-  return `<div class="wiz sf" data-setup>${head}${body}<div class="wiz-bar"><button class="btn sf-clear" type="button" data-w-clear>Clear</button>${step === 3 ? `<button class="btn primary" type="button" data-w-finish>Done</button>` : `<button class="btn primary" type="button" data-w-next>Next</button>`}</div></div>`;
+  return `<div class="wiz sf" data-setup>${head}${step === 1 ? coach("setup", "Three quick steps") : ""}${body}<div class="wiz-bar"><button class="btn sf-clear" type="button" data-w-clear>Clear</button>${step === 3 ? `<button class="btn primary" type="button" data-w-finish>Done</button>` : `<button class="btn primary" type="button" data-w-next>Next</button>`}</div></div>`;
 }
 function finishWelcome(){
   const ex = example();
   const bills = typeof setupBills === "function" && DRAFT.bills ? setupBills().filter(x => x.amt > 0) : [], dayNow = todayMid().getDate();
   Object.assign(ex, {cur: DRAFT.cur, income: r2(numv(DRAFT.income) * (PAY_BASE[DRAFT.pay] || 1)), pay: DRAFT.pay !== "monthly" ? {when: DRAFT.pay, amount: numv(DRAFT.income), day: DRAFT.pay === "twice" ? 1 : undefined, day2: DRAFT.pay === "twice" ? 15 : undefined} : numv(DRAFT.income) && DRAFT.day ? {when: "monthly", amount: numv(DRAFT.income), day: +DRAFT.day} : null, efSaved: 0,
     expenses: bills.length ? bills.map(x => ({id: uid(), name: x.n, amount: x.amt, env: "needs"})) : numv(DRAFT.home) ? [{id: uid(), name: "Rent or mortgage", amount: numv(DRAFT.home), env: "needs"}] : [],
-    theme: "light", skin: "simple",
+    theme: "light", skin: "simple", coach: S.coach || {},
     subs: (DRAFT.subs || []).map(n => { const x = SETUP_SUBS.find(y => y[0] === n); return {id: uid(), name: n, price: x ? x[2] : 0, cycle: "mo", renewDay: dayNow, group: "", env: "misc", keep: "auto"}; }).concat((DRAFT.subx || []).filter(x => String(x.n || "").trim()).map(x => ({id: uid(), name: String(x.n).trim(), price: numv(x.a), cycle: "mo", renewDay: dayNow, group: "", env: "misc", keep: "auto"}))), swaps: [], codes: [], splits: [], settlements: [], people: [{id: "me", name: "You"}], goalName: "", goalAmt: 0, statements: {}, example: false, hideNote: false, tab: "month", started: isoDaysAgo(0)});
   S = ex; UI.welcome = null; welcomeDone(); save();
 }
@@ -5746,6 +5782,7 @@ function tripWizard(draft){
   const last = i === steps.length - 1, optional = cur === "budget" || cur === "stay" || (ev && cur === "where");
   return `<form class="wiz" data-form="trip" data-wiz>${ev ? `<input type="hidden" name="kind" value="event">` : ""}${keep.map(k => `<input type="hidden" name="${k}" value="${esc(String(hv[k] != null ? hv[k] : d[k] == null ? "" : d[k]))}">`).join("")}
     <div class="wiz-top"><b>${ev ? "New event" : "New trip"}</b><span class="wiz-dots" aria-label="Step ${i + 1} of ${steps.length}">${steps.map((_, j) => `<i class="${j === i ? "on" : j < i ? "done" : ""}"></i>`).join("")}</span><button class="icon-btn" type="button" data-trip-cancel aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
+    ${i === 0 ? coach(ev ? "event" : "trip", "Four quick steps") : ""}
     ${steps.slice(0, i).map((k, j) => `<button class="wiz-done" type="button" data-wiz-go="${j}"><span>${LBL[k]}</span><b>${val(k)}</b></button>`).join("")}
     <div class="wiz-card">${body[cur]}${optional && !last ? `<button class="link small wiz-skip" type="button" data-wiz-skip>Skip for now</button>` : optional && last ? `<button class="link small wiz-skip" type="submit" data-wiz-skip-last>Skip and finish</button>` : ""}</div>
     <div class="wiz-bar"><button class="btn" type="button" data-wiz-clear>Clear</button>${last ? `<button class="btn primary" type="submit">${ev ? "Add event" : "Add trip"}</button>` : `<button class="btn primary" type="button" data-wiz-next>Next</button>`}</div></form>`;
@@ -6251,11 +6288,11 @@ function debtCard(l){
 
 function loanForm(l){
   const d = UI.loanDraft, cardSel = !d.card ? "Visa" : CARD_TYPES.includes(d.card) ? d.card : "Other", sel = (name, list, v) => `<select name="${name}">${list.map(([k, n]) => `<option value="${k}" ${v === k ? "selected" : ""}>${n}</option>`).join("")}</select>`;
-  // the step-by-step new loan waits for approval (W stays off until then)
-  const W = false && !l, st = W ? (UI.fstep || 0) : 0, on = i => W ? ` fs${st === i ? " on" : ""}` : "", ins = d.kind === "carins";
+  // a new loan is added step by step; editing one shows the whole card
+  const W = !l && !window.KEEPWISE_LOAN_FORM_ALL, st = W ? (UI.fstep || 0) : 0, on = i => W ? ` fs${st === i ? " on" : ""}` : "", ins = d.kind === "carins";
   const K = (LOAN_KINDS.find(x => x[0] === d.kind) || [0, "Loan"])[1], EV = (LOAN_EVERY.find(x => x[0] === d.every) || [0, "", "a month"])[2];
   const folded = W ? [[0, "What", `${LOAN_EMO[d.kind] || "🧾"} ${esc(d.name || K)}`], [1, ins ? "Policy" : "Payment", ins ? (+d.premium > 0 ? `${fmt(+d.premium)} · ${(INS_TERMS.find(x => x[0] === String(d.term || "6")) || [0, ""])[1]}` : "Skipped") : (+d.pay > 0 ? `${fmt(+d.pay)} ${EV}` : "Not set")]].filter(x => x[0] < st).map(([i, n, v]) => `<button class="wiz-done" type="button" data-fs-go="${i}"><span>${n}</span><b>${v}</b></button>`).join("") : "";
-  const top = W ? `<div class="wiz-top sf-top"><button class="icon-btn" type="button" data-fs-back aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button><b>${d.kind === "card" ? "New card" : ins ? "Car insurance" : "New loan"}</b><button class="icon-btn" type="button" data-loan-cancel aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div><span class="wiz-dots sf-dots" aria-label="Step ${st + 1} of ${ins ? 2 : 3}">${(ins ? [0, 1] : [0, 1, 2]).map(j => `<i class="${j === st ? "on" : j < st ? "done" : ""}"></i>`).join("")}</span>${folded}` : "";
+  const top = W ? `<div class="wiz-top sf-top"><button class="icon-btn" type="button" data-fs-back aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button><b>${d.kind === "card" ? "New card" : ins ? "Car insurance" : "New loan"}</b><button class="icon-btn" type="button" data-loan-cancel aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div><span class="wiz-dots sf-dots" aria-label="Step ${st + 1} of ${ins ? 2 : 3}">${(ins ? [0, 1] : [0, 1, 2]).map(j => `<i class="${j === st ? "on" : j < st ? "done" : ""}"></i>`).join("")}</span>${st === 0 ? coach("loan", "Three quick steps") : ""}${folded}` : "";
   return `<form class="inc-form${W ? " wiz sf fsteps" : ""}" data-form="loan">${top}<section class="${W ? "wiz-card" : ""}${on(0)}">${W ? `<h3>What is it?</h3><p class="muted small">The kind of debt, and a name if you like</p>` : ""}${W ? `<input type="hidden" name="kind" value="${esc(d.kind)}"><div class="sf-chips">${LOAN_KINDS.filter(x => x[0] !== "card" || d.kind === "card").map(([k, n]) => `<button type="button" class="sf-chip" data-fs-kind="${k}" aria-pressed="${d.kind === k}"><span aria-hidden="true">${LOAN_EMO[k] || "🧾"}</span>${n}</button>`).join("")}</div>` : ""}<div class="grid2"${W ? ' style="grid-template-columns:1fr"' : ""}>${W ? "" : `<label class="field"><span>Type</span>${sel("kind", LOAN_KINDS.filter(x => x[0] !== "card" || d.kind === "card"), d.kind)}</label>`}
       <label class="field"><span>Name <small class="muted">optional</small></span><input name="name" value="${esc(d.name)}" placeholder="e.g. Bank of America" enterkeyhint="next" autocomplete="off"></label></div>
     <div class="grid2" data-loan-cardrow ${d.kind === "card" ? "" : "hidden"}><label class="field"><span>Card</span>${sel("card", CARD_TYPES.map(c => [c, c]), cardSel)}</label>
@@ -6283,8 +6320,8 @@ function loanForm(l){
       <label class="field"><span>Interest</span><input name="rate" readonly tabindex="-1" class="calc" placeholder="Worked out for you" value="${esc(loanRateText(d))}" aria-label="Interest, worked out from your numbers"></label></div>
     <p class="muted small" data-loan-ratenote>${loanRateNote(d)}</p></div>${W ? `</section>` : `</section>`}
     ${W ? `<div class="wiz-bar"><button class="btn sf-clear" type="button" data-fs-clear>Clear</button>${st >= (ins ? 1 : 2) ? `<button class="btn primary" type="submit">${d.kind === "card" ? "Add card" : ins ? "Add insurance" : "Add loan"}</button>` : `<button class="btn primary" type="button" data-fs-next>Next</button>`}</div>` : ""}
-    <div class="grid2"${W ? " hidden" : ""}>${l ? `<button class="btn danger" type="button" data-loan-del>Remove</button>` : `<button class="btn" type="button" data-loan-cancel>Cancel</button>`}<button class="btn primary" type="submit" style="padding:10px">${l ? "Save" : "Add loan"}</button></div>
-    ${l ? `<button class="link plain small" type="button" data-loan-cancel style="align-self:center">Cancel</button>` : ""}</form>`;
+    ${W ? "" : `    <div class="grid2">${l ? `<button class="btn danger" type="button" data-loan-del>Remove</button>` : `<button class="btn" type="button" data-loan-cancel>Cancel</button>`}<button class="btn primary" type="submit" style="padding:10px">${l ? "Save" : "Add loan"}</button></div>
+    ${l ? `<button class="link plain small" type="button" data-loan-cancel style="align-self:center">Cancel</button>` : ""}`}</form>`;
 }
 function insRow(l){
   const P = insTerm(l), left = insLeft(l), now = insThisMonth(l), soon = P && !P.ahead ? daysUntil(P.to) : null, nm = esc(l.name || "Car insurance"), T = P ? P.T : (+l.term === 12 ? 12 : 6);
@@ -6772,6 +6809,7 @@ function render(keepScroll){
   const sheet = $("asksheet"); if (sheet){ sheet.innerHTML = UI.askOpen ? askSheet() : ""; sheet.hidden = !UI.askOpen; }
   const fab = $("wise"); if (fab) fab.hidden = !askOk || !!UI.askOpen;
   appEl.classList.toggle("welcoming", UI.welcome != null && !UI.account && !STMT.result);
+  appEl.classList.toggle("flowing", !!$("view").querySelector(".wiz"));   // a step-by-step screen has the whole phone: no header, tabs or owl behind it
   if (!keepScroll){ v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   renderTabs(); renderBell(); { const pb = $("plus-badge"), tg = $("brand-tag"); if (pb) pb.hidden = !plusOn(); if (tg) tg.hidden = plusOn(); }
   if (S.tab === "month" && !UI.biz && autoOn() && Date.now() - AUTO.at > 30 * 6e4) setTimeout(() => autoRun(false), 0);   // Plus: look at the banks at most every half hour
@@ -7447,6 +7485,7 @@ view.addEventListener("keydown", e => {  // Enter in "Add a line" adds it, like 
 view.addEventListener("click", async e => {
   const t = e.target, b = t.closest("button, a");
   if (!b) return;
+  if (b.dataset.coachOk){ S.coach = S.coach || {}; S.coach[b.dataset.coachOk] = 1; if (UI.welcome == null) save(); const c = b.closest("[data-coach]"); if (c) c.remove(); return; }
   if (b.dataset.amtEye){ S.hideLoans = !S.hideLoans; save(); render(true); return; }
   if (b.dataset.go && b.dataset.goSel){ UI.settings = false; goTo(b.dataset.go, b.dataset.goSel); return; }
   if (b.dataset.go){ if (b.dataset.go === "plan") b.dataset.go = "month"; UI.settings = false; S.tab = b.dataset.go; UI.history = false; UI.banks = false; UI.stmt = null; save(); render(false); return; }
@@ -7454,7 +7493,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-w-start")){ UI.settings = false; DRAFT.cur = S.cur; DRAFT.income = ""; DRAFT.home = ""; DRAFT.pay = "monthly"; DRAFT.day = 1; DRAFT.bills = []; DRAFT.amts = {}; DRAFT.subs = []; DRAFT.subx = []; DRAFT.extra = []; UI.welcome = 1; render(false); return; }
   if (b.hasAttribute("data-tour-start")){ tourStart(); return; }
   if (b.dataset.wPay){ DRAFT.pay = b.dataset.wPay; render(true); return; }
-  if (b.dataset.wBill){ const k = b.dataset.wBill; DRAFT.bills = DRAFT.bills || []; DRAFT.bills = DRAFT.bills.includes(k) ? DRAFT.bills.filter(x => x !== k) : DRAFT.bills.concat(k); render(true); const i = view.querySelector(`[data-w-amt="${k}"]`); if (i && DRAFT.bills.includes(k) && !IS_IOS) i.focus(); return; }
+  if (b.dataset.wBill){ const k = b.dataset.wBill; DRAFT.bills = DRAFT.bills || []; DRAFT.bills = DRAFT.bills.includes(k) ? DRAFT.bills.filter(x => x !== k) : DRAFT.bills.concat(k); render(true); return; }
   if (b.dataset.wSub){ const n = b.dataset.wSub; DRAFT.subs = DRAFT.subs || []; DRAFT.subs = DRAFT.subs.includes(n) ? DRAFT.subs.filter(x => x !== n) : DRAFT.subs.concat(n); render(true); return; }
   if (b.hasAttribute("data-w-subx")){ DRAFT.subx = (DRAFT.subx || []).concat({n: "", a: ""}); render(true); const i = view.querySelector(`[data-w-sn="${DRAFT.subx.length - 1}"]`); if (i) i.focus(); return; }
   if (b.hasAttribute("data-w-extra")){ DRAFT.extra = (DRAFT.extra || []).concat({n: "", a: ""}); render(true); const i = view.querySelector(`[data-w-xn="${DRAFT.extra.length - 1}"]`); if (i) i.focus(); return; }
@@ -7462,7 +7501,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-w-clear")){ if (UI.welcome === 1){ DRAFT.income = ""; DRAFT.pay = "monthly"; DRAFT.day = 1; } else if (UI.welcome === 2){ DRAFT.bills = []; DRAFT.amts = {}; DRAFT.extra = []; } else { DRAFT.subs = []; DRAFT.subx = []; } render(true); return; }
   if (b.hasAttribute("data-w-next")){
     if (UI.welcome === 1 && !numv(DRAFT.income) && !b.hasAttribute("data-w-skipstep")){ toast("Enter what comes in each month."); const i = view.querySelector('[data-w="income"]'); if (i) i.focus(); return; }
-    UI.welcome = Math.min(3, UI.welcome + 1); render(false); const i = view.querySelector("[data-w=income],[data-w=home]"); if (i && !IS_IOS) i.focus(); return; }
+    UI.welcome = Math.min(3, UI.welcome + 1); render(false); return; }
   if (b.hasAttribute("data-w-back")){ UI.welcome = Math.max(0, UI.welcome - 1); render(false); return; }
   if (b.hasAttribute("data-w-skip")){ DRAFT.home = ""; UI.welcome = 3; render(false); return; }
   if (b.hasAttribute("data-w-example")){ UI.welcome = null; welcomeDone(); S.tab = "month"; save(); render(false); return; }
@@ -7568,7 +7607,7 @@ view.addEventListener("click", async e => {
       if (b.hasAttribute("data-wiz-skip")){ if (step === "budget") dr.budget = ""; if (step === "stay") dr.stay = ""; if (step === "where" && ev){ dr.place = ""; delete dr.geo; } }
       else if (step === "where" && !ev && !String(dr.name || "").trim()){ toast("Give the trip a name."); wf.querySelector("[name=name]").focus(); return; }
       else if (step === "when" && (!dr.start || !dr.end || dr.end < dr.start)){ toast(!dr.start || !dr.end ? "Pick the start and end dates." : `The ${ev ? "event" : "trip"} cannot end before it starts.`); return; }
-      UI.tripStep = (UI.tripStep || 0) + 1; render(true); const f1 = view.querySelector("form[data-wiz] .wiz-card input:not([type=hidden]), form[data-wiz] .wiz-card select"); if (f1 && f1.type !== "radio" && f1.type !== "date") f1.focus({preventScroll: true}); return; } }
+      UI.tripStep = (UI.tripStep || 0) + 1; render(true); return; } }
   if (b.hasAttribute("data-trip-cancel")){ UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; render(true); return; }
   if (b.dataset.tripGoto){ UI.mseg = "budget"; goTo("month", `[data-out=trips] [data-trip="${b.dataset.tripGoto}"]`); return; }
   if (b.hasAttribute("data-trips-all")){ UI.tripsAll = true; refreshOuts(); return; }
@@ -7895,7 +7934,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-give-cancel")){ UI.giveAdd = false; UI.giveEdit = null; render(true); return; }
   if (b.hasAttribute("data-give-edit")){ UI.giveEdit = b.closest("[data-give]").dataset.give; UI.giveAdd = false; render(true); return; }
   if (b.hasAttribute("data-give-del")){ const u = undoable(), g = (S.giving || []).find(x => x.id === UI.giveEdit); S.giving = (S.giving || []).filter(x => x !== g); UI.giveEdit = null; save(); render(true); toast(`Removed ${g ? g.name || giveCause(g.cause) : "it"}.`, u); return; }
-  if (b.hasAttribute("data-loan-add")){ UI.loanAdd = true; UI.loanEdit = null; UI.fstep = 0; UI.loanDraft = {kind: "bank", name: "", pay: "", every: "mo", total: "", end: "", left: ""}; render(true); const f = view.querySelector('form[data-form="loan"] [name=pay]'); if (f) f.focus(); return; }
+  if (b.hasAttribute("data-loan-add")){ UI.loanAdd = true; UI.loanEdit = null; UI.fstep = 0; UI.loanDraft = {kind: "bank", name: "", pay: "", every: "mo", total: "", end: "", left: ""}; render(true); return; }   // no keyboard until a field is tapped
   if (b.hasAttribute("data-loan-edit") && loanX){ UI.loanEdit = loanX.id; UI.loanAdd = false; UI.loanDraft = {kind: loanX.kind, name: loanX.name || "", pay: loanX.pay, every: loanX.every, total: loanX.total || "", end: loanX.end || "", left: loanX.left || "", card: loanX.card || "", fee: loanX.fee || "", feeOn: loanX.feeOn || "", on: loanX.on || "", premium: loanX.premium || "", term: loanX.term || 6, plan: loanX.plan || "monthly", start: loanX.start || "", insfee: loanX.kind === "carins" ? loanX.fee || "" : "", apr: loanX.apr != null ? loanX.apr : "", borrowed: loanX.borrowed || "", since: loanX.since || "", day: loanX.day || ""}; render(true); return; }
   if (b.dataset.fsKind){ const f = b.closest("form"), d = UI.loanDraft || {}; if (f) new FormData(f).forEach((v, k) => { if (k !== "rate") d[k] = String(v); }); d.kind = b.dataset.fsKind; render(true); return; }
   if (b.hasAttribute("data-fs-next") || b.hasAttribute("data-fs-back") || b.dataset.fsGo != null || b.hasAttribute("data-fs-clear")){ const f = b.closest("form");

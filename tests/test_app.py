@@ -4745,7 +4745,7 @@ async def the_month_chart_opens_into_every_line(ctx):
 async def car_insurance_runs_by_its_policy(ctx):
     pg = await open_app(ctx, month_tabs=True, w=375, h=812)
     await tab(pg, "loans")
-    await pg.click("[data-loan-add]"); await pg.wait_for_timeout(200)
+    await pg.evaluate("window.KEEPWISE_LOAN_FORM_ALL = true"); await pg.click("[data-loan-add]"); await pg.wait_for_timeout(200)
     f = 'form[data-form="loan"]'
     await pg.select_option(f + " [name=kind]", "carins"); await pg.wait_for_timeout(100)
     assert await pg.locator(f + " [name=premium]").is_visible() and not await pg.locator(f + " [name=pay]").is_visible(), "the policy has its own fields"
@@ -4962,7 +4962,7 @@ async def no_card_loses_what_you_typed(ctx):
     await pg.locator("[data-code-edit]").first.click(); await pg.wait_for_timeout(100); await sweep("edit a code", 3); await pg.click("[data-code-cancel]")
     await tab(pg, "plan"); await pg.click("[data-add-exp]"); await pg.wait_for_timeout(100); await sweep("add a line", 2); await pg.click("[data-exp-cancel]")
     await pg.locator("[data-exp-edit]").first.click(); await pg.wait_for_timeout(100); await sweep("edit a line", 2); await pg.click("[data-exp-cancel]")
-    await pg.click("[data-loan-add]"); await pg.wait_for_timeout(100); await sweep("add a loan", 5)
+    await pg.evaluate("window.KEEPWISE_LOAN_FORM_ALL = true"); await pg.click("[data-loan-add]"); await pg.wait_for_timeout(100); await sweep("add a loan", 5)
     for kind in ("car", "student", "home"):   # every dropdown in the loan card keeps its choice
         await pg.select_option("form[data-form=loan] [name=kind]", kind); await pg.evaluate("document.activeElement && document.activeElement.blur()"); await pg.wait_for_timeout(300)
         assert await pg.input_value("form[data-form=loan] [name=kind]") == kind, kind
@@ -4994,7 +4994,7 @@ async def loans_section_counts_and_finishes(ctx):
     await tab(pg, "month"); kept0 = money(await text(pg, "[data-out=envelopes] .env-row >> nth=0")); assert await pg.locator("[data-loans-row]").count() == 0, "no row until there is a loan"
     await tab(pg, "plan")
     box = await text(pg, "[data-out=loans]"); assert "Loans and debt" in box and "Add a loan or car insurance" in box
-    await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
+    await pg.evaluate("window.KEEPWISE_LOAN_FORM_ALL = true"); await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
     assert [o.strip() for o in await f.locator("[name=kind] option").all_inner_texts()] == ["Bank loan", "Personal loan", "Student debt", "Car loan", "Car insurance", "Mortgage", "Other debt"], "cards are added in Banks › Cards"
     assert [o.strip() for o in await f.locator("[name=every] option").all_inner_texts()] == ["Every month", "Every week", "Every 2 weeks", "Every year"]
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(100); assert "Enter the payment amount" in await pg.inner_text("#toast")
@@ -5006,7 +5006,7 @@ async def loans_section_counts_and_finishes(ctx):
     et = await leg()
     assert abs(money(re.search(r"Expenditures (\S+)", et).group(1)) - need0) < 0.01 and "Loans $260" in et, "the payment sits apart from Expenditures: " + et
     # a bank loan with an end date
-    await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
+    await pg.evaluate("window.KEEPWISE_LOAN_FORM_ALL = true"); await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
     await f.locator("[name=name]").fill("Car"); await f.locator("[name=kind]").select_option("car"); await f.locator("[name=pay]").fill("300"); await f.locator("[name=end]").fill("2027-04-05")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
     box = await text(pg, "[data-out=loans]"); assert "Ends Apr 2027, 6 months from now" in box and "$560" in await text(pg, "[data-loans-row] .env-head"), box
@@ -5024,13 +5024,13 @@ async def loans_section_counts_and_finishes(ctx):
     # once the end date has passed it stops counting
     await pg.clock.set_fixed_time(__import__("datetime").datetime(2027, 4, 20, 10, 0)); await tab(pg, "loans"); await pg.wait_for_timeout(150)
     # picking an end date, or tapping Done on the keyboard, never empties the card (the iPhone date picker takes focus away)
-    await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
+    await pg.evaluate("window.KEEPWISE_LOAN_FORM_ALL = true"); await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
     await f.locator("[name=name]").fill("Bank of America"); await f.locator("[name=total]").fill("700"); await f.locator("[name=end]").fill("2028-04-20")
     await pg.evaluate("document.activeElement.blur()"); await pg.wait_for_timeout(250)
     assert await f.locator("[name=name]").input_value() == "Bank of America" and await f.locator("[name=total]").input_value() == "700" and await f.locator("[name=end]").input_value() == "2028-04-20"
     await pg.click("[data-loan-cancel]"); await pg.wait_for_timeout(100)
     # interest appears only when payment, amount left, installments and end date are all there, and the maths is exact
-    await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
+    await pg.evaluate("window.KEEPWISE_LOAN_FORM_ALL = true"); await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
     assert await f.locator("[name=rate]").get_attribute("readonly") is not None and await f.locator("[name=rate]").input_value() == ""
     await f.locator("[name=pay]").fill("100"); await f.locator("[name=total]").fill("1100"); await f.locator("[name=left]").fill("12"); await pg.wait_for_timeout(80)
     assert await f.locator("[name=rate]").input_value() == "", "no end date yet, so no interest shown"
@@ -5697,7 +5697,7 @@ async def date_fields_open_on_a_tap_and_keep_to_sensible_limits(ctx):
     day = (await state(pg))["subs"][-3]; row = pg.locator(f"[data-sub='{day['id']}']"); await row.locator("[data-renew-open]").click(); await pg.wait_for_timeout(150)
     assert await row.locator("[data-renew-day]").count() == 1 and await row.locator("[data-renew-date]").count() == 0, "a monthly one picks a day"
     # --- a loan's end date is ahead; a saved one that has already passed can still be opened and saved
-    await tab(pg, "loans"); await pg.click("[data-loan-add]"); await pg.wait_for_timeout(150)
+    await tab(pg, "loans"); await pg.evaluate("window.KEEPWISE_LOAN_FORM_ALL = true"); await pg.click("[data-loan-add]"); await pg.wait_for_timeout(150)
     assert await pg.get_attribute("form[data-form=loan] [name=end]", "min") == today; await check_opens("form[data-form=loan] [name=end]")
     # --- a trip can start any day, and never ends before it starts
     await pg.keyboard.press("Escape"); await pg.evaluate("document.activeElement && document.activeElement.blur()"); await pg.wait_for_timeout(400)
@@ -6484,6 +6484,37 @@ async def weekly_subscriptions_and_bills_count_each_charge(ctx):
     e = [x for x in (await state(pg))["expenses"] if x["name"] == "Daycare"][0]
     assert e["every"] == "wk" and e["per"] == 100 and e["amount"] in (400, 500), e
     assert "$100 every week" in await pg.locator(".env-body [data-exp]", has_text="Daycare").inner_text()
+    assert not pg.errors, pg.errors
+
+@test
+async def a_new_loan_is_added_step_by_step_without_the_keyboard_jumping_up(ctx):
+    # one calm full screen per step, answers fold to the top, and no field takes focus by itself
+    pg = await open_app(ctx, month_tabs=True)
+    await tab(pg, "loans"); await pg.click("[data-loan-add]"); await pg.wait_for_timeout(200)
+    f = pg.locator("form[data-form=loan]"); assert await f.evaluate("e => e.classList.contains('wiz')") and await pg.locator("#tabbar").is_hidden(), "a full screen, no tabs behind it"
+    assert await pg.evaluate("document.activeElement === document.body || !document.activeElement.matches('input,select,textarea')"), "the keyboard waits for a tap"
+    await f.locator("[data-fs-kind=car]").click(); await pg.wait_for_timeout(150); await f.locator("[name=name]").fill("Toyota")
+    await f.locator("[data-fs-next]").click(); await pg.wait_for_timeout(150)
+    assert "Toyota" in await f.locator(".wiz-done").first.inner_text(), "the first answer folds up"
+    await f.locator("[data-fs-next]").click(); await pg.wait_for_timeout(150); assert "Enter the payment amount" in await pg.inner_text("#toast")
+    await f.locator("[name=pay]").fill("310"); await f.locator("[data-fs-next]").click(); await pg.wait_for_timeout(150)
+    await f.locator("[name=total]").fill("8000"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(300)
+    l = [x for x in (await state(pg))["loans"] if x.get("name") == "Toyota"][0]; assert (l["kind"], l["pay"], l["total"]) == ("car", 310, 8000), l
+    assert await pg.locator("#tabbar").is_visible() and await pg.locator("form.wiz").count() == 0
+    assert not pg.errors, pg.errors
+
+@test
+async def first_time_on_a_screen_shows_its_steps_once(ctx):
+    # a small card names the steps the first time someone opens a screen or a step-by-step flow; Got it keeps it away
+    pg = await open_app(ctx, month_tabs=True); await pg.evaluate("window.KEEPWISE_COACH = true")
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.example = false; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.evaluate("window.KEEPWISE_COACH = true"); await tab(pg, "subs"); await tab(pg, "month"); await tab(pg, "subs")
+    c = pg.locator("[data-coach=subs]"); assert await c.count() == 1 and "Netflix" in await c.inner_text()
+    await c.locator("[data-coach-ok]").click(); await pg.wait_for_timeout(150); assert await pg.locator("[data-coach=subs]").count() == 0
+    await tab(pg, "month"); await tab(pg, "subs"); assert await pg.locator("[data-coach=subs]").count() == 0, "shown once"
+    assert (await state(pg))["coach"]["subs"] == 1
+    await tab(pg, "loans"); await pg.click("[data-loan-add]"); await pg.wait_for_timeout(200)
+    assert "Three quick steps" in await pg.inner_text("[data-coach=loan]")
     assert not pg.errors, pg.errors
 
 @test
