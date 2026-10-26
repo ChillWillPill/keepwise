@@ -129,9 +129,14 @@ async def wiz(pg, vals, submit=True):
             if submit: await f.locator(".wiz-bar [type=submit]").click(); await pg.wait_for_timeout(250)
             return
 async def text(pg, sel): return (await pg.inner_text(sel)).replace("\n", " ")
+async def owl(pg):
+    # at the very bottom of a long screen the owl steps aside; a person scrolls up a little to bring it back
+    if await pg.evaluate("document.body.classList.contains('at-end')"):
+        await pg.evaluate("document.getElementById('main').scrollTop -= 120"); await pg.wait_for_timeout(250)
+    await pg.click("#wise")
 async def ask_type(pg, q):
     # type into Ask wherever you are: the card at the foot of Month, or the owl button on any other tab
-    if await pg.locator("#ask-in").count() == 0: await pg.click("#wise"); await pg.wait_for_timeout(150)
+    if await pg.locator("#ask-in").count() == 0: await owl(pg); await pg.wait_for_timeout(150)
     await pg.fill("#ask-in", q); await pg.press("#ask-in", "Enter")
 async def open_trip(pg):
     if await pg.locator("[data-trip-open][aria-expanded=true]").count() == 0: await pg.click("[data-trip-open]")
@@ -2914,7 +2919,7 @@ async def coming_up_reads_in_date_order_and_a_trip_is_never_logged_as_spending(c
     k = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
     k0 = await k(); n0 = len((await state(pg)).get("spends") or [])
     await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150); k0 = await k()
-    await tab(pg, "plan"); await pg.click("#wise"); await pg.wait_for_timeout(200)
+    await tab(pg, "plan"); await owl(pg); await pg.wait_for_timeout(200)
     await ask_type(pg, "Plan a trip for Australia budget 6,000 euros"); await pg.wait_for_timeout(500)
     st = await state(pg); assert st["tab"] == "month" and len(st.get("spends") or []) == n0 and len(st.get("trips") or []) == 0, "nothing is saved until the dates are checked"
     assert await k() == k0 and await pg.locator("[data-ask-sheet]").count() == 0
@@ -2923,9 +2928,9 @@ async def coming_up_reads_in_date_order_and_a_trip_is_never_logged_as_spending(c
     await wiz(pg, {"start": "2026-11-01", "end": "2026-11-14"})
     tr = (await state(pg))["trips"][0]; assert (tr["name"], tr["budget"], tr["cur"], tr["start"]) == ("Australia", 5160, "EUR", "2026-11-01") and await k() == k0
     # with no number it still starts a trip, and a question about trips is still a question
-    await pg.click("#wise"); await pg.wait_for_timeout(150); await ask_type(pg, "plan a trip to Lahore"); await pg.wait_for_timeout(400)
+    await owl(pg); await pg.wait_for_timeout(150); await ask_type(pg, "plan a trip to Lahore"); await pg.wait_for_timeout(400)
     assert await pg.locator("form[data-form=trip] [name=name]").input_value() == "Lahore"; await pg.click("[data-trip-cancel]"); await pg.wait_for_timeout(120)
-    await pg.click("#wise"); await pg.wait_for_timeout(150); await ask_type(pg, "how is my trip going?"); await pg.wait_for_timeout(300)
+    await owl(pg); await pg.wait_for_timeout(150); await ask_type(pg, "how is my trip going?"); await pg.wait_for_timeout(300)
     assert await pg.locator("form[data-form=trip]").count() == 0 and "Australia" in await text(pg, "#ask-out")
     assert not pg.errors, pg.errors
 
@@ -2943,7 +2948,7 @@ async def an_event_works_like_a_trip_with_a_place_and_people(ctx):
     card = await text(pg, "[data-trip]"); assert "Rooftop Cafe" in await text(pg, "[data-trip] [data-place-chip]") and "Birthday party · 12 people" in card and "Today" in card and "$50 a person budgeted" in card, card
     assert "Trips and events" in (await text(pg, "[data-trips] h2")).replace("TRIPS AND EVENTS", "Trips and events") or "TRIPS AND EVENTS" in (await text(pg, "[data-trips]")).upper()
     # spending said today goes to the event, not the month, and the cost per person follows
-    await pg.click("#wise"); await pg.wait_for_timeout(150); await ask_type(pg, "cake 60, balloons 24"); await pg.wait_for_timeout(350)
+    await owl(pg); await pg.wait_for_timeout(150); await ask_type(pg, "cake 60, balloons 24"); await pg.wait_for_timeout(350)
     assert "to Birthday party. $84 spent of $600." in await said(pg) and await pg.locator("[data-ask-sheet]").count() == 0 and await pg.locator("[data-trip].flash").count() == 1, "it lands on the event"
     assert "$7 a person so far" in await text(pg, "[data-trip]") and await kept() == k0
     await pg.fill("form[data-form=tripAdd] [name=q]", "venue 300"); await pg.click("form[data-form=tripAdd] [type=submit]"); await pg.wait_for_timeout(300)
@@ -2959,18 +2964,18 @@ async def an_event_works_like_a_trip_with_a_place_and_people(ctx):
     await pg.click("[data-trip-settle=counted]"); await pg.wait_for_timeout(200); assert abs(money(k0) - money(await kept()) - 384) < 0.01
     # said out loud: the card opens filled in, and nothing is saved until it is added
     n = len((await state(pg))["trips"])
-    await pg.click("#wise"); await pg.wait_for_timeout(150); await ask_type(pg, "plan a wedding for Ali at Pearl Hall for 300 people, budget 20,000"); await pg.wait_for_timeout(500)
+    await owl(pg); await pg.wait_for_timeout(150); await ask_type(pg, "plan a wedding for Ali at Pearl Hall for 300 people, budget 20,000"); await pg.wait_for_timeout(500)
     f = pg.locator("form[data-form=trip]"); assert len((await state(pg))["trips"]) == n and await f.count() == 1
     got = [await f.locator(f"[name={k}]").input_value() for k in ("etype", "name", "place", "people", "budget")]; assert got == ["wedding", "Wedding for Ali", "Pearl Hall", "300", "20000"], got
     await wiz(pg, {"start": "2026-12-20", "end": "2026-12-22"})
     w = [x for x in (await state(pg))["trips"] if x["name"] == "Wedding for Ali"][0]; assert (w["kind"], w["people"], w["budget"], w["place"]) == ("event", 300, 20000, "Pearl Hall")
     for q, etype, name in (("organise a dj night budget 500", "dj", "DJ night"), ("plan a concert in Lahore", "concert", "Concert")):
-        await pg.click("#wise"); await pg.wait_for_timeout(150); await ask_type(pg, q); await pg.wait_for_timeout(450)
+        await owl(pg); await pg.wait_for_timeout(150); await ask_type(pg, q); await pg.wait_for_timeout(450)
         f = pg.locator("form[data-form=trip]"); assert await f.locator("[name=etype]").input_value() == etype and await f.locator("[name=name]").input_value() == name, q
         await pg.click("[data-trip-cancel]"); await pg.wait_for_timeout(120)
     # a trip is still a trip, and an ordinary gift is still spending
     await pg.click("[data-trip-add]"); await pg.wait_for_timeout(120); assert await pg.locator("form[data-form=trip] [name=etype]").count() == 0; await pg.click("[data-trip-cancel]"); await pg.wait_for_timeout(120)
-    k = len((await state(pg)).get("spends") or []); await pg.click("#wise"); await pg.wait_for_timeout(150); await ask_type(pg, "add birthday gift 30"); await pg.wait_for_timeout(350)
+    k = len((await state(pg)).get("spends") or []); await owl(pg); await pg.wait_for_timeout(150); await ask_type(pg, "add birthday gift 30"); await pg.wait_for_timeout(350)
     assert len((await state(pg))["spends"]) == k + 1 and await pg.locator("form[data-form=trip]").count() == 0
     assert not pg.errors, pg.errors
 
@@ -4231,7 +4236,7 @@ async def the_owl_panel_stands_out_in_the_dark(ctx):
         r, g, b = [int(x) for x in re.findall(r"\d+", c)[:3]]; return 0.2126 * r + 0.7152 * g + 0.0722 * b
     for scheme in ("dark", "light"):
         pg = await open_app(ctx, scheme=scheme); await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(150)
-        await pg.click("#wise"); await pg.wait_for_timeout(300)
+        await owl(pg); await pg.wait_for_timeout(300)
         v = await pg.evaluate("""() => { const p = document.querySelector('.ask-panel'), c = getComputedStyle(p), card = getComputedStyle(document.querySelector('#view .card')), back = getComputedStyle(document.querySelector('.ask-back'));
           return {panel: c.backgroundColor, edge: c.borderTopColor, card: card.backgroundColor, cardEdge: card.borderTopColor, back: back.backgroundColor, ink: c.color}; }""")
         if scheme == "dark":
@@ -4485,14 +4490,14 @@ async def ask_explains_the_words_and_they_work(ctx):
     # no picker: the (i) says which words put an entry where, and each example does exactly that
     pg = await open_app(ctx, month_tabs=True, w=375, h=812)
     st = lambda: pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1'))")
-    await pg.click("#wise"); await pg.wait_for_timeout(200)
+    await owl(pg); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-ask-kind]").count() == 0, "no picker"
     await pg.click(".ask-panel [data-info=ask]"); await pg.wait_for_timeout(150)
     tip = await pg.inner_text(".ask-panel [data-info-tip=ask]")
     for w in ("Money in", "received", "Subscription", "sub", "Expenditure", "monthly", "Misc"): assert w in tip, (w, tip)
     async def say(q):
         await pg.evaluate("document.getElementById('toast').hidden = true")
-        if await pg.locator("#ask-in").count() == 0: await pg.click("#wise"); await pg.wait_for_timeout(200)
+        if await pg.locator("#ask-in").count() == 0: await owl(pg); await pg.wait_for_timeout(200)
         await pg.fill("#ask-in", q); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(600)
     await say("Received 300 from Ali"); assert any(x["amount"] == 300 for x in (await st()).get("ins", [])), "money in"
     await say("Netflix sub 15"); assert any(x["name"].lower().startswith("netflix") and x["price"] == 15 for x in (await st())["subs"]), "subscription"
@@ -5247,6 +5252,15 @@ async def on_payday_whats_left_is_set_aside_for_the_goal(ctx):
     assert not p2.errors, p2.errors
 
 @test
+async def new_split_opens_where_you_can_see_it(ctx):
+    pg = await open_app(ctx); await tab(pg, "split")
+    await pg.click("[data-new-split]"); await pg.wait_for_timeout(700)
+    top = await pg.evaluate("""() => { const f = document.querySelector('form[data-form="split"]'), m = document.getElementById('main'); const r = f.getBoundingClientRect(), q = m.getBoundingClientRect(); return [r.top - q.top, q.height]; }""")
+    assert 0 <= top[0] < top[1] / 3, top
+    assert await pg.evaluate("!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)"), "the keyboard does not jump up"
+    assert not pg.errors, pg.errors
+
+@test
 async def keepwise_never_flags_itself(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
     flagged = lambda s: re.search(r"\$[\d,.]+", s.split("FLAGGED")[-1]).group(0)
@@ -5653,7 +5667,7 @@ async def saying_money_in_out_loud_works_like_typing(ctx):
     await pg.goto(URL); await pg.wait_for_timeout(450)
     heard = lambda words, final=False: pg.evaluate("([w, f]) => window.__rec.onresult({results: [Object.assign([{transcript: w}], {isFinal: f})]})", [words, final])
     async def say(words, final=True):
-        if await pg.locator("#asksheet [data-ask-mic]").count() == 0: await pg.click("#wise"); await pg.wait_for_timeout(250)
+        if await pg.locator("#asksheet [data-ask-mic]").count() == 0: await owl(pg); await pg.wait_for_timeout(250)
         await pg.click("#asksheet [data-ask-mic]"); await pg.wait_for_timeout(150); await heard(words, final)
         if not final: await pg.click("#asksheet [data-voice-stop]")
         await pg.wait_for_timeout(700)
@@ -5669,7 +5683,7 @@ async def saying_money_in_out_loud_works_like_typing(ctx):
     b = await state(pg); await say("how much have I earned"); a = await state(pg); assert len(a["ins"]) == len(b["ins"]) and len(a["spends"]) == len(b["spends"])
     # nothing heard: nothing logged
     await pg.evaluate("(() => { const c = document.querySelector('#asksheet [data-ask-close]'); if (c) c.click(); })()"); await pg.wait_for_timeout(150)
-    await pg.click("#wise"); await pg.wait_for_timeout(250)
+    await owl(pg); await pg.wait_for_timeout(250)
     await pg.click("#asksheet [data-ask-mic]"); await pg.wait_for_timeout(120); await pg.click("#asksheet [data-voice-stop]"); await pg.wait_for_timeout(300)
     c = await state(pg); assert len(c["ins"]) == len(a["ins"]) and len(c["spends"]) == len(a["spends"]) and "Nothing was heard" in await pg.inner_text("#toast")
     assert not pg.errors, pg.errors
@@ -6017,7 +6031,7 @@ async def banks_keeps_cards_with_limits_and_reminders(ctx):
 @test
 async def the_owl_adds_by_icon_to_misc_or_toward_a_bill(ctx):
     pg = await open_app(ctx, month_tabs=True)
-    await pg.click("#wise"); await pg.wait_for_timeout(200)
+    await owl(pg); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-quick-env=misc][aria-pressed=true]").count() == 1, "Misc first"
     n = await pg.locator(".quick-ic").count(); assert n >= 20, n
     assert await pg.locator("[data-quick-ic=bolt]").count() == 0 and await pg.locator("[data-quick-ic=cart]").count() == 0, "bills are not one-offs"
@@ -6037,7 +6051,7 @@ async def the_owl_adds_by_icon_to_misc_or_toward_a_bill(ctx):
     r = await _ask(pg, "car petrol 30"); assert "Miscellaneous" in r, ("a word that only sounds like a bill stays a one-off", r)
     await pg.evaluate("(() => { const c = document.querySelector('.ask-panel [data-ask-close]'); if (c) c.click(); })()")
     # a bill you don't have yet is added as one
-    await pg.click("#wise"); await pg.wait_for_timeout(150); await pg.click("[data-quick-env=exp]"); await pg.click("[data-quick-ic=kid]"); await pg.wait_for_timeout(100)
+    await owl(pg); await pg.wait_for_timeout(150); await pg.click("[data-quick-env=exp]"); await pg.click("[data-quick-ic=kid]"); await pg.wait_for_timeout(100)
     assert "Add bill" in await text(pg, "[data-form=quick]")
     await pg.fill("[data-form=quick] [name=amount]", "90"); await pg.click("[data-form=quick] [type=submit]"); await pg.wait_for_timeout(200)
     assert any(e["name"] == "Childcare" and e["amount"] == 90 and e["env"] == "needs" for e in (await state(pg))["expenses"])
@@ -6368,7 +6382,7 @@ async def loans_log_payments_and_trips_carry_flights(ctx):
 @test
 async def the_owl_has_a_fuel_icon_in_misc(ctx):
     pg = await open_app(ctx, month_tabs=True)
-    await pg.click("#wise"); await pg.wait_for_timeout(300)
+    await owl(pg); await pg.wait_for_timeout(300)
     labels = [x.strip() for x in await pg.locator(".quick-grid button").all_inner_texts()]
     assert "Fuel" in labels and labels.index("Fuel") == labels.index("Car") + 1, labels[:8]
     assert not pg.errors, pg.errors
@@ -6504,7 +6518,7 @@ async def owl_sheet_repeats_favourites_and_shows_history(ctx):
     await seed(pg, "s.spends = []")
     for q in ("food delivered 4.32", "food delivered 4.32", "cigarettes 4.19"): await _ask(pg, q)
     await pg.evaluate("(() => { const c = document.querySelector('#asksheet [data-ask-close]'); if (c) c.click(); })()"); await pg.wait_for_timeout(150)
-    await pg.click("#wise"); await pg.wait_for_timeout(200)
+    await owl(pg); await pg.wait_for_timeout(200)
     chips = pg.locator("#asksheet .rep-chip"); assert await chips.count() == 2 and "Food delivered" in await chips.first.inner_text() and "$4.32" in await chips.first.inner_text(), "most logged first"
     n0 = len((await state(pg))["spends"]); await chips.first.click(); await pg.wait_for_timeout(200)
     assert len((await state(pg))["spends"]) == n0 + 1 and "Logged $4.32 for Food delivered" in await pg.inner_text("#toast") and await pg.locator("#asksheet [data-quick]").count() == 1, "logged, and the sheet stays open"

@@ -145,7 +145,8 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .wise-fab[hidden]{display:none}.wise-fab img{width:44px;height:44px;border-radius:50%;pointer-events:none}
 .wise-fab{width:64px;height:64px;border:2.5px solid var(--green);box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 18%,transparent),0 10px 24px rgba(0,0,0,.28)}
 .wise-fab img{width:52px;height:52px}
-.app:not(.touring) .view{padding-bottom:max(96px,var(--view-pb,0px))}
+.app:not(.touring) .view{padding-bottom:max(24px,var(--view-pb,0px))}
+#view form{scroll-margin-top:12px}
 .wise-fab::after{content:"+";position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:var(--green);color:var(--card);font:700 16px/22px var(--body);text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .wise-fab.moving{transform:scale(1.12);box-shadow:0 10px 26px rgba(0,0,0,.28);cursor:grabbing}
 .app.typing .wise-fab,.app.welcoming .wise-fab,.app.touring .wise-fab{display:none}
@@ -328,9 +329,9 @@ a.btn{display:block;text-decoration:none}
 .seg.sub-seg[data-pseg-switch]{grid-template-columns:1fr 1fr}
 [data-pseg-switch]~.card .inc-row:not(.editing){padding:10px 14px;gap:4px}
 [data-pseg-switch]~.card .inc-row:not(.editing)>.row-top+[data-exp-edit]{margin-top:-24px}
-.view:has([data-pseg-switch]){gap:12px;padding-top:12px;padding-bottom:96px}
+.view:has([data-pseg-switch]){gap:12px;padding-top:12px;padding-bottom:24px}
 [data-pseg-switch]~[data-out] .card,[data-pseg-switch]~.card{padding:14px 16px;gap:8px;border-radius:18px}
-.view:has([data-mseg-switch]){gap:12px;padding-top:12px;padding-bottom:96px}
+.view:has([data-mseg-switch]){gap:12px;padding-top:12px;padding-bottom:24px}
 [data-mseg-switch]~.hero{padding:14px 14px 12px;gap:2px;border-radius:20px}
 [data-mseg-switch]~.hero h1{font-size:1.1rem}
 [data-mseg-switch]~.hero .big{font-size:min(2.35rem,11.5vw)!important;margin-top:2px!important}
@@ -413,7 +414,7 @@ a.btn{display:block;text-decoration:none}
 .toast-undo{pointer-events:auto;appearance:none;border:0;background:color-mix(in srgb,var(--bg) 16%,transparent);color:inherit;font:700 .84rem var(--body);margin-left:6px;padding:7px 12px;border-radius:10px;cursor:pointer;flex:none}
 /* Messages sit at the foot of the visible screen, so an open keyboard never covers them. */
 .toast{pointer-events:none;position:fixed;left:50%;transform:translate(-50%,-100%);top:calc(var(--vv-top,0px) + var(--vv-h,100vh) - 84px - env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);border:0;box-shadow:0 18px 40px -12px rgba(0,0,0,.45),0 3px 10px rgba(0,0,0,.18);padding:10px 12px 10px 10px;border-radius:18px;font-weight:600;font-size:.9rem;line-height:1.3;z-index:60;max-width:calc(100% - 32px);width:max-content;display:flex;align-items:center;gap:10px;text-align:left;animation:toastIn .22s ease-out}
-.toast[hidden]{display:none}body.toasting .wise-fab:not(.tour-focus){opacity:0;pointer-events:none;transform:scale(.8)}.wise-fab{transition:opacity .18s,transform .18s}.toast-owl{width:28px;height:28px;border-radius:50%;flex:none}.toast-msg{min-width:0;overflow-wrap:anywhere}
+.toast[hidden]{display:none}body.toasting .wise-fab:not(.tour-focus),body.at-end .wise-fab:not(.tour-focus){opacity:0;pointer-events:none;transform:scale(.8)}.wise-fab{transition:opacity .18s,transform .18s}.toast-owl{width:28px;height:28px;border-radius:50%;flex:none}.toast-msg{min-width:0;overflow-wrap:anywhere}
 .toast:has(.toast-msg.long){border-radius:18px}
 .toast-owl{background:var(--card);padding:2px}.toast-msg{padding-right:4px}
 @keyframes toastIn{from{opacity:0;transform:translate(-50%,-80%)}to{opacity:1;transform:translate(-50%,-100%)}}
@@ -6365,6 +6366,15 @@ const loanRateNote = l => { const r = loanRate(l); return !r ? "Fill in the paym
 const loanRateText = l => { const r = loanRate(l); return !r ? "" : r.short ? "Check the numbers" : `${r.apr}% a year`; };
 const monthYear = d => d.toLocaleDateString("en-US", {month: "short", year: "numeric"});
 document.addEventListener("input", e => { const t = e.target; if (t && t.name === "amount" && t.form && /^(loanPay|cardPay)$/.test(t.form.dataset.form || "")) payAfter(t.form); });
+// A tap that opens a new card (Add a line, Add giving, New split…) takes you to it when it opened out of sight.
+// The forms already there before the tap are noted, so only the new one is scrolled to, and nothing is focused.
+const NEW_CARD_BTNS = "[data-new-split],[data-add-exp],[data-give-add],[data-inc-add],[data-card-add],[data-inv-add],[data-biz-add],[data-add-person-open],[data-miles-add],[data-sales-add],[data-idea-add]";
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest(NEW_CARD_BTNS); if (!b || !b.closest("#view") || b.closest(".wiz,.st-sheet,form")) return;
+  const before = new Set(document.querySelectorAll("#view form"));
+  setTimeout(() => requestAnimationFrame(() => { const f = [...document.querySelectorAll("#view form")].find(x => !before.has(x) && !x.closest(".wiz,.st-sheet,.cf-back") && x.offsetParent); if (!f) return;
+    const m = $("main"), r = f.getBoundingClientRect(), q = m.getBoundingClientRect(), tb = $("tabbar"), bottom = tb && tb.offsetParent ? Math.min(q.bottom, tb.getBoundingClientRect().top) : q.bottom;
+    if (r.top >= q.top && r.top < bottom - 120) return;   // its top is already on screen
+    try { f.scrollIntoView({block: "start", behavior: "smooth"}); } catch(err){ f.scrollIntoView(); } }), 0); }, true);
 // The payday card: the split and the button follow the amount as it is typed, without redrawing the box being typed in.
 document.addEventListener("input", e => { const t = e.target; if (!t || !t.matches || !t.matches("[data-close-amt]")) return;
   const card = t.closest("[data-close]"), st = card && S.statements[card.dataset.close]; if (!st) return;
@@ -6974,7 +6984,7 @@ function render(keepScroll){
   if (S.tab === "month" && !UI.biz && autoOn() && Date.now() - AUTO.at > 30 * 6e4) setTimeout(() => autoRun(false), 0);   // Plus: look at the banks at most every half hour
   { const sn = $("sidenav"); if (sn){ sn.innerHTML = UI.menu ? sideNav() : ""; sn.hidden = !UI.menu; } }
   layoutWide(); tidyHints();
-  main.scrollTop = keepScroll ? top : 0; back(); segStick();
+  main.scrollTop = keepScroll ? top : 0; back(); segStick(); owlAtEnd();
   if (VOICE.rec) voicePaint();  // a redraw while listening keeps the Stop button and the words heard so far
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
 }
@@ -7510,6 +7520,9 @@ renderAcctBtn();
 /* ================= events ================= */
 const view = $("view");
 $("main").addEventListener("scroll", segStick, {passive: true});
+// At the very bottom of a long screen the owl steps aside, so it never covers the last row; scrolling up brings it back.
+function owlAtEnd(){ const m = $("main"); if (m) document.body.classList.toggle("at-end", m.scrollHeight > m.clientHeight + 40 && m.scrollTop + m.clientHeight >= m.scrollHeight - 12); }
+$("main").addEventListener("scroll", owlAtEnd, {passive: true}); window.addEventListener("resize", owlAtEnd);
 // The hidden Plus tester switch: tap the "KeepWise Plus" label 7 times in a row.
 document.addEventListener("click", e => { const t = e.target.closest && e.target.closest("[data-plus-tap]"); if (!t) return;
   const now = Date.now(); PLUS_TAP.n = now - PLUS_TAP.t < 1500 ? PLUS_TAP.n + 1 : 1; PLUS_TAP.t = now;
