@@ -2231,7 +2231,7 @@ async def space(pg, which):
     await pg.wait_for_timeout(150)
 
 async def biz_add(pg, sel):
-    if not await pg.locator(f"#view {sel}").count() and not await pg.locator(f"#tabbar {sel}").count(): await pg.click("[data-biz-add]"); await pg.wait_for_timeout(80)
+    if not await pg.locator(f"#view {sel}").count() and not await pg.locator(f"#tabbar {sel}").count(): await pg.click("[data-biz-plus]"); await pg.wait_for_timeout(80)
     await pg.locator(sel).first.click()
 
 async def biz_on(pg):
@@ -5420,9 +5420,17 @@ async def business_split_pay_rules_and_profit_report(ctx):
     sp = await text(pg, "[data-bz-split]"); assert "Tax 25%" in sp and "$250" in sp and "Profit 10%" in sp and "$100" in sp and "Running 65%" in sp and "$650" in sp, sp
     # pay yourself: personal counts it as income, the business profit stays
     p0 = money(await text(pg, "[data-biz-profit]"))
+    pay = await text(pg, "[data-bz-pay]"); assert "up to $750" in pay and await pg.input_value("form[data-form=bzPay] [name=amount]") == "100", pay
+    await pg.fill("form[data-form=bzPay] [name=amount]", "900"); await pg.click("form[data-form=bzPay] [type=submit]"); await pg.wait_for_timeout(200)
+    assert "more than the $750" in await text(pg, "[data-bz-pay-over]") and not (await state(pg))["biz"].get("draws"), "more than is safe asks once more"
     await pg.fill("form[data-form=bzPay] [name=amount]", "300"); await pg.click("form[data-form=bzPay] [type=submit]"); await pg.wait_for_timeout(250)
     st = await state(pg); x = [v for v in st["extras"] if v.get("bizPay")][0]; assert x["got"][-1]["amount"] == 300 and st["biz"]["draws"][-1]["amount"] == 300
     assert money(await text(pg, "[data-biz-profit]")) == p0 and "Paid yourself $300" in await pg.inner_text("#toast")
+    pay = await text(pg, "[data-bz-pay]"); assert "up to $450" in pay and "Paid to you this month $300" in pay and "Left in the business $700" in pay and "bank app" in pay, pay
+    await pg.click("[data-draws-open]"); await pg.click("[data-draw-edit]"); await pg.fill("form[data-form=drawEdit] [name=amount]", "250"); await pg.click("form[data-form=drawEdit] [type=submit]"); await pg.wait_for_timeout(200)
+    st = await state(pg); assert st["biz"]["draws"][0]["amount"] == 250 and [v for v in st["extras"] if v.get("bizPay")][0]["got"][0]["amount"] == 250, "editing changes both sides"
+    await pg.click("[data-draw-edit]"); await pg.click("[data-draw-del]"); await pg.wait_for_timeout(200)
+    st = await state(pg); assert not st["biz"]["draws"] and not [v for v in st["extras"] if v.get("bizPay")][0]["got"], "removing a payment takes it off both sides"
     # a rule ticks and names matching statement lines
     await pg.click("[data-bseg=tax]"); await pg.wait_for_timeout(150); await pg.click("[data-bz-rule-add]")
     r = pg.locator("form[data-form=bzRule]"); await r.locator("[name=match]").fill("godaddy"); await r.locator("[name=name]").fill("GoDaddy"); await r.locator("[name=cat]").select_option("Office & software"); await r.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
@@ -6809,6 +6817,24 @@ async def month_recap_is_private_and_shares_only_orders_and_fuel(ctx):
     async with pg.expect_download() as dl: await r.locator("[data-recap-share=orders]").click()
     d = await dl.value; assert d.suggested_filename.startswith("keepwise-orders-") and d.suggested_filename.endswith(".png")
     assert not pg.errors, pg.errors
+
+@test
+async def business_search_and_owl_speak_business(ctx):
+    pg = await open_app(ctx); await biz_on(pg)
+    await pg.click("#find-btn"); await pg.wait_for_timeout(150)
+    v = await text(pg, "#view"); assert "Profit this month" in v and "Pay yourself" in v and "Income" not in v, v[:300]
+    assert await pg.get_attribute("#find-in", "placeholder") == "Search your business"
+    await pg.fill("#find-in", "p&l"); await pg.wait_for_timeout(500); assert "Profit and loss report" in await text(pg, "#view")
+    await pg.fill("#find-in", "pay yourself"); await pg.wait_for_timeout(500); await pg.click("[data-find-go='0']"); await pg.wait_for_timeout(250)
+    assert await pg.locator("[data-bz-pay]").count() == 1 and await pg.locator("#tabbar [data-bseg=money][aria-current=page]").count() == 1
+    # the owl is here too, and speaks business
+    await pg.click("#wise"); await pg.wait_for_timeout(200)
+    assert "Ask about your business" in await text(pg, "#asksheet")
+    await pg.fill("#ask-in", "facebook ads 40"); await pg.press("#ask-in", "Enter"); await pg.wait_for_timeout(300)
+    e = (await state(pg))["biz"]["entries"][-1]; assert e["amount"] == 40 and e["kind"] == "out" and e["cat"] == "Advertising & marketing", e
+    await pg.click("#wise"); await pg.wait_for_timeout(200)
+    await pg.locator("#asksheet [data-ask]", has_text="How is the business doing?").click(); await pg.wait_for_timeout(150)
+    assert "went out" in await text(pg, "#ask-out") and not pg.errors, pg.errors
 
 async def main():
     passed, failed = 0, []
