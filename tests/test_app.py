@@ -593,7 +593,7 @@ async def split_new_equal_percent_exact_borrow(ctx):
     titles = [x["title"] for x in st["splits"]]
     assert all(t in titles for t in ["Tacos", "Gift", "Bills", "Loan"]), titles
     t = await text(pg, "[data-out=splitSum]")
-    assert "Dad owes you $25" in t and "Priya owes you $42" in t, t
+    assert "Dad owes you $25" in t and "Emily owes you $42" in t, t
 
 @test
 async def split_edit_delete_filter(ctx):
@@ -654,19 +654,19 @@ async def split_people_add_remove_import(ctx):
     await pg.locator("[data-person]", has_text="Alex").locator("[data-del-person]").click()
     assert await pg.inner_text("#toast") == "Alex still owes you $21.50. Settle up first."
     # settled people can be removed; their past splits keep the name
-    await pg.locator("[data-settle]", has_text="Priya").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(100); await pg.click("form[data-form=settle] [type=submit]"); await pg.wait_for_timeout(100)
-    await pg.locator("[data-person]", has_text="Priya").locator("[data-person-open]").click(); await pg.wait_for_timeout(60)
-    assert "Settled up" in await pg.locator("[data-person]", has_text="Priya").inner_text()
-    await pg.locator("[data-person]", has_text="Priya").locator("[data-del-person]").click(); await pg.wait_for_timeout(100)
-    assert await pg.inner_text("#toast") == "Removed Priya. Past splits still show their name."
-    assert await pg.locator("[data-person]", has_text="Priya").count() == 0
-    assert "Priya owes you $12" in await text(pg, "[data-split]:has-text('Team lunch')")
+    await pg.locator("[data-settle]", has_text="Emily").locator("[data-settle-btn]").click(); await pg.wait_for_timeout(100); await pg.click("form[data-form=settle] [type=submit]"); await pg.wait_for_timeout(100)
+    await pg.locator("[data-person]", has_text="Emily").locator("[data-person-open]").click(); await pg.wait_for_timeout(60)
+    assert "Settled up" in await pg.locator("[data-person]", has_text="Emily").inner_text()
+    await pg.locator("[data-person]", has_text="Emily").locator("[data-del-person]").click(); await pg.wait_for_timeout(100)
+    assert await pg.inner_text("#toast") == "Removed Emily. Past splits still show their name."
+    assert await pg.locator("[data-person]", has_text="Emily").count() == 0
+    assert "Emily owes you $12" in await text(pg, "[data-split]:has-text('Team lunch')")
     await pg.click("[data-new-split]"); await pg.wait_for_timeout(80)
-    await pg.fill("[data-part-search]", "pri"); await pg.wait_for_timeout(80)
+    await pg.fill("[data-part-search]", "emi"); await pg.wait_for_timeout(80)
     assert await pg.locator("[data-part-add=p6]").count() == 0, "removed person not offered in new splits"
     await pg.click("[data-cancel-split]")
-    await pg.click("[data-add-person-open]"); await pg.fill("#new-person", "priya"); await pg.click("form[data-form=addPerson] button[type=submit]"); await pg.wait_for_timeout(100)
-    assert await pg.locator("[data-person]", has_text="Priya").count() == 1, "adding the name again brings them back"
+    await pg.click("[data-add-person-open]"); await pg.fill("#new-person", "emily"); await pg.click("form[data-form=addPerson] button[type=submit]"); await pg.wait_for_timeout(100)
+    assert await pg.locator("[data-person]", has_text="Emily").count() == 1, "adding the name again brings them back"
     await pg.locator("[data-person]", has_text="Zoe").locator("[data-person-open]").click(); await pg.wait_for_timeout(60)
     await pg.locator("[data-person]", has_text="Zoe").locator("[data-del-person]").click(); await pg.wait_for_timeout(100)
     assert not any(p["name"] == "Zoe" for p in (await state(pg))["people"])
@@ -2669,7 +2669,7 @@ async def business_receipt_photo_fills_the_cost(ctx):
     assert "hardware" in (await f.locator("[name=name]").input_value()).lower() and await f.locator("[name=date]").input_value() == "2026-10-02"
     await f.locator("[name=cat]").select_option("Supplies"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(300)
     e = (await state(pg))["biz"]["entries"][-1]; assert e.get("rcpt") == e["id"] and e["amount"] == 32.94, (e, await pg.inner_text("#toast"))
-    await pg.click("[data-biz-rcpt-view]"); await pg.wait_for_selector("[data-rcpt-viewer] img")
+    await pg.click(f"[data-bz-open-entry='{e['id']}']"); await pg.click("[data-bz-rcpt-show]"); await pg.wait_for_selector("[data-rcpt-viewer] img")
     assert await pg.evaluate("document.querySelector('[data-rcpt-viewer] img').naturalWidth") > 100
     await pg.click("[data-rcpt-close]"); await pg.wait_for_timeout(100); assert await pg.locator("[data-rcpt-viewer]").count() == 0
     assert not pg.errors, pg.errors
@@ -5394,9 +5394,25 @@ async def receipts_and_memories_need_plus_and_work(ctx):
     assert "with the receipt" in await pg.inner_text("#toast")
     # a memory, kept in the timeline with the year in review
     await menu_to(pg, "memories"); assert "in review" in (await text(pg, "[data-mem-year]")).lower()
-    await pg.click("[data-mem-add]"); await pg.fill("form[data-form=memNew] [name=note]", "First dinner in Miami"); await pg.click("form[data-form=memNew] [type=submit]"); await pg.wait_for_timeout(300)
+    await pg.click("[data-mem-add]"); await pg.fill("form[data-form=memNew] [name=note]", "First dinner in Miami")
+    async with pg.expect_file_chooser() as fc: await pg.click("[data-mem-photo]")
+    await (await fc.value).set_files(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures", "receipt-photo.png")); await pg.wait_for_selector("form[data-form=memNew] .ph-prev", timeout=30000)
+    assert await pg.input_value("form[data-form=memNew] [name=note]") == "First dinner in Miami", "the words typed before the photo are still there"
+    await pg.click("form[data-form=memNew] [type=submit]"); await pg.wait_for_timeout(300)
     assert "First dinner in Miami" in await text(pg, "#view") and "1 memory" in (await text(pg, "[data-mem-year]")).lower()
     assert (await state(pg))["memories"][-1]["note"] == "First dinner in Miami"
+    # albums: make one, add to it, open it, play it like a story; the wall remembers where a photo was dragged
+    await pg.click("[data-mem-album-new]"); await pg.fill("form[data-form=memAlbum] [name=name]", "Summer 2026"); await pg.click("form[data-form=memAlbum] [type=submit]"); await pg.wait_for_timeout(200)
+    assert "Summer 2026" in await text(pg, "[data-mem-album-head]")
+    await pg.click("[data-mem-in]"); await pg.fill("form[data-form=memNew] [name=note]", "Beach sunset"); await pg.click("form[data-form=memNew] [type=submit]"); await pg.wait_for_timeout(300)
+    assert (await state(pg))["memories"][-1].get("album") and "Beach sunset" in await text(pg, "#view"), "back in the album after adding"
+    await pg.click("[data-mem-album-close]"); await pg.wait_for_timeout(150); assert "Summer 2026" in await text(pg, "[data-mem-albums]")
+    await pg.locator("[data-mem-album]", has_text="Summer 2026").click(); await pg.wait_for_timeout(150); await pg.click("[data-mem-album-head] [data-mem-play]"); await pg.wait_for_timeout(200)
+    assert "Beach sunset" in await text(pg, "[data-mem-player]"); await pg.click("[data-mem-fav]"); await pg.wait_for_timeout(100); assert (await state(pg))["memories"][-1].get("fav")
+    await pg.click("[data-mem-play-close]"); await pg.click("[data-mem-album-close]"); await pg.wait_for_timeout(200)
+    pol = pg.locator("[data-mem-pol]").first; bx = await pol.bounding_box()
+    await pg.mouse.move(bx["x"] + 30, bx["y"] + 30); await pg.mouse.down(); await pg.mouse.move(bx["x"] + 90, bx["y"] + 110, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(150)
+    assert any(m.get("pos") for m in (await state(pg))["memories"]), "the dragged photo keeps its place"
     assert not pg.errors, pg.errors
 
 @test
@@ -6835,6 +6851,115 @@ async def business_search_and_owl_speak_business(ctx):
     await pg.click("#wise"); await pg.wait_for_timeout(200)
     await pg.locator("#asksheet [data-ask]", has_text="How is the business doing?").click(); await pg.wait_for_timeout(150)
     assert "went out" in await text(pg, "#ask-out") and not pg.errors, pg.errors
+
+@test
+async def business_dashboard_statuses_and_money_report(ctx):
+    pg = await open_app(ctx); await biz_on(pg)
+    # the + menu works from every tab, not just Money
+    await pg.click("#tabbar [data-bseg=overview]"); await pg.wait_for_timeout(150)
+    for k in ("out", "in"):
+        await pg.click("[data-biz-plus]"); await pg.click(f"#tabbar [data-biz-new={k}]"); await pg.wait_for_timeout(200)
+        assert await pg.locator("form[data-form=bizEntry]").count() == 1, k; await pg.click("[data-biz-add-close] >> nth=0"); await pg.wait_for_timeout(150)
+    await pg.click("[data-biz-plus]")
+    async with pg.expect_file_chooser() as fc: await pg.click("#tabbar [data-biz-new=rcpt]")
+    await pg.wait_for_timeout(200); assert await pg.locator("form[data-form=bizEntry]").count() == 1; await pg.click("[data-biz-add-close] >> nth=0"); await pg.click("#tabbar [data-bseg=money]"); await pg.wait_for_timeout(150)
+    for k, name, amt in [("in", "Order 1", "100"), ("in", "Order 2", "200"), ("out", "Wax", "50")]:
+        await biz_add(pg, f"[data-biz-new={k}]"); f = pg.locator("form[data-form=bizEntry]"); await f.locator("[name=name]").fill(name); await f.locator("[name=amount]").fill(amt); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    assert money(await text(pg, "[data-biz-profit]")) == 250
+    tot = await text(pg, ".bz-tot"); assert "$300" in tot and "Net sales" in tot, tot
+    # a sale marked pending stops counting until it arrives
+    await pg.locator("[data-bz-open-entry]", has_text="Order 2").first.click(); await pg.click("[data-bz-status=pending]"); await pg.wait_for_timeout(150); await pg.click("[data-bz-sheet-close]", position={"x": 20, "y": 20}); await pg.wait_for_timeout(100)
+    assert money(await text(pg, "[data-biz-profit]")) == 50 and "Pending" in await text(pg, "[data-biz-list]")
+    await pg.locator("[data-bz-open-entry]", has_text="Order 2").first.click(); await pg.click("[data-bz-status=ok]"); await pg.wait_for_timeout(150); await pg.click("[data-bz-sheet-close]", position={"x": 20, "y": 20}); await pg.wait_for_timeout(100)
+    # a part refund: linked to the sale, profit goes down, the sale shows it
+    await pg.locator("[data-bz-open-entry]", has_text="Order 1").first.click(); await pg.click("[data-bz-mode=refund]")
+    r = pg.locator("form[data-form=bzRefund]"); await r.locator("[name=amount]").fill("30"); await r.locator("[type=submit]").click(); await pg.wait_for_timeout(200); await pg.click("[data-bz-sheet-close]", position={"x": 20, "y": 20}); await pg.wait_for_timeout(100)
+    assert money(await text(pg, "[data-biz-profit]")) == 220 and "Part refunded" in await text(pg, "[data-biz-list]")
+    assert "$30" in await text(pg, ".bz-tot") and await pg.locator("[data-bz-filter=refunds]").count() == 1
+    # a dispute holds the money; lost becomes a refund with its fee
+    await pg.locator("[data-bz-open-entry]", has_text="Order 2").first.click(); await pg.click("[data-bz-status=disputed]"); await pg.wait_for_timeout(150); await pg.click("[data-bz-sheet-close]", position={"x": 20, "y": 20}); await pg.wait_for_timeout(100)
+    assert money(await text(pg, "[data-biz-profit]")) == 20
+    await pg.locator("[data-bz-open-entry]", has_text="Order 2").first.click(); await pg.fill("[data-bz-dispute-fee]", "15"); await pg.click("[data-bz-dispute=lost]"); await pg.wait_for_timeout(200); await pg.click("[data-bz-sheet-close]", position={"x": 20, "y": 20}); await pg.wait_for_timeout(100)
+    st = await state(pg); es = st["biz"]["entries"]; assert any(e.get("refundOf") and e["amount"] == 200 for e in es) and any(e["cat"] == "Fees & commissions" and e["amount"] == 15 for e in es)
+    assert money(await text(pg, "[data-biz-profit]")) == 5
+    # edit, delete and restore
+    await pg.locator("[data-bz-open-entry]", has_text="Wax").first.click(); await pg.click("[data-bz-mode=edit]")
+    ed = pg.locator("form[data-form=bzEdit]"); await ed.locator("[name=amount]").fill("40"); await ed.locator("[type=submit]").click(); await pg.wait_for_timeout(150); await pg.click("[data-bz-sheet-close]", position={"x": 20, "y": 20}); await pg.wait_for_timeout(100)
+    assert money(await text(pg, "[data-biz-profit]")) == 15
+    await pg.locator("[data-bz-open-entry]", has_text="Wax").first.click(); await pg.click("[data-bz-trash]"); await pg.wait_for_timeout(150)
+    assert money(await text(pg, "[data-biz-profit]")) == 55 and "Recently removed (1)" in await text(pg, "[data-biz-list]")
+    await pg.click("[data-bz-trash-open]"); await pg.click("[data-bz-restore]"); await pg.wait_for_timeout(150); assert money(await text(pg, "[data-biz-profit]")) == 15
+    # filters
+    await pg.click("[data-bz-filter=out]"); await pg.wait_for_timeout(100); lst = await text(pg, "[data-biz-list]"); assert "Wax" in lst and "Order 1" not in lst, lst
+    await pg.click("[data-bz-filter=all]"); await pg.wait_for_timeout(100)
+    # the overview: today, the sales count, tiles, chart periods, needs and the two links
+    await pg.click("[data-bseg=overview]"); await pg.wait_for_timeout(150)
+    ov = await text(pg, "[data-bz-ov]"); assert "Today:" in ov and "sales" in ov and "refunds" in ov, ov
+    assert "Average sale" in await text(pg, ".bz-swipe") and "Safe to use" in await text(pg, ".bz-swipe")
+    await pg.click("[data-bz-chart-per='7d']"); await pg.wait_for_timeout(100); assert await pg.locator("[data-bz-chart] .bz-col").count() == 7
+    await pg.click("[data-bz-insights-open]"); await pg.wait_for_timeout(150); assert "Where sales come from" in await text(pg, "[data-bz-insights]")
+    await pg.click("[data-bz-goal-edit]"); await pg.fill("form[data-form=bzGoal] [name=goal]", "1000"); await pg.click("form[data-form=bzGoal] [type=submit]"); await pg.wait_for_timeout(150)
+    assert "of $1,000" in await text(pg, "[data-bz-goal]"); await pg.click("[data-bz-insights-close] >> nth=0"); await pg.wait_for_timeout(150)
+    # the money report: folded to totals, everything counted, CSV out
+    await pg.click("[data-bz-report-open] >> nth=0"); await pg.wait_for_timeout(150)
+    rp = await text(pg, "[data-bz-report]"); assert "Money in" in rp and "Gross sales" in rp and "$300" in rp and "Refunds and returns" in rp, rp
+    await pg.click("[data-rep-fold=profit]"); await pg.wait_for_timeout(100); assert "Tax to put aside" in await text(pg, "[data-rep=profit]")
+    async with pg.expect_download() as dl: await pg.click("[data-rep-csv]")
+    csv = open(await (await dl.value).path()).read(); assert "Order 1" in csv and "Refund" in csv and "Dispute fee" in csv, csv
+    assert not pg.errors, pg.errors
+
+@test
+async def a_demo_business_shows_how_it_works_and_saves_nothing(ctx):
+    pg = await open_app(ctx); await space(pg, "business")
+    assert await pg.locator("[data-biz-hero]").count() == 0, "without Plus, Business is the preview"
+    await pg.click("[data-bz-demo-on]"); await pg.wait_for_timeout(300)
+    assert "Demo business" in await text(pg, "[data-bz-demo-bar]") and money(await text(pg, "[data-biz-profit]")) != 0
+    assert "Dispute" in await text(pg, "[data-bz-needs]") and await pg.locator("#tabbar [data-bseg]").count() == 4
+    await pg.click("#tabbar [data-bseg=money]"); await pg.wait_for_timeout(150); assert await pg.locator("[data-bz-filter=disputes]").count() == 1
+    await pg.locator("[data-bz-open-entry]").first.click(); await pg.click("[data-bz-trash]"); await pg.wait_for_timeout(150)
+    st = await state(pg); assert not (st.get("biz") or {}).get("entries"), "the demo is never saved"
+    await pg.click("[data-bz-demo-off]"); await pg.wait_for_timeout(200); assert await pg.locator("[data-bz-demo-bar]").count() == 0 and await pg.locator("[data-biz-hero]").count() == 0
+    assert not pg.errors, pg.errors
+
+@test
+async def business_bank_brings_sales_and_costs_in(ctx):
+    pg = await open_app(ctx, month_tabs=True)
+    today = datetime.date.today(); d = lambda n: (today - datetime.timedelta(days=n)).isoformat(); calls = []
+    PLAID_JS = """window.Plaid = {create: o => ({open: () => setTimeout(() => o.onSuccess('public-sandbox-1234abcd-12ab-34cd-56ef-1234567890ab', {institution: {name: 'First Platypus Bank', institution_id: 'ins_109508'}}), 60)})};"""
+    await pg.route("https://cdn.plaid.com/**", lambda r: r.fulfill(status=200, content_type="text/javascript", body=PLAID_JS))
+    tx = [{"id": "p1", "acct": "a1", "amount": -2100, "date": d(20), "name": "ACME CORP PAYROLL", "cur": "USD", "pending": False},
+          {"id": "p2", "acct": "a1", "amount": 15.49, "date": d(15), "name": "Netflix", "cur": "USD", "pending": False},
+          {"id": "p3", "acct": "a1", "amount": 61.2, "date": d(3), "name": "Craft Warehouse", "cur": "USD", "pending": False},
+          {"id": "p4", "acct": "a1", "amount": 9.99, "date": d(0), "name": "Pending Shop", "cur": "USD", "pending": True},
+          {"id": "p5", "acct": "a1", "amount": 40, "date": d(200), "name": "Old thing", "cur": "USD", "pending": False}]
+    accts = [{"id": "a1", "name": "Plaid Checking", "mask": "0000", "type": "checking", "kind": "depository", "balance": 1100.5, "cur": "USD"},
+             {"id": "a2", "name": "Plaid Credit Card", "mask": "3333", "type": "credit card", "kind": "credit", "balance": 410, "cur": "USD"},
+             {"id": "a3", "name": "Plaid Student", "mask": "4000", "type": "student", "kind": "loan", "balance": 25000, "cur": "USD"}]
+    async def api(route):
+        path = "/" + route.request.url.split("workers.dev/", 1)[1]; body = json.loads(route.request.post_data or "{}"); calls.append((path, body))
+        r = {"/plaid/link": {"link_token": "link-sandbox-x", "env": "sandbox"}, "/plaid/exchange": {"item": "SEALED-BLOB"}, "/plaid/remove": {"removed": True},
+             "/plaid/sync": {"added": tx if not body.get("cursor") else [], "modified": [], "removed": [], "next_cursor": "c1", "has_more": False,
+                             "accounts": accts}}[path]
+        await route.fulfill(status=200, content_type="application/json", body=json.dumps(r))
+    await pg.route(re.compile(r"keepwise-api\."), api)
+    await biz_on(pg); await pg.wait_for_timeout(150)
+    assert "Connect a business account" in await text(pg, "[data-bz-bank]")
+    await pg.click("[data-bz-bank-connect]"); await pg.wait_for_timeout(900)
+    pick = pg.locator("[data-bz-bank-pick]"); assert await pick.count() == 1, "back in Business to choose the accounts"
+    assert not await pick.locator("[data-bz-bank-use='p:a3']").is_checked(), "loans start unticked"
+    await pick.locator("[data-bz-bank-use='p:a2']").uncheck(); await pg.click("[data-bz-bank-pick-done]"); await pg.wait_for_timeout(200)
+    es = [e for e in (await state(pg))["biz"]["entries"] if e.get("src") == "bank"]
+    assert sorted((e["kind"], e["amount"]) for e in es) == [("in", 2100), ("out", 15.49), ("out", 61.2)], es
+    sort = await text(pg, "[data-bz-tosort]"); assert "To sort" in sort and "Netflix" in sort, sort
+    row = pg.locator("[data-bz-sort]", has_text="Netflix"); await row.locator("[data-bz-sort-no]").click(); await pg.wait_for_timeout(150)
+    row = pg.locator("[data-bz-sort]", has_text="Craft"); await row.locator("[data-bz-sort-cat]").select_option("Supplies"); await row.locator("[data-bz-sort-ok]").click(); await pg.wait_for_timeout(150)
+    es = [e for e in (await state(pg))["biz"]["entries"] if e.get("src") == "bank"]; assert len(es) == 2 and any(e["cat"] == "Supplies" and not e.get("toSort") for e in es), es
+    # the business account leaves Personal; nothing comes in twice
+    await pg.click("[data-bz-eye]"); await pg.wait_for_timeout(100); assert "$1,100.50" in await text(pg, "[data-bz-bank]")
+    await pg.reload(); await pg.wait_for_timeout(600); assert len([e for e in (await state(pg))["biz"]["entries"] if e.get("src") == "bank"]) == 2
+    await space(pg, "personal"); await menu_to(pg, "banks"); await pg.wait_for_timeout(200)
+    assert "Plaid Checking" in await text(pg, "[data-acct-biz]") and "Plaid Checking" not in await text(pg, "[data-acct-group=cash]") if await pg.locator("[data-acct-group=cash]").count() else True
+    assert not pg.errors, pg.errors
 
 async def main():
     passed, failed = 0, []
