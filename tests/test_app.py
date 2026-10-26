@@ -1898,6 +1898,7 @@ async def say_it_and_keepwise_logs_it_in_the_right_place(ctx):
     # a trip paid in euros: bare numbers are euros there, converted into your own currency
     await pg.click("[data-trip-add]"); await wiz(pg, {"name": "Madrid", "start": "2026-10-08", "end": "2026-10-10", "budget": "500", "cur": "EUR"})
     assert "paying in EUR" in await text(pg, "[data-trips]")
+    assert await pg.evaluate("""() => { const t = [...document.querySelectorAll('[data-trip]')].find(e => e.textContent.includes('Madrid')), r = t.getBoundingClientRect(), m = document.getElementById('main').getBoundingClientRect(); return r.top >= m.top - 1 && r.top < m.bottom - 80; }"""), "a new trip opens right where it is"
     r = await say("tapas 20"); assert "Added Tapas, €20 ($22.51 at today’s rate), to Madrid. $22.51 spent of $500." in r, r
     r = await say("museum 15 usd"); assert "Added Museum, $15, to Madrid" in r, r
     await pg.fill("form[data-form=tripAdd] [name=q]", "metro 2, churros 4"); await pg.click("form[data-form=tripAdd] [type=submit]"); await pg.wait_for_timeout(350)
@@ -1944,11 +1945,13 @@ async def speaking_fills_the_ask_box(ctx):
     mic = pg.locator("[data-ask-mic]"); assert await mic.count() == 1 and await mic.get_attribute("aria-pressed") == "false"
     heard = lambda words, final=False: pg.evaluate("([w, f]) => window.__rec.onresult({results: [Object.assign([{transcript: w}], {isFinal: f})]})", [words, final])
     n = lambda: pg.evaluate("(JSON.parse(localStorage.getItem('keepwise-app-v1')) || {spends: []}).spends ? (JSON.parse(localStorage.getItem('keepwise-app-v1')).spends || []).length : 0")
-    # 1. the phone reports a final result: it is sent at once
+    # 1. even when the phone calls it final, a pause to think does not send it: it waits 4 seconds of quiet
     await mic.click(); await pg.wait_for_timeout(150)
     assert await pg.evaluate("window.__recOn") == 1 and await pg.evaluate("window.__rec.lang") == "en-US" and await mic.get_attribute("aria-pressed") == "true"
     out = await text(pg, "#ask-out"); assert "Listening" in out and await pg.locator("[data-voice-stop]").count() == 1, "there is always a way to stop: " + out
-    await heard("lunch $12", True); await pg.wait_for_timeout(350)
+    await heard("lunch $12", True); await pg.wait_for_timeout(2500)
+    assert await mic.get_attribute("aria-pressed") == "true" and await pg.locator("#ask-mic.quiet").count() == 1, "still listening during a short pause, with the ring running down"
+    await pg.wait_for_timeout(2000)
     assert "Lunch, $12" in await text(pg, "#ask-out") and (await state(pg))["spends"][-1]["name"] == "Lunch", "what was said is logged like typing it"
     assert await pg.locator("[data-ask-mic]").get_attribute("aria-pressed") == "false" and await pg.locator("[data-voice-stop]").count() == 0
     # 2. the phone never says it is finished (as iPhones often do): the words show as heard, and Stop sends them
@@ -1956,8 +1959,12 @@ async def speaking_fills_the_ask_box(ctx):
     assert (await pg.locator("[data-voice-heard]").inner_text()).strip() == "taxi 9"
     await pg.click("[data-voice-stop]"); await pg.wait_for_timeout(350)
     assert "Taxi, $9" in await text(pg, "#ask-out") and (await state(pg))["spends"][-1]["name"] == "Taxi"
-    # 3. or just pause: a short silence sends it without touching anything
-    await pg.click("[data-ask-mic]"); await pg.wait_for_timeout(100); await heard("snack 3"); await pg.wait_for_timeout(2400)
+    # 3. or just pause: 4 seconds of quiet sends it; if the phone stops listening by itself first, it listens again and keeps the words
+    await pg.click("[data-ask-mic]"); await pg.wait_for_timeout(100); await heard("snack"); on0 = await pg.evaluate("window.__recOn")
+    await pg.evaluate("window.__rec.onend()"); await pg.wait_for_timeout(100)
+    assert await pg.evaluate("window.__recOn") == on0 + 1 and await pg.locator("[data-ask-mic]").get_attribute("aria-pressed") == "true", "listening starts again"
+    await heard("3"); assert (await pg.locator("[data-voice-heard]").inner_text()).strip() == "snack 3"
+    await pg.wait_for_timeout(4400)
     assert "Snack, $3" in await text(pg, "#ask-out") and (await state(pg))["spends"][-1]["name"] == "Snack"
     # 4. tapping the microphone again also stops and sends; with nothing heard it says so and logs nothing
     await pg.click("[data-ask-mic]"); await pg.wait_for_timeout(100); await heard("gum 1"); await pg.click("[data-ask-mic]"); await pg.wait_for_timeout(350)
@@ -5254,7 +5261,7 @@ async def on_payday_whats_left_is_set_aside_for_the_goal(ctx):
 @test
 async def new_split_opens_where_you_can_see_it(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
-    await pg.click("[data-new-split]"); await pg.wait_for_timeout(700)
+    await pg.click("[data-new-split]"); await pg.wait_for_timeout(1500)
     top = await pg.evaluate("""() => { const f = document.querySelector('form[data-form="split"]'), m = document.getElementById('main'); const r = f.getBoundingClientRect(), q = m.getBoundingClientRect(); return [r.top - q.top, q.height]; }""")
     assert 0 <= top[0] < top[1] / 3, top
     assert await pg.evaluate("!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)"), "the keyboard does not jump up"
@@ -5669,7 +5676,7 @@ async def saying_money_in_out_loud_works_like_typing(ctx):
     async def say(words, final=True):
         if await pg.locator("#asksheet [data-ask-mic]").count() == 0: await owl(pg); await pg.wait_for_timeout(250)
         await pg.click("#asksheet [data-ask-mic]"); await pg.wait_for_timeout(150); await heard(words, final)
-        if not final: await pg.click("#asksheet [data-voice-stop]")
+        await pg.click("#asksheet [data-voice-stop]")   # it waits through pauses now, so the test taps Stop like a person in a hurry
         await pg.wait_for_timeout(700)
     k0 = await _keep(pg); await say("I got paid five hundred dollars" if False else "I got paid 500 dollars for a freelance job"); s = await state(pg)
     assert s["ins"][-1]["amount"] == 500 and abs(await _keep(pg) - (k0 + 500)) < 0.01, "spoken income is money in"
@@ -5960,8 +5967,8 @@ async def an_income_with_no_amount_asks_how_much_arrived(ctx):
     q = pg.locator("[data-arrive]", has_text="Tutoring"); assert await q.count() == 1 and "amount varies" in await q.inner_text(), "the day after it was due, it asks"
     n = len((await state(pg))["extras"][-1].get("got") or [])
     await q.locator("[data-arrive-yes]").click(); await pg.wait_for_timeout(350)
-    assert len((await state(pg))["extras"][-1].get("got") or []) == n and "Enter how much arrived." in await pg.inner_text("#toast"), "nothing is logged at $0"
-    form = pg.locator("[data-inc] form[data-form=incomeLog]"); assert await form.count() == 1
+    form = q.locator("form[data-form=arriveAmt]"); assert len((await state(pg))["extras"][-1].get("got") or []) == n and await form.count() == 1, "nothing is logged at $0: the amount is asked right on the card"
+    await form.locator("[type=submit]").click(); await pg.wait_for_timeout(200); assert "Enter how much arrived." in await pg.inner_text("#toast")
     await form.locator("[name=amount]").fill("140"); await form.locator("[type=submit]").click(); await pg.wait_for_timeout(350)
     got = (await state(pg))["extras"][-1]["got"]; assert got[-1]["amount"] == 140 and await pg.locator("[data-arrive]", has_text="Tutoring").count() == 0, "logging it settles the question"
     # the second date of the month comes up next

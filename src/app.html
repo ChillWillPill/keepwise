@@ -128,6 +128,8 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .lock-pad button.ghost{border-color:transparent;background:none;font-size:.95rem;font-weight:500}
 @media (max-height:620px){.lock-pad{grid-template-columns:repeat(3,60px);gap:8px}.lock-pad button{width:60px;height:60px;font-size:1.25rem}}
 #ask-mic.listening{background:var(--green);color:var(--card);border-color:var(--green);animation:micpulse 1.2s ease-in-out infinite}
+#ask-mic{position:relative}#ask-mic.listening.quiet::after{content:"";position:absolute;inset:-5px;border-radius:50%;background:conic-gradient(var(--green) var(--qa,360deg),transparent 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));animation:qring var(--quiet,4000ms) linear forwards;pointer-events:none}
+@property --qa{syntax:"<angle>";inherits:false;initial-value:360deg}@keyframes qring{from{--qa:360deg}to{--qa:0deg}}
 @keyframes micpulse{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--green) 22%,transparent)}}
 .note-row{gap:6px;flex-direction:row!important;align-items:flex-start}.note-row .note-main{flex:1;min-width:0}.note-tog{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--muted);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;cursor:pointer;flex:none;position:relative}.note-row.unread .note-tog{color:var(--green);border-color:color-mix(in srgb,var(--green) 35%,transparent)}.note-tog:hover{background:var(--chip)}
 .note-main{appearance:none;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:0;display:flex;gap:10px;align-items:flex-start;width:100%;cursor:pointer}
@@ -810,9 +812,9 @@ form[data-ctype="debit"] [data-only="credit"],form[data-ctype="credit"] [data-on
 .glow-pick{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:-4px 0 2px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.glow-pick .seg{flex:1}.skin-extra{display:block;color:var(--green);font-weight:600;font-size:.74rem;margin-top:3px}
 .skin-list{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:row dense;gap:8px;margin-top:4px}
 .skin-opt{flex-direction:column;align-items:flex-start}.skin-opt .skin-sw{width:100%;height:30px}
-.skin-opt{appearance:none;display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+.skin-opt{appearance:none;display:flex;align-items:stretch;gap:10px;width:100%;text-align:left;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
 .skin-opt[aria-checked="true"]{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
-.skin-opt b{display:block}.skin-opt small{display:block}
+.skin-opt b{display:block}.skin-opt small{display:block}.skin-opt>span:not(.skin-sw){width:100%;text-align:left}
 .skin-sw{flex:none;display:flex;width:54px;height:34px;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
 .skin-sw i{flex:1}
 .skin-blue i:nth-child(1){background:#ffffff}.skin-blue i:nth-child(2){background:#000000}.skin-blue i:nth-child(3){background:#1d5fd6}
@@ -3714,37 +3716,47 @@ function plainly(){
 // KeepWise only receives the words, and keeps no audio.
 const MIC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.500 11a6.500 6.500 0 0 0 13 0M12 17.500V21"/></svg>';
 const voiceCan = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition) && !window.Capacitor;
-// While listening, the words appear as they are heard and a Stop button is always there. It sends on its own after a
-// short pause, when the phone says it is done, or when Stop is tapped. Phones differ in when they report a final result,
-// so the last words heard are what gets sent, whichever of those comes first.
+// While listening, the words appear as they are heard and a Stop button is always there. People pause to think, so it
+// waits: up to 8 seconds for the first word, then 4 seconds of quiet after the last one, with a ring on the mic that
+// runs down during a pause and starts again with the next word. Tap Stop to send at once. If the phone ends listening by
+// itself mid-thought, listening starts again; if it cannot, the words stay in the box to finish or send.
 const STOP_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.500"/></svg>';
-const VOICE = {rec: null, text: "", quiet: 0, max: 0, done: false};
+const VOICE = {rec: null, text: "", base: "", quiet: 0, max: 0, done: false, wait: 0}, VOICE_FIRST = 8000, VOICE_PAUSE = 4000;
 function voicePaint(){
   const b = $("ask-mic"), o = $("ask-out"), on = !!VOICE.rec;
   if (b){ b.setAttribute("aria-pressed", String(on)); b.classList.toggle("listening", on); b.innerHTML = on ? STOP_IC : MIC; b.setAttribute("aria-label", on ? "Stop listening and send" : "Speak instead of typing"); }
-  if (o && on){ o.hidden = false; o.innerHTML = `<span class="muted small">Listening. Say it in English, then pause or tap Stop.</span><br><b data-voice-heard>${esc(VOICE.text || "…")}</b><br><button class="btn small" type="button" data-voice-stop style="margin-top:8px">Stop and send</button>`; }
+  if (o && on){ o.hidden = false; o.innerHTML = `<span class="muted small">Listening. Take your time; it sends after a pause, or tap Stop.</span><br><b data-voice-heard>${esc(VOICE.text || "…")}</b><br><button class="btn small" type="button" data-voice-stop style="margin-top:8px">Stop and send</button>`; }
+}
+function voiceWait(ms){   // (re)start the quiet timer, and the ring that shows it
+  clearTimeout(VOICE.quiet); VOICE.wait = ms; VOICE.quiet = setTimeout(() => voiceFinish(true), ms);
+  const b = $("ask-mic"); if (b){ b.style.setProperty("--quiet", ms + "ms"); b.classList.remove("quiet"); void b.offsetWidth; b.classList.add("quiet"); }
 }
 function voiceFinish(send){
   const rec = VOICE.rec; if (!rec || VOICE.done) return; VOICE.done = true;
-  clearTimeout(VOICE.quiet); clearTimeout(VOICE.max); VOICE.rec = null;
+  clearTimeout(VOICE.quiet); clearTimeout(VOICE.max); VOICE.rec = null; const b = $("ask-mic"); if (b) b.classList.remove("quiet");
   try { rec.onresult = rec.onend = rec.onerror = null; rec.stop(); } catch(e){}
   const said = VOICE.text.trim(), o = $("ask-out"), i = $("ask-in"); voicePaint();
   if (send && said && i){ i.value = said; if (i.form) i.form.dispatchEvent(new Event("submit", {bubbles: true, cancelable: true})); return; }
   if (o){ o.textContent = ASK.last || ""; o.hidden = !ASK.last; }
   if (send && !said) toast("Nothing was heard. Tap the microphone and try again.");
 }
+function voiceStart(rec){ try { rec.start(); return true; } catch(e){ return false; } }
 function voiceToggle(){
   if (VOICE.rec){ voiceFinish(true); return; }
   const R = window.SpeechRecognition || window.webkitSpeechRecognition; if (!R) return;
-  const rec = new R(); rec.lang = "en-US"; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
-  rec.onresult = e => { let t = "", fin = false; for (let k = 0; k < e.results.length; k++){ const r = e.results[k]; if (r && r[0]) t += (t ? " " : "") + String(r[0].transcript || "").trim(); if (r && r.isFinal) fin = true; }
-    VOICE.text = t.trim(); const h = document.querySelector("[data-voice-heard]"); if (h) h.textContent = VOICE.text || "…";
-    clearTimeout(VOICE.quiet); if (fin) voiceFinish(true); else VOICE.quiet = setTimeout(() => voiceFinish(true), 1800); };
-  rec.onerror = e => { const err = e && e.error; if (err === "no-speech" && VOICE.text){ voiceFinish(true); return; }
-    voiceFinish(false); toast(err === "not-allowed" || err === "service-not-allowed" ? "The microphone is off for KeepWise. Allow it in your browser settings, or type instead." : err === "no-speech" ? "Nothing was heard. Tap the microphone and try again." : "Could not hear that. Try again, or type instead."); };
-  rec.onend = () => voiceFinish(true);
-  VOICE.text = ""; VOICE.done = false;
-  try { rec.start(); VOICE.rec = rec; VOICE.max = setTimeout(() => voiceFinish(true), 20000); voicePaint(); } catch(e){ VOICE.rec = null; toast("Could not start listening. Type instead."); }
+  const rec = new R(); rec.lang = "en-US"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
+  rec.onresult = e => { let t = ""; for (let k = 0; k < e.results.length; k++){ const r = e.results[k]; if (r && r[0]) t += (t ? " " : "") + String(r[0].transcript || "").trim(); }
+    VOICE.text = [VOICE.base, t.trim()].filter(Boolean).join(" "); const h = document.querySelector("[data-voice-heard]"); if (h) h.textContent = VOICE.text || "…";
+    voiceWait(VOICE_PAUSE); };   // every word heard starts the pause over: nothing is sent while someone is still talking or thinking
+  rec.onerror = e => { const err = e && e.error; if (err === "no-speech" || err === "aborted") return;   // quiet is handled by our own timers
+    voiceFinish(false); toast(err === "not-allowed" || err === "service-not-allowed" ? "The microphone is off for KeepWise. Allow it in your browser settings, or type instead." : "Could not hear that. Try again, or type instead."); };
+  rec.onend = () => { if (VOICE.done || VOICE.rec !== rec) return;
+    VOICE.base = VOICE.text;   // the phone stopped on its own: keep what was said and listen again
+    if (!voiceStart(rec)){ const said = VOICE.text.trim(); VOICE.done = true; clearTimeout(VOICE.quiet); clearTimeout(VOICE.max); VOICE.rec = null; const b = $("ask-mic"); if (b) b.classList.remove("quiet"); voicePaint();
+      const i = $("ask-in"); if (said && i){ i.value = said; toast("Got it so far. Finish typing, or tap Ask to send."); } else toast("Nothing was heard. Tap the microphone and try again."); } };
+  VOICE.text = ""; VOICE.base = ""; VOICE.done = false;
+  if (!voiceStart(rec)){ VOICE.rec = null; toast("Could not start listening. Type instead."); return; }
+  VOICE.rec = rec; VOICE.max = setTimeout(() => voiceFinish(true), 60000); voicePaint(); voiceWait(VOICE_FIRST);
 }
 // One-off spending by what it was. Each logged line has a kind (the icon on its row), so the owl can add a kind up,
 // say what a habit comes to, and rank the kinds. It reports what was logged and leaves the judging to the person.
@@ -6084,7 +6096,8 @@ OUT.billsDue = () => { const list = billsDue(), ll = loansDue(), sd = subsDue();
 OUT.arrived = () => { const list = arrivals(); if (!list.length) return "";
   return `<section class="card" data-arrived><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 style="font-size:1.2rem">Did it arrive?</h2><button class="link plain small" type="button" data-arrive-later>Ask me tomorrow</button></div>
     ${list.map(a => `<div class="inc-row" data-arrive="${esc(a.key)}" data-arrive-date="${isoOf(a.date)}"><div class="row-top"><div><div class="name">${esc(a.name)}</div><div class="muted small">Expected ${dayMonth(a.date)}</div></div><div class="name tnum">${a.amount > 0 ? fmt(a.amount) : `<span class="muted small">amount varies</span>`}</div></div>
-      <div class="grid2"><button class="btn small" type="button" data-arrive-no>${a.x ? "It won’t come" : "Not yet"}</button><button class="btn small primary" type="button" data-arrive-yes>${a.x ? "Yes, log it" : "Yes, it arrived"}</button></div></div>`).join("")}</section>`; };
+      ${UI.arriveAmt === a.key ? `<form class="inline bs-add" data-form="arriveAmt"><span class="money-in" style="flex:1 1 120px"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" placeholder="How much arrived" aria-label="How much arrived from ${esc(a.name)}" enterkeyhint="done"></span><button class="btn small primary" type="submit">Log it</button><button class="btn small" type="button" data-arrive-amt-cancel>Cancel</button></form>`
+      : `<div class="grid2"><button class="btn small" type="button" data-arrive-no>${a.x ? "It won’t come" : "Not yet"}</button><button class="btn small primary" type="button" data-arrive-yes>${a.x ? "Yes, log it" : "Yes, it arrived"}</button></div>`}</div>`).join("")}</section>`; };
 
 /* ================= tell them (messages you send yourself; KeepWise sends nothing) ================= */
 // After a split on this phone is added, changed, deleted or settled, KeepWise writes a short message for each person in it.
@@ -7825,10 +7838,11 @@ view.addEventListener("click", async e => {
   if (arr && (b.hasAttribute("data-arrive-yes") || b.hasAttribute("data-arrive-no"))){ const iso = arr.dataset.arriveDate, yes = b.hasAttribute("data-arrive-yes"), u = undoable();
     if (arr.dataset.arrive === "pay"){ if (yes){ S.payGot = iso; save(); refreshOuts(); toast("Good. Your pay is marked as arrived.", u); } else { S.arriveSnooze = isoOf(todayMid()); save(); refreshOuts(); toast("We’ll ask again tomorrow."); } return; }
     const x = extras().find(v => v.id === arr.dataset.arrive); if (!x) return;
-    if (yes && !extraFixed(x)){ UI.incLog = x.id; UI.incEdit = null; UI.incAdd = false; refreshOuts(); const i = view.querySelector(`[data-inc="${x.id}"] form[data-form="incomeLog"] [name=amount]`); if (i){ i.scrollIntoView({block: "center"}); i.focus(); } toast("Enter how much arrived."); return; }   // no fixed amount: ask, never assume
+    if (yes && !extraFixed(x)){ UI.arriveAmt = x.id; refreshOuts(); return; }   // no fixed amount: ask right on the card, never assume
     if (yes){ (x.got = x.got || []).push({id: uid(), date: iso, amount: +x.amount || 0}); save(); refreshOuts(); toast(`Logged ${fmt(x.amount)} from ${x.name}.`, u); }
     else { x.skip = iso; save(); refreshOuts(); toast(`Okay. ${x.name} is skipped this time.`, u); }
     return; }
+  if (b.hasAttribute("data-arrive-amt-cancel")){ UI.arriveAmt = null; refreshOuts(); return; }
   if (b.hasAttribute("data-inc-add")){ UI.incAdd = true; UI.incEdit = null; UI.incLog = null; UI.incDraft = blankInc(); refreshOuts(); return; }
   if (b.hasAttribute("data-inc-cancel")){ UI.incAdd = false; UI.incEdit = null; refreshOuts(); return; }
   const incRow = b.closest("[data-inc]"), incX = incRow && extras().find(x => x.id === incRow.dataset.inc);
@@ -8291,8 +8305,10 @@ view.addEventListener("submit", async e => {
     if (rec.day && (!old || old.day !== rec.day)) rec.dueSince = isoDaysAgo(0);
     if (rec.kind === "card"){ rec.card = String(fd.get("card") || "Visa"); if (rec.card === "Other") rec.card = String(fd.get("cardOther") || "").trim().slice(0, 30) || "Other"; rec.fee = numv(fd.get("fee")) || 0; rec.feeOn = rec.fee ? mdToIso(fd, "feeOn", old0 && old0.feeOn) : ""; } else if (old0) { delete old0.card; delete old0.fee; delete old0.feeOn; }
     if (rec.every === "yr") rec.on = mdToIso(fd, "on", old0 && old0.on); else if (old0) delete old0.on;
-    if (old) Object.assign(old, rec); else loanList().push({id: uid(), ...rec});
-    UI.loanAdd = false; UI.loanEdit = null; if (S.tab === "month"){ if (monthTabs()) UI.mseg = "budget"; UI.openEnv = "loans"; } save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);   // stay on it: the loan cards live inside Loans & debts
+    const lid = old ? old.id : uid();
+    if (old) Object.assign(old, rec); else loanList().push({id: lid, ...rec});
+    UI.loanAdd = false; UI.loanEdit = null; if (S.tab === "month"){ if (monthTabs()) UI.mseg = "budget"; UI.openEnv = "loans"; } save(); if (isField(document.activeElement)) document.activeElement.blur();
+    if (old || UI.biz || S.tab !== "month" || !goTo("month", `[data-loan="${lid}"]`)) render(true);   // a new loan: land on its card inside Loans & debts
     (old ? savedToast : toast)(old ? "Loan updated." : rec.every === "yr" ? `Added. ${fmt(rec.pay)} counts in full in the month it is paid.` : `Added. ${fmt(loanMonthly(rec))} a month now counts in Loans & debts.`); return; }
   if (kind === "income"){
     const name = String(fd.get("name") || "").trim(), amount = numv(fd.get("amount")), when = fd.get("when") || "any";
@@ -8304,6 +8320,9 @@ view.addEventListener("submit", async e => {
     if (old && rec.next && sameBiweekly(old.next, rec.next)) rec.next = old.next;
     if (old){ if (old.when !== rec.when || old.day !== rec.day || old.day2 !== rec.day2 || old.wd !== rec.wd || !sameBiweekly(old.next, rec.next)) rec.added = isoDaysAgo(0); Object.assign(old, rec); } else extras().push({id: uid(), got: [], added: isoDaysAgo(0), ...rec});
     UI.incAdd = false; UI.incEdit = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); (old ? savedToast : toast)(old ? `${name} updated.` : amount ? `Added ${name}. Your plan now counts it.` : `Added ${name}. It counts each time you log a payment.`); return; }
+  if (kind === "arriveAmt"){ const row = f.closest("[data-arrive]"), x = row && extras().find(v => v.id === row.dataset.arrive), a = numv(fd.get("amount")); if (!x) return;
+    if (!(a > 0)){ toast("Enter how much arrived."); return; } const u = undoable();
+    (x.got = x.got || []).push({id: uid(), date: row.dataset.arriveDate, amount: a}); UI.arriveAmt = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Logged ${fmt(a)} from ${x.name}.`, u); return; }
   if (kind === "incomeLog"){ const x = extras().find(v => v.id === f.closest("[data-inc]").dataset.inc), a = numv(fd.get("amount")); if (!x) return;
     if (!a){ toast("Enter the amount you received."); return; }
     (x.got = x.got || []).push({id: uid(), date: String(fd.get("date") || isoDaysAgo(0)), amount: a}); UI.incLog = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); refreshOuts(); toast(`Logged ${fmt(a)} from ${x.name}.`); return; }
@@ -8379,8 +8398,10 @@ view.addEventListener("submit", async e => {
     const old = UI.tripEdit && tripList().find(x => x.id === UI.tripEdit);
     const cur = CURRENCIES.some(c => c[0] === fd.get("cur")) && fd.get("cur") !== S.cur ? String(fd.get("cur")) : "";
     const tidy = x => { if (!x.place) delete x.place; if (!x.geo) delete x.geo; return x; };
-    if (old) tidy(Object.assign(old, {name, start, end, budget, cur}, more)); else tripList().push(tidy({id: uid(), name, start, end, budget, cur, items: [], settled: null, ...more}));
-    UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; UI.tripStep = 0; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); (old ? savedToast : toast)(old ? `Updated ${name}.` : `${name} is set. Spending you add on ${start === end ? "that day" : "those days"} goes to the ${ev ? "event" : "trip"}.`); return; }
+    const tid = old ? old.id : uid();
+    if (old) tidy(Object.assign(old, {name, start, end, budget, cur}, more)); else tripList().push(tidy({id: tid, name, start, end, budget, cur, items: [], settled: null, ...more}));
+    UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; UI.tripStep = 0; UI.tripOpen = tid; save(); if (isField(document.activeElement)) document.activeElement.blur(); if (UI.biz || !goTo("month", `[data-trip="${tid}"]`)) render(true);   // land on the trip just made, never somewhere else
+    (old ? savedToast : toast)(old ? `Updated ${name}.` : `${name} is set. Spending you add on ${start === end ? "that day" : "those days"} goes to the ${ev ? "event" : "trip"}.`); return; }
   if (kind === "ask"){ const q = tidySaid($("ask-in").value); if (!q) return; ASK.go = null;
     // After a command changes something, go to it: the panel closes, the right tab opens, the item is brought into view
     // and marked for a moment, and what was done stays on screen with Undo.
