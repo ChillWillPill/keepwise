@@ -93,3 +93,11 @@ Plan:
 ## After the business release: free, easy-life features (agreed 26 Oct 2026)
 - Android home-screen widget; Share to KeepWise (screenshots, receipts, bank texts read on the phone); bills and paydays in your calendar (.ics link).
 - Cancel / lower-your-bill guides; pattern learning (suggests bills and reminders); savings challenges; monthly money letter; weekly auto-backup to the person's own Drive or iCloud.
+
+## Split members who use KeepWise (next release)
+- Adding someone to a split: type their email (or pick one contact on Android). No contact-list upload.
+- KeepWise checks only that one person, using a hashed email (lookups/{sha256(email)} -> uid, written by each user for their own sign-in email).
+- Match found: the split links to them, they see it in their app and get a push notification (free, FCM/web push).
+- No match: send the email and offer an invite link via WhatsApp/text; they're linked when they join with that email.
+- Phone numbers: only after the user verifies their own number (SMS sign-in costs money, so it comes later).
+- Anyone can turn off being found by email (Settings).
