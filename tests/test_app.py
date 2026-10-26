@@ -5364,6 +5364,34 @@ async def notifications_can_be_chosen_for_personal_and_business(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def business_split_pay_rules_and_profit_report(ctx):
+    pg = await open_app(ctx, month_tabs=True)
+    await pg.evaluate("window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.plusTester = true; localStorage.setItem('keepwise-app-v1', JSON.stringify(s))"); await pg.reload(); await pg.wait_for_timeout(400)
+    await biz_on(pg)
+    await pg.click("[data-biz-new=in]"); f = pg.locator("form[data-form=bizEntry]"); await f.locator("[name=name]").fill("Paddle payout"); await f.locator("[name=amount]").fill("1000"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    sp = await text(pg, "[data-bz-split]"); assert "Tax 25%" in sp and "$250" in sp and "Profit 10%" in sp and "$100" in sp and "Running 65%" in sp and "$650" in sp, sp
+    # pay yourself: personal counts it as income, the business profit stays
+    p0 = money(await text(pg, "[data-biz-profit]"))
+    await pg.fill("form[data-form=bzPay] [name=amount]", "300"); await pg.click("form[data-form=bzPay] [type=submit]"); await pg.wait_for_timeout(250)
+    st = await state(pg); x = [v for v in st["extras"] if v.get("bizPay")][0]; assert x["got"][-1]["amount"] == 300 and st["biz"]["draws"][-1]["amount"] == 300
+    assert money(await text(pg, "[data-biz-profit]")) == p0 and "Paid yourself $300" in await pg.inner_text("#toast")
+    # a rule ticks and names matching statement lines
+    await pg.click("[data-bseg=tax]"); await pg.wait_for_timeout(150); await pg.click("[data-bz-rule-add]")
+    r = pg.locator("form[data-form=bzRule]"); await r.locator("[name=match]").fill("godaddy"); await r.locator("[name=name]").fill("GoDaddy"); await r.locator("[name=cat]").select_option("Office & software"); await r.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    assert "GoDaddy" in await text(pg, "[data-bz-rules]")
+    csv = os.path.join(TMP, "biz-rule.csv"); open(csv, "w").write("Date,Description,Amount\n10/02/2026,GODADDY.COM DNS 123,-23.05\n10/03/2026,CORNER SHOP,-7.50\n")
+    await pg.click("[data-bseg=money]"); await pg.wait_for_timeout(150)
+    async with pg.expect_file_chooser() as fc: await pg.click("[data-biz-import] >> nth=0")
+    await (await fc.value).set_files(csv); await pg.wait_for_timeout(1200)
+    picks = await pg.evaluate("[...document.querySelectorAll('[data-biz-pick]')].map(c => c.checked)"); assert picks.count(True) == 1, picks
+    await pg.click("[data-biz-import-add]"); await pg.wait_for_timeout(250)
+    e = (await state(pg))["biz"]["entries"][-1]; assert e["name"] == "GoDaddy" and e["cat"] == "Office & software" and e.get("rule"), e
+    # the profit & loss report
+    await pg.click("[data-bseg=tax]"); await pg.wait_for_timeout(150); await pg.select_option("[data-pl-per]", "m"); await pg.wait_for_timeout(150)
+    pl = await text(pg, "[data-bz-pl]"); assert "Income $1,000" in pl and "Office & software" in pl and "Net profit" in pl, pl
+    assert not pg.errors, pg.errors
+
+@test
 async def keepwise_never_flags_itself(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
     flagged = lambda s: re.search(r"\$[\d,.]+", s.split("FLAGGED")[-1]).group(0)

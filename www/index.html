@@ -445,6 +445,8 @@ a.btn{display:block;text-decoration:none}
 .app.typing ~ .toast{top:calc(var(--vv-top,0px) + var(--vv-h,100vh) - 12px)}
 .toast-undo{pointer-events:auto;appearance:none;border:0;background:color-mix(in srgb,var(--bg) 16%,transparent);color:inherit;font:700 .84rem var(--body);margin-left:6px;padding:7px 12px;border-radius:10px;cursor:pointer;flex:none}
 /* Messages sit at the foot of the visible screen, so an open keyboard never covers them. */
+.plus-trial.on .pt-top{display:flex;gap:14px;align-items:center}.plus-trial.on h3{margin:6px 0 2px}.plus-trial.on .pt-top p{margin:0}.pt-ring{--pt:1;flex:none;width:68px;height:68px;border-radius:50%;display:grid;place-content:center;text-align:center;line-height:1;background:radial-gradient(closest-side,var(--card,#fff) 79%,transparent 80%),conic-gradient(var(--good,#1a7f4b) calc(var(--pt)*360deg),color-mix(in srgb,var(--good,#1a7f4b) 15%,transparent) 0)}.pt-ring b{font:700 1.5rem var(--head,inherit)}.pt-ring span{font-size:.7rem;opacity:.7}.pt-days{display:flex;gap:5px;margin:14px 0 10px}.pt-days i{flex:1;height:6px;border-radius:3px;background:var(--good,#1a7f4b)}.pt-days i.used{background:color-mix(in srgb,var(--ink) 12%,transparent)}.pt-foot{border-top:1px solid color-mix(in srgb,var(--ink) 8%,transparent);margin-top:10px;padding-top:8px;text-align:center}
+.icon-btn svg{margin:0!important;vertical-align:middle!important}
 .toast{pointer-events:none;position:fixed;left:50%;transform:translate(-50%,-100%);top:calc(var(--vv-top,0px) + var(--vv-h,100vh) - 84px - env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);border:0;box-shadow:0 18px 40px -12px rgba(0,0,0,.45),0 3px 10px rgba(0,0,0,.18);padding:10px 12px 10px 10px;border-radius:18px;font-weight:600;font-size:.9rem;line-height:1.3;z-index:60;max-width:calc(100% - 32px);width:max-content;display:flex;align-items:center;gap:10px;text-align:left;animation:toastIn .22s ease-out}
 .toast[hidden]{display:none}body.toasting .wise-fab:not(.tour-focus),body.at-end .wise-fab:not(.tour-focus){opacity:0;pointer-events:none;transform:scale(.8)}.wise-fab{transition:opacity .18s,transform .18s}.toast-owl{width:28px;height:28px;border-radius:50%;flex:none}.toast-msg{min-width:0;overflow-wrap:anywhere}
 .toast:has(.toast-msg.long){border-radius:18px}
@@ -997,6 +999,10 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .bz-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bz-tiles>div{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--lift)}.bz-tiles span{font-size:.78rem;color:var(--muted)}.bz-tiles b{font-size:1.02rem}
 .bz-need{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:.92rem}.bz-need:first-of-type{border-top:0}.bz-need>span:nth-child(2){flex:1;min-width:0}.bz-need .dot{width:8px;height:8px;border-radius:50%;background:var(--rust);flex:none}.bz-need .dot.gold{background:var(--gold)}
 .bz-miles-link{margin-bottom:0}
+.bz-bar{display:flex;height:14px;border-radius:9px;overflow:hidden;margin:10px 0 8px;background:var(--chip)}.bz-bar i:nth-child(1){background:var(--gold)}.bz-bar i:nth-child(2){background:var(--green)}.bz-bar i:nth-child(3){background:color-mix(in srgb,var(--green) 35%,var(--chip))}
+.bz-leg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:.78rem;color:var(--muted)}.bz-leg b{display:block;color:var(--ink);font-size:1rem}
+.bz-rule{display:grid;grid-template-columns:38px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.bz-rule:first-of-type{border-top:0}
+.bz-plsel{width:auto;padding:6px 10px;font-size:.88rem}.bz-plcat{font-size:.9rem;padding-left:10px}
 .ph-prev{width:100%;max-height:240px;object-fit:contain;border-radius:14px;background:var(--chip)}
 .mems{display:flex;flex-direction:column;gap:10px}.mem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center}.mem-ph{appearance:none;border:0;padding:0;background:var(--chip);width:64px;height:64px;border-radius:14px;overflow:hidden;cursor:pointer}.mem-ph img{width:100%;height:100%;object-fit:cover}.mem-txt{display:flex;flex-direction:column;min-width:0}.mem-txt b{overflow-wrap:anywhere}
 .bz-hero .label{margin:0}.bz-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.bz-quick button{appearance:none;font:600 .8rem var(--body);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;box-shadow:var(--lift)}.bz-quick b{font-size:1.2rem;line-height:1;color:var(--green)}
@@ -2995,7 +3001,8 @@ async function bizRead(file){
   busy("Reading your statement");
   try { await readStatementFile(file); const tx = (STMT.tx || []).slice(); STMT.tx = null; const done = new Set(bizData().imported);
     BIZ.lines = tx.map(t => { const date = isoOf(t.date), key = `${date}|${t.desc}|${t.amt}`; return {key, date, desc: String(t.desc).slice(0, 80), amt: +t.amt}; }).filter(l => !done.has(l.key)).sort((a, c) => c.date.localeCompare(a.date));
-    BIZ.pick = new Set(); BIZ.file = file.name || "statement"; busy(false); render(true);
+    BIZ.pick = new Set(BIZ.lines.map((l, i) => bizRuleFor(l.desc) ? i : -1).filter(i => i >= 0)); BIZ.file = file.name || "statement"; busy(false); render(true);
+    if (BIZ.pick.size) toast(`${BIZ.pick.size} line${BIZ.pick.size === 1 ? "" : "s"} ticked by your rules. Check them, then add.`);
     const box = view.querySelector("[data-biz-import-card]"); if (box) box.scrollIntoView({block: "start"}); }
   catch(err){ busy(false); toast(err && err.message ? err.message : "Couldn't read that file."); }
 }
@@ -3224,7 +3231,7 @@ function bizNotes(){
   if (!plusOn() || !S.biz) return [];
   const b = bizData(), out = [], t = todayMid(), iso = isoOf(t), add = (key, text, detail, bseg, kind) => out.push({key: "B:" + key, text, detail, go: "biz", bseg, kind, local: true});
   const recent = b.entries.filter(e => e.kind === "in" && e.date && daysUntil(isoDate(e.date)) >= -1);
-  if (recent.length) add(`s:${iso}:${recent.length}`, recent.length === 1 ? `New sale: ${fmt(recent[0].amount)}${recent[0].src && SALES_SRC[recent[0].src] ? ` · ${SALES_SRC[recent[0].src]}` : ""}` : `${recent.length} new sales · ${fmt(r2(recent.reduce((a, e) => a + e.amount, 0)))}`, "Since yesterday.", "money", "sales");
+  if (recent.length) add(`s:${iso}:${recent.length}`, recent.length === 1 ? `New sale: ${fmt(recent[0].amount)}${recent[0].src && SALES_SRC[recent[0].src] ? ` · ${SALES_SRC[recent[0].src]}` : ""}` : `${recent.length} new sales · ${fmt(r2(recent.reduce((a, e) => a + e.amount, 0)))}`, (v => `${fmt(v.tax)} for tax · ${fmt(v.profit)} profit · ${fmt(v.run)} to run the business.`)(splitOf(r2(recent.reduce((a, e) => a + e.amount, 0)))), "money", "sales");
   b.invoices.filter(i => i.status === "paid" && i.paidOn && daysUntil(isoDate(i.paidOn)) >= -2).forEach(i => add(`ip:${i.id}`, `${i.client || "A client"} paid ${fmt(invTotal(i))}`, `${invNo(i.no)} is settled.`, "invoices", "invoices"));
   b.invoices.filter(invLate).forEach(i => add(`il:${i.id}:${iso}`, `${i.client || "A client"} is ${-daysUntil(isoDate(i.due))} days late`, `${fmt(invTotal(i))} on ${invNo(i.no)}. Send a reminder?`, "invoices", "invoices"));
   const nq = USA() ? nextQuarter() : null; if (nq && daysUntil(nq.due) <= 14) add(`tx:${isoOf(nq.due)}`, `Q${nq.n} estimated tax is due ${dayMonth(nq.due)}`, `${fmt(nq.amount)} by your set-aside.`, "tax", "tax");
@@ -3250,6 +3257,62 @@ function saleChime(){ const P = notePref(), h = new Date().getHours(); if (!note
   try { const A = window.AudioContext || window.webkitAudioContext; if (!A) return; const ac = saleChime.ac || (saleChime.ac = new A()), t0 = ac.currentTime;
     [[1318.5, 0], [1760, .09], [2093, .18]].forEach(([f, d]) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = "triangle"; o.frequency.value = f; g.gain.setValueAtTime(0, t0 + d); g.gain.linearRampToValueAtTime(.18, t0 + d + .01); g.gain.exponentialRampToValueAtTime(.001, t0 + d + .35); o.connect(g).connect(ac.destination); o.start(t0 + d); o.stop(t0 + d + .4); });
   } catch(e){} }
+
+// ---- Business, part 2: every sale splits itself, pay yourself, sorting rules and the profit & loss report
+const bizSplit = () => { const b = bizData(), tax = Math.max(0, Math.min(90, +b.taxPct || 0)), profit = Math.max(0, Math.min(100 - tax, b.profitPct == null ? 10 : +b.profitPct)); return {tax, profit, run: r2(100 - tax - profit)}; };
+const splitOf = v => { const p = bizSplit(); return {tax: r2(v * p.tax / 100), profit: r2(v * p.profit / 100), run: r2(v * p.run / 100)}; };
+const bizRules = () => (bizData().rules = bizData().rules || []);
+const bizRuleFor = desc => { const d = String(desc || "").toLowerCase(); return bizRules().find(r => r.match && d.includes(r.match)) || null; };
+function bizSplitCard(M){
+  const p = bizSplit(), v = splitOf(Math.max(0, M.inc)), mon = new Date(bizNow()[0], bizNow()[1], 1).toLocaleString("en-US", {month: "long"});
+  return `<section class="card" data-bz-split><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Where ${mon}’s money goes${infoBtn("bzSplit", "About splitting each sale")}</h2><button class="link small" type="button" data-bz-split-edit>Change %</button></div>
+    ${infoTip("bzSplit", "Every sale is split as it comes in: a share for tax, a share kept as profit, and the rest to run the business. Move the tax and profit money to separate accounts and tax time is never a surprise. This is the Profit First way.")}
+    <div class="bz-bar" aria-hidden="true"><i style="width:${p.tax}%"></i><i style="width:${p.profit}%"></i><i style="width:${p.run}%"></i></div>
+    <div class="bz-leg"><span>Tax ${p.tax}%<b class="tnum">${fmt(v.tax)}</b></span><span>Profit ${p.profit}%<b class="tnum">${fmt(v.profit)}</b></span><span>Running ${p.run}%<b class="tnum">${fmt(v.run)}</b></span></div>
+    ${UI.bzSplitEdit ? `<div class="grid2" style="margin-top:8px"><label class="field"><span>Tax %</span><input data-biz-taxpct inputmode="decimal" value="${p.tax}"></label><label class="field"><span>Profit %</span><input data-bz-profitpct inputmode="decimal" value="${p.profit}"></label></div>` : ""}</section>`;
+}
+function bizPayCard(b){
+  const last = (b.draws || []).slice(-1)[0];
+  return `<section class="card" data-bz-pay><h2>Pay yourself</h2><p class="muted small" data-keep>Move your pay from the business to your personal month. Personal counts it as income; the business profit stays as it is.</p>
+    <form data-form="bzPay" style="display:flex;flex-direction:column;gap:10px"><label class="close-amt"><span class="close-cur">${esc(sym())}</span><input name="amount" inputmode="decimal" placeholder="0" aria-label="Amount to pay yourself" autocomplete="off"></label>
+      <button class="btn primary" type="submit">Pay me</button></form>
+    ${last ? `<p class="muted small" style="text-align:center" data-keep>Last time: ${fmt(last.amount)} on ${shortDate(last.date)}</p>` : ""}</section>`;
+}
+function bizRulesCard(b){
+  const rules = bizRules(), n = (b.entries || []).filter(e => e.rule && (e.date || "").startsWith(String(bizNow()[0]))).length;
+  return `<section class="card" data-bz-rules><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Sorted for you</h2><button class="link small" type="button" data-bz-rule-add>${UI.bzRuleAdd ? "Cancel" : "＋ Rule"}</button></div>
+    ${UI.bzRuleAdd ? `<form data-form="bzRule" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px"><label class="field"><span>When a bank line says</span><input name="match" maxlength="40" placeholder="e.g. godaddy" autocomplete="off" autocapitalize="off"></label>
+      <div class="grid2"><label class="field"><span>Call it</span><input name="name" maxlength="40" placeholder="e.g. GoDaddy" autocomplete="off"></label><label class="field"><span>Category</span><select name="cat">${[...BIZ_COST_CATS, ...BIZ_IN_CATS.map(c => c)].filter((c, i, l) => l.indexOf(c) === i).map(c => `<option>${esc(c)}</option>`).join("")}</select></label></div>
+      <button class="btn primary" type="submit">Save rule</button></form>` : ""}
+    ${rules.length ? rules.map(r => `<div class="bz-rule" data-bz-rule="${r.id}">${stTile(r.name || r.match, "b")}<span class="st-txt"><span class="st-n">${esc(r.name || r.match)}</span><small class="muted">contains “${esc(r.match)}”</small></span><span class="pill grey">${esc(r.cat)}</span><button class="link danger-link small" type="button" data-bz-rule-del aria-label="Remove rule">✕</button></div>`).join("")
+      : `<p class="muted small" data-keep>Add a rule like “godaddy → Office & software”. Lines from a statement or your bank that match are ticked and sorted by themselves.</p>`}
+    ${n ? `<p class="muted small" data-keep>${n} line${n === 1 ? "" : "s"} sorted by rules this year.</p>` : ""}</section>`;
+}
+const PL_PERIODS = () => { const [y, m] = bizNow(), q = Math.floor(m / 3); return [["m", "This month", y, m, m], ["q", `Q${q + 1} ${y}`, y, q * 3, m], ["y", `${y} so far`, y, 0, m], ...(q > 0 ? [["pq", `Q${q} ${y}`, y, (q - 1) * 3, q * 3 - 1]] : [])]; };
+function bizPL(){
+  const per = PL_PERIODS().find(x => x[0] === (UI.plPer || "q")) || PL_PERIODS()[1], [, label, y, a, z] = per, r = bizRange(y, a, z), cats = {};
+  r.es.filter(e => e.kind === "out").forEach(e => cats[e.cat || "Other"] = r2((cats[e.cat || "Other"] || 0) + e.amount));
+  if (r.subs) cats["Office & software"] = r2((cats["Office & software"] || 0) + r.subs); if (r.shares) cats["Utilities & phone"] = r2((cats["Utilities & phone"] || 0) + r.shares); if (r.miles) cats["Car & truck"] = r2((cats["Car & truck"] || 0) + r.miles);
+  return {label, inc: r.inc, out: r.out, profit: r.profit, cats: Object.entries(cats).sort((p, q) => q[1] - p[1])};
+}
+function bizPLCard(){
+  const P = bizPL();
+  return `<section class="card" data-bz-pl><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Profit & loss</h2><select data-pl-per aria-label="Period" class="bz-plsel">${PL_PERIODS().map(([k, n]) => `<option value="${k}" ${k === (UI.plPer || "q") ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div>
+    <div class="line"><b>Income</b><span class="tnum">${fmt(P.inc)}</span></div>
+    ${P.cats.map(([c, v]) => `<div class="line bz-plcat"><span class="muted">${esc(c)}</span><span class="tnum">−${fmt(v)}</span></div>`).join("")}
+    <div class="line"><b>Costs</b><span class="tnum">−${fmt(P.out)}</span></div><div class="line"><b>Net profit</b><b class="tnum ${P.profit < 0 ? "bad" : "good"}">${fmt(P.profit)}</b></div>
+    <button class="btn primary" type="button" data-bz-pl-pdf>Download PDF</button></section>`;
+}
+async function bizPLPdf(){
+  const P = bizPL(), b = bizData(), name = b.name || "My business", rows = [["Income", fmt(P.inc)], ...P.cats.map(([c, v]) => ["  " + c, "−" + fmt(v)]), ["Total costs", "−" + fmt(P.out)], ["Net profit", fmt(P.profit)]];
+  try { if (!window.jspdf){ await new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); }
+    const doc = new window.jspdf.jsPDF({unit: "pt", format: "letter"}); let y = 64;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(20); doc.text(name, 56, y); y += 24; doc.setFontSize(13); doc.setFont("helvetica", "normal"); doc.text(`Profit and loss · ${P.label}`, 56, y); y += 30;
+    rows.forEach(([a, v], i) => { const bold = !a.startsWith("  "); doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(12); doc.text(a, 56, y); doc.text(v, 556, y, {align: "right"}); y += 20; if (i === 0 || a === "Total costs") { doc.setDrawColor(220); doc.line(56, y - 12, 556, y - 12); } });
+    doc.setFontSize(9); doc.setTextColor(120); doc.text(`Made with KeepWise on ${dateWithYear(todayMid())}. Not tax advice.`, 56, 740);
+    await saveFile(doc.output("blob"), `profit-and-loss-${P.label.replace(/\s+/g, "-").toLowerCase()}.pdf`); toast("Profit & loss saved as PDF.");
+  } catch(e){ const blob = new Blob([`<html><body style="font-family:sans-serif"><h1>${esc(name)}</h1><h3>Profit and loss · ${esc(P.label)}</h3><table>${rows.map(([a, v]) => `<tr><td>${esc(a)}</td><td style="text-align:right">${esc(v)}</td></tr>`).join("")}</table></body></html>`], {type: "text/html"}); await saveFile(blob, "profit-and-loss.html"); }
+}
 // Adding business money: one calm full-screen step, like a new loan or trip.
 function bizAddWiz(d){
   const k = UI.bizAdd === "in" ? "in" : "out", cats = k === "in" ? BIZ_IN_CATS : BIZ_COST_CATS, top = k === "in" ? BIZ_IN_CATS : BIZ_COST_CATS.slice(0, 5), cur = d.cat || (k === "in" ? "Sales" : "Supplies");
@@ -3283,9 +3346,11 @@ function bizSpace(){
       <div class="st-meter" aria-hidden="true"><i style="width:${M.inc > 0 ? Math.max(0, Math.min(100, Math.round(M.profit / M.inc * 100))) : 0}%"></i></div>
       <div class="st-stats"><span><b class="tnum">${fmt(M.inc)}</b> came in</span><span><b class="tnum">${fmt(M.out)}</b> went out</span><span><b class="tnum">${fmt(taxOf(Math.max(0, M.profit)))}</b> tax to put aside</span></div></section>
     <div class="bz-quick" role="group" aria-label="Add to your business"><button type="button" data-biz-new="out"><b aria-hidden="true">＋</b>Cost</button><button type="button" data-biz-new="in"><b aria-hidden="true">＋</b>Money in</button><button type="button" data-biz-new="rcpt"><b aria-hidden="true">📷</b>Receipt</button><button type="button" data-biz-import><b aria-hidden="true">📄</b>Statement</button></div>
+    ${bizSplitCard(M)}
   <section class="card" data-biz-list><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>This month</h2>${M.es.length > 5 ? `<button class="link small" type="button" data-biz-all>${UI.bizAll ? "Show less" : `See all ${M.es.length}`}</button>` : `<span class="muted small tnum">${M.es.length} entr${M.es.length === 1 ? "y" : "ies"}</span>`}</div>
     ${M.es.length ? `<div class="rows">${M.es.slice().sort((a, c) => c.date.localeCompare(a.date)).slice(0, UI.bizAll ? 999 : 5).map(e => `<div class="line bz-line" data-biz-entry="${e.id}">${stTile(e.name, e.kind === "in" ? "i" : (e.cat || "").startsWith("Adv") ? "o" : "b")}<div style="min-width:0;flex:1"><div>${esc(e.name)}</div><div class="muted small">${shortDate(e.date)} · ${esc(e.cat || "")}${e.src && SALES_SRC[e.src] ? ` · ${SALES_SRC[e.src]}` : ""}${e.rcpt ? ` · <button class="link small" type="button" data-biz-rcpt-view>Receipt</button>` : ""}</div></div><div class="inline"><span class="tnum ${e.kind === "in" ? "good" : ""}">${e.kind === "in" ? "+" : ""}${fmt(e.amount)}</span><button class="link danger-link small" type="button" data-biz-del aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small" data-keep>Nothing yet this month. Add a cost or money in above, or sort a statement.</p>`}
     ${M.subs || M.shares || M.miles ? `<p class="muted small">Also counted: ${[M.subs ? `${fmt(M.subs)} in subscriptions` : "", M.shares ? `${fmt(M.shares)} as the business share of personal bills` : "", M.miles ? `${fmt(M.miles)} for ${M.dist} ${mileUnit()}s driven` : ""].filter(Boolean).join(", ")}.</p>` : ""}</section>
+    ${bizPayCard(b)}
     <section class="card bz-more">
     ${bz("sales", ic("⚡", "s"), "Live sales", onSales.length ? `${onSales.map(x => SALES_SRC[x]).join(", ")} connected` : "Connect Stripe, PayPal, Shopify or Square", salesCard())}
     ${bz("subs", ic("↻", "b"), "Business subscriptions", b.subs.length ? `${b.subs.length} · ${fmt(subsMo)}/mo` : "Software and tools the business pays for", `<section class="card" data-biz-subs><h2>Business subscriptions</h2>
@@ -3335,6 +3400,7 @@ function bizSpace(){
     const cats = {}; Y.es.filter(e => e.kind === "out").forEach(e => cats[e.cat || "Other"] = r2((cats[e.cat || "Other"] || 0) + e.amount)); if (Y.subs) cats["Office & software"] = r2((cats["Office & software"] || 0) + Y.subs); if (Y.shares) cats["Utilities & phone"] = r2((cats["Utilities & phone"] || 0) + Y.shares); if (Y.miles) cats["Car & truck (mileage)"] = Y.miles;
     const topCats = Object.entries(cats).sort((a, c) => c[1] - a[1]).slice(0, 5), sales = Y.es.filter(e => e.kind === "in"), avg = sales.length ? r2(sales.reduce((a, e) => a + e.amount, 0) / sales.length) : 0;
     body = `<button class="w-choice bz-miles-link" type="button" data-bseg="miles"><span class="st-tile t-m" aria-hidden="true">🚗</span><span><b>Mileage</b><span class="muted small">Drives for the business, at ${USA() ? "the IRS rate" : "your rate"}</span></span>${I.chev}</button>
+    ${bizRulesCard(b)}${bizPLCard()}
     <section class="card" data-biz-tax><h2 class="h-info">Tax set-aside${infoBtn("bizTax", "About the tax set-aside")}</h2>${infoTip("bizTax", "A share of your business profit to keep aside for tax, so tax time is never a surprise. Pick the rate your accountant suggests; KeepWise only does the math, it is not tax advice.")}
     <div class="inline" style="gap:10px;flex-wrap:nowrap"><span class="small">Keep aside</span><span class="money-in" style="max-width:110px"><input data-biz-taxpct inputmode="decimal" value="${b.taxPct}" aria-label="Tax set-aside percent"><em>%</em></span><span class="small">of profit</span></div>
     <p data-biz-taxline>That is <b>${fmt(taxM)}</b> this month and <b>${fmt(taxY)}</b> so far this year.</p>
@@ -5276,9 +5342,9 @@ OUT.syncBox = () => {
   const head = `<div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Sync across your devices</h2><span class="pill gold">Plus</span></div>`;
   if (!plusOn()) return `<section class="card" data-sync>${head}<p class="muted small" data-keep>See the same KeepWise on your phone, tablet and computer. Locked with a passphrase only you know, so nobody else can read it, not even us.</p>${plusLink("Try Plus free for a week")}</section>`;
   if (!signed) return `<section class="card" data-sync>${head}<p class="muted small" data-keep>Sign in first, then choose a sync passphrase.</p><button class="btn" type="button" data-open-account>Sign in</button></section>`;
-  if (on && SYNC.key) return `<section class="card" data-sync>${head}<p data-sync-state><b>On.</b> <span class="muted">Synced ${syncAgo()}.</span></p>${SYNC.err ? `<p class="small bad">${esc(SYNC.err)}</p>` : ""}
+  if (on && SYNC.key) return `<section class="card" data-sync>${head}<p data-sync-state><b style="color:var(--good,#1a7f4b)">✓ Up to date.</b> <span class="muted">Synced ${syncAgo()}. Changes sync on their own.</span></p>${SYNC.err ? `<p class="small bad">${esc(SYNC.err)}</p>` : ""}
     <p class="muted small" data-keep>On another device, sign in with the same account and enter your sync passphrase. App lock stays separate on each device.</p>
-    <div class="grid2"><button class="btn" type="button" data-sync-now>Sync now</button><button class="btn" type="button" data-sync-off>Turn off</button></div></section>`;
+    <div class="grid2"><button class="btn small" type="button" data-sync-now>Sync again</button><button class="btn small danger" type="button" data-sync-off>Turn off</button></div></section>`;
   return `<section class="card" data-sync>${head}<p class="muted small" data-keep>Everything is locked on this device with your sync passphrase before it leaves, so the server keeps only a sealed copy it can’t read. Use the same passphrase on every device. If you forget it, it can’t be recovered; your data stays on each device.</p>
     <form data-form="syncOn" style="display:flex;flex-direction:column;gap:10px"><label class="field"><span>Sync passphrase</span><input name="pass" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters"></label>
       <label class="field"><span>Again, to be sure</span><input name="pass2" type="password" autocomplete="new-password" placeholder="Same passphrase"></label>
@@ -6825,9 +6891,12 @@ const plusMoney = usdAmt => { const r = UI.plusRate, cur = S.cur || "USD"; retur
 V.plus = () => { const P = plusPrice(), perMonth = Math.round(P.yr / 12 * 100) / 100, save = Math.round((P.mo * 12 - P.yr) / (P.mo * 12) * 100);
   if (S.cur && S.cur !== "USD" && UI.plusRate == null){ UI.plusRate = 0; fxRate("USD", S.cur).then(r => { UI.plusRate = r || 0; if (UI.plus) render(true); }).catch(() => {}); }
   const t = S.plusTrial, used = !!(t && t.start), on = trialOn(), end = trialEnds(), left = on ? daysUntil(end) : 0;
-  const trialCard = window.Capacitor ? "" : on ? `<section class="card plus-trial on" data-plus-trial><span class="pill ok">Free week on</span><h3>${left <= 1 ? "Your free week ends tomorrow" : `${left} days of Plus left`}</h3>
-      <p class="muted small" data-keep>It ends on <b>${dateWithYear(end)}</b>. Plus isn’t on sale yet, so nothing is charged; when it opens it will be ${plusMoney(P.mo)} a month or ${plusMoney(P.yr)} a year, and you choose then.</p>
-      <button class="link danger-link small" type="button" data-trial-stop>End the free week now</button></section>`
+  const trialCard = window.Capacitor ? "" : on ? `<section class="card plus-trial on" data-plus-trial>
+      <div class="pt-top"><div class="pt-ring" style="--pt:${Math.max(0, Math.min(7, left)) / 7}"><b>${left}</b><span>${left === 1 ? "day" : "days"}</span></div>
+        <div><span class="pill ok">Free week on</span><h3>${left <= 1 ? "Your free week ends tomorrow" : "Enjoy every part of Plus"}</h3><p class="muted small">Ends ${dateWithYear(end)}</p></div></div>
+      <div class="pt-days" aria-hidden="true">${Array.from({length: 7}, (_, i) => `<i class="${i < 7 - left ? "used" : ""}"></i>`).join("")}</div>
+      <p class="muted small" data-keep>Nothing is charged. When Plus opens it will be ${plusMoney(P.mo)} a month or ${plusMoney(P.yr)} a year, and you choose then.</p>
+      <div class="pt-foot"><button class="link small muted" type="button" data-trial-stop>End the free week early</button></div></section>`
     : used ? `<section class="card plus-trial" data-plus-trial><h3>Your free week has ended</h3><p class="muted small" data-keep>Everything free is still here. Join the waitlist and we’ll email you when Plus opens.</p></section>`
     : `<section class="card plus-trial" data-plus-trial><span class="pill gold">7 days free</span><h3>Try everything in Plus for a week</h3><p class="muted small" data-keep>Free until <b>${dateWithYear(dayPlus(todayMid(), 7))}</b>. No card needed and nothing is charged. We’ll remind you 2 days before it ends.</p>
       <button class="btn primary" type="button" data-trial-start>Start my free week</button></section>`;
@@ -7818,6 +7887,8 @@ document.addEventListener("click", e => { const t = e.target.closest && e.target
   const now = Date.now(); PLUS_TAP.n = now - PLUS_TAP.t < 1500 ? PLUS_TAP.n + 1 : 1; PLUS_TAP.t = now;
   if (PLUS_TAP.n >= 7){ PLUS_TAP.n = 0; S.plusTester = !S.plusTester; save(); render(false); toast(S.plusTester ? "Plus preview is on. Business is ready to try." : "Plus preview is off."); } });
 document.addEventListener("change", e => { const t = e.target;
+  if (t.matches && t.matches("[data-bz-profitpct]")){ bizData().profitPct = Math.max(0, Math.min(90, Math.round(numv(t.value)) || 0)); save(); render(true); return; }
+  if (t.matches && t.matches("[data-pl-per]")){ UI.plPer = t.value; render(true); return; }
   if (t.matches && t.matches("[data-biz-taxpct]")){ const v = Math.max(0, Math.min(60, Math.round(numv(t.value) * 10) / 10 || 0)); bizData().taxPct = v; save(); render(true); return; }
   if (t.matches && t.matches("[data-bank-use]")){ setBankPref(t.dataset.bankUse, {use: t.checked}); save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-prof]")){ const k = t.dataset.bizProf, v = String(t.value || "").trim(); let val = v.slice(0, k === "payNote" ? 200 : k === "address" ? 160 : 100);
@@ -8150,7 +8221,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-stmt-csv")){ statementCsv(); return; }
   // ---- backup and keeping data safe
   if (b.hasAttribute("data-backup")){ downloadBackup(); return; }
-  if (b.hasAttribute("data-sync-now")){ syncPull(true).then(() => syncPush()).then(() => { refreshOuts(); toast("Synced."); }); return; }
+  if (b.hasAttribute("data-sync-now")){ b.disabled = true; b.textContent = "Syncing…"; syncPull(true).then(() => syncPush()).then(() => { refreshOuts(); toast("Synced."); }); return; }
   if (b.hasAttribute("data-sync-off")){ syncStop().then(() => { refreshOuts(); toast("Sync is off. This device keeps its own copy."); }); return; }
   if (b.hasAttribute("data-backup-later")){ S.backupSnooze = isoDaysAgo(0); save(); refreshOuts(); return; }
   if (b.hasAttribute("data-restore")){ $("restore-in").click(); return; }
@@ -8363,7 +8434,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-biz-import")){ UI.bizPickFile = true; $("stmt").click(); return; }
   if (b.hasAttribute("data-biz-import-cancel")){ BIZ.lines = null; BIZ.pick = new Set(); render(true); return; }
   if (b.hasAttribute("data-biz-import-add")){ const bd = bizData(), u = undoable(), picked = [...BIZ.pick].map(i => BIZ.lines[i]).filter(Boolean);
-    picked.forEach(l => { bd.entries.push({id: uid(), kind: l.amt > 0 ? "in" : "out", name: l.desc.slice(0, 60), amount: r2(Math.abs(l.amt)), date: l.date, cat: l.amt > 0 ? "Sales" : "From statement"}); bd.imported.push(l.key); });
+    picked.forEach(l => { const r = bizRuleFor(l.desc); bd.entries.push({id: uid(), kind: l.amt > 0 ? "in" : "out", name: (r && r.name) || l.desc.slice(0, 60), amount: r2(Math.abs(l.amt)), date: l.date, cat: r ? r.cat : l.amt > 0 ? "Sales" : "From statement", ...(r ? {rule: r.id} : {})}); bd.imported.push(l.key); });
     bd.imported = bd.imported.slice(-3000); BIZ.lines = null; BIZ.pick = new Set(); save(); render(true); toast(`Added ${picked.length} to Business.`, u); return; }
   if (b.hasAttribute("data-biz-export")){ const ok = await saveFile(new Blob([bizCsv()], {type: "text/csv"}), `keepwise-business-${bizNow()[0]}.csv`); if (ok) toast("Saved. Send the file to your accountant."); return; }
   if (b.dataset.salesAdd){ SALES.form = b.dataset.salesAdd; SALES.err = ""; render(true); const f = view.querySelector(".sales-form input"); if (f) f.focus({preventScroll: true}); return; }
@@ -8380,6 +8451,10 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-biz-logo-site")){ busy("Looking for your logo");
     try { const d = await salesCall("/site/logo", {url: bizData().website}); const bin = Uint8Array.from(atob(d.data), c => c.charCodeAt(0)); bizData().logo = await logoFrom(new Blob([bin], {type: d.type})); save(); busy(false); render(true); toast("Found your logo. Check it looks right."); }
     catch(err){ busy(false); toast(err.message && !/load/.test(err.message) ? err.message : "No logo found on that website. You can upload one instead."); } return; }
+  if (b.hasAttribute("data-bz-split-edit")){ UI.bzSplitEdit = !UI.bzSplitEdit; render(true); return; }
+  if (b.hasAttribute("data-bz-rule-add")){ UI.bzRuleAdd = !UI.bzRuleAdd; render(true); return; }
+  if (b.hasAttribute("data-bz-rule-del")){ const id = b.closest("[data-bz-rule]").dataset.bzRule, u = undoable(); bizData().rules = bizRules().filter(r => r.id !== id); save(); render(true); toast("Rule removed.", u); return; }
+  if (b.hasAttribute("data-bz-pl-pdf")){ bizPLPdf(); return; }
   if (b.hasAttribute("data-note-settings")){ UI.settings = "notes"; render(false); $("main").scrollTop = 0; return; }
   if (b.dataset.notePref){ const P = notePref(), k = b.dataset.notePref; P[k] = P[k] === false ? true : false; save(); renderBell(); render(true); return; }
   if (b.dataset.bseg){ UI.bseg = b.dataset.bseg; UI.invAdd = false; UI.invEdit = null; render(false); const m = $("main"); if (m) m.scrollTop = 0; return; }
@@ -8448,7 +8523,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-mem-close")){ UI.memories = false; render(false); return; }
   if (b.dataset.memView){ photoView(b.dataset.memView); return; }
   if (b.hasAttribute("data-mem-del")){ const id = b.closest("[data-mem]").dataset.mem, u = undoable(); S.memories = memList().filter(m => m.id !== id); save(); render(true); memPaint(); toast("Memory removed.", u); return; }
-  if (b.hasAttribute("data-trial-start")){ if (window.Capacitor) return; S.plusTrial = {start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 7))}; save(); render(true); toast(`Your free week of Plus is on, until ${dateWithYear(isoDate(S.plusTrial.end))}. Nothing is charged.`); return; }
+  if (b.hasAttribute("data-trial-start")){ if (window.Capacitor) return; S.plusTrial = {start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 7))}; save(); render(true); toast("Free week started. Enjoy Plus!"); return; }
   if (b.hasAttribute("data-trial-stop")){ if (S.plusTrial) S.plusTrial.cancelled = isoOf(todayMid()); UI.biz = false; save(); render(true); toast("Your free week has ended. Everything free is still here."); return; }
   if (b.hasAttribute("data-plus-close")){ UI.plus = false; render(false); return; }
   if (b.hasAttribute("data-open-account")){ if (b.dataset.accStart && typeof ACC !== "undefined"){ ACC.mode = b.dataset.accStart; ACC.err = ""; } UI.account = true; UI.inbox = false; if (typeof accInit === "function") accInit(); render(false); return; }
@@ -8721,6 +8796,12 @@ view.addEventListener("submit", async e => {
     if (/\d/.test(q) && (wantsAdd || !asking)){ const u = undoable(), before = JSON.stringify(S), said = await logSpend(q);
       if (said){ ASK.last = said; if (JSON.stringify(S) !== before && land(said, u)) return; refreshOuts(); renderBell(); if (JSON.stringify(S) !== before) toast("Logged.", u); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
     ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
+  if (kind === "bzRule"){ const match = String(fd.get("match") || "").trim().toLowerCase().slice(0, 40), name = String(fd.get("name") || "").trim().slice(0, 40), cat = String(fd.get("cat") || "Other");
+    if (match.length < 2){ toast("Type a word the bank line contains."); return; } bizRules().push({id: uid(), match, name, cat}); UI.bzRuleAdd = false; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast("Rule saved. Matching lines are sorted by themselves."); return; }
+  if (kind === "bzPay"){ const a = numv(fd.get("amount")); if (!(a > 0)){ toast("Enter how much to pay yourself."); return; } const u = undoable(), b2 = bizData(), d = isoDaysAgo(0), nm = `Pay from ${b2.name || "my business"}`;
+    (b2.draws = b2.draws || []).push({id: uid(), date: d, amount: r2(a)});
+    let x = (S.extras = S.extras || []).find(v => v.bizPay); if (!x){ x = {id: uid(), name: nm, kind: "side", when: "any", day: 1, day2: 15, wd: 5, next: d, amount: "", added: d, bizPay: true}; S.extras.push(x); }
+    (x.got = x.got || []).push({id: uid(), date: d, amount: r2(a)}); save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Paid yourself ${fmt(a)}. Personal counts it as income this month.`, u); return; }
   if (kind === "rcptNew"){ const amount = numv(fd.get("amount")), name = String(fd.get("name") || "").trim().slice(0, 60) || "Receipt", date = String(fd.get("date") || isoDaysAgo(0));
     if (!(amount > 0)){ toast("Enter the amount."); return; } const u = undoable(), id = uid();
     (S.spends = S.spends || []).push({id, date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0), at: Date.now(), k: periodKeyOfIso(date) || compute().planKey, name: titleCase(name), amount: r2(amount)});
