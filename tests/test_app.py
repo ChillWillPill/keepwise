@@ -1061,7 +1061,7 @@ async def receipt_photo_is_a_plus_feature(ctx):
 @test
 async def business_space_is_a_plus_preview(ctx):
     pg = await open_app(ctx)
-    await pg.click("[data-space=business]"); await pg.wait_for_timeout(150)
+    await space(pg, "business"); await pg.wait_for_timeout(150)
     v = await text(pg, "#view")
     assert "Keep business and personal money apart" in v and "Tax set-aside" in v and "Sign in to join the waitlist" in v
     assert await pg.locator("#m-income").count() == 0, "personal month is hidden"
@@ -1070,7 +1070,7 @@ async def business_space_is_a_plus_preview(ctx):
     assert sw[0] <= sw[1]
     await pg.click(".biz-panel [data-space=personal]"); await pg.wait_for_timeout(150)
     assert await pg.locator("#m-income").count() == 1
-    await pg.click("[data-space=business]"); await tab(pg, "subs"); await tab(pg, "month")
+    await space(pg, "business"); await tab(pg, "subs"); await tab(pg, "month")
     assert await pg.locator("#m-income").count() == 1, "leaving the tab returns to Personal"
 
 @test
@@ -2157,7 +2157,7 @@ async def giving_is_a_line_you_name_yourself(ctx):
 async def plus_testers_get_a_working_business_space(ctx):
     pg = await open_app(ctx, month_tabs=True)
     k0 = money(await text(pg, "[data-out=headline] .big"))
-    await pg.click("button:has-text('Income')"); await pg.click("[data-space=business]"); await pg.wait_for_timeout(200)
+    await pg.click("button:has-text('Income')"); await space(pg, "business"); await pg.wait_for_timeout(200)
     assert "Join the Plus waitlist" in await pg.inner_text("#view") or "Sign in to join the waitlist" in await pg.inner_text("#view")
     # the hidden tester switch: 7 taps on the Plus label
     for _ in range(7): await pg.click("[data-plus-tap]", force=True)
@@ -2167,9 +2167,9 @@ async def plus_testers_get_a_working_business_space(ctx):
       return {shown: !b.hidden && r.width > 0, inside: r.right <= box.right + 1, full: w.scrollWidth <= w.clientWidth + 1, tag: document.getElementById('brand-tag').hidden}; }""")
     assert hb == {"shown": True, "inside": True, "full": True, "tag": True}, hb
     # a cost, then money in
-    await pg.click("[data-biz-new=out]"); f = pg.locator("form[data-form=bizEntry]"); await f.locator("[name=name]").fill("Candle jars"); await f.locator("[name=amount]").fill("120"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    await biz_add(pg, "[data-biz-new=out]"); f = pg.locator("form[data-form=bizEntry]"); await f.locator("[name=name]").fill("Candle jars"); await f.locator("[name=amount]").fill("120"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     assert money(await text(pg, "[data-biz-profit]")) == -120
-    await pg.click("[data-biz-new=in]"); f = pg.locator("form[data-form=bizEntry]")
+    await biz_add(pg, "[data-biz-new=in]"); f = pg.locator("form[data-form=bizEntry]")
     assert await f.locator("[name=cat]").input_value() == "Sales"
     await f.locator("[name=name]").fill("Etsy payout"); await f.locator("[name=amount]").fill("900"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     assert money(await text(pg, "[data-biz-profit]")) == 780
@@ -2181,7 +2181,7 @@ async def plus_testers_get_a_working_business_space(ctx):
     await pg.click("[data-bseg=tax]"); await pg.wait_for_timeout(150)
     assert "$195 this month" in await text(pg, "[data-biz-taxline]"), await text(pg, "[data-biz-taxline]")
     await pg.fill("[data-biz-taxpct]", "30"); await pg.press("[data-biz-taxpct]", "Tab"); await pg.wait_for_timeout(200)
-    assert "$234 this month" in await text(pg, "[data-biz-taxline]") and await pg.locator("[data-bseg=tax][aria-pressed=true]").count() == 1
+    assert "$234 this month" in await text(pg, "[data-biz-taxline]") and await pg.locator("#tabbar [data-bseg=tax][aria-current=page]").count() == 1
     # a business subscription and the business share of a personal bill
     await pg.click("[data-bseg=money]"); await pg.wait_for_timeout(150)
     sf = pg.locator("form[data-form=bizSub]"); await sf.locator("[name=name]").fill("Canva Pro"); await sf.locator("[name=price]").fill("15"); await sf.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
@@ -2193,13 +2193,13 @@ async def plus_testers_get_a_working_business_space(ctx):
     sh = pg.locator("form[data-form=bizShare]"); src = await sh.locator("[name=src] option").first.inner_text(); await sh.locator("[name=pct]").fill("50"); await sh.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     assert src in await text(pg, "[data-biz-shares]") and "50% business" in await text(pg, "[data-biz-shares]")
     # sorting a statement: tick the business lines
-    async with pg.expect_file_chooser() as fc: await pg.click("[data-biz-import]")
+    async with pg.expect_file_chooser() as fc: await biz_add(pg, "[data-biz-import]")
     await (await fc.value).set_files(os.path.join(HERE, "fixtures", "sample-bank-statement.csv")); await pg.wait_for_timeout(1200)
     rows = pg.locator("[data-biz-pick]"); n = await rows.count(); assert n > 10, n
     await rows.nth(0).check(); await rows.nth(1).check(); assert "Add 2 to Business" in await text(pg, "[data-biz-import-add]")
     before = len((await state(pg))["biz"]["entries"]); await pg.click("[data-biz-import-add]"); await pg.wait_for_timeout(200)
     assert len((await state(pg))["biz"]["entries"]) == before + 2 and "Added 2 to Business" in await pg.inner_text("#toast")
-    async with pg.expect_file_chooser() as fc: await pg.click("[data-biz-import]")
+    async with pg.expect_file_chooser() as fc: await biz_add(pg, "[data-biz-import]")
     await (await fc.value).set_files(os.path.join(HERE, "fixtures", "sample-bank-statement.csv")); await pg.wait_for_timeout(1200)
     assert await pg.locator("[data-biz-pick]").count() == n - 2, "lines already added are not offered again"
     await pg.click("[data-biz-import-cancel]")
@@ -2210,20 +2210,32 @@ async def plus_testers_get_a_working_business_space(ctx):
     assert csv.startswith("Date,Type,Name,Category,Amount") and "Etsy payout" in csv and "Canva Pro" in csv and "50% business" in csv and "Total income" in csv and "Tax set-aside at 30%" in csv and "Costs by category" in csv and "Estimated tax Q4" in csv, csv[:400]
     # personal money is untouched, everything stays after a reload, and the preview can be turned off
     await pg.reload(); await pg.wait_for_timeout(500)
-    await pg.click("button:has-text('Income')"); await pg.click("[data-space=business]"); await pg.wait_for_timeout(200)
+    await pg.click("button:has-text('Income')"); await space(pg, "business"); await pg.wait_for_timeout(200)
     assert money(await text(pg, "[data-biz-profit]")) != 0
     await pg.click("[data-plus-off]"); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-biz-hero]").count() == 0 and (await state(pg))["biz"]["entries"]
-    await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150); await pg.click("button:has-text('Overview')"); await pg.wait_for_timeout(150)
+    await space(pg, "personal"); await pg.wait_for_timeout(150); await pg.click("button:has-text('Overview')"); await pg.wait_for_timeout(150)
     assert money(await text(pg, "[data-out=headline] .big")) == k0
     assert not pg.errors, pg.errors
 
 
+async def space(pg, which):
+    if await pg.locator("#space-chip:visible").count():
+        await pg.click("#space-chip"); await pg.wait_for_timeout(150)
+        await pg.click(f"#space-pop [data-space={which}]")
+    else:
+        if not await pg.locator(f"#view [data-space={which}]").count():
+            await pg.click("[data-tab=month]"); await pg.wait_for_timeout(120)
+            if await pg.locator("[data-mseg=more]").count(): await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(120)
+        await pg.click(f"#view [data-space={which}]")
+    await pg.wait_for_timeout(150)
+
+async def biz_add(pg, sel):
+    if not await pg.locator(f"#view {sel}").count() and not await pg.locator(f"#tabbar {sel}").count(): await pg.click("[data-biz-add]"); await pg.wait_for_timeout(80)
+    await pg.locator(sel).first.click()
+
 async def biz_on(pg):
-    if not await pg.locator("#view [data-space=business]").count():
-        await pg.click("[data-tab=month]"); await pg.wait_for_timeout(120)
-        if await pg.locator("[data-mseg=more]").count(): await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(120)
-    await pg.click("[data-space=business]"); await pg.wait_for_timeout(150)
+    await space(pg, "business")
     if await pg.locator("[data-bseg=money]").count(): await pg.click("[data-bseg=money]"); await pg.wait_for_timeout(120)   # it opens on Overview; most tests work in Money
     if not await pg.locator("[data-biz-hero]").count():
         for _ in range(7): await pg.click("[data-plus-tap]", force=True)
@@ -2306,7 +2318,7 @@ async def plus_connects_a_bank_through_plaid(ctx):
     await pg.route(re.compile(r"keepwise-api\."), api)
     await pg.click("button:has-text('Income')"); await pg.wait_for_timeout(150); await menu_to(pg, "banks"); await pg.wait_for_timeout(150)
     assert await pg.locator("[data-plaid]").count() == 0, "Plaid is a Plus feature"
-    await pg.click("[data-tab=month]"); await biz_on(pg); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150)
+    await pg.click("[data-tab=month]"); await biz_on(pg); await space(pg, "personal"); await pg.wait_for_timeout(150)
     await menu_to(pg, "banks"); await pg.wait_for_timeout(150)
     card = await text(pg, "[data-bank]"); assert "Connect with Plaid" in card and "SimpleFIN" not in card, "Plus pays for Plaid, so it does not offer a SimpleFIN plan you would pay for: " + card
     await pg.click("[data-plaid-add]"); await pg.wait_for_timeout(800)
@@ -2350,7 +2362,7 @@ async def plus_connects_a_bank_through_plaid(ctx):
     assert "From Everyday checking" in await text(pg, "[data-biz-import-card]")
     await pg.click("[data-biz-bank=a1]"); await pg.wait_for_timeout(800)
     lines = await text(pg, "[data-biz-import-card]"); assert "Craft Warehouse" in lines and await pg.locator("[data-biz-pick]").count() == 3, lines
-    await pg.click("[data-biz-import-cancel]"); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150); await menu_to(pg, "banks"); await pg.wait_for_timeout(150)
+    await pg.click("[data-biz-import-cancel]"); await space(pg, "personal"); await pg.wait_for_timeout(150); await menu_to(pg, "banks"); await pg.wait_for_timeout(150)
     # disconnect removes it at Plaid and on the phone
     await pg.click("[data-plaid-more]"); await pg.click("[data-plaid-off]"); await pg.wait_for_timeout(300)
     assert calls[-1][0] == "/plaid/remove" and "SEALED-BLOB" not in (await pg.evaluate("localStorage.getItem('keepwise-plaid-v1')") or "")
@@ -2379,7 +2391,7 @@ async def plus_autopilot_shows_what_changed_in_the_bank(ctx):
     await pg.route(re.compile(r"keepwise-api\."), api)
     await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(150)
     assert await pg.locator("[data-auto]").count() == 0, "Autopilot is Plus with a bank connected"
-    await biz_on(pg); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150)
+    await biz_on(pg); await space(pg, "personal"); await pg.wait_for_timeout(150)
     await menu_to(pg, "banks"); await pg.click("[data-plaid-add]"); await pg.wait_for_timeout(800); await pg.click("[data-bank-pick-done]"); await pg.click("[data-tab=month]")
     await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(400)
     card = await text(pg, "[data-auto]")
@@ -2409,7 +2421,7 @@ async def plus_emails_the_people_in_a_split(ctx):
         body = json.loads(route.request.post_data or "{}"); sent.append(body)
         await route.fulfill(status=200, content_type="application/json", body=json.dumps({"sent": len(body["items"])}))
     await pg.route(re.compile(r"keepwise-api\..*/split/email"), api)
-    await biz_on(pg); await pg.click("[data-space=personal]"); await tab(pg, "split")
+    await biz_on(pg); await space(pg, "personal"); await tab(pg, "split")
     names = await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1')).people.filter(p => p.id !== 'me' && !p.archived).map(p => [p.id, p.name])")
     (a, an), (b, bn) = names[0], names[1]
     async def new_split(title):
@@ -2534,7 +2546,7 @@ async def plus_emails_invoices_and_reminds_when_late(ctx):
     assert len((await state(pg))["biz"]["invoices"][0]["reminded"]) == 1
     await pg.reload(); await pg.wait_for_timeout(6000); assert len([x for x in sent if x["subject"].startswith("Reminder:")]) == 1, "never twice for the same step"
     # turning reminders off stops them
-    await tab(pg, "month"); await pg.click("[data-mseg=more]"); await pg.click("[data-space=business]"); await pg.click("[data-bseg=invoices]"); await pg.click("[data-inv-remind=off]"); await pg.wait_for_timeout(150)
+    await tab(pg, "month"); await pg.click("[data-mseg=more]"); await space(pg, "business"); await pg.click("[data-bseg=invoices]"); await pg.click("[data-inv-remind=off]"); await pg.wait_for_timeout(150)
     assert (await state(pg))["biz"]["remindOff"] is True
     assert not pg.errors, pg.errors
 
@@ -2608,10 +2620,10 @@ async def business_invoices_are_made_shared_and_paid(ctx):
     r0 = f.locator("[data-inv-item]").nth(0); await r0.locator("[name=desc]").fill("Wax melts"); await r0.locator("[name=price]").fill("40")
     await f.locator("[name=due]").fill("2026-01-05"); await f.locator("[name=date]").fill("2026-01-01"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     assert "INV-0002" in await text(pg, "[data-inv-list]") and "1 late" in await text(pg, "[data-inv-hero]")
-    await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150); await pg.click("button:has-text('Overview')"); await pg.wait_for_timeout(150)
+    await space(pg, "personal"); await pg.wait_for_timeout(150); await pg.click("button:has-text('Overview')"); await pg.wait_for_timeout(150)
     up = await text(pg, "[data-out=comingUp]"); assert "Maple Market · INV-0002" in up and "Late by" in up, up
     # empty invoices are refused
-    await pg.click("button:has-text('Income')"); await pg.click("[data-space=business]"); await pg.click("[data-bseg=invoices]"); await pg.click("[data-inv-add]")
+    await pg.click("button:has-text('Income')"); await space(pg, "business"); await pg.click("[data-bseg=invoices]"); await pg.click("[data-inv-add]")
     await pg.locator("form[data-form=invoice] [type=submit]").click(); await pg.wait_for_timeout(100); assert "Say who" in await pg.inner_text("#toast")
     assert not pg.errors, pg.errors
 
@@ -2635,9 +2647,9 @@ async def business_mileage_and_estimated_tax(ctx):
     # Q3 (Jun-Aug): 2000 - 400 = 1600 profit at 25% = 400, due Sep 15
     nx = await text(pg, "[data-biz-qnext]"); assert "$400" in nx and "Q3" in nx and "Sep 15, 2026" in nx and "in 7 days" in nx, nx
     assert "$250" in await text(pg, "[data-biz-q='2026Q1']")
-    await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150); await pg.click("button:has-text('Overview')"); await pg.wait_for_timeout(150)
+    await space(pg, "personal"); await pg.wait_for_timeout(150); await pg.click("button:has-text('Overview')"); await pg.wait_for_timeout(150)
     assert "Estimated tax Q3" in await text(pg, "[data-out=comingUp]")
-    await pg.click("button:has-text('Income')"); await pg.click("[data-space=business]"); await pg.click("[data-bseg=tax]")
+    await pg.click("button:has-text('Income')"); await space(pg, "business"); await pg.click("[data-bseg=tax]")
     await pg.click("[data-biz-q='2026Q3'] [data-biz-qpaid]"); await pg.wait_for_timeout(150)
     assert (await state(pg))["biz"]["qpaid"].get("2026Q3") and "Q4" in await text(pg, "[data-biz-qnext]")
     await pg.click("[data-bseg=miles]"); await pg.fill("[data-biz-milerate]", "0.70"); await pg.press("[data-biz-milerate]", "Tab"); await pg.wait_for_timeout(150)
@@ -2648,7 +2660,7 @@ async def business_mileage_and_estimated_tax(ctx):
 @test
 async def business_receipt_photo_fills_the_cost(ctx):
     pg = await open_app(ctx, month_tabs=True); await biz_on(pg)
-    async with pg.expect_file_chooser() as fc: await pg.click("[data-biz-new=rcpt]")
+    async with pg.expect_file_chooser() as fc: await biz_add(pg, "[data-biz-new=rcpt]")
     await (await fc.value).set_files(os.path.join(HERE, "fixtures", "receipt-photo.png"))
     await pg.wait_for_selector("[data-biz-rcpt-preview]:not([hidden])", timeout=60000); await pg.wait_for_timeout(300)
     assert "Read $32.94" in await text(pg, "[data-biz-rcpt-preview]"), (await text(pg, "[data-biz-rcpt-preview]"), await pg.inner_text("#toast"))
@@ -5285,7 +5297,7 @@ async def business_extras_fold_into_short_rows(ctx):
     await pg.evaluate("window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.plusTester = true; localStorage.setItem('keepwise-app-v1', JSON.stringify(s))"); await pg.reload(); await pg.wait_for_timeout(400)
     await pg.click("[data-tab=month]"); await pg.wait_for_timeout(120)
     if await pg.locator("[data-mseg=more]").count(): await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(120)
-    await pg.click("[data-space=business]"); await pg.wait_for_timeout(200)
+    await space(pg, "business"); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-bz-ov]").count() == 1, "Business opens on Overview"
     await pg.click("[data-bseg=money]"); await pg.wait_for_timeout(150)
     assert await pg.locator("[data-bz]").count() == 5 and await pg.locator("[data-sales-card], form[data-form=bizSub], [data-biz-settings]").count() == 0, "the extras start folded"
@@ -5293,7 +5305,7 @@ async def business_extras_fold_into_short_rows(ctx):
     assert await pg.locator("form[data-form=bizSub]").count() == 1 and await pg.get_attribute("[data-bz-open=subs]", "aria-expanded") == "true"
     await pg.click("[data-bz-open=prof]"); await pg.wait_for_timeout(150)
     assert await pg.locator("form[data-form=bizSub]").count() == 0 and await pg.locator("[data-biz-settings]").count() == 1, "one open at a time"
-    await pg.click("[data-biz-new=out]"); await pg.wait_for_timeout(150)
+    await biz_add(pg, "[data-biz-new=out]"); await pg.wait_for_timeout(150)
     assert await pg.locator(".bz-wiz").count() == 1 and await pg.locator(".app.flowing").count() == 1, "adding a cost is its own full screen"
     await pg.click(".bz-wiz [data-biz-add-close] >> nth=1"); await pg.wait_for_timeout(150); assert await pg.locator(".bz-wiz").count() == 0
     assert not pg.errors, pg.errors
@@ -5404,7 +5416,7 @@ async def business_split_pay_rules_and_profit_report(ctx):
     pg = await open_app(ctx, month_tabs=True)
     await pg.evaluate("window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.plusTester = true; localStorage.setItem('keepwise-app-v1', JSON.stringify(s))"); await pg.reload(); await pg.wait_for_timeout(400)
     await biz_on(pg)
-    await pg.click("[data-biz-new=in]"); f = pg.locator("form[data-form=bizEntry]"); await f.locator("[name=name]").fill("Paddle payout"); await f.locator("[name=amount]").fill("1000"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
+    await biz_add(pg, "[data-biz-new=in]"); f = pg.locator("form[data-form=bizEntry]"); await f.locator("[name=name]").fill("Paddle payout"); await f.locator("[name=amount]").fill("1000"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(250)
     sp = await text(pg, "[data-bz-split]"); assert "Tax 25%" in sp and "$250" in sp and "Profit 10%" in sp and "$100" in sp and "Running 65%" in sp and "$650" in sp, sp
     # pay yourself: personal counts it as income, the business profit stays
     p0 = money(await text(pg, "[data-biz-profit]"))
@@ -5417,7 +5429,7 @@ async def business_split_pay_rules_and_profit_report(ctx):
     assert "GoDaddy" in await text(pg, "[data-bz-rules]")
     csv = os.path.join(TMP, "biz-rule.csv"); open(csv, "w").write("Date,Description,Amount\n10/02/2026,GODADDY.COM DNS 123,-23.05\n10/03/2026,CORNER SHOP,-7.50\n")
     await pg.click("[data-bseg=money]"); await pg.wait_for_timeout(150)
-    async with pg.expect_file_chooser() as fc: await pg.click("[data-biz-import] >> nth=0")
+    async with pg.expect_file_chooser() as fc: await biz_add(pg, "[data-biz-import]")
     await (await fc.value).set_files(csv); await pg.wait_for_timeout(1200)
     picks = await pg.evaluate("[...document.querySelectorAll('[data-biz-pick]')].map(c => c.checked)"); assert picks.count(True) == 1, picks
     await pg.click("[data-biz-import-add]"); await pg.wait_for_timeout(250)
@@ -5454,7 +5466,7 @@ async def chosen_currency_shows_everywhere(ctx):
         assert "$" not in v, f"{where}: " + v[max(0, v.index("$") - 40): v.index("$") + 20].replace("\n", " ")
     await clean("month"); await pg.click("[data-plain]"); await pg.locator("[data-ask]").nth(2).click(); await clean("ask")
     await pg.click("[data-inc-add]"); await clean("income form"); await pg.click("[data-inc-cancel]")
-    await pg.click("[data-space=business]"); await clean("business"); await pg.click("[data-space=personal]")
+    await space(pg, "business"); await clean("business"); await space(pg, "personal")
     await pg.click("[data-history]"); await clean("statements")
     for i in range(3):
         await pg.locator(".stmt-row").nth(i).click(); await pg.wait_for_timeout(80); await clean(f"statement {i}"); await pg.click("[data-stmt-back]")
@@ -6832,3 +6844,4 @@ async def main():
     sys.exit(1 if failed else 0)
 
 asyncio.run(main())
+
