@@ -79,3 +79,17 @@ Plan:
 - Illustrated "what it really costs" cards (idea from a café ad, Oct 23 — concept only, our own art): one bold number + a simple illustration + a receipt-style breakdown. Use sparingly at moments, not on everyday screens: a monthly insight ("Food delivered: 11 times, $46.80 this month — $560 a year"), Cheaper swap ideas (home vs café cost side by side), the month-end recap / money memories (Plus), and shareable images for Instagram marketing.
   - Sharing (Oct 23): people won't share what they waste (trolling). Two kinds of card: (1) KeepWise's own Instagram posts about general habits — never anyone's real data; (2) in-app share cards only for wins — "I kept $375 this month", "Dropped 3 subscriptions: +$480 a year", "Umrah fund 25% there", streaks — with amounts hidden by default (percent / "goal reached" only, a switch to show figures). Spending-habit cards stay private in the app.
   - Update: both card kinds (habit cost and wins) are mainly for the user to see privately in the monthly recap. Share is offered where people actually like to post: monthly delivery orders ("11 orders this month") and fuel/petrol cost (relatable because of inflation, e.g. "Fuel this month: up 18% on last year").
+
+## Next business release (agreed 26 Oct 2026; mockup first, built after Waqar uses Business for KeepWise itself)
+- Overview tab first: profit vs last month, 6-month chart, tiles (owed to you, monthly costs, tax to set aside + due date, best month), Needs you.
+- Sales block: count and total vs last month, average sale, refunds, sources; for subscriptions: active, new, cancelled, MRR.
+- Automatic sorting rules for business bank lines; P&L report as PDF.
+- Profit First: every sale splits into tax / profit / running costs. "Pay yourself" moves owner's pay from Business to Personal income.
+- Business notifications: new sale (or evening bundle), invoice paid/late with Send reminder, tax due, bill renewals, unusual cost, subscribers, Monday summary. Original happy coin chime for sales (Android channel sound; in-app on web).
+- Settings → Notifications in two sections, Personal and Business, each with a master switch, per-type toggles, chime on/off, quiet hours.
+- Paddle as a fifth Live sales source once approved. Paddle chosen as merchant of record (refund page and Terms already name Paddle).
+- Later: receipt email inbox, ask your business, profit per product, year-end pack, clients + recurring invoices + quotes, cash-flow forecast, bills to pay, sales tax on invoices, time tracking, 1099s, multiple businesses.
+
+## After the business release: free, easy-life features (agreed 26 Oct 2026)
+- Android home-screen widget; Share to KeepWise (screenshots, receipts, bank texts read on the phone); bills and paydays in your calendar (.ics link).
+- Cancel / lower-your-bill guides; pattern learning (suggests bills and reminders); savings challenges; monthly money letter; weekly auto-backup to the person's own Drive or iCloud.

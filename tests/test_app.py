@@ -2174,7 +2174,10 @@ async def plus_testers_get_a_working_business_space(ctx):
     await f.locator("[name=name]").fill("Etsy payout"); await f.locator("[name=amount]").fill("900"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     assert money(await text(pg, "[data-biz-profit]")) == 780
     # four parts, and the switch stays pinned like the others
-    assert [await x.inner_text() for x in await pg.locator("[data-bseg]").all()] == ["Money", "Invoices", "Mileage", "Tax"]
+    assert [await x.inner_text() for x in await pg.locator("[data-bseg-switch] [data-bseg]").all()] == ["Overview", "Money", "Invoices", "Tax"]
+    await pg.click("[data-bseg=overview]"); await pg.wait_for_timeout(150)
+    ov = await text(pg, "[data-bz-ov]"); assert "780" in ov and "1 sale" in ov, ov
+    assert await pg.locator("[data-bz-chart], .bz-tiles, [data-bz-needs]").count() == 3
     await pg.click("[data-bseg=tax]"); await pg.wait_for_timeout(150)
     assert "$195 this month" in await text(pg, "[data-biz-taxline]"), await text(pg, "[data-biz-taxline]")
     await pg.fill("[data-biz-taxpct]", "30"); await pg.press("[data-biz-taxpct]", "Tab"); await pg.wait_for_timeout(200)
@@ -2221,6 +2224,7 @@ async def biz_on(pg):
         await pg.click("[data-tab=month]"); await pg.wait_for_timeout(120)
         if await pg.locator("[data-mseg=more]").count(): await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(120)
     await pg.click("[data-space=business]"); await pg.wait_for_timeout(150)
+    if await pg.locator("[data-bseg=money]").count(): await pg.click("[data-bseg=money]"); await pg.wait_for_timeout(120)   # it opens on Overview; most tests work in Money
     if not await pg.locator("[data-biz-hero]").count():
         for _ in range(7): await pg.click("[data-plus-tap]", force=True)
         await pg.wait_for_timeout(200)
@@ -2620,7 +2624,7 @@ async def business_mileage_and_estimated_tax(ctx):
       {id: 'a2', kind: 'in', name: 'Summer sales', amount: 2000, date: '2026-07-10', cat: 'Sales'},
       {id: 'a3', kind: 'out', name: 'Wax', amount: 400, date: '2026-07-12', cat: 'Supplies'}]}); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
     await pg.reload(); await pg.wait_for_timeout(400); await biz_on(pg)
-    await pg.click("[data-bseg=miles]"); await pg.wait_for_timeout(150)
+    await pg.click("[data-bseg=tax]"); await pg.wait_for_timeout(120); await pg.click("[data-bseg=miles]"); await pg.wait_for_timeout(150)
     assert "at 72.5¢ a mile" in await text(pg, "[data-miles-hero]"), await text(pg, "[data-miles-hero]")
     f = pg.locator("form[data-form=trip2]"); await f.locator("[name=purpose]").fill("Craft fair"); await f.locator("[name=dist]").fill("40"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     assert "Logged 40 miles: $29" in await pg.inner_text("#toast") and money(await text(pg, "[data-miles-hero] .big")) == 29
@@ -5275,8 +5279,14 @@ async def new_split_opens_where_you_can_see_it(ctx):
 @test
 async def business_extras_fold_into_short_rows(ctx):
     pg = await ctx.new_page(); await pg.set_viewport_size({"width": 390, "height": 844}); pg.errors = []
-    await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true; window.KEEPWISE_BIZ_OPEN = false;")
-    await pg.goto(URL); await pg.wait_for_timeout(400); await biz_on(pg)
+    await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true; window.KEEPWISE_BIZ_OPEN = false; window.KEEPWISE_BIZ_SEG = '';")
+    await pg.goto(URL); await pg.wait_for_timeout(400)
+    await pg.evaluate("window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.plusTester = true; localStorage.setItem('keepwise-app-v1', JSON.stringify(s))"); await pg.reload(); await pg.wait_for_timeout(400)
+    await pg.click("[data-tab=month]"); await pg.wait_for_timeout(120)
+    if await pg.locator("[data-mseg=more]").count(): await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(120)
+    await pg.click("[data-space=business]"); await pg.wait_for_timeout(200)
+    assert await pg.locator("[data-bz-ov]").count() == 1, "Business opens on Overview"
+    await pg.click("[data-bseg=money]"); await pg.wait_for_timeout(150)
     assert await pg.locator("[data-bz]").count() == 5 and await pg.locator("[data-sales-card], form[data-form=bizSub], [data-biz-settings]").count() == 0, "the extras start folded"
     await pg.click("[data-bz-open=subs]"); await pg.wait_for_timeout(150)
     assert await pg.locator("form[data-form=bizSub]").count() == 1 and await pg.get_attribute("[data-bz-open=subs]", "aria-expanded") == "true"
@@ -5339,6 +5349,18 @@ async def receipts_and_memories_need_plus_and_work(ctx):
     await pg.click("[data-mem-add]"); await pg.fill("form[data-form=memNew] [name=note]", "First dinner in Miami"); await pg.click("form[data-form=memNew] [type=submit]"); await pg.wait_for_timeout(300)
     assert "First dinner in Miami" in await text(pg, "#view") and "1 memory" in (await text(pg, "[data-mem-year]")).lower()
     assert (await state(pg))["memories"][-1]["note"] == "First dinner in Miami"
+    assert not pg.errors, pg.errors
+
+@test
+async def notifications_can_be_chosen_for_personal_and_business(ctx):
+    pg = await open_app(ctx)
+    await menu_to(pg, "settings"); await pg.click("[data-note-settings]"); await pg.wait_for_timeout(150)
+    assert "Personal" in await text(pg, "[data-note-grp=p]") and await pg.locator("[data-note-grp=b]").count() == 0, "no Business section without Business"
+    await pg.click("#bell"); await pg.wait_for_timeout(150); n0 = await pg.locator(".note-row").count(); await pg.click("[data-close-inbox]")
+    await menu_to(pg, "settings"); await pg.click("[data-note-settings]"); await pg.wait_for_timeout(150)
+    await pg.click("[data-note-pref=p]"); await pg.wait_for_timeout(150)
+    assert (await state(pg))["notePref"]["p"] is False and await pg.locator("[data-note-pref='p:bills']").count() == 0, "one switch turns off all of Personal"
+    await pg.click("#bell"); await pg.wait_for_timeout(150); assert await pg.locator(".note-row").count() < max(1, n0), "and the bell follows"
     assert not pg.errors, pg.errors
 
 @test
@@ -6723,7 +6745,8 @@ async def main():
                 await ctx.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(body=css, content_type="text/css"))
                 await ctx.route("https://fonts.gstatic.com/local/**", lambda r: r.fulfill(path=os.path.join(FONTS, r.request.url.rsplit("/", 1)[-1]), content_type="font/woff2"))
             await ctx.add_init_script("if (window.KEEPWISE_MONTH_ONE_PAGE === undefined) window.KEEPWISE_MONTH_ONE_PAGE = true;")
-            await ctx.add_init_script("if (window.KEEPWISE_BIZ_OPEN === undefined) window.KEEPWISE_BIZ_OPEN = true;")   # Business rows open, unless a test checks them folded   # Month as one page unless a test asks for the phone's three parts
+            await ctx.add_init_script("if (window.KEEPWISE_BIZ_OPEN === undefined) window.KEEPWISE_BIZ_OPEN = true;")
+            await ctx.add_init_script("if (window.KEEPWISE_BIZ_SEG === undefined) window.KEEPWISE_BIZ_SEG = 'money';")   # Business opens on Overview; older tests start in Money   # Business rows open, unless a test checks them folded   # Month as one page unless a test asks for the phone's three parts
             try:
                 await fn(ctx)
                 errs = [e for pg in ctx.pages for e in getattr(pg, "errors", [])]

@@ -993,6 +993,10 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .st-alt{align-self:center;font-size:.9rem;min-height:36px}.st-alt:disabled{opacity:.45}
 .st-wait,.st-mergenote{margin:0;text-align:center}
 .st-wiz .note{margin:0}
+.bz-ch{font:700 .36em var(--body);opacity:.9;vertical-align:middle}
+.bz-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bz-tiles>div{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--lift)}.bz-tiles span{font-size:.78rem;color:var(--muted)}.bz-tiles b{font-size:1.02rem}
+.bz-need{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:.92rem}.bz-need:first-of-type{border-top:0}.bz-need>span:nth-child(2){flex:1;min-width:0}.bz-need .dot{width:8px;height:8px;border-radius:50%;background:var(--rust);flex:none}.bz-need .dot.gold{background:var(--gold)}
+.bz-miles-link{margin-bottom:0}
 .ph-prev{width:100%;max-height:240px;object-fit:contain;border-radius:14px;background:var(--chip)}
 .mems{display:flex;flex-direction:column;gap:10px}.mem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center}.mem-ph{appearance:none;border:0;padding:0;background:var(--chip);width:64px;height:64px;border-radius:14px;overflow:hidden;cursor:pointer}.mem-ph img{width:100%;height:100%;object-fit:cover}.mem-txt{display:flex;flex-direction:column;min-width:0}.mem-txt b{overflow-wrap:anywhere}
 .bz-hero .label{margin:0}.bz-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.bz-quick button{appearance:none;font:600 .8rem var(--body);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;box-shadow:var(--lift)}.bz-quick b{font-size:1.2rem;line-height:1;color:var(--green)}
@@ -2868,7 +2872,7 @@ const plusOn = () => !!S.plusTester || trialOn();
 const PLUS_TAP = {n: 0, t: 0};
 const BIZ_COST_CATS = ["Supplies", "Office & software", "Advertising & marketing", "Equipment", "Contract labor", "Fees & commissions", "Travel", "Meals", "Car & truck", "Utilities & phone", "Rent", "Insurance", "Returns & refunds", "Other"], BIZ_IN_CATS = ["Sales", "Services", "Other"];
 const BIZ = {lines: null, pick: new Set(), file: "", rcpt: null, view: null};
-const BSEGS = [["money", "Money"], ["invoices", "Invoices"], ["miles", "Mileage"], ["tax", "Tax"]];
+const BSEGS = [["overview", "Overview"], ["money", "Money"], ["invoices", "Invoices"], ["tax", "Tax"]];
 // Where you live, for prices, offers and US-only rules. Picked by you, or taken from your currency until you pick one.
 // It stays on this phone.
 const COUNTRY_CODES = "AD AE AF AG AI AL AM AO AR AS AT AU AW AZ BA BB BD BE BF BG BH BI BJ BM BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CK CL CM CN CO CR CU CV CW CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FO FR GA GB GD GE GH GI GL GM GN GQ GR GT GU GW GY HK HN HR HT HU ID IE IL IN IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MO MR MT MU MV MW MX MY MZ NA NC NE NG NI NL NO NP NR NZ OM PA PE PF PG PH PK PL PR PS PT PW PY QA RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TG TH TJ TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VG VI VN VU WS XK YE ZA ZM ZW".split(" ");
@@ -3134,7 +3138,7 @@ async function salesSync(src, quiet){
   try {
     const s = st[src] || (st[src] = {}), since = s.since ? new Date(s.since) : yearStart();
     const rows = src === "stripe" ? await stripeRows(c.key, Math.floor(since.getTime() / 1000)) : src === "shopify" ? await shopifyRows(c, since) : src === "square" ? await squareRows(c, since) : await paypalRows(c, since);
-    const r = salesAdd(src, rows); s.at = Date.now(); s.since = new Date(Date.now() - 3 * 864e5).toISOString();   // the last few days are read again: late sales are caught, and nothing is added twice
+    const r = salesAdd(src, rows); if (r.n) saleChime(); s.at = Date.now(); s.since = new Date(Date.now() - 3 * 864e5).toISOString();   // the last few days are read again: late sales are caught, and nothing is added twice
     save(); SALES.busy = ""; render(true);
     if (!quiet || r.n) toast((r.n ? `${r.n} new ${SALES_SRC[src]} sale${r.n === 1 ? "" : "s"} added.${r.other ? ` ${r.other} in another currency left out.` : ""}` : `${SALES_SRC[src]} is up to date.`) + (r.matched.length ? ` ${r.matched.join(", ")} marked paid.` : ""));
   } catch(err){ SALES.busy = ""; SALES.err = `${SALES_SRC[src]}: ${err.message}`; render(true); }
@@ -3194,6 +3198,58 @@ function salesCard(){
 let RCPT_SWEPT = false;
 function rcptSweep(){ if (RCPT_SWEPT || typeof indexedDB === "undefined") return; RCPT_SWEPT = true; const keep = new Set(bizData().entries.map(e => e.rcpt).filter(Boolean));
   rcptDo("readonly", st => st.getAllKeys()).then(keys => (keys || []).filter(k => !keep.has(k)).forEach(rcptDel)).catch(() => {}); }   // photos whose cost was removed
+
+// The business at a glance: how this month compares, what sells, what needs doing.
+function bizOverview(b, y, m, M, Y){
+  const P = bizCal(m ? y : y - 1, m ? m - 1 : 11), sales = M.es.filter(e => e.kind === "in"), refunds = M.es.filter(e => e.kind === "out" && /refund|return/i.test(e.cat || ""));
+  const ch = P.profit ? Math.round((M.profit - P.profit) / Math.abs(P.profit) * 100) : null, avg = sales.length ? r2(sales.reduce((a, e) => a + e.amount, 0) / sales.length) : 0;
+  const owed = r2(b.invoices.filter(i => i.status !== "paid").reduce((a, i) => a + invTotal(i), 0)), late = b.invoices.filter(invLate);
+  const subsMo = r2(b.subs.reduce((a, v) => a + (v.cycle === "yr" ? (+v.price || 0) / 12 : +v.price || 0), 0)), nq = USA() ? nextQuarter() : null;
+  const months = Array.from({length: m + 1}, (_, i) => bizCal(y, i).profit), best = months.length ? Math.max(...months) : 0, bestI = months.indexOf(best);
+  const noRcpt = M.es.filter(e => e.kind === "out" && !e.rcpt && !e.src).length, srcs = {}; sales.forEach(e => { const k = e.src && SALES_SRC[e.src] ? SALES_SRC[e.src] : "Added by you"; srcs[k] = (srcs[k] || 0) + 1; });
+  const needs = [...late.map(i => `<div class="bz-need" data-bz-need="late"><span class="dot"></span><span>${esc(i.client || "A client")} is ${-daysUntil(isoDate(i.due))} days late · ${fmt(invTotal(i))}</span><button class="link small" type="button" data-bseg="invoices">Remind</button></div>`),
+    noRcpt ? `<div class="bz-need"><span class="dot gold"></span><span>${noRcpt} cost${noRcpt === 1 ? " has" : "s have"} no receipt</span><button class="link small" type="button" data-bseg="money">Add</button></div>` : "",
+    nq && daysUntil(nq.due) <= 21 ? `<div class="bz-need"><span class="dot gold"></span><span>Q${nq.n} tax ${fmt(nq.amount)} is due ${dayMonth(nq.due)}</span><button class="link small" type="button" data-bseg="tax">See</button></div>` : ""].filter(Boolean);
+  return `<section class="hero st-hero bz-hero" data-biz-hero data-bz-ov><p class="label">${new Date(y, m, 1).toLocaleString("en-US", {month: "long"})} profit${b.name ? ` · ${esc(b.name)}` : ""}</p>
+      <div class="big tnum" data-biz-profit>${fmt(M.profit)}${ch != null && isFinite(ch) ? ` <span class="bz-ch">${ch >= 0 ? "▲" : "▼"} ${Math.abs(ch)}% vs last month</span>` : ""}</div>
+      <div class="st-stats"><span><b class="tnum">${sales.length}</b> sale${sales.length === 1 ? "" : "s"}</span><span><b class="tnum">${fmt(avg)}</b> average</span><span><b class="tnum">${refunds.length ? `${refunds.length} · ${fmt(r2(refunds.reduce((a, e) => a + e.amount, 0)))}` : "0"}</b> refunds</span></div></section>
+    <section class="card" data-bz-chart><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Last 6 months</h2><span class="muted small">In and out</span></div>${bizBars()}</section>
+    <div class="bz-tiles"><div><span>Owed to you</span><b class="tnum">${fmt(owed)}</b></div><div><span>Monthly costs</span><b class="tnum">${fmt(subsMo)}</b></div>
+      <div><span>Tax to put aside</span><b class="tnum">${fmt(taxOf(Math.max(0, M.profit)))}${nq ? ` · ${dayMonth(nq.due)}` : ""}</b></div><div><span>Best month</span><b class="tnum">${best > 0 ? `${new Date(y, bestI, 1).toLocaleString("en-US", {month: "short"})} · ${fmt(best)}` : "Not yet"}</b></div></div>
+    ${Object.keys(srcs).length ? `<section class="card" data-bz-srcs><h2>Where sales came from</h2><div class="rows">${Object.entries(srcs).sort((a, c) => c[1] - a[1]).map(([k, n]) => `<div class="line"><span>${esc(k)}</span><span class="tnum">${n}</span></div>`).join("")}</div></section>` : ""}
+    <section class="card" data-bz-needs><h2>Needs you</h2>${needs.length ? needs.join("") : `<p class="muted small" data-keep>All clear. Nothing needs you right now.</p>`}</section>`;
+}
+// Business notes for the bell: new sales, invoices paid or late, tax coming up, an unusual cost, and a Monday summary.
+function bizNotes(){
+  if (!plusOn() || !S.biz) return [];
+  const b = bizData(), out = [], t = todayMid(), iso = isoOf(t), add = (key, text, detail, bseg, kind) => out.push({key: "B:" + key, text, detail, go: "biz", bseg, kind, local: true});
+  const recent = b.entries.filter(e => e.kind === "in" && e.date && daysUntil(isoDate(e.date)) >= -1);
+  if (recent.length) add(`s:${iso}:${recent.length}`, recent.length === 1 ? `New sale: ${fmt(recent[0].amount)}${recent[0].src && SALES_SRC[recent[0].src] ? ` · ${SALES_SRC[recent[0].src]}` : ""}` : `${recent.length} new sales · ${fmt(r2(recent.reduce((a, e) => a + e.amount, 0)))}`, "Since yesterday.", "money", "sales");
+  b.invoices.filter(i => i.status === "paid" && i.paidOn && daysUntil(isoDate(i.paidOn)) >= -2).forEach(i => add(`ip:${i.id}`, `${i.client || "A client"} paid ${fmt(invTotal(i))}`, `${invNo(i.no)} is settled.`, "invoices", "invoices"));
+  b.invoices.filter(invLate).forEach(i => add(`il:${i.id}:${iso}`, `${i.client || "A client"} is ${-daysUntil(isoDate(i.due))} days late`, `${fmt(invTotal(i))} on ${invNo(i.no)}. Send a reminder?`, "invoices", "invoices"));
+  const nq = USA() ? nextQuarter() : null; if (nq && daysUntil(nq.due) <= 14) add(`tx:${isoOf(nq.due)}`, `Q${nq.n} estimated tax is due ${dayMonth(nq.due)}`, `${fmt(nq.amount)} by your set-aside.`, "tax", "tax");
+  const costs = b.entries.filter(e => e.kind === "out" && e.date && daysUntil(isoDate(e.date)) >= -90), wk = costs.filter(e => daysUntil(isoDate(e.date)) >= -7), avg = costs.length >= 6 ? costs.reduce((a, e) => a + e.amount, 0) / costs.length : 0;
+  wk.filter(e => avg && e.amount > avg * 3).forEach(e => add(`u:${e.id}`, `${e.name} cost ${fmt(e.amount)}`, `That’s well above your usual cost of about ${fmt(r2(avg))}.`, "money", "unusual"));
+  if (t.getDay() === 1){ const last = b.entries.filter(e => e.date && daysUntil(isoDate(e.date)) >= -7 && daysUntil(isoDate(e.date)) < 0), inn = r2(last.filter(e => e.kind === "in").reduce((a, e) => a + e.amount, 0)), oo = r2(last.filter(e => e.kind === "out").reduce((a, e) => a + e.amount, 0));
+    if (last.length) add(`w:${iso}`, "Your week in business", `${last.filter(e => e.kind === "in").length} sales, ${fmt(inn)} in, ${fmt(r2(inn - oo))} profit.`, "overview", "summary"); }
+  return out;
+}
+// Which notes to show: the person chooses per kind, with one switch for Personal and one for Business.
+const NOTE_PREFS = {p: [["bills", "Bills due"], ["subs", "Subscription renewals"], ["payday", "Payday and money arriving"], ["setaside", "Payday set-aside"], ["trips", "Trips and events"], ["loans", "Loans"], ["splits", "Splits"]],
+  b: [["sales", "Every sale"], ["chime", "🪙 Coin chime for sales"], ["invoices", "Invoices paid or late"], ["tax", "Tax due"], ["unusual", "Unusual costs"], ["summary", "Monday summary"]]};
+const notePref = () => (S.notePref = S.notePref || {});
+const noteKindOn = (grp, k) => { const P = notePref(); return P[grp] !== false && P[grp + ":" + k] !== false; };
+const localKind = key => { const p = String(key).replace(/^L:/, "").split(":")[0]; return ({b: "bills", bd: "bills", yd: "bills", ya: "bills", r: "subs", c: "subs", f: "subs", a: "payday", pd: "payday", t: "trips", l: "loans", ld: "loans"})[p] || ""; };
+const noteShown = n => n.go === "biz" ? noteKindOn("b", n.kind) : n.local ? (localKind(n.key) ? noteKindOn("p", localKind(n.key)) : true) : noteKindOn("p", "splits");
+V.noteSettings = () => { const P = notePref(), grp = (g, title, extra) => `<section class="card" data-note-grp="${g}"><div class="set-row"><div><b style="font-size:1.1rem">${title}</b>${extra ? `<small class="muted">${extra}</small>` : ""}</div>${setToggle(P[g] !== false, `data-note-pref="${g}"`, title + " notifications")}</div>
+    ${P[g] !== false ? NOTE_PREFS[g].map(([k, n]) => setRow(n, "", setToggle(P[g + ":" + k] !== false, `data-note-pref="${g}:${k}"`, n))).join("") : ""}</section>`;
+  return `${setHead("Notifications")}${grp("p", "Personal")}${S.biz || plusOn() ? grp("b", "Business", plusOn() ? "" : "Business notifications appear when you use Business.") : `<p class="muted small" style="text-align:center">Business notifications appear when you use Business.</p>`}
+    <section class="card">${setRow("Quiet hours", "No sounds from 10 pm to 8 am. Notes still wait in the bell.", setToggle(P.quiet !== false, `data-note-pref="quiet"`, "Quiet hours"))}</section>`; };
+// A short happy chime for a new sale: two bright notes made on the phone, no sound file. Never in quiet hours.
+function saleChime(){ const P = notePref(), h = new Date().getHours(); if (!noteKindOn("b", "chime") || !noteKindOn("b", "sales") || (P.quiet !== false && (h >= 22 || h < 8))) return;
+  try { const A = window.AudioContext || window.webkitAudioContext; if (!A) return; const ac = saleChime.ac || (saleChime.ac = new A()), t0 = ac.currentTime;
+    [[1318.5, 0], [1760, .09], [2093, .18]].forEach(([f, d]) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = "triangle"; o.frequency.value = f; g.gain.setValueAtTime(0, t0 + d); g.gain.linearRampToValueAtTime(.18, t0 + d + .01); g.gain.exponentialRampToValueAtTime(.001, t0 + d + .35); o.connect(g).connect(ac.destination); o.start(t0 + d); o.stop(t0 + d + .4); });
+  } catch(e){} }
 // Adding business money: one calm full-screen step, like a new loan or trip.
 function bizAddWiz(d){
   const k = UI.bizAdd === "in" ? "in" : "out", cats = k === "in" ? BIZ_IN_CATS : BIZ_COST_CATS, top = k === "in" ? BIZ_IN_CATS : BIZ_COST_CATS.slice(0, 5), cur = d.cat || (k === "in" ? "Sales" : "Supplies");
@@ -3209,13 +3265,14 @@ function bizAddWiz(d){
 }
 function bizSpace(){
   rcptSweep();
-  const b = bizData(), seg = UI.bseg || "money", [y, m] = bizNow(), M = bizCal(y, m), Y = bizYear(), d = UI.bizDraft || {kind: "out"};
+  const b = bizData(), seg = UI.bseg || window.KEEPWISE_BIZ_SEG || "overview", [y, m] = bizNow(), M = bizCal(y, m), Y = bizYear(), d = UI.bizDraft || {kind: "out"};
   const monthName = new Date(y, m, 1).toLocaleString("en-US", {month: "long"}), catOpts = (list, v) => list.map(c => `<option ${c === v ? "selected" : ""}>${c}</option>`).join("");
   const segs = `<div class="seg sub-seg biz-seg" role="group" aria-label="Parts of your business" data-bseg-switch>${BSEGS.map(([k, n]) => `<button type="button" data-bseg="${k}" aria-pressed="${seg === k}">${n}</button>`).join("")}</div>`;
   const hero = `<section class="hero biz-hero" data-biz-hero><p class="muted small">${monthName} · ${esc(b.name || "Business")}</p>
     <div class="big tnum" data-biz-profit>${fmt(M.profit)}</div><p class="muted">${fmt(M.inc)} came in, ${fmt(M.out)} went out.</p></section>`;
   let body = "";
-  if (seg === "money"){
+  if (seg === "overview") body = bizOverview(b, y, m, M, Y);
+  else if (seg === "money"){
     const shareable = [...(S.expenses || []).map(e => ["e:" + e.id, e.name]), ...(S.subs || []).filter(v => v.keep !== "drop").map(v => ["s:" + v.id, v.name])].filter(([id]) => !b.shares.some(sh => sh.src === id));
     salesAutoSync();
     const subsMo = r2(b.subs.reduce((a, v) => a + (v.cycle === "yr" ? (+v.price || 0) / 12 : +v.price || 0), 0)), onSales = Object.keys(SALES_SRC).filter(salesOn);
@@ -3277,7 +3334,8 @@ function bizSpace(){
     const taxM = taxOf(M.profit), taxY = taxOf(Y.profit), qs = USA() ? quarters(y) : [], nq = USA() ? nextQuarter() : null;
     const cats = {}; Y.es.filter(e => e.kind === "out").forEach(e => cats[e.cat || "Other"] = r2((cats[e.cat || "Other"] || 0) + e.amount)); if (Y.subs) cats["Office & software"] = r2((cats["Office & software"] || 0) + Y.subs); if (Y.shares) cats["Utilities & phone"] = r2((cats["Utilities & phone"] || 0) + Y.shares); if (Y.miles) cats["Car & truck (mileage)"] = Y.miles;
     const topCats = Object.entries(cats).sort((a, c) => c[1] - a[1]).slice(0, 5), sales = Y.es.filter(e => e.kind === "in"), avg = sales.length ? r2(sales.reduce((a, e) => a + e.amount, 0) / sales.length) : 0;
-    body = `<section class="card" data-biz-tax><h2 class="h-info">Tax set-aside${infoBtn("bizTax", "About the tax set-aside")}</h2>${infoTip("bizTax", "A share of your business profit to keep aside for tax, so tax time is never a surprise. Pick the rate your accountant suggests; KeepWise only does the math, it is not tax advice.")}
+    body = `<button class="w-choice bz-miles-link" type="button" data-bseg="miles"><span class="st-tile t-m" aria-hidden="true">🚗</span><span><b>Mileage</b><span class="muted small">Drives for the business, at ${USA() ? "the IRS rate" : "your rate"}</span></span>${I.chev}</button>
+    <section class="card" data-biz-tax><h2 class="h-info">Tax set-aside${infoBtn("bizTax", "About the tax set-aside")}</h2>${infoTip("bizTax", "A share of your business profit to keep aside for tax, so tax time is never a surprise. Pick the rate your accountant suggests; KeepWise only does the math, it is not tax advice.")}
     <div class="inline" style="gap:10px;flex-wrap:nowrap"><span class="small">Keep aside</span><span class="money-in" style="max-width:110px"><input data-biz-taxpct inputmode="decimal" value="${b.taxPct}" aria-label="Tax set-aside percent"><em>%</em></span><span class="small">of profit</span></div>
     <p data-biz-taxline>That is <b>${fmt(taxM)}</b> this month and <b>${fmt(taxY)}</b> so far this year.</p>
     <div class="biz-bar"><span style="width:${Y.inc > 0 ? Math.min(100, Math.round(Math.max(0, Y.profit) / Y.inc * 100)) : 0}%"></span></div><p class="muted small">Profit so far this year: ${fmt(Y.profit)} from ${fmt(Y.inc)} in.</p></section>
@@ -4654,7 +4712,7 @@ function localNotes(){
   (S.loans || []).filter(l => l.end && !loanDone(l)).forEach(l => { const f = loanFinish(l), n = f ? daysUntil(f.date) : 99; if (n >= 0 && n <= 30) add(`l:${l.id}:${l.end}`, `${l.name || loanKind(l.kind)} ends ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `After that, ${fmt(loanMonthly(l))} a month stays with you.`, "plan", `[data-loan="${l.id}"]`); });
   return out;
 }
-const allNotes = () => [...localNotes(), ...notifications()];
+const allNotes = () => [...localNotes(), ...bizNotes(), ...notifications()].filter(noteShown);
 // Read and unread are yours to set. A note from your circle also counts as read once Mark all as read has passed it.
 const noteRead = n => { const R = S.noteRead || {}, U = S.noteUnread || {}; return R[n.key] ? true : U[n.key] ? false : !n.local && n.t <= SH.lastSeen; };
 function setNoteRead(n, read){ S.noteRead = S.noteRead || {}; S.noteUnread = S.noteUnread || {}; if (read){ S.noteRead[n.key] = 1; delete S.noteUnread[n.key]; } else { delete S.noteRead[n.key]; S.noteUnread[n.key] = 1; } }
@@ -7393,6 +7451,7 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")
   ${dataCard()}
   ${ACC.user && ACC.profile && !UI.delOpen ? `<button class="link small quiet-del" type="button" data-del-acct>Delete account</button>` : UI.delOpen ? `<div class="cf-back" data-del-box role="dialog" aria-modal="true" aria-label="Erase or delete"><div class="cf-sheet"><span class="cf-ic" aria-hidden="true">⚠️</span><h3>Erase or delete?</h3><p class="muted">Erasing this phone clears your budget here for good. Deleting your account erases your profile.</p><div class="cf-col"><button class="btn danger" type="button" data-reset="blank">Erase this phone</button>${ACC.user && ACC.profile ? `<button class="btn danger" type="button" data-del-acct>Delete my account</button>` : ""}<button class="btn" type="button" data-del-toggle>Keep everything</button></div><div id="reset-confirm"></div></div></div>`
     : ""}`   // Start empty above already clears this phone, so there is one way to do it
+  : UI.settings === "notes" ? V.noteSettings()
   : UI.settings === "look" ? `${setHead("Look")}
   ${themesCard(true)}`
   : `${setHead("Settings")}
@@ -7400,7 +7459,8 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")
     <label class="field"><span>Currency</span><select data-bind="cur">${curOptions(S.cur)}</select></label>
     ${countryField("Country", "Used for prices, offers and rules where you live. Kept on this phone.")}
     ${notifPlugin() ? setRow("Reminders", `A nudge before ${payOn() ? "payday" : "each new month"} to check your subscriptions.`, setToggle(S.remind && S.remind.on, "data-remind-set", "Reminders"), "data-set-remind")
-      : webPushRow()}</section>
+      : webPushRow()}
+    <button class="w-choice" type="button" data-note-settings><span><b>Notifications</b><span class="muted small">Choose what Personal and Business tell you</span></span>${I.chev}</button></section>
   <section class="card" data-set-app><h2>App</h2>
     <div data-out="installBtn">${OUT.installBtn()}</div>
     <div class="inline" style="justify-content:space-between" data-ask-row><span class="h-info">Open on the owl${infoBtn("asklink", "About opening on the owl")}</span><button class="btn small" type="button" data-ask-link>Copy link</button></div>
@@ -8258,6 +8318,7 @@ view.addEventListener("click", async e => {
     if (b.hasAttribute("data-note-toggle")){ const u = undoable(), was = noteRead(n); UI.noteView = UI.noteView || (allNotes().some(x => !noteRead(x)) ? "unread" : "all"); setNoteRead(n, !was); save(); renderBell(); render(true); if (!was && UI.noteView === "unread") toast("Marked as read.", u); return; }
     if (b.hasAttribute("data-note-open")){ setNoteRead(n, true);
       if (!n.go){ UI.inbox = false; S.tab = "split"; S.splitMode = "shared"; save(); render(false); return; }
+      if (n.go === "biz"){ UI.inbox = false; S.tab = "month"; if (monthTabs()) UI.mseg = "more"; UI.biz = true; UI.bseg = n.bseg || "overview"; save(); render(false); $("main").scrollTop = 0; return; }
       const sub = n.sub && S.subs.find(x => x.id === n.sub);
       if (String(n.key).startsWith("L:a:") && S.arriveSnooze) S.arriveSnooze = null;   // asked to see it: show the card even after "ask me tomorrow"
       const loanX = n.loan && loanList().find(l => l.id === n.loan);
@@ -8319,6 +8380,8 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-biz-logo-site")){ busy("Looking for your logo");
     try { const d = await salesCall("/site/logo", {url: bizData().website}); const bin = Uint8Array.from(atob(d.data), c => c.charCodeAt(0)); bizData().logo = await logoFrom(new Blob([bin], {type: d.type})); save(); busy(false); render(true); toast("Found your logo. Check it looks right."); }
     catch(err){ busy(false); toast(err.message && !/load/.test(err.message) ? err.message : "No logo found on that website. You can upload one instead."); } return; }
+  if (b.hasAttribute("data-note-settings")){ UI.settings = "notes"; render(false); $("main").scrollTop = 0; return; }
+  if (b.dataset.notePref){ const P = notePref(), k = b.dataset.notePref; P[k] = P[k] === false ? true : false; save(); renderBell(); render(true); return; }
   if (b.dataset.bseg){ UI.bseg = b.dataset.bseg; UI.invAdd = false; UI.invEdit = null; render(false); const m = $("main"); if (m) m.scrollTop = 0; return; }
   if (b.hasAttribute("data-biz-rcpt-add")){ const form = b.closest("form"), inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.setAttribute("capture", "environment"); inp.hidden = true;
     inp.addEventListener("change", () => { const file = inp.files && inp.files[0]; inp.remove(); if (file) bizReceipt(file, form); }); document.body.appendChild(inp); inp.click(); return; }
