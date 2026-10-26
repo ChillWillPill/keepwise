@@ -993,6 +993,15 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .st-alt{align-self:center;font-size:.9rem;min-height:36px}.st-alt:disabled{opacity:.45}
 .st-wait,.st-mergenote{margin:0;text-align:center}
 .st-wiz .note{margin:0}
+.ph-prev{width:100%;max-height:240px;object-fit:contain;border-radius:14px;background:var(--chip)}
+.mems{display:flex;flex-direction:column;gap:10px}.mem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center}.mem-ph{appearance:none;border:0;padding:0;background:var(--chip);width:64px;height:64px;border-radius:14px;overflow:hidden;cursor:pointer}.mem-ph img{width:100%;height:100%;object-fit:cover}.mem-txt{display:flex;flex-direction:column;min-width:0}.mem-txt b{overflow-wrap:anywhere}
+.bz-hero .label{margin:0}.bz-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.bz-quick button{appearance:none;font:600 .8rem var(--body);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;box-shadow:var(--lift)}.bz-quick b{font-size:1.2rem;line-height:1;color:var(--green)}
+.bz-line{display:flex;align-items:center;gap:10px}.bz-line .st-tile{width:36px;height:36px}
+.bz-more{padding:4px 14px}.bz-acc{border-top:1px solid var(--line)}.bz-acc:first-child{border-top:0}
+.bz-head{appearance:none;border:0;background:none;font:inherit;color:inherit;width:100%;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;text-align:left;cursor:pointer}
+.bz-chev{color:var(--muted);transition:transform .15s}.bz-acc.open .bz-chev{transform:rotate(90deg)}
+.bz-body{padding:0 0 12px}.bz-body>.card{border:0;box-shadow:none;padding:0;margin:0;background:none}.bz-body>.card>h2:first-child{display:none}
+.bz-cats{align-items:center}.bz-catsel{width:auto;flex:1 1 140px;min-width:0}
 .st-title small{font-family:var(--body)}.st-hero .st-taxon{text-align:left}
 .st-wiz [data-out=stCheck]{font-size:.8rem;text-align:center;color:var(--muted);margin:-4px 0 -6px}.st-wiz [data-out=stCheck] p{margin:0}
 .st-wiz .st-t .st-day{margin:0;padding:0;background:none;border-radius:0}
@@ -1442,7 +1451,7 @@ function applyTheme(){
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
 (S.settlements || (S.settlements = [])).forEach(x => { if (!x.id) x.id = uid(); });
 if (!S.subAskFrom) S.subAskFrom = isoDaysAgo(0);   // "Did it charge you?" asks only about renewals from today on
-const save = () => { if (UI.welcome != null || window.__kwErasing || window.__kwTour) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} remindSync(); pushSync(); };
+const save = () => { if (UI.welcome != null || window.__kwErasing || window.__kwTour) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} remindSync(); pushSync(); if (typeof syncSoon === "function") syncSoon(); };
 window.addEventListener("pagehide", save);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
 // Back from the email app: if the email was just verified, the profile says so without a tap.
@@ -2855,7 +2864,7 @@ function spaceSwitch(){
 /* ================= KeepWise Plus: Business space (tester preview) =================
    Plus is not on sale yet. A hidden tester switch turns it on: tap the "KeepWise Plus" label 7 times.
    Business money stays on this phone like everything else. Business runs on calendar months. */
-const plusOn = () => !!S.plusTester;
+const plusOn = () => !!S.plusTester || trialOn();
 const PLUS_TAP = {n: 0, t: 0};
 const BIZ_COST_CATS = ["Supplies", "Office & software", "Advertising & marketing", "Equipment", "Contract labor", "Fees & commissions", "Travel", "Meals", "Car & truck", "Utilities & phone", "Rent", "Insurance", "Returns & refunds", "Other"], BIZ_IN_CATS = ["Sales", "Services", "Other"];
 const BIZ = {lines: null, pick: new Set(), file: "", rcpt: null, view: null};
@@ -3185,6 +3194,19 @@ function salesCard(){
 let RCPT_SWEPT = false;
 function rcptSweep(){ if (RCPT_SWEPT || typeof indexedDB === "undefined") return; RCPT_SWEPT = true; const keep = new Set(bizData().entries.map(e => e.rcpt).filter(Boolean));
   rcptDo("readonly", st => st.getAllKeys()).then(keys => (keys || []).filter(k => !keep.has(k)).forEach(rcptDel)).catch(() => {}); }   // photos whose cost was removed
+// Adding business money: one calm full-screen step, like a new loan or trip.
+function bizAddWiz(d){
+  const k = UI.bizAdd === "in" ? "in" : "out", cats = k === "in" ? BIZ_IN_CATS : BIZ_COST_CATS, top = k === "in" ? BIZ_IN_CATS : BIZ_COST_CATS.slice(0, 5), cur = d.cat || (k === "in" ? "Sales" : "Supplies");
+  return `<form class="wiz sf bz-wiz" data-form="bizEntry"><div class="wiz-top sf-top"><button class="icon-btn" type="button" data-biz-add-close aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button><b>${k === "in" ? "Money in" : "New cost"}</b><button class="icon-btn" type="button" data-biz-add-close aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
+    <div class="wiz-card">
+      <label class="close-amt"><span class="close-cur">${esc(sym())}</span><input name="amount" inputmode="decimal" placeholder="0" aria-label="Amount" autocomplete="off" enterkeyhint="next"></label>
+      <label class="field"><span>${k === "in" ? "From" : "What for"}</span><input name="name" maxlength="60" autocomplete="off" placeholder="${k === "in" ? "e.g. Etsy payout" : "e.g. Candle jars"}" enterkeyhint="done"></label>
+      <div class="field"><span>Category</span><div class="chips bz-cats">${top.map(c => `<button type="button" class="chip${c === cur ? " on" : ""}" data-biz-cat="${esc(c)}" aria-pressed="${c === cur}">${esc(c)}</button>`).join("")}<select name="cat" aria-label="All categories" class="bz-catsel">${cats.map(c => `<option ${c === cur ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div></div>
+      <label class="field"><span>Date</span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}"></label>
+      ${k === "out" ? `<button class="btn" type="button" data-biz-rcpt-add>${I.camera || ""}Add a receipt photo</button><div class="biz-rcpt-prev" data-biz-rcpt-preview hidden><img alt="Receipt photo"><span class="small muted"></span></div>` : ""}
+      <input type="hidden" name="kind" value="${k}"></div>
+    <div class="wiz-bar"><button class="btn primary" type="submit" style="width:100%">${k === "in" ? "Add money in" : "Add cost"}</button></div></form>`;
+}
 function bizSpace(){
   rcptSweep();
   const b = bizData(), seg = UI.bseg || "money", [y, m] = bizNow(), M = bizCal(y, m), Y = bizYear(), d = UI.bizDraft || {kind: "out"};
@@ -3196,46 +3218,48 @@ function bizSpace(){
   if (seg === "money"){
     const shareable = [...(S.expenses || []).map(e => ["e:" + e.id, e.name]), ...(S.subs || []).filter(v => v.keep !== "drop").map(v => ["s:" + v.id, v.name])].filter(([id]) => !b.shares.some(sh => sh.src === id));
     salesAutoSync();
-    body = hero + salesCard() + `<section class="card" data-biz-add><h2>Add business money</h2>
-    <form data-form="bizEntry" style="display:flex;flex-direction:column;gap:10px">
-      <div class="seg sub-seg biz-kind" role="group" aria-label="Money in or a cost" style="grid-template-columns:1fr 1fr"><button type="button" data-biz-kind="out" aria-pressed="${d.kind !== "in"}">A cost</button><button type="button" data-biz-kind="in" aria-pressed="${d.kind === "in"}">Money in</button></div>
-      ${d.kind !== "in" ? `<button class="btn" type="button" data-biz-rcpt-add>${I.camera || ""}Snap a receipt</button><div class="biz-rcpt-prev" data-biz-rcpt-preview hidden><img alt="Receipt photo"><span class="small muted"></span></div>` : ""}
-      <label class="field"><span>${d.kind === "in" ? "From" : "What for"}</span><input name="name" maxlength="60" autocomplete="off" placeholder="${d.kind === "in" ? "e.g. Etsy payout" : "e.g. Candle jars"}" enterkeyhint="next"></label>
-      <div class="grid2"><label class="field"><span>Amount</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" placeholder="0" enterkeyhint="done"></span></label>
-        <label class="field"><span>Category</span><select name="cat">${catOpts(d.kind === "in" ? BIZ_IN_CATS : BIZ_COST_CATS, d.kind === "in" ? "Sales" : "Supplies")}</select></label></div>
-      <label class="field"><span>Date</span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}"></label>
-      <input type="hidden" name="kind" value="${d.kind === "in" ? "in" : "out"}"><button class="btn primary" type="submit">${d.kind === "in" ? "Add money in" : "Add cost"}</button></form></section>
-  <section class="card" data-biz-list><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>This month</h2><span class="muted small tnum">${M.es.length} entr${M.es.length === 1 ? "y" : "ies"}</span></div>
-    ${M.es.length ? `<div class="rows">${M.es.slice().sort((a, c) => c.date.localeCompare(a.date)).map(e => `<div class="line" data-biz-entry="${e.id}"><div style="min-width:0"><div>${esc(e.name)}</div><div class="muted small">${shortDate(e.date)} · ${esc(e.cat || "")}${e.src && SALES_SRC[e.src] ? ` · ${SALES_SRC[e.src]}` : ""}${e.rcpt ? ` · <button class="link small" type="button" data-biz-rcpt-view>Receipt</button>` : ""}</div></div><div class="inline"><span class="tnum ${e.kind === "in" ? "good" : ""}">${e.kind === "in" ? "+" : ""}${fmt(e.amount)}</span><button class="link danger-link small" type="button" data-biz-del aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Nothing yet this month. Add a sale or a cost above, or sort a statement below.</p>`}
+    const subsMo = r2(b.subs.reduce((a, v) => a + (v.cycle === "yr" ? (+v.price || 0) / 12 : +v.price || 0), 0)), onSales = Object.keys(SALES_SRC).filter(salesOn);
+    const bz = (key, tile, title, sub, inner) => { const open = UI.bzOpen === key || window.KEEPWISE_BIZ_OPEN || (key === "import" && BIZ.lines) || (key === "sales" && (SALES.form || SALES.err));
+      return `<div class="bz-acc${open ? " open" : ""}" data-bz="${key}"><button class="bz-head" type="button" data-bz-open="${key}" aria-expanded="${!!open}">${tile}<span class="st-txt"><span class="st-n">${title}</span><small class="muted">${sub}</small></span><span class="bz-chev" aria-hidden="true">${I.chev}</span></button>${open ? `<div class="bz-body">${inner}</div>` : ""}</div>`; };
+    const ic = (t, c) => `<span class="st-tile t-${c}" aria-hidden="true">${t}</span>`;
+    body = `<section class="hero st-hero bz-hero" data-biz-hero><p class="label">${esc(monthName)} profit${b.name ? ` · ${esc(b.name)}` : ""}</p><div class="big tnum" data-biz-profit>${fmt(M.profit)}</div>
+      <div class="st-meter" aria-hidden="true"><i style="width:${M.inc > 0 ? Math.max(0, Math.min(100, Math.round(M.profit / M.inc * 100))) : 0}%"></i></div>
+      <div class="st-stats"><span><b class="tnum">${fmt(M.inc)}</b> came in</span><span><b class="tnum">${fmt(M.out)}</b> went out</span><span><b class="tnum">${fmt(taxOf(Math.max(0, M.profit)))}</b> tax to put aside</span></div></section>
+    <div class="bz-quick" role="group" aria-label="Add to your business"><button type="button" data-biz-new="out"><b aria-hidden="true">＋</b>Cost</button><button type="button" data-biz-new="in"><b aria-hidden="true">＋</b>Money in</button><button type="button" data-biz-new="rcpt"><b aria-hidden="true">📷</b>Receipt</button><button type="button" data-biz-import><b aria-hidden="true">📄</b>Statement</button></div>
+  <section class="card" data-biz-list><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>This month</h2>${M.es.length > 5 ? `<button class="link small" type="button" data-biz-all>${UI.bizAll ? "Show less" : `See all ${M.es.length}`}</button>` : `<span class="muted small tnum">${M.es.length} entr${M.es.length === 1 ? "y" : "ies"}</span>`}</div>
+    ${M.es.length ? `<div class="rows">${M.es.slice().sort((a, c) => c.date.localeCompare(a.date)).slice(0, UI.bizAll ? 999 : 5).map(e => `<div class="line bz-line" data-biz-entry="${e.id}">${stTile(e.name, e.kind === "in" ? "i" : (e.cat || "").startsWith("Adv") ? "o" : "b")}<div style="min-width:0;flex:1"><div>${esc(e.name)}</div><div class="muted small">${shortDate(e.date)} · ${esc(e.cat || "")}${e.src && SALES_SRC[e.src] ? ` · ${SALES_SRC[e.src]}` : ""}${e.rcpt ? ` · <button class="link small" type="button" data-biz-rcpt-view>Receipt</button>` : ""}</div></div><div class="inline"><span class="tnum ${e.kind === "in" ? "good" : ""}">${e.kind === "in" ? "+" : ""}${fmt(e.amount)}</span><button class="link danger-link small" type="button" data-biz-del aria-label="Remove ${esc(e.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small" data-keep>Nothing yet this month. Add a cost or money in above, or sort a statement.</p>`}
     ${M.subs || M.shares || M.miles ? `<p class="muted small">Also counted: ${[M.subs ? `${fmt(M.subs)} in subscriptions` : "", M.shares ? `${fmt(M.shares)} as the business share of personal bills` : "", M.miles ? `${fmt(M.miles)} for ${M.dist} ${mileUnit()}s driven` : ""].filter(Boolean).join(", ")}.</p>` : ""}</section>
-  <section class="card" data-biz-subs><h2>Business subscriptions</h2>
+    <section class="card bz-more">
+    ${bz("sales", ic("⚡", "s"), "Live sales", onSales.length ? `${onSales.map(x => SALES_SRC[x]).join(", ")} connected` : "Connect Stripe, PayPal, Shopify or Square", salesCard())}
+    ${bz("subs", ic("↻", "b"), "Business subscriptions", b.subs.length ? `${b.subs.length} · ${fmt(subsMo)}/mo` : "Software and tools the business pays for", `<section class="card" data-biz-subs><h2>Business subscriptions</h2>
     ${b.subs.length ? `<div class="rows">${b.subs.map(v => `<div class="line" data-biz-sub="${v.id}"><div><div>${esc(v.name)}</div><div class="muted small">${v.cycle === "yr" ? `Yearly${v.on ? `, ${dayMonth(isoDate(v.on))}` : ""}` : "Monthly"}</div></div><div class="inline"><span class="tnum">${fmt(v.price)}${v.cycle === "yr" ? "/yr" : "/mo"}</span><button class="link danger-link small" type="button" data-biz-sub-del aria-label="Remove ${esc(v.name)}">Remove</button></div></div>`).join("")}</div>` : `<p class="muted small">Software, hosting, tools: anything the business pays for on a schedule.</p>`}
-    <form data-form="bizSub" class="biz-mini"><input name="name" maxlength="40" placeholder="e.g. Canva Pro" aria-label="Subscription name" autocomplete="off"><span class="money-in"><em>${esc(sym())}</em><input name="price" inputmode="decimal" placeholder="0" aria-label="Price"></span><select name="cycle" aria-label="How often"><option value="mo">Monthly</option><option value="yr">Yearly</option></select><button class="btn small" type="submit">Add</button></form></section>
-  <section class="card" data-biz-shares><h2 class="h-info">Business share of personal bills${infoBtn("bizShare", "About business shares")}</h2>${infoTip("bizShare", "If you use your phone, internet or a subscription partly for the business, count that share as a business cost. Your personal month is not changed.")}
+    <form data-form="bizSub" class="biz-mini"><input name="name" maxlength="40" placeholder="e.g. Canva Pro" aria-label="Subscription name" autocomplete="off"><span class="money-in"><em>${esc(sym())}</em><input name="price" inputmode="decimal" placeholder="0" aria-label="Price"></span><select name="cycle" aria-label="How often"><option value="mo">Monthly</option><option value="yr">Yearly</option></select><button class="btn small" type="submit">Add</button></form></section>`)}
+    ${bz("shares", ic("%", "g"), "Business share of personal bills", b.shares.length ? `${b.shares.length} bill${b.shares.length === 1 ? "" : "s"} shared` : "Phone, internet and more used partly for work", `<section class="card" data-biz-shares><h2 class="h-info">Business share of personal bills${infoBtn("bizShare", "About business shares")}</h2>${infoTip("bizShare", "If you use your phone, internet or a subscription partly for the business, count that share as a business cost. Your personal month is not changed.")}
     ${b.shares.length ? `<div class="rows">${b.shares.map(sh => `<div class="line" data-biz-share="${sh.id}"><div><div>${esc(bizShareName(sh))}</div><div class="muted small">${sh.pct}% business</div></div><div class="inline"><span class="tnum">${fmt(bizShareMonthly(sh))}/mo</span><button class="link danger-link small" type="button" data-biz-share-del aria-label="Remove ${esc(bizShareName(sh))}">Remove</button></div></div>`).join("")}</div>` : ""}
-    ${shareable.length ? `<form data-form="bizShare" class="biz-mini"><select name="src" aria-label="Personal bill">${shareable.map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join("")}</select><span class="money-in"><input name="pct" inputmode="numeric" placeholder="50" aria-label="Business percent"><em>%</em></span><button class="btn small" type="submit">Add</button></form>` : `<p class="muted small">Add bills and subscriptions to your personal plan first; then you can count part of them here.</p>`}</section>
-  <section class="card" data-biz-import-card><h2 class="h-info">Sort a statement${infoBtn("bizImport", "About sorting a statement")}</h2>${infoTip("bizImport", "Choose a CSV, PDF or photo of a statement. Tick the lines that were business: money in becomes business income, money out a business cost. Read on this phone only.")}
+    ${shareable.length ? `<form data-form="bizShare" class="biz-mini"><select name="src" aria-label="Personal bill">${shareable.map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join("")}</select><span class="money-in"><input name="pct" inputmode="numeric" placeholder="50" aria-label="Business percent"><em>%</em></span><button class="btn small" type="submit">Add</button></form>` : `<p class="muted small">Add bills and subscriptions to your personal plan first; then you can count part of them here.</p>`}</section>`)}
+    ${bz("import", ic("📄", "m"), "Sort a statement", "Tick the lines that were business", `<section class="card" data-biz-import-card><h2 class="h-info">Sort a statement${infoBtn("bizImport", "About sorting a statement")}</h2>${infoTip("bizImport", "Choose a CSV, PDF or photo of a statement. Tick the lines that were business: money in becomes business income, money out a business cost. Read on this phone only.")}
     ${BIZ.lines ? (BIZ.lines.length ? `<p class="muted small">${esc(BIZ.file)}: tick what was business.</p><div class="st-tx biz-lines">${BIZ.lines.map((l, i) => `<label class="move-row"><input type="checkbox" data-biz-pick="${i}" ${BIZ.pick.has(i) ? "checked" : ""}><span style="flex:1;min-width:0"><span>${esc(l.desc)}</span><span class="muted small" style="display:block">${shortDate(l.date)}</span></span><span class="tnum ${l.amt > 0 ? "good" : ""}">${l.amt > 0 ? "+" : ""}${fmt(Math.abs(l.amt))}</span></label>`).join("")}</div>
       <div class="grid2"><button class="btn" type="button" data-biz-import-cancel>Cancel</button><button class="btn primary" type="button" data-biz-import-add ${BIZ.pick.size ? "" : "disabled"}>Add ${BIZ.pick.size} to Business</button></div>` : `<p class="muted small">Every line in that statement is already in Business.</p><button class="btn" type="button" data-biz-import-cancel>Done</button>`)
-      : `<button class="btn" type="button" data-biz-import>Choose a statement</button>${plaidOn() ? `<div class="biz-banks">${bankList().filter(a => a.src === "plaid" && acctInUse(a)).map(a => `<button class="btn" type="button" data-biz-bank="${esc(a.id)}">From ${esc(acctName(a))}${a.mask ? " ••" + esc(a.mask) : ""}</button>`).join("")}</div>` : ""}`}</section>
-  ${bizProfileCard(b)}`;
+      : `<button class="btn" type="button" data-biz-import>Choose a statement</button>${plaidOn() ? `<div class="biz-banks">${bankList().filter(a => a.src === "plaid" && acctInUse(a)).map(a => `<button class="btn" type="button" data-biz-bank="${esc(a.id)}">From ${esc(acctName(a))}${a.mask ? " ••" + esc(a.mask) : ""}</button>`).join("")}</div>` : ""}`}</section>`)}
+    ${bz("prof", ic("🏷", "m"), "Business profile", b.name ? esc(b.name) : "Name, logo and how you get paid", bizProfileCard(b))}</section>`;
+    if (UI.bizAdd) body += bizAddWiz(d);
   } else if (seg === "invoices"){
     const list = b.invoices.slice().sort((a, c) => (c.date || "").localeCompare(a.date || "")), owed = r2(list.filter(i => i.status !== "paid").reduce((a, i) => a + invTotal(i), 0)), late = list.filter(invLate);
     const ed = UI.invEdit ? b.invoices.find(i => i.id === UI.invEdit) : null, draft = UI.invAdd || ed;
     const it = draft ? (ed ? ed.items : (UI.invItems || [{desc: "", qty: 1, price: ""}])) : [];
     body = `<section class="hero biz-hero" data-inv-hero><p class="muted small">Invoices</p><div class="big tnum">${fmt(owed)}</div><p class="muted">${owed > 0 ? `still to be paid${late.length ? ` · <b class="bad">${late.length} late</b>` : ""}` : "Nobody owes you right now."}</p></section>
     ${!b.logo || !b.payKind ? `<p class="small muted" data-inv-prof-hint>Add your logo and how you get paid, and every invoice carries them with a Pay now link. <button class="link small" type="button" data-goto-prof>Business profile</button></p>` : ""}
-    ${draft ? `<section class="card" data-inv-form-card><h2>${ed ? `Edit ${invNo(ed.no)}` : "New invoice"}</h2><form data-form="invoice" style="display:flex;flex-direction:column;gap:10px">
+    ${draft ? `<form class="wiz sf inv-wiz" data-form="invoice" data-inv-form-card><div class="wiz-top sf-top"><button class="icon-btn" type="button" data-inv-cancel aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button><b>${ed ? `Edit ${invNo(ed.no)}` : "New invoice"}</b><button class="icon-btn" type="button" data-inv-cancel aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div><div class="wiz-card">
       <label class="field"><span>Bill to</span><input name="client" maxlength="60" value="${esc(ed ? ed.client : "")}" placeholder="Client or company" autocomplete="off"></label>
       <label class="field"><span>Client’s email <small class="muted">optional, to email it and send reminders</small></span><input name="email" type="email" inputmode="email" maxlength="120" value="${esc(ed ? ed.email || "" : "")}" placeholder="name@company.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
       <div data-inv-items style="display:flex;flex-direction:column;gap:8px">${it.map((x, i) => `<div class="inv-item" data-inv-item="${i}"><input name="desc" maxlength="80" value="${esc(x.desc || "")}" placeholder="What you did or sold" aria-label="Item ${i + 1}"><span class="money-in"><em>Qty</em><input name="qty" inputmode="decimal" value="${esc(x.qty != null ? x.qty : 1)}" aria-label="Quantity"></span><span class="money-in"><em>${esc(sym())}</em><input name="price" inputmode="decimal" value="${esc(x.price != null ? x.price : "")}" placeholder="0" aria-label="Price"></span></div>`).join("")}</div>
       <button class="link small" type="button" data-inv-line style="align-self:flex-start">+ Add a line</button>
       <div class="grid2"><label class="field"><span>Date</span><input name="date" type="date" value="${esc(ed ? ed.date : isoDaysAgo(0))}"></label><label class="field"><span>Due</span><input name="due" type="date" value="${esc(ed ? ed.due || "" : isoOf(dayPlus(todayMid(), 14)))}"></label></div>
       <label class="field"><span>Note <small class="muted">optional</small></span><input name="note" maxlength="160" value="${esc(ed ? ed.note || "" : "")}" placeholder="e.g. Pay by bank transfer to …"></label>
-      <div class="grid2"><button class="btn" type="button" data-inv-cancel>Cancel</button><button class="btn primary" type="submit">${ed ? "Save" : "Create invoice"}</button></div></form></section>`
+      </div><div class="wiz-bar"><button class="btn primary" type="submit" style="width:100%">${ed ? "Save" : "Create invoice"}</button></div></form>`
       : `<button class="btn primary" type="button" data-inv-add>${I.plus}New invoice</button>`}
     ${mailOk() && b.invoices.some(i => i.email) ? `<p class="small muted" data-inv-remind>${b.remindOff ? `Late invoice reminders are off. <button class="link small" type="button" data-inv-remind="on">Turn on</button>` : `Late invoices get a polite email reminder by themselves, 3 and 10 days after they're due. <button class="link plain small" type="button" data-inv-remind="off">Turn off</button>`}</p>` : ""}
-    <section class="card" data-inv-list><h2>All invoices</h2>${list.length ? `<div class="rows">${list.map(i => `<div class="line inv-row" data-inv="${i.id}"><div style="min-width:0"><div>${esc(i.client || "No name")} <span class="muted small">${invNo(i.no)}</span></div>
+    <section class="card" data-inv-list><h2>All invoices</h2>${list.length ? `<div class="rows">${list.map(i => `<div class="line inv-row bz-line" data-inv="${i.id}">${stTile(i.client || "?", i.status === "paid" ? "i" : invLate(i) ? "o" : "b")}<div style="min-width:0;flex:1"><div>${esc(i.client || "No name")} <span class="muted small">${invNo(i.no)}</span></div>
         <div class="small ${i.status === "paid" ? "good" : invLate(i) ? "bad" : "muted"}">${i.status === "paid" ? `Paid ${shortDate(i.paidOn)}${i.paidBy ? ` · via ${SALES_SRC[i.paidBy] || i.paidBy}` : ""}` : invLate(i) ? `Late · was due ${shortDate(i.due)}` : i.due ? `Due ${shortDate(i.due)}` : "Open"}</div>
         ${i.status !== "paid" && (i.sentAt || (i.reminded || []).length) ? `<div class="muted small" data-inv-sent>${(i.reminded || []).length ? `Reminder sent ${shortDate(i.reminded[i.reminded.length - 1])}` : `Emailed ${shortDate(i.sentAt)}`}</div>` : ""}
         <div class="inline" style="gap:12px;margin-top:4px;flex-wrap:wrap">${i.email && mailOk() && i.status !== "paid" ? `<button class="link small" type="button" data-inv-email>${i.sentAt ? "Email again" : "Email"}</button>` : ""}<button class="link small" type="button" data-inv-share>Share</button>${i.status === "paid" ? `<button class="link plain small" type="button" data-inv-unpaid>Mark unpaid</button>` : `<button class="link small" type="button" data-inv-paid>Mark paid</button><button class="link plain small" type="button" data-inv-edit>Edit</button>`}<button class="link danger-link small" type="button" data-inv-del>Delete</button></div></div>
@@ -3292,6 +3316,7 @@ function bizPreview(){
       ${joined ? `<p><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p>`
         : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`
         : `<button class="btn primary" type="button" data-open-account>Sign in to join the waitlist</button>`}
+      ${!window.Capacitor && !(S.plusTrial && S.plusTrial.start) ? `<button class="btn" type="button" data-trial-start>Try it free for 7 days</button>` : ""}
       ${plusLink()}
       <button class="link small" type="button" data-space="personal" style="align-self:center">Back to Personal</button>
     </section>
@@ -3332,7 +3357,7 @@ function askCard(sheet){ return `<section class="card${sheet ? " ask-panel" : ""
       <li><b>Misc:</b> anything else with an amount. “Coffee 4”</li>
       <li><b>A question:</b> “Can I afford 300?” Answers use the numbers on this page.</li></ul></div>` : ""}
     ${UI.info === "ask" ? `<div class="ask-howto"><p class="label">How to use it</p><div data-out="howto">${OUT.howto()}</div></div>` : ""}
-    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 160px">${voiceCan() ? `<button class="icon-btn" type="button" id="ask-mic" data-ask-mic aria-label="Speak instead of typing" aria-pressed="false">${MIC}</button>` : ""}<button class="btn" type="submit">Ask</button></form>
+    <form class="inline" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" placeholder="Ask, or add spending: uber 20" aria-label="Ask KeepWise or add spending" style="flex:1 1 160px">${voiceCan() ? `<button class="icon-btn" type="button" id="ask-mic" data-ask-mic aria-label="Speak instead of typing" aria-pressed="false">${MIC}</button>` : ""}<button class="icon-btn" type="button" data-rcpt-snap aria-label="Add spending from a receipt photo">${I.camera || "📷"}</button><button class="btn" type="submit">Ask</button></form>
     <div id="ask-out" class="ask-out" ${ASK.last ? "" : "hidden"}>${esc(ASK.last)}</div>
     ${sheet ? quickPick() : ""}
     <div class="chips ask-chips" data-scroll-x><button class="chip" type="button" data-plain style="font-weight:700">Say it plainly</button>${["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"What do I spend most on?","Who owes me?","When is my emergency fund full?"].map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
@@ -3654,7 +3679,7 @@ function spendRow(g){
   const last = g.items[0], n = g.items.length, back = last.amount < 0, total = r2(g.items.reduce((a, x) => a + x.amount, 0)), open = UI.spendOpen === g.key, again = !back && !last.sid;
   const entry = x => UI.spendEdit === x.id
     ? `<form data-form="spendEdit" data-spend="${x.id}"><input name="amount" inputmode="decimal" enterkeyhint="done" value="${Math.abs(x.amount)}" aria-label="Amount"><input name="date" type="date" value="${esc(x.date || "")}" max="${isoDaysAgo(0)}" aria-label="Date"><button class="btn small primary" type="submit">Save</button><button class="btn small" type="button" data-spend-cancel>Cancel</button></form>`
-    : `<div class="line" data-spend="${x.id}"><div class="muted">${esc(spendWhen(x))}${x.ocur ? ` · ${esc(fmtIn(x.orig, x.ocur))}` : ""}</div><div class="inline"><span class="tnum ${back ? "good" : ""}">${back ? "+" + fmt(-x.amount) : fmt(x.amount)}</span><button class="link plain" type="button" data-spend-edit>Edit</button><button class="link danger-link" type="button" data-spend-del>Remove</button></div></div>`;
+    : `<div class="line" data-spend="${x.id}"><div class="muted">${esc(spendWhen(x))}${x.ocur ? ` · ${esc(fmtIn(x.orig, x.ocur))}` : ""}</div><div class="inline"><span class="tnum ${back ? "good" : ""}">${back ? "+" + fmt(-x.amount) : fmt(x.amount)}</span>${x.rcpt ? `<button class="link plain" type="button" data-photo-view="${esc(x.rcpt)}">Receipt</button>` : `<button class="link plain" type="button" data-rcpt-attach>+ Receipt</button>`}<button class="link plain" type="button" data-mem-for="spend:${x.id}">✦</button><button class="link plain" type="button" data-spend-edit>Edit</button><button class="link danger-link" type="button" data-spend-del>Remove</button></div></div>`;
   return `<div class="spend-g${open ? " open" : ""}" data-spend-g="${esc(g.key)}"><div class="line" data-spend="${last.id}">
       <button class="spend-open" type="button" data-spend-open aria-expanded="${open}" aria-label="${esc(last.name)}, ${n === 1 ? "logged once" : "logged " + n + " times"}. ${open ? "Hide" : "Show"} the details"><span class="sp-ic" data-sp-ic="${spendIconKey(last.name)}" aria-hidden="true">${I[spendIconKey(last.name)]}</span><span class="sp-txt"><div>${esc(last.name)}${n === 1 && last.ocur ? ` <span class="muted small">${esc(fmtIn(last.orig, last.ocur))}</span>` : ""}</div><div class="muted small">${n === 1 ? `${shortDate(last.date)} · ${back ? "money back" : "one time"}` : `${n} times this month · ${g.items.every(x => x.amount === last.amount) ? fmt(Math.abs(last.amount)) + " each" : "last " + fmt(Math.abs(last.amount))}`}</div></span></button>
       <div class="inline"><span class="tnum ${back ? "good" : ""}">${back ? "+" + fmt(-total) : fmt(total)}</span>${again ? `<button class="btn small" type="button" data-spend-again aria-label="Log ${esc(last.name)} again, ${fmt(last.amount)}"><span aria-hidden="true">↻</span> Again</button>` : ""}</div></div>
@@ -4593,7 +4618,7 @@ function goTo(tabName, sel){
   // Banks is behind the app lock however it is reached: a link from Month, search, the bell or Coming up asks first, like the tab does.
   if (tabName === "banks" && S.tab !== "banks" && bankLocked() && !LOCK.on){ UI.menu = false; UI.find = false; LOCK.gate = "tab"; LOCK.gateGo = {sel: sel || null, pay: UI.cardPay || null}; UI.cardPay = null; lockNow(); render(true); return false; }
   if (sel && tabName === "month") UI.needKind = /data-arrive/.test(sel) ? "arrived" : /data-bill-due/.test(sel) ? "bills" : /data-yr-due/.test(sel) ? "yearly" : UI.needKind;   // bring the right question to the front
-  UI.find = false; UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; S.tab = tabName; save(); render(false);
+  UI.find = false; UI.inbox = false; UI.account = false; UI.biz = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; S.tab = tabName; save(); render(false);
   const el = sel && (monthFind(sel) || planFind(sel) || view.querySelector(sel)), m = $("main"); if (!el) return false;
   // Land the card's top below the switch that pins at the top of Month and Subs (top 8px + its height + an 8px ring), never under it.
   const seg = m.querySelector(".view>.seg.sub-seg"), under = seg ? 8 + seg.offsetHeight + 8 : 0;
@@ -4624,6 +4649,7 @@ function localNotes(){
   yearlySoon(3).forEach(v => { const n = daysUntil(v.d); add(`yd:${v.x.key}:${isoOf(v.d)}`, `${v.x.name} is due ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `${fmt(v.x.amount)} on ${dayMonth(v.d)}. It comes once a year.`, v.x.go[0], v.x.go[1]); });
   yearlyDue().forEach(v => add(`ya:${v.x.key}:${isoOf(v.date)}`, YR_ASK[v.x.kind](v.x.name), `${fmt(v.x.amount)} was due ${dayMonth(v.date)}.`, "month", `[data-yr-due="${v.x.key}"]`));
   billsDue().forEach(v => add(`b:${v.e.id}:${isoOf(v.date)}`, `Did you pay ${v.e.name}?`, `${fmt(v.e.amount)} was due ${dayMonth(v.date)}.`, "month", `[data-bill-due="${v.e.id}"]`));
+  if (trialOn() && daysUntil(trialEnds()) <= 2) add(`trial:${S.plusTrial.end}`, daysUntil(trialEnds()) <= 1 ? "Your free week of Plus ends tomorrow" : "Your free week of Plus ends in 2 days", `It ends on ${dateWithYear(isoDate(S.plusTrial.end))}. Nothing is charged; everything free stays.`, "month", null);
   (S.loans || []).filter(loanNeedsDetails).forEach(l => add(`ld:${l.id}`, `Finish the details for ${l.name || loanKind(l.kind)}`, "Add the amount left or the end date, so KeepWise can show when it ends and your statement is complete.", "plan", `[data-loan="${l.id}"]`, null, l.id));
   (S.loans || []).filter(l => l.end && !loanDone(l)).forEach(l => { const f = loanFinish(l), n = f ? daysUntil(f.date) : 99; if (n >= 0 && n <= 30) add(`l:${l.id}:${l.end}`, `${l.name || loanKind(l.kind)} ends ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `After that, ${fmt(loanMonthly(l))} a month stays with you.`, "plan", `[data-loan="${l.id}"]`); });
   return out;
@@ -4706,7 +4732,7 @@ function findGo(h){
   const g = h.go; UI.find = false; UI.findQ = "";
   if (g.menu){ menuGo(g.menu); const el = g.sel && view.querySelector(g.sel), m = $("main");
     if (el){ m.scrollTop += el.getBoundingClientRect().top - m.getBoundingClientRect().top - 16; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); } return; }
-  if (g.act === "history"){ UI.settings = false; UI.history = true; UI.stmt = null; render(false); return; }
+  if (g.act === "history"){ UI.settings = false; UI.history = true; UI.stmt = null; UI.memories = false; render(false); return; }
   if (g.act === "inbox"){ render(false); $("bell").click(); return; }
   if (g.act === "ask"){ render(false); $("wise").click(); return; }
   if (g.tab === "month" && g.sel === ".hero") UI.mseg = "now";
@@ -4891,7 +4917,7 @@ V.history = () => {
       <div class="inline" style="gap:6px"><span class="name tnum ${keptOf(s) < 0 ? "bad" : "good"}">${fmt(keptOf(s))}</span>${I.chev}</div></div></button>`; }).join("")}</div>` : `<p class="empty">No statements yet. Your first one starts this month.</p>`}`;
 };
 V.statement = () => {
-  const s = S.statements && S.statements[UI.stmt]; if (!s) { UI.stmt = null; return V.history(); }
+  const s = S.statements && S.statements[UI.stmt]; if (!s) { UI.stmt = null; UI.memories = false; return V.history(); }
   const f = fmt;  // statements use the currency you have selected, like every other number
   const open = s.key === currentKey(), out = s.needs + s.misc;
   const row = (a, b, cls) => `<div class="st-line"><span>${a}</span><span class="tnum ${cls || ""}">${b}</span></div>`;
@@ -5113,6 +5139,145 @@ OUT.backupBox = () => {
     <div class="dtiles"><button class="dtile" type="button" data-backup><span class="dt-ic" aria-hidden="true">⬇️</span><b>Download a backup</b><small>Everything in one file</small></button><button class="dtile" type="button" data-restore><span class="dt-ic" aria-hidden="true">🗂️</span><b>Restore a backup</b><small>From a saved file</small></button></div>
     ${IS_IOS && !IN_APP && !STANDALONE && hasRealData() ? `<button class="link small" type="button" data-move-copy style="align-self:flex-start">${UI.moveCopied ? "✓ Copied. Paste it in the Home Screen app" : "Copy my data for the Home Screen app"}</button>` : ""}</div>`;
 };
+
+/* ================= Sync across your devices (Plus): end-to-end encrypted ================= */
+// Opt-in, signed-in only. Everything is locked on this phone with a key made from a sync passphrase only the person
+// knows, so the server keeps a sealed copy it cannot read. A new device joins with the same passphrase. Items are merged
+// by id: the newest copy wins, and anything added on this phone since the last sync is kept. App lock stays per device.
+const SYNC = {key: null, busy: false, err: "", t: 0, pullT: 0, quiet: false};
+const SYNC_SKIP = ["tab", "lock", "push", "plusTester", "plusTrial", "sync", "syncAt", "syncIds", "lastBackup"];
+const devId = () => { let d = ""; try { d = localStorage.getItem("keepwise-dev") || ""; if (!d){ d = uid() + uid(); localStorage.setItem("keepwise-dev", d); } } catch(e){} return d; };
+const b64e = buf => { const a = new Uint8Array(buf); let s = ""; for (let i = 0; i < a.length; i += 32768) s += String.fromCharCode.apply(null, a.subarray(i, i + 32768)); return btoa(s); };
+const b64d = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
+const SDB = () => new Promise((res, rej) => { const q = indexedDB.open("keepwise-sync", 1); q.onupgradeneeded = () => q.result.createObjectStore("k"); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+const sdbDo = (mode, fn) => SDB().then(db => new Promise((res, rej) => { const tx = db.transaction("k", mode), q = fn(tx.objectStore("k")); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); }));
+async function syncDerive(pass, salt){
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name: "PBKDF2", salt, iterations: 210000, hash: "SHA-256"}, base, {name: "AES-GCM", length: 256}, false, ["encrypt", "decrypt"]);
+}
+const syncRef = () => ACC.db.collection("users").doc(ACC.user.uid).collection("sync").doc("state");
+const syncReady = () => !!(S.sync && S.sync.on && SYNC.key && typeof ACC !== "undefined" && ACC.user && ACC.db && plusOn());
+async function zipBytes(bytes, back){ try { const cs = back ? new DecompressionStream("gzip") : new CompressionStream("gzip"); const out = new Response(new Blob([bytes]).stream().pipeThrough(cs)); return new Uint8Array(await out.arrayBuffer()); } catch(e){ return null; } }
+async function syncPack(salt){
+  const d = JSON.parse(JSON.stringify(S)); SYNC_SKIP.forEach(k => delete d[k]);
+  let bytes = new TextEncoder().encode(JSON.stringify(d)), z = 0; const zz = typeof CompressionStream !== "undefined" ? await zipBytes(bytes) : null; if (zz){ bytes = zz; z = 1; }
+  const iv = crypto.getRandomValues(new Uint8Array(12)), ct = await crypto.subtle.encrypt({name: "AES-GCM", iv}, SYNC.key, bytes);
+  return {v: 1, salt: b64e(salt), iv: b64e(iv), data: b64e(ct), z, at: Date.now(), dev: devId()};
+}
+async function syncOpen(doc, key){
+  let bytes = new Uint8Array(await crypto.subtle.decrypt({name: "AES-GCM", iv: b64d(doc.iv)}, key || SYNC.key, b64d(doc.data)));
+  if (doc.z){ const u = await zipBytes(bytes, true); if (!u) throw new Error("This browser cannot open synced data."); bytes = u; }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+const idsOf = st => { const out = []; Object.keys(st || {}).forEach(k => { if (Array.isArray(st[k])) st[k].forEach(x => { if (x && typeof x === "object" && x.id) out.push(k + ":" + x.id); }); }); return out; };
+function syncMerge(remote){
+  const known = new Set(S.syncIds || []), keep = {};
+  SYNC_SKIP.forEach(k => { if (k in S) keep[k] = S[k]; });
+  const merged = JSON.parse(JSON.stringify(remote));
+  Object.keys(S).forEach(k => { if (SYNC_SKIP.includes(k) || !Array.isArray(S[k])) return;
+    const rl = Array.isArray(merged[k]) ? merged[k] : (merged[k] = []), have = new Set(rl.map(x => x && x.id));
+    S[k].forEach(x => { if (x && typeof x === "object" && x.id && !have.has(x.id) && !known.has(k + ":" + x.id)) rl.push(x); });   // added here since the last sync
+  });
+  Object.keys(S).forEach(k => delete S[k]); Object.assign(S, merged, keep);
+}
+async function syncPush(){
+  if (!syncReady() || SYNC.busy) return; SYNC.busy = true;
+  try { const doc = await syncPack(b64d(S.sync.salt)); await syncRef().set(doc); S.syncAt = doc.at; S.syncIds = idsOf(S); SYNC.err = ""; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+  catch(e){ SYNC.err = "Couldn’t sync just now. It will try again."; }
+  SYNC.busy = false; if (UI.settings === "data") refreshOuts();
+}
+async function syncPull(force){
+  if (!syncReady() || SYNC.busy) return false; SYNC.busy = true; let changed = false;
+  try { const snap = await syncRef().get(); const doc = snap.exists ? snap.data() : null;
+    if (doc && (force || ((doc.at || 0) > (S.syncAt || 0) && doc.dev !== devId()))){ const remote = await syncOpen(doc); syncMerge(remote); S.syncAt = doc.at; S.syncIds = idsOf(S); changed = true;
+      SYNC.quiet = true; save(); SYNC.quiet = false; render(true); }
+    SYNC.err = ""; }
+  catch(e){ SYNC.err = "Couldn’t sync just now. It will try again."; }
+  SYNC.busy = false; return changed;
+}
+function syncSoon(){ if (SYNC.quiet || !syncReady()) return; clearTimeout(SYNC.t); SYNC.t = setTimeout(syncPush, 2500); }
+async function syncLoadKey(){ try { const k = await sdbDo("readonly", st => st.get("key")); if (k && S.sync && S.sync.on){ SYNC.key = k; await syncPull(); } } catch(e){} }
+async function syncStart(pass){   // turn on, or join a device that already syncs
+  if (!(typeof ACC !== "undefined" && ACC.user && ACC.db)) throw new Error("Sign in first.");
+  if (!pass || pass.length < 8) throw new Error("Use at least 8 characters.");
+  const snap = await syncRef().get(), doc = snap.exists ? snap.data() : null;
+  const salt = doc ? b64d(doc.salt) : crypto.getRandomValues(new Uint8Array(16)), key = await syncDerive(pass, salt);
+  if (doc){ let remote; try { remote = await syncOpen(doc, key); } catch(e){ throw new Error("That passphrase doesn’t open your synced data."); }
+    SYNC.key = key; S.sync = {on: true, salt: b64e(salt), since: isoDaysAgo(0)}; if (S.example || !hasRealData()) S.syncIds = idsOf(S);   // an example month on a new device is replaced, never merged in
+    syncMerge(remote); S.syncAt = doc.at; S.syncIds = idsOf(S); }
+  else { SYNC.key = key; S.sync = {on: true, salt: b64e(salt), since: isoDaysAgo(0)}; }
+  try { await sdbDo("readwrite", st => st.put(key, "key")); } catch(e){}
+  save(); await syncPush(); return !!doc;
+}
+async function syncStop(){ S.sync = {on: false}; SYNC.key = null; try { await sdbDo("readwrite", st => st.delete("key")); } catch(e){} save(); }
+document.addEventListener("visibilitychange", () => { if (!document.hidden) syncPull(); });
+setInterval(() => { if (!document.hidden) syncPull(); }, 60000);
+const syncAgo = () => { const t = S.syncAt; if (!t) return "not yet"; const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : shortDate(isoOf(new Date(t))); };
+OUT.syncBox = () => {
+  const signed = typeof ACC !== "undefined" && ACC.user, on = !!(S.sync && S.sync.on);
+  const head = `<div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Sync across your devices</h2><span class="pill gold">Plus</span></div>`;
+  if (!plusOn()) return `<section class="card" data-sync>${head}<p class="muted small" data-keep>See the same KeepWise on your phone, tablet and computer. Locked with a passphrase only you know, so nobody else can read it, not even us.</p>${plusLink("Try Plus free for a week")}</section>`;
+  if (!signed) return `<section class="card" data-sync>${head}<p class="muted small" data-keep>Sign in first, then choose a sync passphrase.</p><button class="btn" type="button" data-open-account>Sign in</button></section>`;
+  if (on && SYNC.key) return `<section class="card" data-sync>${head}<p data-sync-state><b>On.</b> <span class="muted">Synced ${syncAgo()}.</span></p>${SYNC.err ? `<p class="small bad">${esc(SYNC.err)}</p>` : ""}
+    <p class="muted small" data-keep>On another device, sign in with the same account and enter your sync passphrase. App lock stays separate on each device.</p>
+    <div class="grid2"><button class="btn" type="button" data-sync-now>Sync now</button><button class="btn" type="button" data-sync-off>Turn off</button></div></section>`;
+  return `<section class="card" data-sync>${head}<p class="muted small" data-keep>Everything is locked on this device with your sync passphrase before it leaves, so the server keeps only a sealed copy it can’t read. Use the same passphrase on every device. If you forget it, it can’t be recovered; your data stays on each device.</p>
+    <form data-form="syncOn" style="display:flex;flex-direction:column;gap:10px"><label class="field"><span>Sync passphrase</span><input name="pass" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters"></label>
+      <label class="field"><span>Again, to be sure</span><input name="pass2" type="password" autocomplete="new-password" placeholder="Same passphrase"></label>
+      ${UI.syncErr ? `<p class="small bad" data-sync-err>${esc(UI.syncErr)}</p>` : ""}<button class="btn primary" type="submit">Turn on sync</button></form></section>`;
+};
+
+/* ================= Receipts and money memories (Plus) ================= */
+// A receipt photo on any spending: snapped from the owl, KeepWise reads the shop, total and date and adds the spending
+// with the photo kept on this phone. A memory is a photo and a note on a spending or a trip ("first dinner in Miami"),
+// gathered in a timeline by month and trip, with a year in review.
+const PHOTO = {blob: null, guess: null};
+const pickPhoto = (cb, camera) => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; if (camera) inp.setAttribute("capture", "environment"); inp.hidden = true;
+  inp.addEventListener("change", () => { const f = inp.files && inp.files[0]; inp.remove(); if (f) cb(f); }); document.body.appendChild(inp); inp.click(); };
+function photoView(key){ rcptDo("readonly", st => st.get(key)).then(blob => { if (!blob) { toast("That photo isn’t on this device."); return; }
+  const d = document.createElement("div"); d.className = "rcpt-view"; d.setAttribute("role", "dialog"); d.innerHTML = `<button class="btn small" type="button">Close</button><img alt="Photo">`;
+  d.querySelector("img").src = URL.createObjectURL(blob); d.addEventListener("click", () => d.remove()); document.body.appendChild(d); }).catch(() => toast("That photo isn’t on this device.")); }
+async function receiptSnap(file){
+  busy("Reading the receipt");
+  try { PHOTO.blob = await receiptPhoto(file); let g = {total: 0, date: "", name: ""};
+    try { const rows = await imageRows(file); g = receiptGuess(rows.map(rowText).filter(Boolean)); } catch(e){}
+    if (ocrW){ try { ocrW.terminate(); } catch(e){} ocrW = null; }
+    PHOTO.guess = g; UI.rcptNew = true; UI.askOpen = false; busy(false); render(true);
+  } catch(err){ busy(false); PHOTO.blob = null; toast(err && err.message ? err.message : "That photo can’t be read."); }
+}
+function rcptWiz(){
+  const g = PHOTO.guess || {}, url = PHOTO.blob ? URL.createObjectURL(PHOTO.blob) : "";
+  return `<form class="wiz sf" data-form="rcptNew"><div class="wiz-top sf-top"><button class="icon-btn" type="button" data-rcpt-cancel aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button><b>From your receipt</b><button class="icon-btn" type="button" data-rcpt-cancel aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
+    <div class="wiz-card">${url ? `<img class="ph-prev" src="${url}" alt="Receipt photo">` : ""}<p class="muted small" data-keep>${g.total ? `Read ${fmt(g.total)}${g.name ? ` at ${esc(g.name)}` : ""}. Check it, then add it.` : "Couldn’t read the total. Type it in."}</p>
+      <label class="close-amt"><span class="close-cur">${esc(sym())}</span><input name="amount" inputmode="decimal" value="${g.total ? g.total.toFixed(2) : ""}" placeholder="0" aria-label="Amount"></label>
+      <label class="field"><span>Where</span><input name="name" maxlength="60" value="${esc(g.name || "")}" placeholder="e.g. Corner shop" autocomplete="off"></label>
+      <label class="field"><span>Date</span><input name="date" type="date" value="${esc(g.date || isoDaysAgo(0))}" max="${isoDaysAgo(0)}"></label></div>
+    <div class="wiz-bar"><button class="btn primary" type="submit" style="width:100%">Add spending</button></div></form>`;
+}
+// ---- memories
+const memList = () => (S.memories = S.memories || []);
+const memRefName = m => { if (!m.ref) return ""; const [k, id] = m.ref.split(":"); if (k === "trip"){ const t = (S.trips || []).find(x => x.id === id); return t ? t.name : ""; } const x = (S.spends || []).find(v => v.id === id); return x ? `${x.name}, ${fmt(x.amount)}` : ""; };
+function memWiz(){
+  const ref = UI.memNew && UI.memNew.ref || "", name = memRefName({ref}), url = PHOTO.blob ? URL.createObjectURL(PHOTO.blob) : "";
+  return `<form class="wiz sf" data-form="memNew"><div class="wiz-top sf-top"><button class="icon-btn" type="button" data-mem-cancel aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button><b>New memory</b><button class="icon-btn" type="button" data-mem-cancel aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
+    <div class="wiz-card">${name ? `<p class="muted small" data-keep>For <b>${esc(name)}</b></p>` : ""}
+      ${url ? `<img class="ph-prev" src="${url}" alt="Your photo">` : `<button class="btn" type="button" data-mem-photo>📷 Add a photo</button>`}
+      <label class="field"><span>A few words</span><input name="note" maxlength="140" placeholder="e.g. First dinner in Miami" autocomplete="off"></label>
+      <label class="field"><span>Date</span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}"></label></div>
+    <div class="wiz-bar"><button class="btn primary" type="submit" style="width:100%">Keep this memory</button></div></form>`;
+}
+V.memories = () => {
+  const list = memList().slice().sort((a, b) => (b.date || "").localeCompare(a.date || "")), y = String(todayMid().getFullYear()), yl = list.filter(m => (m.date || "").startsWith(y));
+  const trips = (S.trips || []).filter(t => (t.start || "").startsWith(y)), tripSpend = r2(trips.reduce((a, t) => a + (tripTotal(t) || 0), 0));
+  const months = new Map(); list.forEach(m => { const k = (m.date || "").slice(0, 7); if (!months.has(k)) months.set(k, []); months.get(k).push(m); });
+  const card = m => `<div class="mem" data-mem="${m.id}">${m.photo ? `<button class="mem-ph" type="button" data-mem-view="${esc(m.photo)}" aria-label="Open the photo"><img data-mem-img="${esc(m.photo)}" alt=""></button>` : ""}<div class="mem-txt"><b>${esc(m.note || "A memory")}</b><small class="muted">${shortDate(m.date)}${memRefName(m) ? ` · ${esc(memRefName(m))}` : ""}</small></div><button class="link danger-link small" type="button" data-mem-del aria-label="Remove this memory">Remove</button></div>`;
+  return `<div class="inline" style="justify-content:space-between"><h1>Memories</h1><button class="btn small" type="button" data-mem-close>Done</button></div>
+  <section class="hero st-hero" data-mem-year><p class="label">${y} in review</p><div class="big tnum">${yl.length} <span>memor${yl.length === 1 ? "y" : "ies"}</span></div>
+    <div class="st-stats"><span><b class="tnum">${trips.length}</b> trip${trips.length === 1 ? "" : "s"}</span><span><b class="tnum">${fmt(tripSpend)}</b> on trips</span><span><b class="tnum">${yl.filter(m => m.photo).length}</b> photos</span></div></section>
+  ${plusOn() ? `<button class="btn primary" type="button" data-mem-add>＋ New memory</button>` : plusLink("Memories are part of Plus. Try it free for a week")}
+  ${list.length ? [...months.entries()].map(([k, ms]) => `<section class="card"><h2>${esc(keyLabel(k))}</h2><div class="mems">${ms.map(card).join("")}</div></section>`).join("") : `<p class="muted" style="text-align:center">No memories yet. Add a photo and a few words to any spending or trip.</p>`}`;
+};
+function memPaint(){ document.querySelectorAll("img[data-mem-img]").forEach(im => { if (im.src) return; rcptDo("readonly", st => st.get(im.dataset.memImg)).then(b => { if (b) im.src = URL.createObjectURL(b); }).catch(() => {}); }); }
 // iPhone clears website data after about a week away unless the site is on the Home Screen.
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const STANDALONE = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
@@ -6025,7 +6190,7 @@ function tripCard(t){
     ${st === "ended" ? `<div class="part-help" style="border-radius:14px"><b>This ${noun} is over. What should happen to the ${fmt(tot)}?</b><p class="muted small">Count it and it comes out of what you keep in ${esc(C.planMonth)}. Keep it separate and your month is untouched. You can change this later.</p>
       <div class="grid2"><button class="btn small" type="button" data-trip-settle="separate">Keep it separate</button><button class="btn small primary" type="button" data-trip-settle="counted">Count it in ${esc(C.planMonth)}</button></div></div>` : ""}
     ${st === "counted" || st === "separate" ? "" : `<form class="inline" data-form="tripAdd" style="gap:8px"><input name="q" placeholder="${ev ? "venue 500, flowers 80" : "uber 20, dinner 50"}${t.cur && t.cur !== S.cur ? ` (in ${esc(t.cur)})` : ""}" aria-label="Add spending to ${esc(t.name)}" enterkeyhint="send" autocomplete="off" autocapitalize="off" style="flex:1 1 150px"><button class="btn small" type="submit">Add</button></form>`}
-    <div class="inline" style="justify-content:space-between"><button class="link plain small" type="button" data-trip-open aria-expanded="${open}">${open ? "Hide details" : `Details${(t.items || []).length ? ` (${t.items.length})` : ""}`}</button><button class="link plain small" type="button" data-trip-edit aria-label="Edit ${esc(t.name)}">Edit</button></div>
+    <div class="inline" style="justify-content:space-between"><button class="link plain small" type="button" data-trip-open aria-expanded="${open}">${open ? "Hide details" : `Details${(t.items || []).length ? ` (${t.items.length})` : ""}`}</button><span class="inline" style="gap:14px"><button class="link plain small" type="button" data-mem-for="trip:${t.id}">✦ Memory</button><button class="link plain small" type="button" data-trip-edit aria-label="Edit ${esc(t.name)}">Edit</button></span></div>
     ${open ? `<div class="inc-pays">${Object.keys(days).sort().reverse().map(d => `<div class="muted small" style="margin-top:6px">${shortDate(d)} · ${fmt(r2(days[d].reduce((a, x) => a + x.amount, 0)))}</div>${days[d].map(x => `<div class="line" data-trip-item="${x.id}"><span>${esc(x.name)}${x.ocur ? ` <span class="muted small">${esc(fmtIn(x.orig, x.ocur))}</span>` : ""}</span><span class="inline"><span class="tnum">${fmt(x.amount)}</span><button class="link danger-link small" type="button" data-trip-item-del aria-label="Remove ${esc(x.name)}">Remove</button></span></div>`).join("")}`).join("") || `<p class="muted small">Nothing logged yet.</p>`}
       ${st === "counted" ? `<p class="muted small">This ${noun} counts in ${esc(keyLabel(t.countKey))}, under Miscellaneous.</p><button class="link small" type="button" data-trip-settle="separate" style="align-self:flex-start">Keep it separate instead</button>` : st === "separate" ? `<p class="muted small" data-keep>This ${noun} is kept apart from your months.</p><button class="link small" type="button" data-trip-settle="counted" style="align-self:flex-start">Count it in ${esc(C.planMonth)} instead</button>` : ""}</div>` : ""}</div>`;
 }
@@ -6568,7 +6733,16 @@ OUT.loans = () => {
 
 /* ================= KeepWise Plus: what it adds and what it costs ================= */
 // One screen that gathers every Plus feature, the price and the waitlist. Plus is not on sale yet, and the screen says so.
-const PLUS_PRICE = {monthly: 15, monthlyEarly: 12, earlyMonths: 6, yearly: 180, yearlyEarly: 140};
+// Plus is priced by country, in four tiers (agreed 18 Oct 2026), and shown in the person's own currency.
+const PLUS_TIERS = {1: {mo: 9.99, yr: 79}, 2: {mo: 6.99, yr: 59}, 3: {mo: 3.99, yr: 35}, 4: {mo: 1.99, yr: 19}};
+const TIER2 = "CA GB IE FR DE ES IT PT NL BE LU AT CH DK SE NO FI IS AU NZ AE SA QA KW BH OM SG JP KR HK IL", TIER3 = "MX BR TR MY ZA PL CZ HU RO BG HR SK SI LT LV EE RS AR CL CO PE TH CN GR CY MT", TIER4 = "PK IN BD EG NG PH ID LK NP KE GH VN MA DZ TN ET UG TZ";
+const plusTier = () => { const c = regionCode(); return !c || c === "US" ? 1 : TIER2.includes(c) ? 2 : TIER3.includes(c) ? 3 : TIER4.includes(c) ? 4 : 2; };
+const PLUS_PRICE = (() => { const t = PLUS_TIERS[1]; return {monthly: t.mo, yearly: t.yr}; })();
+const plusPrice = () => PLUS_TIERS[plusTier()];
+// The free week: 7 days of everything in Plus, then the country's price. It is offered at natural moments only, says the
+// day it ends and the price after it, and reminds 2 days before. Nothing is charged here: Plus is not on sale yet.
+const trialOn = () => !!(S.plusTrial && S.plusTrial.end && isoOf(todayMid()) < S.plusTrial.end && !S.plusTrial.cancelled);
+const trialEnds = () => S.plusTrial ? isoDate(S.plusTrial.end) : null;
 const usd = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
 const HOME_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>';
 const PIN_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.500-5.700-6.500-10.500a6.500 6.500 0 0 1 13 0C18.500 15.300 12 21 12 21z"/><circle cx="12" cy="10.500" r="2.300"/></svg>';
@@ -6589,27 +6763,37 @@ function plusCta(){
     : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the waitlist</button>`
     : `<button class="btn primary" type="button" data-open-account>Sign in to join the waitlist</button>`;
 }
-V.plus = () => { const P = PLUS_PRICE, perMonth = P.yearlyEarly / 12;
+const plusMoney = usdAmt => { const r = UI.plusRate, cur = S.cur || "USD"; return cur !== "USD" && r > 0 ? fmtIn(Math.round(usdAmt * r * 100) / 100, cur) : usd(usdAmt); };
+V.plus = () => { const P = plusPrice(), perMonth = Math.round(P.yr / 12 * 100) / 100, save = Math.round((P.mo * 12 - P.yr) / (P.mo * 12) * 100);
+  if (S.cur && S.cur !== "USD" && UI.plusRate == null){ UI.plusRate = 0; fxRate("USD", S.cur).then(r => { UI.plusRate = r || 0; if (UI.plus) render(true); }).catch(() => {}); }
+  const t = S.plusTrial, used = !!(t && t.start), on = trialOn(), end = trialEnds(), left = on ? daysUntil(end) : 0;
+  const trialCard = window.Capacitor ? "" : on ? `<section class="card plus-trial on" data-plus-trial><span class="pill ok">Free week on</span><h3>${left <= 1 ? "Your free week ends tomorrow" : `${left} days of Plus left`}</h3>
+      <p class="muted small" data-keep>It ends on <b>${dateWithYear(end)}</b>. Plus isn’t on sale yet, so nothing is charged; when it opens it will be ${plusMoney(P.mo)} a month or ${plusMoney(P.yr)} a year, and you choose then.</p>
+      <button class="link danger-link small" type="button" data-trial-stop>End the free week now</button></section>`
+    : used ? `<section class="card plus-trial" data-plus-trial><h3>Your free week has ended</h3><p class="muted small" data-keep>Everything free is still here. Join the waitlist and we’ll email you when Plus opens.</p></section>`
+    : `<section class="card plus-trial" data-plus-trial><span class="pill gold">7 days free</span><h3>Try everything in Plus for a week</h3><p class="muted small" data-keep>Free until <b>${dateWithYear(dayPlus(todayMid(), 7))}</b>. No card needed and nothing is charged. We’ll remind you 2 days before it ends.</p>
+      <button class="btn primary" type="button" data-trial-start>Start my free week</button></section>`;
   return `<div class="inline" style="justify-content:space-between"><span class="pill gold">KeepWise Plus</span><button class="btn small" type="button" data-plus-close>Done</button></div>
   <h1 class="plus-h">Everything free stays free.</h1>
   <p class="plus-sub">Plus adds what one phone cannot do alone.</p>
+  ${trialCard}
   <section class="card"><ul class="plus-list">${PLUS_REASONS().map(([ic, t, d, soon]) => `<li${soon ? ' class="soon"' : ""}><span class="plus-ic">${ic}</span><div><b>${t}${soon ? ` <span class="pill grey" style="font-size:.68rem">${soon}</span>` : ""}</b><span class="muted small">${d}</span></div></li>`).join("")}</ul></section>
   ${window.Capacitor ? `<p class="muted small" style="text-align:center" data-plus-app-note>Plus is coming to the Android app later. Join the waitlist and we’ll email you when it’s here.</p>` : `  <section class="plus-prices" aria-label="Prices">
-    <div class="card plus-price best"><span class="pill gold">Early user price</span><span class="label">Yearly</span>
-      <div class="plus-amt"><s>${usd(P.yearly)}</s><b>${usd(P.yearlyEarly)}</b><span>a year</span></div>
-      <p class="muted small">About ${usd(Math.round(perMonth * 100) / 100)} a month. You save ${usd(P.yearly - P.yearlyEarly)}.</p>${kwCodeChip(KW_CODES[0])}</div>
-    <div class="card plus-price"><span class="pill gold">Early user price</span><span class="label">Monthly</span>
-      <div class="plus-amt"><s>${usd(P.monthly)}</s><b>${usd(P.monthlyEarly)}</b><span>a month</span></div>
-      <p class="muted small">For your first ${P.earlyMonths} months, then ${usd(P.monthly)} a month.</p>${kwCodeChip(KW_CODES[1])}</div>
+    <div class="card plus-price best"><span class="pill gold">Best value</span><span class="label">Yearly</span>
+      <div class="plus-amt"><b>${plusMoney(P.yr)}</b><span>a year</span></div>
+      <p class="muted small">About ${plusMoney(perMonth)} a month. You save ${save}%.</p>${kwCodeChip(KW_CODES[0])}</div>
+    <div class="card plus-price"><span class="label">Monthly</span>
+      <div class="plus-amt"><b>${plusMoney(P.mo)}</b><span>a month</span></div>
+      <p class="muted small">Cancel any time.</p>${kwCodeChip(KW_CODES[1])}</div>
   </section>
-  <p class="muted small" style="text-align:center">Prices in US dollars. Plus is not on sale yet. Join the waitlist and we will email you when it opens. <a href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund Policy</a></p>
+  <p class="muted small" style="text-align:center">Prices for ${esc(regionCode() ? countryName(regionCode()) : "your country")}${S.cur && S.cur !== "USD" ? `, shown in ${esc(S.cur)}` : ""}. Plus is not on sale yet. Join the waitlist and we will email you when it opens. <a href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund Policy</a></p>
 `}
   ${plusCta()}
   <section class="card"><h2 style="font-size:1.2rem">Free, and staying free</h2><ul class="plus-free">${PLUS_FREE.map(t => `<li>${I.check}<span>${t}</span></li>`).join("")}</ul></section>`; };
 // KeepWise's own codes for Plus. They carry the early user prices, so the Codes tab and the Plus screen always agree.
 const KW_CODES = [
-  {code: "EARLY140", plan: "Yearly", offer: `${usd(PLUS_PRICE.yearlyEarly)} for your first year, instead of ${usd(PLUS_PRICE.yearly)}`},
-  {code: "EARLY12", plan: "Monthly", offer: `${usd(PLUS_PRICE.monthlyEarly)} a month for your first ${PLUS_PRICE.earlyMonths} months, instead of ${usd(PLUS_PRICE.monthly)}`},
+  {code: "EARLY140", plan: "Yearly", offer: "20% off your first year, for early users"},
+  {code: "EARLY12", plan: "Monthly", offer: "20% off your first 6 months, for early users"},
 ];
 const kwCodeChip = c => `<button class="code" type="button" data-copy="${c.code}" aria-label="Copy code ${c.code}">${c.code}</button>`;
 // In the Android app Plus is not sold yet, so its codes and prices stay out of the app (Google Play sells subscriptions itself).
@@ -6809,7 +6993,7 @@ function tourStart(){
   if (TOUR.on) return;
   window.__kwTour = true; TOUR.on = true; TOUR.i = 0; TOUR.paused = false; TOUR.welcome = UI.welcome; TOUR.saved = UI.welcome != null ? null : S; TOUR.tab = S.tab;
   if (TOUR.saved){ window.__kwTour = false; save(); window.__kwTour = true; S = example(); }   // the person's month is saved first, then set aside
-  UI.welcome = null; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.biz = false; UI.share = false;
+  UI.welcome = null; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.biz = false; UI.share = false;
   TOUR.skin = S.skin; S.skin = "blue"; applyTheme();   // the tour is shown in the Blue look, then each person's own look comes back
   appEl.classList.add("touring"); tourShow();
 }
@@ -7016,7 +7200,7 @@ function render(keepScroll){
   const main = $("main"), top = main.scrollTop, back = keepScroll ? innerScrollKeep(document.getElementById("app") || document.body) : () => {};
   // Banks & statements is the Banks tab now: anything that opens it (the menu, search, a bank just connected) lands on Accounts.
   if (UI.banks){ UI.banks = false; S.tab = "banks"; UI.bankSeg = "accounts"; UI.settings = false; UI.account = false; save(); }
-  const v = $("view"); v.innerHTML = STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.find ? V.find() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : UI.banks ? V.banks() : UI.settings ? V.settings() : S.tab === "banks" ? V.bankTab() : (V[S.tab] || V.month)();
+  const v = $("view"); v.innerHTML = UI.rcptNew ? rcptWiz() : UI.memNew ? memWiz() : UI.memories ? V.memories() : STMT.result ? V.importReview() : UI.pdfLock ? V.pdfLock() : UI.account ? V.account() : UI.welcome != null ? V.welcome() : UI.plus ? V.plus() : UI.find ? V.find() : UI.inbox ? V.inbox() : UI.share ? V.share() : UI.stmt ? V.statement() : UI.history ? V.history() : UI.banks ? V.banks() : UI.settings ? V.settings() : S.tab === "banks" ? V.bankTab() : (V[S.tab] || V.month)();
   const askOk = !STMT.result && !UI.pdfLock && !UI.account && UI.welcome == null && !UI.biz; if (!askOk) UI.askOpen = false;
   const sheet = $("asksheet"); if (sheet){ sheet.innerHTML = UI.askOpen ? askSheet() : ""; sheet.hidden = !UI.askOpen; }
   const fab = $("wise"); if (fab) fab.hidden = !askOk || !!UI.askOpen;
@@ -7109,6 +7293,7 @@ function accInit(){
 async function accLoadProfile(){
   try { const snap = await ACC.db.collection("users").doc(ACC.user.uid).get(); ACC.profile = snap.exists ? snap.data() : {}; }
   catch(e){ ACC.profile = {}; }
+  if (S.sync && S.sync.on && !SYNC.key) syncLoadKey();   // a device that syncs picks up where the others left off
 }
 const accDoc = () => ACC.db.collection("users").doc(ACC.user.uid);
 const accComplete = () => !!(ACC.profile && ACC.profile.name && ACC.profile.dob && ACC.profile.termsAcceptedAt);
@@ -7201,6 +7386,7 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")
   : UI.settings === "data" || UI.settings === "backup" ? `${setHead("Your data & backups")}
   ${dataSummary()}
   <section class="card" data-set-backup><h2>Backups</h2><div data-out="backupBox">${OUT.backupBox()}</div></section>
+  <div data-out="syncBox">${OUT.syncBox()}</div>
   <section class="card" data-set-move><h2 class="h-info">Move to another browser or the app${infoBtn("move", "About moving your data")}</h2>${infoTip("move", "Copy my data puts everything on the clipboard as one block of text. Open KeepWise where you want it, in another browser or the installed app, and tap Paste my data. Nothing is sent anywhere on the way.")}
     <div class="dtiles"><button class="dtile" type="button" data-move-copy><span class="dt-ic" aria-hidden="true">📋</span><b>${UI.moveCopied ? "✓ Copied" : "Copy my data"}</b><small>To paste somewhere else</small></button><button class="dtile" type="button" data-move-paste><span class="dt-ic" aria-hidden="true">📥</span><b>Paste my data</b><small>From another browser</small></button></div>
     ${UI.movePaste ? moveBox() : ""}</section>
@@ -7231,7 +7417,7 @@ function sideNav(){
       <button class="icon-btn" type="button" data-menu="close" aria-label="Close menu">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
     <div class="sn-seg" role="group" aria-label="Personal or Business"><button type="button" data-menu="personal" aria-pressed="${!UI.biz}">Personal</button><button type="button" data-menu="biz" aria-pressed="${!!UI.biz}">Business <span class="pill gold">Plus</span></button></div>
     <button class="sn-plus" type="button" data-menu="plus"><span class="sn-plus-ic">${I.heart || ""}</span><span class="sn-plus-t"><b>KeepWise Plus</b><span class="small">Coming soon</span></span>${I.chev}</button>
-    ${group("Account", row("security", "M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z", "Security & privacy") + row("data", "M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zM5 7v10c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3", "Your data & backups"))}
+    ${group("Account", row("security", "M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z", "Security & privacy") + row("memories", "M4 7h3l2-2h6l2 2h3v12H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "Memories") + row("data", "M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zM5 7v10c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3", "Your data & backups"))}
     ${group("App", row("settings", "M4 7h10M18 7h2M4 17h2M10 17h10M16 5v4M8 15v4", "Settings") + row("look", "M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-1.4-.6-2.2 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3zM7.5 12a1 1 0 1 0 0-.1M9.5 7.5a1 1 0 1 0 0-.1M14.5 7.5a1 1 0 1 0 0-.1", "Look") + row("tour", "M4 12a8 8 0 1 0 3-6.2M4 4v4h4", "Replay the tour"))}
     ${group("Help", row("support", "M5 5h14v10H10l-5 4zM9 10h6", "Support"))}
     <div style="flex:1"></div>
@@ -7407,8 +7593,9 @@ $("find-btn").addEventListener("click", () => { UI.find = !UI.find; UI.findQ = "
 function menuGo(k){
   if (k === "theme"){ $("theme-btn").click(); render(true); return; }
   UI.menu = false; if (k === "close"){ render(true); return; }
-  UI.find = false; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.settings = false; UI.delOpen = false;
-  if (k === "look"){ UI.settings = "look"; render(false); $("main").scrollTop = 0; return; }   // Look is its own screen: themes live only here
+  UI.find = false; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.share = false; UI.settings = false; UI.delOpen = false;
+  if (k === "look"){ UI.settings = "look"; render(false); $("main").scrollTop = 0; return; }
+  if (k === "memories"){ UI.memories = true; render(false); $("main").scrollTop = 0; memPaint(); return; }   // Look is its own screen: themes live only here
   if (k === "profile"){ UI.account = true; ACC.err = ""; accInit(); render(false); return; }
   if (k === "plus"){ UI.plus = true; render(false); return; }
   if (k === "biz" || k === "personal"){ UI.biz = k === "biz"; S.tab = "month"; save(); render(false); return; }
@@ -7499,7 +7686,7 @@ $("view").addEventListener("click", async e => {
   if (has("data-acc-delete-yes")){
     const typed = document.querySelector("[data-del-type]"); if (!typed || typed.value.trim().toUpperCase() !== "DELETE") return;
     const keep = ACC.profile, erase = ACC.delErase;
-    try { await accDoc().delete(); await ACC.user.delete(); ACC.del = false; S.acctOn = false; S.acct = null;
+    try { try { await syncRef().delete(); } catch(e){} await accDoc().delete(); await ACC.user.delete(); ACC.del = false; S.acctOn = false; S.acct = null;
       if (erase){ const ex = blankOut(example()); welcomeDone(); ex.started = S.started; ex.tab = "month"; S = ex; UI.account = false; }
       save(); render(false); toast(erase ? "Your account and everything on this phone were deleted." : "Your account was deleted. Your budget is still on this phone."); }
     catch(err){
@@ -7582,10 +7769,10 @@ document.addEventListener("change", e => { const t = e.target;
   if (t.matches && t.matches("[data-biz-name]")){ bizData().name = String(t.value || "").trim().slice(0, 50); save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-milerate]")){ const v = Math.max(0, Math.min(10, Math.round(numv(t.value) * 1000) / 1000 || 0)); bizData().mileRate = v; save(); render(true); return; }
   if (t.matches && t.matches("[data-biz-pick]")){ const i = +t.dataset.bizPick; if (t.checked) BIZ.pick.add(i); else BIZ.pick.delete(i); const btn = document.querySelector("[data-biz-import-add]"); if (btn){ btn.disabled = !BIZ.pick.size; btn.textContent = `Add ${BIZ.pick.size} to Business`; } } });
-$("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
+$("home-link").addEventListener("click", e => { e.preventDefault(); if (UI.welcome != null) return; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.share = false; STMT.result = null; S.tab = "month"; save(); render(false); });
 $("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return;
   if (b.dataset.tab === "banks" && S.tab !== "banks" && bankLocked() && !LOCK.on){ LOCK.gate = "tab"; lockNow(); return; }
-  if (b.dataset.tab !== "banks"){ UI.bankEye = false; UI.bankMenu = null; UI.bankRename = null; } UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
+  if (b.dataset.tab !== "banks"){ UI.bankEye = false; UI.bankMenu = null; UI.bankRename = null; } UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
 $("theme-btn").addEventListener("click", () => { const dark = S.theme === "dark" || ((S.theme || "system") === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   S.theme = dark ? "light" : "dark"; save(); applyTheme(); if (UI.account || UI.settings) render(true); toast(S.theme === "light" ? "Light mode" : "Dark mode"); });
 // The owl button: tap to ask or log from any tab. Hold it for a moment and it lifts, then it can be dragged anywhere on
@@ -7703,7 +7890,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.coachOk){ S.coach = S.coach || {}; S.coach[b.dataset.coachOk] = 1; if (UI.welcome == null) save(); const c = b.closest("[data-coach]"); if (c) c.remove(); return; }
   if (b.dataset.amtEye){ S.hideLoans = !S.hideLoans; save(); render(true); return; }
   if (b.dataset.go && b.dataset.goSel){ UI.settings = false; goTo(b.dataset.go, b.dataset.goSel); return; }
-  if (b.dataset.go){ if (b.dataset.go === "plan") b.dataset.go = "month"; UI.settings = false; S.tab = b.dataset.go; UI.history = false; UI.banks = false; UI.stmt = null; save(); render(false); return; }
+  if (b.dataset.go){ if (b.dataset.go === "plan") b.dataset.go = "month"; UI.settings = false; S.tab = b.dataset.go; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; save(); render(false); return; }
   // ---- first-run setup
   if (b.hasAttribute("data-w-start")){ UI.settings = false; DRAFT.cur = S.cur; DRAFT.income = ""; DRAFT.home = ""; DRAFT.pay = "monthly"; DRAFT.day = 1; DRAFT.bills = []; DRAFT.amts = {}; DRAFT.subs = []; DRAFT.subx = []; DRAFT.extra = []; UI.welcome = 1; render(false); return; }
   if (b.hasAttribute("data-tour-start")){ tourStart(); return; }
@@ -7894,15 +8081,17 @@ view.addEventListener("click", async e => {
     if (b.hasAttribute("data-close-skip")){ st.confirmed = "skip"; UI.closeOther = false; UI.closeAmt = null; save(); refreshOuts(); toast(`Skipped. ${keyLabel(key).split(" ")[0]}’s money stays in your account.`); return; }
   }
   // ---- statements
-  if (b.hasAttribute("data-history")){ UI.history = true; UI.stmt = null; render(false); return; }
-  if (b.hasAttribute("data-history-close")){ UI.history = false; UI.banks = false; UI.stmt = null; render(false); return; }
+  if (b.hasAttribute("data-history")){ UI.history = true; UI.stmt = null; UI.memories = false; render(false); return; }
+  if (b.hasAttribute("data-history-close")){ UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; render(false); return; }
   if (b.dataset.stmt){ UI.stmt = b.dataset.stmt; UI.history = true; render(false); return; }
-  if (b.hasAttribute("data-stmt-back")){ UI.stmt = null; render(false); return; }
+  if (b.hasAttribute("data-stmt-back")){ UI.stmt = null; UI.memories = false; render(false); return; }
   if (b.hasAttribute("data-stmt-print")){ if (IN_APP) statementFile(); else window.print(); return; }
   if (b.hasAttribute("data-stmt-pdf")){ statementPdf(); return; }
   if (b.hasAttribute("data-stmt-csv")){ statementCsv(); return; }
   // ---- backup and keeping data safe
   if (b.hasAttribute("data-backup")){ downloadBackup(); return; }
+  if (b.hasAttribute("data-sync-now")){ syncPull(true).then(() => syncPush()).then(() => { refreshOuts(); toast("Synced."); }); return; }
+  if (b.hasAttribute("data-sync-off")){ syncStop().then(() => { refreshOuts(); toast("Sync is off. This device keeps its own copy."); }); return; }
   if (b.hasAttribute("data-backup-later")){ S.backupSnooze = isoDaysAgo(0); save(); refreshOuts(); return; }
   if (b.hasAttribute("data-restore")){ $("restore-in").click(); return; }
   if (b.hasAttribute("data-restore-no")){ UI.restore = null; refreshOuts(); return; }
@@ -8102,6 +8291,11 @@ view.addEventListener("click", async e => {
   if (b.dataset.space){ UI.biz = b.dataset.space === "business"; render(false); return; }
   if (b.hasAttribute("data-plus-off")){ S.plusTester = false; save(); render(false); toast("Plus preview is off."); return; }
   if (b.dataset.bizKind){ UI.bizDraft = {kind: b.dataset.bizKind}; render(true); return; }
+  if (b.dataset.bizNew){ const r = b.dataset.bizNew === "rcpt"; UI.bizAdd = r ? "out" : b.dataset.bizNew; UI.bizDraft = {kind: UI.bizAdd}; BIZ.rcpt = null; render(true); if (r){ const x = view.querySelector(".bz-wiz [data-biz-rcpt-add]"); if (x) x.click(); } return; }
+  if (b.hasAttribute("data-biz-add-close")){ UI.bizAdd = null; BIZ.rcpt = null; render(true); return; }
+  if (b.dataset.bizCat){ const f = b.closest("form"), sel = f && f.querySelector("[name=cat]"); if (sel) sel.value = b.dataset.bizCat; f.querySelectorAll("[data-biz-cat]").forEach(x => { const on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); }); return; }
+  if (b.dataset.bzOpen){ UI.bzOpen = UI.bzOpen === b.dataset.bzOpen ? null : b.dataset.bzOpen; render(true); return; }
+  if (b.hasAttribute("data-biz-all")){ UI.bizAll = !UI.bizAll; render(true); return; }
   if (b.hasAttribute("data-biz-del")){ const id = b.closest("[data-biz-entry]").dataset.bizEntry, u = undoable(); bizData().entries = bizData().entries.filter(e => e.id !== id); save(); render(true); toast("Removed.", u); return; }
   if (b.hasAttribute("data-biz-sub-del")){ const id = b.closest("[data-biz-sub]").dataset.bizSub, u = undoable(); bizData().subs = bizData().subs.filter(v => v.id !== id); save(); render(true); toast("Removed.", u); return; }
   if (b.hasAttribute("data-biz-share-del")){ const id = b.closest("[data-biz-share]").dataset.bizShare, u = undoable(); bizData().shares = bizData().shares.filter(v => v.id !== id); save(); render(true); toast("Removed.", u); return; }
@@ -8177,7 +8371,22 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-tell-all") && UI.tell){ const t = UI.tell; if (await tellSend(t.group) && UI.tell === t){ t.groupSent = true; render(true); } return; }
   if (b.hasAttribute("data-tell-send") && UI.tell){ const t = UI.tell, r = t.rows.find(y => y.id === b.closest("[data-tell-id]").dataset.tellId); if (!r) return;
     if (await tellSend(r.text, firstWord(r.name)) && UI.tell === t){ r.sent = true; render(true); } return; }
-  if (b.hasAttribute("data-plus-open")){ UI.plus = true; UI.account = false; UI.inbox = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.share = false; render(false); return; }
+  if (b.hasAttribute("data-plus-open")){ UI.plus = true; UI.account = false; UI.inbox = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.share = false; render(false); return; }
+  const needPlus = what => { if (plusOn()) return false; UI.plus = true; render(false); toast(`${what} are part of Plus. Try it free for a week.`); return true; };
+  if (b.hasAttribute("data-rcpt-snap")){ if (needPlus("Receipts")) return; pickPhoto(receiptSnap, true); return; }
+  if (b.hasAttribute("data-rcpt-cancel")){ UI.rcptNew = false; PHOTO.blob = null; render(true); return; }
+  if (b.dataset.photoView){ photoView(b.dataset.photoView); return; }
+  if (b.hasAttribute("data-rcpt-attach")){ if (needPlus("Receipts")) return; const id = b.closest("[data-spend]").dataset.spend, x = (S.spends || []).find(v => v.id === id); if (!x) return;
+    pickPhoto(async f => { try { const blob = await receiptPhoto(f); await rcptPut("p:" + x.id, blob); x.rcpt = "p:" + x.id; save(); render(true); toast("Receipt kept with it."); } catch(e){ toast("That photo couldn’t be kept."); } }, true); return; }
+  if (b.dataset.memFor || b.hasAttribute("data-mem-add")){ if (needPlus("Memories")) return; UI.memNew = {ref: b.dataset.memFor || ""}; PHOTO.blob = null; render(false); $("main").scrollTop = 0; return; }
+  if (b.hasAttribute("data-mem-photo")){ pickPhoto(async f => { try { PHOTO.blob = await receiptPhoto(f); render(true); } catch(e){ toast("That photo can’t be used."); } }); return; }
+  if (b.hasAttribute("data-mem-cancel")){ UI.memNew = null; PHOTO.blob = null; render(true); return; }
+  if (b.hasAttribute("data-mem-open")){ UI.memories = true; render(false); $("main").scrollTop = 0; memPaint(); return; }
+  if (b.hasAttribute("data-mem-close")){ UI.memories = false; render(false); return; }
+  if (b.dataset.memView){ photoView(b.dataset.memView); return; }
+  if (b.hasAttribute("data-mem-del")){ const id = b.closest("[data-mem]").dataset.mem, u = undoable(); S.memories = memList().filter(m => m.id !== id); save(); render(true); memPaint(); toast("Memory removed.", u); return; }
+  if (b.hasAttribute("data-trial-start")){ if (window.Capacitor) return; S.plusTrial = {start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 7))}; save(); render(true); toast(`Your free week of Plus is on, until ${dateWithYear(isoDate(S.plusTrial.end))}. Nothing is charged.`); return; }
+  if (b.hasAttribute("data-trial-stop")){ if (S.plusTrial) S.plusTrial.cancelled = isoOf(todayMid()); UI.biz = false; save(); render(true); toast("Your free week has ended. Everything free is still here."); return; }
   if (b.hasAttribute("data-plus-close")){ UI.plus = false; render(false); return; }
   if (b.hasAttribute("data-open-account")){ if (b.dataset.accStart && typeof ACC !== "undefined"){ ACC.mode = b.dataset.accStart; ACC.err = ""; } UI.account = true; UI.inbox = false; if (typeof accInit === "function") accInit(); render(false); return; }
   const sp = b.closest("[data-split]");
@@ -8390,7 +8599,9 @@ view.addEventListener("submit", async e => {
     if (!(amount > 0)){ toast("Enter the amount."); f.querySelector("[name=amount]").focus(); return; }
     const u = undoable(), e = {id: uid(), kind: k2, name, amount: r2(amount), date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0), cat: String(fd.get("cat") || "Other")};
     if (BIZ.rcpt && k2 === "out"){ const blob = BIZ.rcpt; BIZ.rcpt = null; try { await rcptPut(e.id, blob); e.rcpt = e.id; } catch(err){ toast("The receipt photo couldn't be kept on this phone."); } }
-    bizData().entries.push(e); save(); render(true); toast(k2 === "in" ? `Added ${fmt(amount)} in.` : `Added a ${fmt(amount)} cost.`, u); return; }
+    bizData().entries.push(e); UI.bizAdd = null; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true);
+    const row = view.querySelector(`[data-biz-entry="${e.id}"]`); if (row){ cardInView(row.closest(".card") || row); row.classList.add("flash"); }
+    toast(k2 === "in" ? `Added ${fmt(amount)} in.` : `Added a ${fmt(amount)} cost.`, u); return; }
   if (kind === "tellMail"){ const p = S.people.find(x => x.id === f.dataset.pid), em = String(fd.get("email") || "").trim();
     if (!p) return; if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(em)){ toast("Check the email address."); return; }
     p.email = em.slice(0, 120); save(); render(true); toast(`Saved ${firstWord(p.name)}’s email.`); return; }
@@ -8447,6 +8658,20 @@ view.addEventListener("submit", async e => {
     if (/\d/.test(q) && (wantsAdd || !asking)){ const u = undoable(), before = JSON.stringify(S), said = await logSpend(q);
       if (said){ ASK.last = said; if (JSON.stringify(S) !== before && land(said, u)) return; refreshOuts(); renderBell(); if (JSON.stringify(S) !== before) toast("Logged.", u); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").value = ""; $("ask-in").blur(); return; } }
     ASK.last = answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; $("ask-in").blur(); return; }
+  if (kind === "rcptNew"){ const amount = numv(fd.get("amount")), name = String(fd.get("name") || "").trim().slice(0, 60) || "Receipt", date = String(fd.get("date") || isoDaysAgo(0));
+    if (!(amount > 0)){ toast("Enter the amount."); return; } const u = undoable(), id = uid();
+    (S.spends = S.spends || []).push({id, date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0), at: Date.now(), k: periodKeyOfIso(date) || compute().planKey, name: titleCase(name), amount: r2(amount)});
+    if (PHOTO.blob){ try { await rcptPut("p:" + id, PHOTO.blob); S.spends[S.spends.length - 1].rcpt = "p:" + id; } catch(e){} }
+    PHOTO.blob = null; UI.rcptNew = false; save(); if (isField(document.activeElement)) document.activeElement.blur(); goTo("month", `[data-spend="${id}"]`) || render(true); toast(`Added ${fmt(amount)} at ${titleCase(name)}, with the receipt.`, u); return; }
+  if (kind === "memNew"){ const note = String(fd.get("note") || "").trim().slice(0, 140), date = String(fd.get("date") || isoDaysAgo(0));
+    if (!note && !PHOTO.blob){ toast("Add a photo or a few words."); return; } const id = uid(), m = {id, date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : isoDaysAgo(0), note, ref: UI.memNew && UI.memNew.ref || ""};
+    if (PHOTO.blob){ try { await rcptPut("m:" + id, PHOTO.blob); m.photo = "m:" + id; } catch(e){} }
+    memList().push(m); PHOTO.blob = null; UI.memNew = null; UI.memories = true; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(false); $("main").scrollTop = 0; memPaint(); toast("Memory kept."); return; }
+  if (kind === "syncOn"){ const p1 = String(fd.get("pass") || ""), p2 = String(fd.get("pass2") || "");
+    if (p1 !== p2){ UI.syncErr = "The two passphrases don’t match."; refreshOuts(); return; }
+    UI.syncErr = ""; busy("Locking and syncing");
+    try { const joined = await syncStart(p1); busy(false); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(joined ? "Joined. This device now has your synced KeepWise." : "Sync is on. Use the same passphrase on your other devices."); }
+    catch(e){ busy(false); UI.syncErr = e.message || "Couldn’t turn on sync."; refreshOuts(); } return; }
   if (kind === "lockSet"){ const old = String(fd.get("old") || ""), pin = String(fd.get("pin") || ""), pin2 = String(fd.get("pin2") || "");
     if (UI.lockForm === "change" && !(await lockPinOk(old))){ toast("The current passcode is not right."); return; }
     if (!/^\d{4,8}$/.test(pin)){ toast("Use 4 to 8 digits."); return; }
@@ -8550,7 +8775,7 @@ V.pdfLock = () => `<div class="inline" style="justify-content:space-between"><h1
     <p class="muted small">The password is used once, on this phone, to open the file. KeepWise does not save it or send it anywhere.</p></section>`;
 $("restore-in").addEventListener("change", async e => {
   const file = e.target.files[0]; e.target.value = ""; if (!file) return;
-  try { UI.restore = readBackup(await file.text()); UI.history = false; UI.banks = false; UI.stmt = null; UI.account = false; UI.inbox = false; S.tab = "month"; render(false);
+  try { UI.restore = readBackup(await file.text()); UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.account = false; UI.inbox = false; S.tab = "month"; render(false);
     const box = view.querySelector('[data-out="backupBox"]'); if (box) box.scrollIntoView({block: "center"}); }
   catch(err){ toast(err.message || "Couldn’t read that file."); }
 });

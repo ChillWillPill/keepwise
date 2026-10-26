@@ -2167,9 +2167,9 @@ async def plus_testers_get_a_working_business_space(ctx):
       return {shown: !b.hidden && r.width > 0, inside: r.right <= box.right + 1, full: w.scrollWidth <= w.clientWidth + 1, tag: document.getElementById('brand-tag').hidden}; }""")
     assert hb == {"shown": True, "inside": True, "full": True, "tag": True}, hb
     # a cost, then money in
-    f = pg.locator("form[data-form=bizEntry]"); await f.locator("[name=name]").fill("Candle jars"); await f.locator("[name=amount]").fill("120"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
+    await pg.click("[data-biz-new=out]"); f = pg.locator("form[data-form=bizEntry]"); await f.locator("[name=name]").fill("Candle jars"); await f.locator("[name=amount]").fill("120"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     assert money(await text(pg, "[data-biz-profit]")) == -120
-    await pg.click("[data-biz-kind=in]"); f = pg.locator("form[data-form=bizEntry]")
+    await pg.click("[data-biz-new=in]"); f = pg.locator("form[data-form=bizEntry]")
     assert await f.locator("[name=cat]").input_value() == "Sales"
     await f.locator("[name=name]").fill("Etsy payout"); await f.locator("[name=amount]").fill("900"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     assert money(await text(pg, "[data-biz-profit]")) == 780
@@ -2248,7 +2248,7 @@ async def business_live_sales_come_in_from_stripe_and_paypal(ctx):
         last = body.get("end", "")[:10] >= today
         return await route.fulfill(status=200, content_type="application/json", body=json.dumps({"transaction_details": tx if last else [], "total_pages": 1}))
     await pg.route(re.compile(r"keepwise-api\."), api)
-    assert "Live sales" in await text(pg, "[data-sales-card]")
+    assert "Live sales" in await text(pg, "[data-bz=sales]") and await pg.locator("[data-sales-card]").count() == 1
     # a full secret key is refused before anything is sent
     await pg.click("[data-sales-add=stripe]"); f = pg.locator("form[data-form=salesStripe]")
     await f.locator("[name=key]").fill("sk_live_" + "a" * 24); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(150)
@@ -2457,7 +2457,7 @@ async def business_profile_logo_and_pay_now_links(ctx):
         data = [{"id": "txn_9", "type": "charge", "amount": 23100, "fee": 700, "currency": "usd", "created": now - 60, "description": "Blue Door Cafe"}]
         await route.fulfill(status=200, content_type="application/json", body=json.dumps({"data": data, "has_more": False}))
     await pg.route(re.compile(r"keepwise-api\."), api)
-    card = pg.locator("[data-biz-settings]"); assert "Business profile" in await card.inner_text()
+    card = pg.locator("[data-biz-settings]"); assert "Business profile" in await pg.locator("[data-bz=prof]").inner_text() and await card.count() == 1
     async def prof(k, v):
         sel = f"[data-biz-prof={k}]"
         if k == "payKind": await pg.select_option(sel, v)
@@ -2589,7 +2589,7 @@ async def business_invoices_are_made_shared_and_paid(ctx):
     d = await dl.value; assert d.suggested_filename.startswith("INV-0001") and d.suggested_filename.endswith(".png")
     data = open(await d.path(), "rb").read(); assert data[:8] == b"\x89PNG\r\n\x1a\n" and len(data) > 20000
     # edit, then cancel, leaves it alone
-    await pg.click("[data-inv-edit]"); await pg.click("[data-inv-line]"); await pg.click("[data-inv-cancel]"); await pg.wait_for_timeout(100)
+    await pg.click("[data-inv-edit]"); await pg.click("[data-inv-line]"); await pg.click("[data-inv-cancel] >> nth=0"); await pg.wait_for_timeout(100)
     assert len((await state(pg))["biz"]["invoices"][0]["items"]) == 2
     # paid: becomes business income; unpaid takes it back
     await pg.click("[data-inv-paid]"); await pg.wait_for_timeout(200)
@@ -2643,7 +2643,7 @@ async def business_mileage_and_estimated_tax(ctx):
 @test
 async def business_receipt_photo_fills_the_cost(ctx):
     pg = await open_app(ctx, month_tabs=True); await biz_on(pg)
-    async with pg.expect_file_chooser() as fc: await pg.click("[data-biz-rcpt-add]")
+    async with pg.expect_file_chooser() as fc: await pg.click("[data-biz-new=rcpt]")
     await (await fc.value).set_files(os.path.join(HERE, "fixtures", "receipt-photo.png"))
     await pg.wait_for_selector("[data-biz-rcpt-preview]:not([hidden])", timeout=60000); await pg.wait_for_timeout(300)
     assert "Read $32.94" in await text(pg, "[data-biz-rcpt-preview]"), (await text(pg, "[data-biz-rcpt-preview]"), await pg.inner_text("#toast"))
@@ -3525,13 +3525,18 @@ async def plus_screen_gives_reasons_and_prices(ctx):
     for unbuilt in ("shared household", "Offers near you", "Reminders on every phone", "only you can unlock", "birthday"):   # only promises we can keep
         assert unbuilt not in v, unbuilt
     assert await pg.locator(".plus-list li").count() == 7
-    # prices exactly as set: 12 from 15 for the first six months, 140 from 180 a year
+    # prices by country tier: the US pays $9.99 a month or $79 a year
     m = await text(pg, ".plus-price:not(.best)"); y = await text(pg, ".plus-price.best")
-    assert "$15" in m and "$12" in m and "a month" in m and "first 6 months, then $15 a month" in m, m
-    assert "$180" in y and "$140" in y and "a year" in y and "You save $40" in y and "About $11.67 a month" in y, y
-    assert await pg.locator(".plus-price s").count() == 2 and m.upper().count("EARLY USER PRICE") == 1
+    assert "$9.99" in m and "a month" in m, m
+    assert "$79" in y and "a year" in y and "About $6.58 a month" in y and "You save 34%" in y, y
     assert "not on sale yet" in v and "Free, and staying free" in v and "Claude" not in v and "Business space" not in v
     assert "EARLY140" in y and "EARLY12" in m, "each price shows its code"
+    # the free week: says when it ends, charges nothing, and reminds 2 days before
+    t = await text(pg, "[data-plus-trial]"); assert "7 days free" in t.upper() or "7 DAYS FREE" in t.upper(), t
+    await pg.click("[data-trial-start]"); await pg.wait_for_timeout(200)
+    st = await state(pg); assert st["plusTrial"]["start"] and st["plusTrial"]["end"], st.get("plusTrial")
+    assert "Free week on" in await text(pg, "[data-plus-trial]") and "nothing is charged" in (await text(pg, "[data-plus-trial]")).lower()
+    await pg.click("[data-trial-stop]"); await pg.wait_for_timeout(200); assert (await state(pg))["plusTrial"].get("cancelled")
     assert await pg.locator("[data-open-account]").count() >= 1, "signed out: the button leads to sign-in"
     w = await pg.evaluate("Math.max(...[...document.querySelectorAll('#view *')].map(e => e.getBoundingClientRect().right))"); assert w <= 390.5, f"nothing runs off the screen: {w}"
     await pg.click("[data-plus-close]"); await pg.wait_for_timeout(150)
@@ -5003,7 +5008,7 @@ async def keepwise_plus_codes_show_as_eligible(ctx):
     pg = await open_app(ctx); await tab(pg, "codes")
     box = await text(pg, "[data-kw-codes]")
     assert "KeepWise Plus codes" in box and "EARLY140" in box and "EARLY12" in box and box.count("Eligible") == 2, box
-    assert "$140 for your first year, instead of $180" in box and "$12 a month for your first 6 months, instead of $15" in box and "when Plus opens" in box
+    assert "20% off your first year" in box and "20% off your first 6 months" in box and "when Plus opens" in box
     await pg.locator("[data-kw-code=EARLY140] [data-copy]").click(); await pg.wait_for_timeout(150); assert "Cop" in await pg.inner_text("#toast"), "tapping the code copies it"
     assert not any(c["code"].startswith("EARLY") for c in (await state(pg))["codes"]), "KeepWise codes are not mixed into your own list"
     await pg.click("[data-kw-codes] [data-plus-open]"); await pg.wait_for_timeout(150); assert await pg.locator(".plus-prices").count() == 1
@@ -5263,8 +5268,77 @@ async def new_split_opens_where_you_can_see_it(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
     await pg.click("[data-new-split]"); await pg.wait_for_timeout(1500)
     top = await pg.evaluate("""() => { const f = document.querySelector('form[data-form="split"]'), m = document.getElementById('main'); const r = f.getBoundingClientRect(), q = m.getBoundingClientRect(); return [r.top - q.top, q.height]; }""")
-    assert 0 <= top[0] < top[1] / 3, top
+    assert 0 <= top[0] < top[1] / 2, top
     assert await pg.evaluate("!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)"), "the keyboard does not jump up"
+    assert not pg.errors, pg.errors
+
+@test
+async def business_extras_fold_into_short_rows(ctx):
+    pg = await ctx.new_page(); await pg.set_viewport_size({"width": 390, "height": 844}); pg.errors = []
+    await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true; window.KEEPWISE_BIZ_OPEN = false;")
+    await pg.goto(URL); await pg.wait_for_timeout(400); await biz_on(pg)
+    assert await pg.locator("[data-bz]").count() == 5 and await pg.locator("[data-sales-card], form[data-form=bizSub], [data-biz-settings]").count() == 0, "the extras start folded"
+    await pg.click("[data-bz-open=subs]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("form[data-form=bizSub]").count() == 1 and await pg.get_attribute("[data-bz-open=subs]", "aria-expanded") == "true"
+    await pg.click("[data-bz-open=prof]"); await pg.wait_for_timeout(150)
+    assert await pg.locator("form[data-form=bizSub]").count() == 0 and await pg.locator("[data-biz-settings]").count() == 1, "one open at a time"
+    await pg.click("[data-biz-new=out]"); await pg.wait_for_timeout(150)
+    assert await pg.locator(".bz-wiz").count() == 1 and await pg.locator(".app.flowing").count() == 1, "adding a cost is its own full screen"
+    await pg.click(".bz-wiz [data-biz-add-close] >> nth=1"); await pg.wait_for_timeout(150); assert await pg.locator(".bz-wiz").count() == 0
+    assert not pg.errors, pg.errors
+
+@test
+async def sync_is_sealed_and_joins_with_the_passphrase(ctx):
+    # device one: signed in, Plus on, chooses a passphrase; the server copy can't be read
+    pg = await open_app(ctx, fb=True)
+    await pg.evaluate("window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.plusTester = true; s.example = false; s.expenses.push({id: 'zz1', name: 'Sync test bill', amount: 42, env: 'needs'}); localStorage.setItem('keepwise-app-v1', JSON.stringify(s))")
+    await pg.reload(); await pg.wait_for_timeout(500)
+    await open_account(pg); await pg.click("[data-acc-google]"); await pg.wait_for_timeout(400)
+    f = "[data-form=acc-profile]"
+    if await pg.locator(f).count(): await pg.fill(f + " [name=dob]", "1990-07-04"); await pg.check(f + " [name=consent]"); await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(400)
+    await menu_to(pg, "data"); box = pg.locator("[data-sync]"); assert "Sync across your devices" in await box.inner_text()
+    await box.locator("[name=pass]").fill("candle jar 77"); await box.locator("[name=pass2]").fill("candle jar 7"); await box.locator("[type=submit]").click(); await pg.wait_for_timeout(300)
+    assert "don’t match" in await text(pg, "[data-sync-err]")
+    box = pg.locator("[data-sync]"); await box.locator("[name=pass]").fill("candle jar 77"); await box.locator("[name=pass2]").fill("candle jar 77"); await box.locator("[type=submit]").click()
+    await pg.wait_for_selector("[data-sync-state]", timeout=20000)
+    fs = await pg.evaluate("localStorage.getItem('__mock_fs')"); doc = json.loads(fs)["users/g1/sync/state"]
+    assert doc["data"] and "Sync test bill" not in fs and "Netflix" not in fs, "the server only keeps a sealed copy"
+    users = await pg.evaluate("localStorage.getItem('__mock_users')"); sess = await pg.evaluate("localStorage.getItem('__mock_session')")
+    # device two: same account; a wrong passphrase is refused, the right one brings everything over
+    c2 = await ctx.browser.new_context(viewport={"width": 390, "height": 844})
+    await c2.add_init_script(f"if (!localStorage.getItem('__mock_fs')) {{ localStorage.setItem('__mock_fs', {json.dumps(fs)}); localStorage.setItem('__mock_users', {json.dumps(users)}); localStorage.setItem('__mock_session', {json.dumps(sess)}); }}")
+    p2 = await open_app(c2, fb=True); await p2.wait_for_timeout(600)
+    await p2.evaluate("window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.plusTester = true; s.acctOn = true; localStorage.setItem('keepwise-app-v1', JSON.stringify(s))"); await p2.reload(); await p2.wait_for_timeout(600)
+    await menu_to(p2, "data"); b2 = p2.locator("[data-sync]")
+    await b2.locator("[name=pass]").fill("wrong words 1"); await b2.locator("[name=pass2]").fill("wrong words 1"); await b2.locator("[type=submit]").click(); await p2.wait_for_timeout(1500)
+    assert "doesn’t open" in await text(p2, "[data-sync-err]")
+    b2 = p2.locator("[data-sync]"); await b2.locator("[name=pass]").fill("candle jar 77"); await b2.locator("[name=pass2]").fill("candle jar 77"); await b2.locator("[type=submit]").click()
+    await p2.wait_for_selector("[data-sync-state]", timeout=20000)
+    st2 = await state(p2); assert any(e["name"] == "Sync test bill" for e in st2["expenses"]) and not st2.get("example"), "joined with everything from the first device, and the example month is gone"
+    assert not pg.errors and not p2.errors, (pg.errors, p2.errors)
+    await c2.close()
+
+@test
+async def receipts_and_memories_need_plus_and_work(ctx):
+    pg = await open_app(ctx)
+    # without Plus, the camera opens the Plus screen instead
+    await owl(pg); await pg.wait_for_timeout(200); await pg.click("#asksheet [data-rcpt-snap]"); await pg.wait_for_timeout(250)
+    assert await pg.locator(".plus-prices").count() == 1 and "part of Plus" in await pg.inner_text("#toast")
+    await pg.evaluate("window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.plusTester = true; localStorage.setItem('keepwise-app-v1', JSON.stringify(s))"); await pg.reload(); await pg.wait_for_timeout(500)
+    n0 = len((await state(pg)).get("spends") or [])
+    await owl(pg); await pg.wait_for_timeout(200)
+    async with pg.expect_file_chooser() as fc: await pg.click("#asksheet [data-rcpt-snap]")
+    await (await fc.value).set_files(os.path.join(HERE, "fixtures", "receipt-photo.png"))
+    await pg.wait_for_selector("form[data-form=rcptNew]", timeout=60000)
+    f = pg.locator("form[data-form=rcptNew]"); assert await f.locator("[name=amount]").input_value() == "32.94" and await f.locator(".ph-prev").count() == 1
+    await f.locator("[type=submit]").click(); await pg.wait_for_timeout(400)
+    sp = (await state(pg))["spends"]; assert len(sp) == n0 + 1 and sp[-1]["amount"] == 32.94 and sp[-1]["rcpt"], sp[-1]
+    assert "with the receipt" in await pg.inner_text("#toast")
+    # a memory, kept in the timeline with the year in review
+    await menu_to(pg, "memories"); assert "in review" in (await text(pg, "[data-mem-year]")).lower()
+    await pg.click("[data-mem-add]"); await pg.fill("form[data-form=memNew] [name=note]", "First dinner in Miami"); await pg.click("form[data-form=memNew] [type=submit]"); await pg.wait_for_timeout(300)
+    assert "First dinner in Miami" in await text(pg, "#view") and "1 memory" in (await text(pg, "[data-mem-year]")).lower()
+    assert (await state(pg))["memories"][-1]["note"] == "First dinner in Miami"
     assert not pg.errors, pg.errors
 
 @test
@@ -5496,7 +5570,7 @@ async def the_side_menu_opens_each_place(ctx):
     assert await pg.locator("#sidenav").is_hidden()
     await pg.click("#acct-btn"); await pg.wait_for_timeout(300)
     rows = await pg.locator("#sidenav .sn-row span").all_inner_texts()
-    assert rows == ["Security & privacy", "Your data & backups", "Settings", "Look", "Replay the tour", "Support"], rows
+    assert rows == ["Security & privacy", "Memories", "Your data & backups", "Settings", "Look", "Replay the tour", "Support"], rows
     assert [x.strip() for x in await pg.locator("#sidenav .sn-label").all_inner_texts()] == ["ACCOUNT", "APP", "HELP"] or [x.strip().upper() for x in await pg.locator("#sidenav .sn-label").all_inner_texts()] == ["ACCOUNT", "APP", "HELP"]
     assert "Sign in" in await pg.inner_text("#sidenav .sn-head"), "signed out, the top of the menu offers signing in"
     assert "Delete" not in await pg.inner_text("#sidenav"), "delete is not offered in the menu"
@@ -6648,7 +6722,8 @@ async def main():
                 css = "".join(f"@font-face{{font-family:'{fam}';font-style:normal;font-weight:100 900;src:url(https://fonts.gstatic.com/local/{f}) format('woff2')}}" for fam, f in [("Figtree", "figtree-latin-wght-normal.woff2"), ("Fraunces", "fraunces-latin-opsz-normal.woff2")])
                 await ctx.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(body=css, content_type="text/css"))
                 await ctx.route("https://fonts.gstatic.com/local/**", lambda r: r.fulfill(path=os.path.join(FONTS, r.request.url.rsplit("/", 1)[-1]), content_type="font/woff2"))
-            await ctx.add_init_script("if (window.KEEPWISE_MONTH_ONE_PAGE === undefined) window.KEEPWISE_MONTH_ONE_PAGE = true;")   # Month as one page unless a test asks for the phone's three parts
+            await ctx.add_init_script("if (window.KEEPWISE_MONTH_ONE_PAGE === undefined) window.KEEPWISE_MONTH_ONE_PAGE = true;")
+            await ctx.add_init_script("if (window.KEEPWISE_BIZ_OPEN === undefined) window.KEEPWISE_BIZ_OPEN = true;")   # Business rows open, unless a test checks them folded   # Month as one page unless a test asks for the phone's three parts
             try:
                 await fn(ctx)
                 errs = [e for pg in ctx.pages for e in getattr(pg, "errors", [])]

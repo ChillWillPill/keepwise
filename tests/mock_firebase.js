@@ -59,7 +59,11 @@
       doc(id){ const key = c + "/" + id; return {
       async get(){ if (!current || current.uid !== id) throw err("permission-denied"); const has = key in store; return {exists: has, data: () => has ? JSON.parse(JSON.stringify(store[key])) : undefined}; },
       async set(d, o){ if (!current || current.uid !== id) throw err("permission-denied"); store[key] = o && o.merge ? {...(store[key] || {}), ...d} : d; saveStore(); },
-      async delete(){ if (!current || current.uid !== id) throw err("permission-denied"); delete store[key]; saveStore(); }
+      async delete(){ if (!current || current.uid !== id) throw err("permission-denied"); delete store[key]; saveStore(); },
+      collection(sub){ return { doc(id2){ const k2 = key + "/" + sub + "/" + id2, own = () => { if (!current || current.uid !== id) throw err("permission-denied"); }; return {   // users/{uid}/sync/state: only the owner, like the rules
+        async get(){ own(); const has = k2 in store; return {exists: has, data: () => has ? JSON.parse(JSON.stringify(store[k2])) : undefined}; },
+        async set(d){ own(); store[k2] = JSON.parse(JSON.stringify(d)); saveStore(); },
+        async delete(){ own(); delete store[k2]; saveStore(); } }; } }; }
     }; } }; }
   };
   const authFn = () => auth; authFn.GoogleAuthProvider = function(){}; authFn.EmailAuthProvider = {credential: (email, pw) => ({email, pw})};

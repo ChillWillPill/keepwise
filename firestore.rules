@@ -17,6 +17,13 @@ service cloud.firestore {
         && request.resource.data.dates is list && request.resource.data.dates.size() <= 6
         && request.resource.data.tz is string && request.resource.data.tz.size() < 60;
     }
+    // Sync across devices: a sealed copy only the owner's devices can open (end-to-end encrypted on the phone).
+    match /users/{uid}/sync/{doc} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid && doc == 'state'
+        && request.resource.data.keys().hasOnly(['v','salt','iv','data','z','at','dev'])
+        && request.resource.data.data is string && request.resource.data.data.size() < 1000000;
+    }
     match /users/{uid} {
       allow read: if (request.auth != null && request.auth.uid == uid) || isOwner();
       allow delete: if request.auth != null && request.auth.uid == uid;
