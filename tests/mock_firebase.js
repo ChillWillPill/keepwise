@@ -49,8 +49,24 @@
     async sendPasswordResetEmail(email){ window.__mockMail.push({to: email, type: "reset"}); },
     async signOut(){ setUser(null); }
   };
+  // Friends on KeepWise, like the rules: find/{code} readable by anyone signed in, written only for yourself;
+  // inbox/{uid}/items written by any signed-in sender as themselves, read and removed only by the owner; ping write-only.
+  const clone = d => JSON.parse(JSON.stringify(d)), signed = () => { if (!current) throw err("permission-denied"); };
+  let seq = 0; const nid = () => "m" + Date.now().toString(36) + (seq++);
+  const special = {
+    find: id => { const k = "find/" + id; return {
+      async get(){ signed(); const has = k in store; return {exists: has, data: () => has ? clone(store[k]) : undefined}; },
+      async set(d){ signed(); if (d.uid !== current.uid || !current.emailVerified) throw err("permission-denied"); store[k] = clone(d); saveStore(); },
+      async delete(){ signed(); if (store[k] && store[k].uid !== current.uid) throw err("permission-denied"); delete store[k]; saveStore(); } }; },
+    inbox: id => ({ collection(){ const pre = "inbox/" + id + "/items/", list = () => Object.keys(store).filter(k => k.startsWith(pre)).map(k => ({id: k.slice(pre.length), data: () => clone(store[k])})).sort((a, b) => b.data().at - a.data().at);
+      const q = {orderBy(){ return q; }, limit(){ return q; }, async get(){ signed(); if (current.uid !== id) throw err("permission-denied"); const docs = list(); return {docs, size: docs.length}; }};
+      return {...q, async add(d){ signed(); if (d.fromUid !== current.uid || d.email !== current.email) throw err("permission-denied"); store[pre + nid()] = clone(d); saveStore(); },
+        doc(id2){ return {async delete(){ signed(); if (current.uid !== id) throw err("permission-denied"); delete store[pre + id2]; saveStore(); }}; }}; } })
+  };
   const fs = {
-    collection(c){ return {
+    collection(c){ if (c === "ping") return {async add(d){ signed(); store["ping/" + nid()] = clone(d); saveStore(); }};
+      if (special[c]) return {doc: special[c]};
+      return {
       async get(){  // listing the whole collection: only the owner's verified Google account, like the real rules
         if (!current || current.email !== (window.__mockOwner || "notartist04@gmail.com") || current.providerData[0].providerId !== "google.com") throw err("permission-denied");
         const docs = Object.keys(store).filter(k => k.startsWith(c + "/")).map(k => ({id: k.slice(c.length + 1), data: () => JSON.parse(JSON.stringify(store[k]))}));

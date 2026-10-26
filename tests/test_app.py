@@ -2317,6 +2317,7 @@ async def plus_connects_a_bank_through_plaid(ctx):
     v = await pg.inner_text("#view"); assert "Plaid Checking" in v and "••0000" in v and "First Platypus Bank" in v and "Plaid Student" not in v and "Hidden (1)" in v, v
     assert "$1,100.50" not in v and "$•••" in v, "balances start hidden"
     await pg.click("[data-bank-eye]"); await pg.wait_for_timeout(100)
+    if os.environ.get("KW_SHOT"): await pg.click("[data-bank-eye]"); await pg.screenshot(path=os.environ["KW_SHOT"], full_page=False); await pg.click("[data-bank-eye]")
     owed = await text(pg, "[data-acct-group=owed]"); assert "$410" in owed and "owed" in owed and "$1,100.50" in await text(pg, "[data-acct-group=cash]"), owed
     # rename and hide
     await pg.click("[data-acct='p:a1'] [data-acct-menu]"); await pg.click("[data-acct='p:a1'] [data-acct-rename]")
@@ -2351,7 +2352,7 @@ async def plus_connects_a_bank_through_plaid(ctx):
     lines = await text(pg, "[data-biz-import-card]"); assert "Craft Warehouse" in lines and await pg.locator("[data-biz-pick]").count() == 3, lines
     await pg.click("[data-biz-import-cancel]"); await pg.click("[data-space=personal]"); await pg.wait_for_timeout(150); await menu_to(pg, "banks"); await pg.wait_for_timeout(150)
     # disconnect removes it at Plaid and on the phone
-    await pg.click("[data-plaid-off]"); await pg.wait_for_timeout(300)
+    await pg.click("[data-plaid-more]"); await pg.click("[data-plaid-off]"); await pg.wait_for_timeout(300)
     assert calls[-1][0] == "/plaid/remove" and "SEALED-BLOB" not in (await pg.evaluate("localStorage.getItem('keepwise-plaid-v1')") or "")
     assert "Connect with Plaid" in await text(pg, "[data-bank]")
     assert not pg.errors, pg.errors
@@ -5296,6 +5297,41 @@ async def business_extras_fold_into_short_rows(ctx):
     assert await pg.locator(".bz-wiz").count() == 1 and await pg.locator(".app.flowing").count() == 1, "adding a cost is its own full screen"
     await pg.click(".bz-wiz [data-biz-add-close] >> nth=1"); await pg.wait_for_timeout(150); assert await pg.locator(".bz-wiz").count() == 0
     assert not pg.errors, pg.errors
+
+@test
+async def friends_on_keepwise_get_splits_in_their_app(ctx):
+    import hashlib
+    code = lambda e: hashlib.sha256(("keepwise:" + e).encode()).hexdigest()
+    pg = await open_app(ctx, fb=True)
+    await pg.evaluate(f"window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.example = false; s.people = [{{id: 'pb', name: 'Bea Lin', email: 'Bea@Example.com'}}]; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); localStorage.setItem('__mock_fs', JSON.stringify({{'find/{code('bea@example.com')}': {{uid: 'b1', at: 1}}}}))")
+    await pg.reload(); await pg.wait_for_timeout(500)
+    await open_account(pg); await pg.click("[data-acc-google]"); await pg.wait_for_timeout(400)
+    f = "[data-form=acc-profile]"
+    if await pg.locator(f).count(): await pg.fill(f + " [name=dob]", "1990-07-04"); await pg.check(f + " [name=consent]"); await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(400)
+    await pg.wait_for_timeout(3800)
+    fs = json.loads(await pg.evaluate("localStorage.getItem('__mock_fs')"))
+    assert fs.get("find/" + code("gina@example.com"), {}).get("uid") == "g1" and "gina@example.com" not in json.dumps({k: v for k, v in fs.items() if k.startswith("find/")}), "findable by a one-way code, never the address"
+    assert (await state(pg))["people"][0].get("kw") == "b1", "Bea uses KeepWise"
+    await tab(pg, "split"); assert "On KeepWise" in await text(pg, "[data-person]")
+    await pg.click("[data-new-split]"); await pg.fill("[data-d=title]", "Pizza night"); await pg.fill("[data-d=amount]", "40")
+    await pg.click("[data-part-search]"); await pg.click("[data-part-add=pb]"); await pg.wait_for_timeout(80)
+    await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(1200)
+    fs = json.loads(await pg.evaluate("localStorage.getItem('__mock_fs')")); items = [v for k, v in fs.items() if k.startswith("inbox/b1/items/")]
+    assert len(items) == 1 and items[0]["owe"] == 20 and items[0]["title"] == "Pizza night" and items[0]["fromUid"] == "g1", items
+    assert any(k.startswith("ping/") and v["uid"] == "b1" for k, v in fs.items()), "a push nudge is queued"
+    assert "Sent to Bea in KeepWise too" in await text(pg, "[data-kw-sent]")
+    # Bea opens her KeepWise: it waits in the bell and on Split, and one tap adds it
+    await pg.evaluate("const u = JSON.parse(localStorage.getItem('__mock_users')); u['bea@example.com'] = {uid: 'b1', email: 'bea@example.com', pw: 'secret1', provider: 'password', verified: true}; localStorage.setItem('__mock_users', JSON.stringify(u)); localStorage.setItem('__mock_session', 'bea@example.com'); window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.people = []; s.splits = []; s.settlements = []; s.acct = null; localStorage.setItem('keepwise-app-v1', JSON.stringify(s))")
+    await pg.reload(); await pg.wait_for_timeout(4500)
+    await pg.click("#bell"); await pg.wait_for_timeout(200); assert "Gina added you to “Pizza night”" in await text(pg, "#view"), "it's in the bell"
+    await pg.click("[data-close-inbox]"); await pg.wait_for_timeout(150)
+    await tab(pg, "split"); card = await text(pg, "[data-friend-in]")
+    assert "Gina added you to “Pizza night”" in card and "You owe Gina $20" in card, card
+    await pg.click("[data-friend-add]"); await pg.wait_for_timeout(400)
+    st = await state(pg); g = next(p for p in st["people"] if p.get("kw") == "g1"); x = next(x for x in st["splits"] if str(x.get("link", "")).startswith("g1:"))
+    assert x["paidBy"] == g["id"] and x["parts"] == {"me": 20}, x
+    fs = json.loads(await pg.evaluate("localStorage.getItem('__mock_fs')")); assert not any(k.startswith("inbox/b1/items/") for k in fs), "handled items are removed"
+    assert await pg.locator("[data-friend-in]").count() == 0 and not pg.errors, pg.errors
 
 @test
 async def sync_is_sealed_and_joins_with_the_passphrase(ctx):

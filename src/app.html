@@ -417,6 +417,8 @@ a.btn{display:block;text-decoration:none}
 /* Messages sit at the foot of the visible screen, so an open keyboard never covers them. */
 .plus-trial.on .pt-top{display:flex;gap:14px;align-items:center}.plus-trial.on h3{margin:6px 0 2px}.plus-trial.on .pt-top p{margin:0}.pt-ring{--pt:1;flex:none;width:68px;height:68px;border-radius:50%;display:grid;place-content:center;text-align:center;line-height:1;background:radial-gradient(closest-side,var(--card,#fff) 79%,transparent 80%),conic-gradient(var(--good,#1a7f4b) calc(var(--pt)*360deg),color-mix(in srgb,var(--good,#1a7f4b) 15%,transparent) 0)}.pt-ring b{font:700 1.5rem var(--head,inherit)}.pt-ring span{font-size:.7rem;opacity:.7}.pt-days{display:flex;gap:5px;margin:14px 0 10px}.pt-days i{flex:1;height:6px;border-radius:3px;background:var(--good,#1a7f4b)}.pt-days i.used{background:color-mix(in srgb,var(--ink) 12%,transparent)}.pt-foot{border-top:1px solid color-mix(in srgb,var(--ink) 8%,transparent);margin-top:10px;padding-top:8px;text-align:center}
 .icon-btn svg{margin:0!important;vertical-align:middle!important}
+.kw-pill{display:inline-block;font:700 .66rem var(--body);letter-spacing:.02em;color:var(--good,#1a7f4b);background:color-mix(in srgb,var(--good,#1a7f4b) 12%,transparent);padding:2px 7px;border-radius:999px;vertical-align:2px;margin-left:4px}.kw-sent{color:var(--good,#1a7f4b);display:flex;gap:6px;align-items:center;margin:0}.kw-sent svg{width:16px;height:16px;flex:none}.friend-card{gap:12px}.fr-row{display:flex;gap:12px;align-items:flex-start;padding-top:12px;border-top:1px solid var(--line)}.fr-row:first-of-type{border-top:0;padding-top:4px}.fr-txt{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}.fr-act{display:flex;gap:12px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.accts{border:0!important;border-radius:0!important;margin:0 -4px}.acct+.acct{border-top:1px solid var(--line)}.acct-line{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:12px 4px;cursor:pointer;border-radius:10px}.acct-line:focus-visible{outline:2px solid var(--good,#1a7f4b)}.acct-id{display:flex;flex-direction:column;min-width:0;gap:2px}.acct-id .name{font-weight:600}.acct-amt{flex:none;font-weight:600}.acct.open .acct-line{padding-bottom:6px}.acct .acct-acts,.acct .acct-rename{padding:0 4px 12px}.net-card{gap:4px}.net-big{font:700 2rem var(--head,inherit);line-height:1.1}.net-big .masked{font-size:1.6rem}.net-split{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px}.net-split .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}.good-dot{background:var(--good,#1a7f4b)}.bad-dot{background:#c0563f}.plaid-more{width:34px;height:34px;font-size:1.1rem;line-height:1}
 .toast{pointer-events:none;position:fixed;left:50%;transform:translate(-50%,-100%);top:calc(var(--vv-top,0px) + var(--vv-h,100vh) - 84px - env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);border:0;box-shadow:0 18px 40px -12px rgba(0,0,0,.45),0 3px 10px rgba(0,0,0,.18);padding:10px 12px 10px 10px;border-radius:18px;font-weight:600;font-size:.9rem;line-height:1.3;z-index:60;max-width:calc(100% - 32px);width:max-content;display:flex;align-items:center;gap:10px;text-align:left;animation:toastIn .22s ease-out}
 .toast[hidden]{display:none}body.toasting .wise-fab:not(.tour-focus),body.at-end .wise-fab:not(.tour-focus){opacity:0;pointer-events:none;transform:scale(.8)}.wise-fab{transition:opacity .18s,transform .18s}.toast-owl{width:28px;height:28px;border-radius:50%;flex:none}.toast-msg{min-width:0;overflow-wrap:anywhere}
 .toast:has(.toast-msg.long){border-radius:18px}
@@ -1762,11 +1764,11 @@ function plaidCsv(acctId){
   return rows.length ? new File(["Date,Description,Amount\n" + rows.join("\n") + "\n"], `${a.inst} · ${a.name}${a.mask ? " ••" + a.mask : ""} (last 90 days).csv`, {type: "text/csv"}) : null;
 }
 function plaidSection(){
-  const s = plaidStore(), when = t => t ? new Date(t).toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"}) : "";
+  const s = plaidStore(), when = t => { if (!t) return ""; const d = new Date(t), today = d.toDateString() === new Date().toDateString(); return d.toLocaleString("en-US", today ? {hour: "numeric", minute: "2-digit"} : {month: "short", day: "numeric"}); };
   return `<div class="plaid-part" data-plaid><div class="inline" style="justify-content:space-between;align-items:baseline"><b class="small">Plaid <span class="pill gold" style="font-size:.66rem">Plus</span></b></div>
-    ${s.items.length ? `<div class="rows bank-rows">${s.items.map(it => `<div class="line" data-plaid-item="${esc(it.id)}"><div style="min-width:0"><div class="name">${esc(it.inst)}</div><div class="muted small">${(it.accounts || []).length} account${(it.accounts || []).length === 1 ? "" : "s"}${it.at ? ` · Updated ${when(it.at)}` : ""}</div></div><button class="link danger-link small" type="button" data-plaid-off="${esc(it.id)}">Disconnect</button></div>`).join("")}</div>` : ""}
+    ${s.items.length ? `<div class="rows bank-rows">${s.items.map(it => `<div class="line" data-plaid-item="${esc(it.id)}"><div style="min-width:0"><div class="name">${esc(it.inst)}</div><div class="muted small">${(it.accounts || []).length} account${(it.accounts || []).length === 1 ? "" : "s"}${it.at ? ` · Updated ${when(it.at)}` : ""}</div></div><button class="icon-btn plaid-more" type="button" data-plaid-more="${esc(it.id)}" aria-expanded="${UI.plaidMenu === it.id}" aria-label="Options for ${esc(it.inst)}">⋯</button></div>${UI.plaidMenu === it.id ? `<div class="acct-acts"><button class="btn small danger" type="button" data-plaid-off="${esc(it.id)}">Disconnect ${esc(it.inst)}</button></div>` : ""}`).join("")}</div>` : ""}
     ${PLAID.err ? `<p class="err small" role="alert" data-plaid-err>${esc(PLAID.err)}</p>` : ""}
-    ${s.items.length ? `<div class="inline" style="gap:16px"><button class="link small" type="button" data-plaid-refresh ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "sync" ? "Updating…" : "Refresh"}</button><button class="link small" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>Add a bank</button></div>`
+    ${s.items.length ? `<div class="inline" style="gap:16px">${autoOn() ? "" : `<button class="link small" type="button" data-plaid-refresh ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "sync" ? "Updating…" : "Refresh"}</button>`}<button class="link small" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>Add a bank</button></div>`
       : `<p class="muted small">Connect in a few taps with your bank login. Included with KeepWise Plus, no extra fee.</p><button class="btn" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "link" ? "Opening…" : "Connect with Plaid"}</button>`}</div>`;
 }
 function bankCard(){
@@ -1806,8 +1808,8 @@ function acctMoney(a){ if (a.balance == null || isNaN(+a.balance)) return "";
   return UI.bankEye ? `${m}${acctOwed(a) ? ` <span class="muted small">owed</span>` : ""}` : MASK_HTML(); }
 function acctRow(a){
   const open = UI.bankMenu === a.key, ren = UI.bankRename === a.key;
-  return `<div class="acct" data-acct="${esc(a.key)}"><div class="line"><div style="min-width:0"><div class="name">${esc(acctName(a))}${a.mask ? ` <span class="muted small">••${esc(a.mask)}</span>` : ""}</div><div class="muted small">${esc(a.inst)}${a.n ? ` · ${a.n} in 90 days` : ""}</div></div>
-    <div class="inline"><span class="tnum">${acctMoney(a)}</span><button class="icon-btn acct-more" type="button" data-acct-menu aria-expanded="${open}" aria-label="Options for ${esc(acctName(a))}">${I.chev}</button></div></div>
+  return `<div class="acct${open || ren ? " open" : ""}" data-acct="${esc(a.key)}"><button class="line acct-line" type="button" data-acct-menu aria-expanded="${open}" aria-label="${esc(acctName(a))}, options"><span class="acct-id"><span class="name">${esc(acctName(a))}${a.mask ? ` <span class="muted small">••${esc(a.mask)}</span>` : ""}</span><span class="muted small">${esc(a.inst)}${a.n ? ` · ${a.n} in 90 days` : ""}</span></span>
+    <span class="tnum acct-amt">${acctMoney(a)}</span></button>
     ${ren ? `<form data-form="bankRename" class="acct-rename"><input name="name" maxlength="40" value="${esc(acctName(a))}" aria-label="Account name" autocomplete="off"><button class="btn small primary" type="submit">Save</button><button class="btn small" type="button" data-acct-rename-cancel>Cancel</button></form>`
       : open ? `<div class="acct-acts"><button class="btn small" type="button" data-acct-review>Review</button><button class="btn small" type="button" data-acct-rename>Rename</button><button class="btn small" type="button" data-acct-hide>Hide</button></div>` : ""}</div>`;
 }
@@ -1825,12 +1827,15 @@ function bankPickCard(){
     <div class="pick-list">${list.map(a => `<label class="move-row"><input type="checkbox" data-bank-use="${esc(a.key)}" ${acctInUse(a) ? "checked" : ""}><span style="flex:1;min-width:0"><span>${esc(acctName(a))}${a.mask ? ` ••${esc(a.mask)}` : ""}</span><span class="muted small" style="display:block">${acctOwed(a) ? (acctLoan(a) ? "Loan" : "Credit") : "Cash"}</span></span></label>`).join("")}</div>
     <button class="btn primary" type="button" data-bank-pick-done>Done</button></section>`;
 }
-V.banks = () => {
+V.banks = autoTop => {
   const list = bankList(), used = list.filter(acctInUse), hidden = list.filter(a => !acctInUse(a)), cash = used.filter(a => !acctOwed(a)), owed = used.filter(acctOwed);
   const total = arr => { const t = arr.filter(a => a.cur === S.cur && a.balance != null).reduce((s, a) => s + Math.abs(+a.balance || 0), 0); return UI.bankEye ? fmt(t) : MASK_HTML(); };
   const group = (title, arr, note) => arr.length ? `<section class="card acct-group" data-acct-group="${title.toLowerCase()}"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>${title}</h2><span class="tnum muted">${total(arr)}${note && UI.bankEye ? ` ${note}` : ""}</span></div><div class="accts">${arr.map(acctRow).join("")}</div></section>` : "";
+  const sumOf = arr => arr.filter(a => a.cur === S.cur && a.balance != null).reduce((s, a) => s + Math.abs(+a.balance || 0), 0), net = r2(sumOf(cash) - sumOf(owed));
+  const worth = used.length ? `<section class="card net-card" data-net-worth><p class="label">Net worth</p><div class="net-big tnum">${UI.bankEye ? (net < 0 ? "−" + fmt(-net) : fmt(net)) : MASK_HTML()}</div>
+    <div class="net-split muted small"><span><i class="dot good-dot"></i>Cash ${total(cash)}</span><span><i class="dot bad-dot"></i>Owed ${total(owed)}</span></div></section>` : "";
   return `<div class="inline" style="justify-content:space-between"><h1>Banks &amp; statements</h1><span class="inline" style="gap:8px">${list.length ? `<button class="icon-btn" type="button" data-bank-eye aria-pressed="${!!UI.bankEye}" aria-label="${UI.bankEye ? "Hide balances" : "Show balances"}">${UI.bankEye ? I.eye : I.eyeOff}</button>` : ""}${UI.banks ? `<button class="btn small" type="button" data-banks-close>Done</button>` : ""}</span></div>
-  ${UI.bankPick ? bankPickCard() : ""}
+  ${autoTop || ""}${UI.bankPick ? bankPickCard() : ""}${worth}
   ${group("Cash", cash)}${group("Owed", owed, "owed")}
   ${hidden.length ? `<section class="card" data-acct-hidden><button class="link plain" type="button" data-acct-hidden-toggle aria-expanded="${!!UI.bankHidden}">Hidden (${hidden.length}) ${UI.bankHidden ? "▴" : "▾"}</button>
     ${UI.bankHidden ? `<div class="rows bank-rows">${hidden.map(a => `<div class="line" data-acct="${esc(a.key)}"><div style="min-width:0"><div class="name">${esc(acctName(a))}${a.mask ? ` <span class="muted small">••${esc(a.mask)}</span>` : ""}</div><div class="muted small">${esc(a.inst)}</div></div><button class="link small" type="button" data-acct-show>Show</button></div>`).join("")}</div>` : ""}</section>` : ""}
@@ -1904,8 +1909,8 @@ OUT.autoCard = () => {
   if (!autoOn()) return "";
   const list = autoFindings(), when = AUTO.at ? new Date(AUTO.at) : null, max = UI.autoAll ? 50 : 4;
   if (!list.length && S.tab !== "banks") return "";
-  if (!list.length) return `<div class="auto-quiet inline" data-auto data-auto-clear><span class="muted small">${AUTO.busy ? "Checking your accounts…" : `All caught up${when ? ` · checked ${when.toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"})}` : ""}`}</span><button class="link small" type="button" data-auto-refresh ${AUTO.busy ? "disabled" : ""}>Refresh</button></div>`;
-  return `<section class="card auto-card" data-auto><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Since last time${infoBtn("auto", "About Since last time")}</h2><button class="link small" type="button" data-auto-refresh ${AUTO.busy ? "disabled" : ""}>${AUTO.busy ? "Checking…" : "Refresh"}</button></div>
+  if (!list.length) return `<div class="auto-quiet inline" data-auto data-auto-clear><span class="muted small">${AUTO.busy ? "Checking your accounts…" : `All caught up${when ? ` · checked ${when.toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"})}` : ""}`}</span><button class="link small" type="button" data-auto-refresh${plusOn() && plaidStore().items.length ? " data-plaid-refresh" : ""} ${AUTO.busy || PLAID.busy ? "disabled" : ""}>${PLAID.busy === "sync" ? "Updating…" : "Refresh"}</button></div>`;
+  return `<section class="card auto-card" data-auto><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Since last time${infoBtn("auto", "About Since last time")}</h2><button class="link small" type="button" data-auto-refresh${plusOn() && plaidStore().items.length ? " data-plaid-refresh" : ""} ${AUTO.busy || PLAID.busy ? "disabled" : ""}>${AUTO.busy || PLAID.busy ? "Checking…" : "Refresh"}</button></div>
     ${infoTip("auto", "KeepWise Plus reads the bank accounts you use and shows only what changed. Add puts it in your plan; Ignore means it won't come up again. Renewal dates and paydays update by themselves. It all happens on this phone.")}
     ${list.length ? `<div class="auto-list">${list.slice(0, max).map(f => `<div class="auto-row${f.up ? " up" : ""}" data-auto-key="${esc(f.key)}"><div style="min-width:0"><div class="name">${esc(f.title)}</div><div class="muted small">${esc(f.sub)}</div></div>
         <div class="inline auto-acts">${f.info ? `<button class="link plain small" type="button" data-auto-ignore>OK</button>` : `<button class="link plain small" type="button" data-auto-ignore>Ignore</button><button class="btn small primary" type="button" data-auto-add>${f.act}</button>`}</div></div>`).join("")}</div>
@@ -1926,7 +1931,7 @@ function peopleList(c){
     const me = p.id === c.me, net = bals[p.id] || 0, open = UI.editPerson === p.id;
     const sub = me ? "That’s you" : net > 0 ? `<span class="good">Owes you ${fmt(net)}</span>` : net < 0 ? `<span class="bad">You owe ${fmt(-net)}</span>` : "Settled up";
     const head = `<span class="avatar" style="--h:${avatarHue(p.name)}" aria-hidden="true">${esc(initials(me ? "You" : p.name))}</span>
-      <span class="pname"><span class="name">${esc(me ? "You" : p.name)}</span><small class="muted">${sub}</small></span>`;
+      <span class="pname"><span class="name">${esc(me ? "You" : p.name)}${!me && p.kw ? ` <span class="kw-pill" title="Uses KeepWise">On KeepWise</span>` : ""}</span><small class="muted">${sub}</small></span>`;
     if (me || c.kind === "shared") return `<div class="person">${head}</div>`;
     return `<div class="person-wrap${open ? " open" : ""}" data-person="${p.id}">
       <button class="person" type="button" data-person-open aria-expanded="${open}">${head}<span class="chev" aria-hidden="true">${I.chev}</span></button>
@@ -3216,7 +3221,7 @@ const NOTE_PREFS = {p: [["bills", "Bills due"], ["subs", "Subscription renewals"
   b: [["sales", "Every sale"], ["chime", "🪙 Coin chime for sales"], ["invoices", "Invoices paid or late"], ["tax", "Tax due"], ["unusual", "Unusual costs"], ["summary", "Monday summary"]]};
 const notePref = () => (S.notePref = S.notePref || {});
 const noteKindOn = (grp, k) => { const P = notePref(); return P[grp] !== false && P[grp + ":" + k] !== false; };
-const localKind = key => { const p = String(key).replace(/^L:/, "").split(":")[0]; return ({b: "bills", bd: "bills", yd: "bills", ya: "bills", r: "subs", c: "subs", f: "subs", a: "payday", pd: "payday", t: "trips", l: "loans", ld: "loans"})[p] || ""; };
+const localKind = key => { const p = String(key).replace(/^L:/, "").split(":")[0]; return ({b: "bills", bd: "bills", yd: "bills", ya: "bills", r: "subs", c: "subs", f: "subs", a: "payday", pd: "payday", t: "trips", l: "loans", ld: "loans", fr: "splits"})[p] || ""; };
 const noteShown = n => n.go === "biz" ? noteKindOn("b", n.kind) : n.local ? (localKind(n.key) ? noteKindOn("p", localKind(n.key)) : true) : noteKindOn("p", "splits");
 V.noteSettings = () => { const P = notePref(), grp = (g, title, extra) => `<section class="card" data-note-grp="${g}"><div class="set-row"><div><b style="font-size:1.1rem">${title}</b>${extra ? `<small class="muted">${extra}</small>` : ""}</div>${setToggle(P[g] !== false, `data-note-pref="${g}"`, title + " notifications")}</div>
     ${P[g] !== false ? NOTE_PREFS[g].map(([k, n]) => setRow(n, "", setToggle(P[g + ":" + k] !== false, `data-note-pref="${g}:${k}"`, n))).join("") : ""}</section>`;
@@ -4434,8 +4439,8 @@ V.bankTab = () => (UI.bankSeg || "accounts") === "cards" ? `${bankSeg()}${cardsV
   <div data-out="trends">${OUT.trends()}</div>
   <div data-out="historyCard">${OUT.historyCard()}</div>
   <div data-out="dropCard">${OUT.dropCard()}</div>`
-  : `${bankSeg()}${coach("banks", "Your banks in one place")}${autoOn() ? `<div data-out="autoCard">${OUT.autoCard()}</div>` : ""}${V.banks()}
-  <button class="w-choice plus-entry" type="button" data-plus-open><span class="pill gold">Plus</span><span><b>KeepWise Plus</b><span class="muted small">Live splits with friends, every device, and more.</span></span>${I.chev}</button>`;
+  : `${bankSeg()}${coach("banks", "Your banks in one place")}${V.banks(autoOn() ? `<div data-out="autoCard">${OUT.autoCard()}</div>` : "")}
+  ${plusOn() ? "" : `<button class="w-choice plus-entry" type="button" data-plus-open><span class="pill gold">Plus</span><span><b>KeepWise Plus</b><span class="muted small">Live splits with friends, every device, and more.</span></span>${I.chev}</button>`}`;
 // The three shares always total 100: Expenditures and Miscellaneous are chosen, Savings is what is left. If the two
 // chosen ones would pass 100, the one not being edited gives way.
 // Envelopes can be set as shares of income (the default) or as fixed amounts. With amounts, Savings is what is left of the
@@ -4525,6 +4530,7 @@ V.split = () => {
   <h1>Split</h1>
   ${modeSwitch()}${coach("split", "Share a bill in three taps")}
   <div data-out="splitSum">${OUT.splitSum()}</div>
+  ${c.kind === "local" ? friendCard() : ""}
   ${c.kind === "local" && UI.tell && !(UI.tell.at && list.some(x => x.id === UI.tell.at)) ? tellCard() : ""}
   ${splitDraft && !splitDraft.editId ? splitForm() : `<button class="btn primary" type="button" data-new-split>${I.plus}New split</button>`}
   ${c.splits.length ? `<div class="inline act-head"><h2>Activity</h2><span class="muted small">${c.splits.length} split${c.splits.length === 1 ? "" : "s"}</span></div>` : ""}
@@ -4748,7 +4754,7 @@ function localNotes(){
   (S.loans || []).filter(l => l.end && !loanDone(l)).forEach(l => { const f = loanFinish(l), n = f ? daysUntil(f.date) : 99; if (n >= 0 && n <= 30) add(`l:${l.id}:${l.end}`, `${l.name || loanKind(l.kind)} ends ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `After that, ${fmt(loanMonthly(l))} a month stays with you.`, "plan", `[data-loan="${l.id}"]`); });
   return out;
 }
-const allNotes = () => [...localNotes(), ...bizNotes(), ...notifications()].filter(noteShown);
+const allNotes = () => [...friendNotes(), ...localNotes(), ...bizNotes(), ...notifications()].filter(noteShown);
 // Read and unread are yours to set. A note from your circle also counts as read once Mark all as read has passed it.
 const noteRead = n => { const R = S.noteRead || {}, U = S.noteUnread || {}; return R[n.key] ? true : U[n.key] ? false : !n.local && n.t <= SH.lastSeen; };
 function setNoteRead(n, read){ S.noteRead = S.noteRead || {}; S.noteUnread = S.noteUnread || {}; if (read){ S.noteRead[n.key] = 1; delete S.noteUnread[n.key]; } else { delete S.noteRead[n.key]; S.noteUnread[n.key] = 1; } }
@@ -4836,7 +4842,7 @@ function findGo(h){
 // money coming in green, warnings soft red, shared splits violet.
 const NOTE_KINDS = {in: I.cash, bill: I.home, sub: I.bag, warn: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>', loan: I.bank, split: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5M15 14c3 0 6 1.5 6 4"/></svg>'};
 function noteKind(n){ const k = String(n.key || "");
-  if (!n.local) return "split";
+  if (!n.local || /^L:fr:/.test(k)) return "split";
   if (/^L:(a|pd):/.test(k)) return "in";
   if (/^L:f:/.test(k)) return "warn";
   if (/^L:(r|c|t):/.test(k)) return "sub";
@@ -5306,6 +5312,8 @@ async function syncStart(pass){   // turn on, or join a device that already sync
 async function syncStop(){ S.sync = {on: false}; SYNC.key = null; try { await sdbDo("readwrite", st => st.delete("key")); } catch(e){} save(); }
 document.addEventListener("visibilitychange", () => { if (!document.hidden) syncPull(); });
 setInterval(() => { if (!document.hidden) syncPull(); }, 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) friendPull(); });
+setInterval(() => { if (!document.hidden) friendPull(); }, 60000);
 const syncAgo = () => { const t = S.syncAt; if (!t) return "not yet"; const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : shortDate(isoOf(new Date(t))); };
 OUT.syncBox = () => {
   const signed = typeof ACC !== "undefined" && ACC.user, on = !!(S.sync && S.sync.on);
@@ -6439,14 +6447,14 @@ function tellAbout(kind, x, old){  // kind: add, edit, delete
     else text = `${x.title}: ${tellLine(x, id)}.`;
     rows.push({id, name: tellName(id), text, mail: mailFor(kind, x, id, old)});
   });
-  before.filter(id => !now.includes(id)).forEach(id => rows.push({id, name: tellName(id), text: `You are no longer part of ${old.title}. It no longer counts between us.`, mail: mailFor("removed", x, id, old)}));
+  before.filter(id => !now.includes(id)).forEach(id => rows.push({id, name: tellName(id), text: `You are no longer part of ${old.title}. It no longer counts between us.`, mail: mailFor("removed", x, id, old), removed: true}));
   if (!rows.length){ UI.tell = null; return; }
-  UI.tell = {kind, title: x.title, at: kind === "edit" ? x.id : null, rows, group: now.length >= 2 && x.method !== "borrow" ? tellGroup(x, kind) : null, each: false};
+  UI.tell = {kind, title: x.title, at: kind === "edit" ? x.id : null, rows, group: now.length >= 2 && x.method !== "borrow" ? tellGroup(x, kind) : null, each: false, src: {x}};
 }
 function tellSettled(pid, amount, gotPaid, left){
   if (shared()){ UI.tell = null; return; }
   const name = tellName(pid);
-  UI.tell = {kind: "settle", title: name, at: null, group: null, each: false,
+  UI.tell = {kind: "settle", title: name, at: null, group: null, each: false, src: {amount, gotPaid, ref: uid()},
     rows: [{id: pid, name, text: left > 0.005 ? (gotPaid ? `Got your ${fmt(amount)}, thank you. ${fmt(left)} is still to come.` : `I paid you ${fmt(amount)}. I still owe you ${fmt(left)}.`)
       : gotPaid ? `Got your ${fmt(amount)}, thank you. We are all square.` : `I paid you ${fmt(amount)}. We are all square.`,
       mail: (() => { const S1 = mailMe(); return gotPaid ? {subject: left > 0.005 ? `Payment recorded: you still owe ${S1} ${fmt(left)}` : `Payment recorded: you're all settled with ${S1}`, text: `${S1} recorded your payment of ${fmt(amount)}.\n${left > 0.005 ? `You still owe ${S1} ${fmt(left)}.` : `You're all settled up with ${S1}.`}`}
@@ -6463,6 +6471,7 @@ function tellCard(){
       ${t.each ? `<div class="tell-rows">${t.rows.map(row).join("")}</div>` : `<button class="link small" type="button" data-tell-each style="align-self:center">Or tell each person separately</button>`}`
     : one ? `<div class="tell-msg">${esc(t.rows[0].text)}${tellFootHtml}</div><div data-tell-id="${esc(t.rows[0].id)}"><button class="btn primary" type="button" data-tell-send>${I.share}${t.rows[0].sent ? "Sent. Send again" : `Send to ${esc(firstWord(t.rows[0].name))}`}</button></div>`
     : `<div class="tell-rows">${t.rows.map(row).join("")}</div>`}
+    ${t.rows.some(r => r.kw) ? `<p class="small kw-sent" data-kw-sent>${I.check || "✓"} Sent to ${esc(t.rows.filter(r => r.kw).map(r => firstWord(r.name)).join(", "))} in KeepWise too.</p>` : ""}
     ${tellEmailPart(t)}
     <p class="muted small">${plusOn() ? "Share sends it from your own apps. Emails are sent by KeepWise from splits@notify.mykeepwise.com, and replies come straight to you." : "KeepWise does not message anyone. You send this yourself, from your own apps."}</p></section>`;
 }
@@ -6493,7 +6502,7 @@ async function tellEmail(auto){
   catch(err){ toast(auto ? `Couldn’t email them: ${err.message}` : err.message); }
   t.emailBusy = false; if (UI.tell === t) render(true);
 }
-function mailAfterTell(){ const t = UI.tell; if (t && mailAuto() && t.rows.some(r => tellPerson(r.id).email)) setTimeout(() => { if (UI.tell === t) tellEmail(true); }, 300); }
+function mailAfterTell(){ const t = UI.tell; if (t) setTimeout(() => friendsSend(t), 200); if (t && mailAuto() && t.rows.some(r => tellPerson(r.id).email)) setTimeout(() => { if (UI.tell === t) tellEmail(true); }, 300); }
 // At the start of each month, KeepWise emails you (only you, at your account email) where your splits stand.
 async function mailMonthly(){
   if (!mailAuto() || shared()) return; const key = currentKey(); if ((S.splitMailMonth || "") === key) return;
@@ -6505,6 +6514,76 @@ async function mailMonthly(){
   const lines = [owedMe.length ? `Owed to you: ${fmt(sum(owedMe))}` : "", ...owedMe.map(x => `  ${x.p.name} owes you ${fmt(x.net)}`), iOwe.length ? `You owe: ${fmt(sum(iOwe))}` : "", ...iOwe.map(x => `  You owe ${x.p.name} ${fmt(-x.net)}`)].filter(Boolean);
   try { const idToken = await ACC.user.getIdToken(); await salesCall("/split/email", {idToken, from: (accName() || "").split(/\s+/)[0], title: `${month} balance`, kind: "self", items: [{to: "self", name: (accName() || "there").split(/\s+/)[0], text: lines.join("\n")}]}); }
   catch(e){ S.splitMailMonth = ""; save(); }
+}
+// ---- Friends on KeepWise ----
+// Someone signed in with a verified email can be found by it: KeepWise stores only a one-way code made from the email
+// (SHA-256), never the address. When you add that email to a split, the split also reaches their KeepWise: it waits in
+// their bell and on Split, and they add it to their own splits in one tap. Nothing is uploaded from anyone's contacts.
+const FRIEND = {inbox: [], busy: false, at: 0};
+const friendReady = () => typeof ACC !== "undefined" && !!ACC.user && !!ACC.db;
+async function findKey(email){ const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("keepwise:" + String(email).trim().toLowerCase())); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join(""); }
+async function findMeOn(){
+  if (!friendReady() || !ACC.user.email || !ACC.user.emailVerified) return;
+  try { const ref = ACC.db.collection("find").doc(await findKey(ACC.user.email));
+    if (S.findOff) await ref.delete(); else await ref.set({uid: ACC.user.uid, at: Date.now()}); } catch(e){}
+}
+async function friendCheck(p, force){
+  if (!friendReady() || !p || !p.email || (!force && p.kwAt && Date.now() - p.kwAt < 864e5)) return;
+  try { const s = await ACC.db.collection("find").doc(await findKey(p.email)).get(), u = s.exists ? s.data().uid : "";
+    p.kwAt = Date.now(); if (u && u !== ACC.user.uid) p.kw = u; else delete p.kw; save(); } catch(e){}
+}
+async function friendStart(){ if (!friendReady()) return; await findMeOn(); for (const p of S.people.filter(p => p.email && !p.archived)) await friendCheck(p); friendPull(); if (S.push && S.push.on && S.push.token && pushCan()) pushSave(S.push.token).catch(() => {}); render(true); }
+// What a split means between me and one person: + they owe me, − I owe them.
+function pairOwe(x, id){ const sh = shares(x); let v = 0; if (x.paidBy === "me") v += sh[id] || 0; if (x.paidBy === id) v -= sh.me || 0; return r2(v); }
+async function friendsSend(t){
+  if (!t || !t.src || t.friendSent || (t.src.x && t.src.x.link) || !friendReady() || !ACC.user.email || !ACC.user.emailVerified) return; t.friendSent = true;
+  const me = ACC.user, from = mailMe().slice(0, 40); let n = 0;
+  for (const r of t.rows){ const p = tellPerson(r.id); if (!p.email) continue; await friendCheck(p); if (!p.kw) continue;
+    const kind = r.removed ? "delete" : t.kind, x = t.src.x;
+    const owe = kind === "settle" ? (t.src.gotPaid ? t.src.amount : -t.src.amount) : kind === "delete" ? 0 : pairOwe(x, r.id);   // from their side: + they owe me
+    const item = {fromUid: me.uid, from, email: me.email.toLowerCase(), kind, ref: String(kind === "settle" ? t.src.ref : x.id).slice(0, 60), title: String(kind === "settle" ? "Payment" : x.title || "A split").slice(0, 80),
+      total: kind === "settle" ? r2(t.src.amount) : r2(+x.amount || 0), owe: r2(owe), text: String(r.mail ? r.mail.text : r.text).slice(0, 600), at: Date.now()};
+    try { await ACC.db.collection("inbox").doc(p.kw).collection("items").add(item); r.kw = true; n++;
+      ACC.db.collection("ping").add({uid: p.kw, from, at: Date.now()}).catch(() => {}); } catch(e){} }
+  if (n && UI.tell === t) render(true);
+}
+async function friendPull(){
+  if (!friendReady() || FRIEND.busy || Date.now() - FRIEND.at < 20000) return; FRIEND.busy = true; FRIEND.at = Date.now();
+  try { const q = await ACC.db.collection("inbox").doc(ACC.user.uid).collection("items").orderBy("at", "desc").limit(30).get(), before = FRIEND.inbox.length;
+    FRIEND.inbox = q.docs.map(d => ({id: d.id, ...d.data()}));
+    if (FRIEND.inbox.length !== before){ renderBell(); if (S.tab === "split" || UI.inbox) render(true); } } catch(e){}
+  FRIEND.busy = false;
+}
+const friendLine = it => { const v = +it.owe || 0, nm = it.from || "A friend";
+  if (it.kind === "delete") return "It no longer counts between you.";
+  if (it.kind === "settle") return v > 0 ? `You paid ${nm} ${fmt(v)}.` : `${nm} paid you ${fmt(-v)}.`;
+  return v > 0 ? `You owe ${nm} ${fmt(v)}.` : v < 0 ? `${nm} owes you ${fmt(-v)}.` : "Nothing between you two."; };
+const friendHead = it => { const nm = it.from || "A friend";
+  return it.kind === "settle" ? `${nm} recorded a payment` : it.kind === "delete" ? `${nm} removed “${it.title}”` : it.kind === "edit" ? `${nm} changed “${it.title}”` : `${nm} added you to “${it.title}”`; };
+const friendNotes = () => FRIEND.inbox.map(it => ({key: "L:fr:" + it.id, text: friendHead(it), detail: friendLine(it), t: it.at, local: true, friend: it.id}));
+function friendCard(){
+  if (!FRIEND.inbox.length) return "";
+  const row = it => { const linked = S.splits.some(x => x.link === it.fromUid + ":" + it.ref), act = it.kind === "delete" ? (linked ? "Remove from my splits" : "OK") : it.kind === "edit" && linked ? "Update my split" : it.kind === "settle" ? "Add the payment" : "Add to my splits";
+    return `<div class="fr-row" data-friend="${esc(it.id)}"><span class="avatar" style="--h:${avatarHue(it.from || "?")}" aria-hidden="true">${esc(initials(it.from || "?"))}</span>
+      <div class="fr-txt"><b>${esc(friendHead(it))}</b><span class="muted small">${it.kind !== "settle" && it.kind !== "delete" && it.total ? `${fmt(it.total)} in all · ` : ""}${esc(friendLine(it))}</span>
+      <div class="fr-act"><button class="btn small primary" type="button" data-friend-add>${act}</button>${act === "OK" ? "" : `<button class="link plain small" type="button" data-friend-skip>Not now</button>`}</div></div></div>`; };
+  return `<section class="card friend-card" data-friend-in><div class="inline" style="justify-content:space-between"><p class="label">From friends on KeepWise</p><span class="pill ok">${FRIEND.inbox.length} new</span></div>${FRIEND.inbox.map(row).join("")}</section>`;
+}
+async function friendTake(id, keep){
+  const it = FRIEND.inbox.find(x => x.id === id); if (!it) return;
+  if (keep){ const em = String(it.email || "").toLowerCase();
+    let p = S.people.find(q => q.kw === it.fromUid) || S.people.find(q => q.email && q.email.toLowerCase() === em);
+    if (!p && it.kind !== "delete"){ p = {id: uid(), name: it.from || "Friend", email: it.email}; S.people.push(p); }
+    if (p){ p.kw = it.fromUid; p.archived = false; if (!p.email) p.email = it.email; }
+    const link = it.fromUid + ":" + it.ref, old = S.splits.find(x => x.link === link), v = +it.owe || 0;
+    if (it.kind === "settle"){ if (p && v && !S.settlements.some(s => s.link === link)) S.settlements.push({id: uid(), from: v > 0 ? "me" : p.id, to: v > 0 ? p.id : "me", amount: Math.abs(v), date: isoDaysAgo(0), link}); }
+    else if (it.kind === "delete" || !v){ if (old) S.splits.splice(S.splits.indexOf(old), 1); }
+    else { const rec = {title: it.title, amount: Math.abs(v), tag: (old && old.tag) || S.tags[0] || "", paidBy: v > 0 ? p.id : "me", method: "exact", parts: v > 0 ? {me: v} : {[p.id]: -v}, icon: (old && old.icon) || "", link, total: it.total};
+      if (old) Object.assign(old, rec); else S.splits.push({id: uid(), ...rec, date: isoDaysAgo(0), createdAt: Date.now()}); }
+    save(); }
+  FRIEND.inbox = FRIEND.inbox.filter(x => x.id !== id); renderBell(); render(true);
+  if (keep) toast(it.kind === "delete" ? "Removed from your splits." : it.kind === "settle" ? "Payment added." : "Added to your splits.");
+  try { await ACC.db.collection("inbox").doc(ACC.user.uid).collection("items").doc(id).delete(); } catch(e){}
 }
 const firstWord = n => String(n || "").trim().split(/\s+/)[0] || "them";
 async function tellSend(text, name){
@@ -7025,7 +7104,8 @@ function pushDates(){  // the next few nudge days, two days before each payday (
 async function pushDb(){ await accInit(); if (!ACC.db) throw new Error("offline"); return ACC.db; }
 async function pushSave(token){
   const db = await pushDb(), dates = pushDates();
-  await db.collection("push").doc(token).set({token, dates, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", at: new Date().toISOString()});
+  const me = typeof ACC !== "undefined" && ACC.user ? {uid: ACC.user.uid} : {};
+  await db.collection("push").doc(token).set({token, dates, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", at: new Date().toISOString(), ...me});
   S.push = {on: true, token, dates: dates.join(",")}; save();
 }
 async function pushTurnOn(){
@@ -7379,6 +7459,7 @@ function accInit(){
           if (u && /[?&]verified=1/.test(location.search)){ try { history.replaceState(null, "", location.pathname); } catch(x){} UI.account = true; setTimeout(() => accCheckVerified(true), 300); }
           if (u) setTimeout(mailMonthly, 2500);   // Plus: this month's balance emails, once a month
           if (u) setTimeout(invReminders, 4000);   // Plus: late invoices get a polite reminder
+          if (u) setTimeout(friendStart, 3000);   // friends on KeepWise: be findable, check who uses it, collect what they sent
           if (UI.account) render(true);
           if (first){ first = false; done(); }
         });
@@ -7499,7 +7580,8 @@ V.settings = () => UI.settings === "security" ? `${setHead("Security & privacy")
     ${countryField("Country", "Used for prices, offers and rules where you live. Kept on this phone.")}
     ${notifPlugin() ? setRow("Reminders", `A nudge before ${payOn() ? "payday" : "each new month"} to check your subscriptions.`, setToggle(S.remind && S.remind.on, "data-remind-set", "Reminders"), "data-set-remind")
       : webPushRow()}
-    <button class="w-choice" type="button" data-note-settings><span><b>Notifications</b><span class="muted small">Choose what Personal and Business tell you</span></span>${I.chev}</button></section>
+    <button class="w-choice" type="button" data-note-settings><span><b>Notifications</b><span class="muted small">Choose what Personal and Business tell you</span></span>${I.chev}</button>
+    ${typeof ACC !== "undefined" && ACC.user ? setRow("Friends can find you", "When a friend adds your email to a split, it appears in your KeepWise too. Only a one-way code made from your email is stored.", setToggle(!S.findOff, "data-find-set", "Friends can find you"), "data-set-find") : ""}</section>
   <section class="card" data-set-app><h2>App</h2>
     <div data-out="installBtn">${OUT.installBtn()}</div>
     <div class="inline" style="justify-content:space-between" data-ask-row><span class="h-info">Open on the owl${infoBtn("asklink", "About opening on the owl")}</span><button class="btn small" type="button" data-ask-link>Copy link</button></div>
@@ -8191,6 +8273,8 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-stmt-csv")){ statementCsv(); return; }
   // ---- backup and keeping data safe
   if (b.hasAttribute("data-backup")){ downloadBackup(); return; }
+  if (b.hasAttribute("data-friend-add") || b.hasAttribute("data-friend-skip")){ const r = b.closest("[data-friend]"); if (r) friendTake(r.dataset.friend, b.hasAttribute("data-friend-add")); return; }
+  if (b.hasAttribute("data-find-set")){ S.findOff = !S.findOff; save(); render(true); findMeOn(); toast(S.findOff ? "Friends can no longer find you by email." : "Friends can find you by your email."); return; }
   if (b.hasAttribute("data-sync-now")){ b.disabled = true; b.textContent = "Syncing…"; syncPull(true).then(() => syncPush()).then(() => { refreshOuts(); toast("Synced."); }); return; }
   if (b.hasAttribute("data-sync-off")){ syncStop().then(() => { refreshOuts(); toast("Sync is off. This device keeps its own copy."); }); return; }
   if (b.hasAttribute("data-backup-later")){ S.backupSnooze = isoDaysAgo(0); save(); refreshOuts(); return; }
@@ -8234,7 +8318,8 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-pdf-cancel")){ UI.pdfLock = null; render(false); return; }
   if (b.hasAttribute("data-import-open")){ UI.bizPickFile = false; $("stmt").click(); return; }
   if (b.hasAttribute("data-bank-refresh")){ if (BANK.busy) return; BANK.busy = true; render(true); await bankFetch(true); BANK.busy = false; render(true); if (!BANK.err) toast("Your bank is up to date."); return; }
-  if (b.hasAttribute("data-auto-refresh")){ autoRun(true); refreshOuts(); return; }
+  if (b.hasAttribute("data-plaid-more")){ UI.plaidMenu = UI.plaidMenu === b.dataset.plaidMore ? null : b.dataset.plaidMore; render(true); return; }
+  if (b.hasAttribute("data-auto-refresh")){ if (plusOn() && plaidStore().items.length) await plaidRefresh(); autoRun(true); refreshOuts(); return; }
   if (b.hasAttribute("data-auto-all")){ UI.autoAll = true; refreshOuts(); return; }
   if (b.hasAttribute("data-auto-add") || b.hasAttribute("data-auto-ignore")){ const key = b.closest("[data-auto-key]").dataset.autoKey, f = autoFindings().find(x => x.key === key); if (!f) return;
     const u = undoable(), msg = b.hasAttribute("data-auto-add") ? autoApply(f) : ""; autoMem().ignore[key] = 1; save(); render(true);
@@ -8358,6 +8443,7 @@ view.addEventListener("click", async e => {
   if (noteEl && UI.inbox){ const n = allNotes().find(x => x.key === noteEl.dataset.note); if (!n) return;
     if (b.hasAttribute("data-note-toggle")){ const u = undoable(), was = noteRead(n); UI.noteView = UI.noteView || (allNotes().some(x => !noteRead(x)) ? "unread" : "all"); setNoteRead(n, !was); save(); renderBell(); render(true); if (!was && UI.noteView === "unread") toast("Marked as read.", u); return; }
     if (b.hasAttribute("data-note-open")){ setNoteRead(n, true);
+      if (n.friend){ UI.inbox = false; S.splitMode = "local"; goTo("split", "[data-friend-in]"); return; }
       if (!n.go){ UI.inbox = false; S.tab = "split"; S.splitMode = "shared"; save(); render(false); return; }
       if (n.go === "biz"){ UI.inbox = false; S.tab = "month"; if (monthTabs()) UI.mseg = "more"; UI.biz = true; UI.bseg = n.bseg || "overview"; save(); render(false); $("main").scrollTop = 0; return; }
       const sub = n.sub && S.subs.find(x => x.id === n.sub);
@@ -8712,7 +8798,7 @@ view.addEventListener("submit", async e => {
     toast(k2 === "in" ? `Added ${fmt(amount)} in.` : `Added a ${fmt(amount)} cost.`, u); return; }
   if (kind === "tellMail"){ const p = S.people.find(x => x.id === f.dataset.pid), em = String(fd.get("email") || "").trim();
     if (!p) return; if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(em)){ toast("Check the email address."); return; }
-    p.email = em.slice(0, 120); save(); render(true); toast(`Saved ${firstWord(p.name)}’s email.`); return; }
+    p.email = em.slice(0, 120); delete p.kw; delete p.kwAt; save(); render(true); toast(`Saved ${firstWord(p.name)}’s email.`); friendCheck(p, true).then(() => { if (p.kw) render(true); }); return; }
   if (kind === "bankRename"){ const key = UI.bankRename, name = String(fd.get("name") || "").trim().slice(0, 40); if (!key) return; setBankPref(key, {name: name || null}); UI.bankRename = null; UI.bankMenu = null; save(); render(true); toast(name ? "Renamed." : "Name reset."); return; }
   if (kind === "salesStripe" || kind === "salesPaypal" || kind === "salesShopify" || kind === "salesSquare"){ if (!SALES.busy) await salesConnect(kind.slice(5).toLowerCase(), f); return; }
   if (kind === "invoice"){ const bd = bizData(), items = invItemsOf(f).filter(x => x.desc.trim() || numv(x.price) > 0).map(x => ({desc: x.desc.trim().slice(0, 80) || "Item", qty: numv(x.qty) > 0 ? r2(numv(x.qty)) : 1, price: r2(numv(x.price))}));
