@@ -3293,7 +3293,7 @@ async def double_tap_never_zooms(ctx):
         ta = await pg.evaluate(f"(() => {{ let e = document.querySelector('{sel}'), all = []; for (; e; e = e.parentElement) all.push(getComputedStyle(e).touchAction); return all; }})()")
         assert "manipulation" in ta and "none" not in ta, (sel, ta)
     vp = await pg.get_attribute("meta[name=viewport]", "content")
-    assert "user-scalable=no" not in vp and "maximum-scale=1" not in vp, "pinch to zoom stays on for people who need it"
+    assert "user-scalable=no" in vp and "maximum-scale=1" in vp, "the app does not zoom, like a native app"
     for name in ("month", "subs", "cheaper", "codes", "plan", "split"):
         await tab(pg, name)
         if name == "split": await pg.click("[data-new-split]"); await pg.wait_for_timeout(100)

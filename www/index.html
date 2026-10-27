@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="description" content="See what you keep at month end: subscriptions, cheaper swaps, codes, budget and bill splitting.">
 <link rel="canonical" href="https://mykeepwise.com/">
 <meta property="og:type" content="website">
@@ -101,7 +101,7 @@ html{-webkit-tap-highlight-color:transparent}*{-webkit-tap-highlight-color:trans
 button:not(:disabled):not(.wise-fab):active,a:active{opacity:.6;transition:opacity 0s}
 .brand b,h1,h2,.big,.summary3 b,.bigsoft{font-optical-sizing:auto;font-weight:600;letter-spacing:-.025em}
 html,body{margin:0;overflow:hidden;overscroll-behavior:none}
-html{touch-action:manipulation}  /* a quick double tap (on a tab, a button) must never zoom the page; pinch to zoom still works */
+html{touch-action:manipulation}  /* no double-tap zoom; pinch zoom is off too (viewport + gesture events), like a native app */
 body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-text-size-adjust:100%}
 .app{position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100%);display:flex;flex-direction:column;background:var(--bg)}
 .app-header{flex:none;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);position:relative;z-index:3}
@@ -5464,7 +5464,7 @@ function statementFile(){
   const art = document.querySelector(".stmt"); if (!art) return;
   // The saved file looks like the printed one: light paper colours whatever theme is on screen.
   const paper = `.stmt{--bg:#f6f7f5;--card:#fff;--ink:#17201b;--muted:#5b675f;--line:#dde3de;--chip:#f3f5f2;--green:#1f6b45;--bad:#b0442c;--gold:#9a7424;background:#fff;color:#17201b;box-shadow:none;max-width:720px;margin:0 auto}.stmt .st-sum>div{background:#fff;border:1px solid #dde3de}html,body{background:#fff!important;color:#17201b}`;
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KeepWise statement ${esc(keyLabel(UI.stmt))}</title><style>${css}body{padding:16px;background:#fff}${paper}</style></head><body>${art.outerHTML}</body></html>`;
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>KeepWise statement ${esc(keyLabel(UI.stmt))}</title><style>${css}body{padding:16px;background:#fff}${paper}</style></head><body>${art.outerHTML}</body></html>`;
   saveFile(new Blob([html], {type:"text/html"}), `keepwise-statement-${UI.stmt}.html`);
 }
 
@@ -8417,6 +8417,7 @@ renderAcctBtn();
 
 /* ================= events ================= */
 const view = $("view");
+["gesturestart", "gesturechange"].forEach(t => document.addEventListener(t, e => e.preventDefault(), {passive: false}));   // iPhone: no pinch zoom
 $("main").addEventListener("scroll", segStick, {passive: true});
 // At the very bottom of a long screen the owl steps aside, so it never covers the last row; scrolling up brings it back.
 function owlAtEnd(){ const m = $("main"); if (m) document.body.classList.toggle("at-end", m.scrollHeight > m.clientHeight + 40 && m.scrollTop + m.clientHeight >= m.scrollHeight - 12); }

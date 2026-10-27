@@ -8,7 +8,7 @@ head = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="description" content="See what you keep at month end: subscriptions, cheaper swaps, codes, budget and bill splitting.">
 <link rel="canonical" href="https://mykeepwise.com/">
 <meta property="og:type" content="website">
