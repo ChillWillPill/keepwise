@@ -6338,7 +6338,7 @@ V.welcome = () => {
 };
 
 // First time on a screen or in a step-by-step flow: one calm card that names the steps, shown once, gone with "Got it".
-const coachOn = k => !(S.coach && S.coach[k]) && !(navigator.webdriver && !window.KEEPWISE_COACH) && !(typeof TOUR !== "undefined" && TOUR.on) && (!S.example || k === "setup");
+const coachOn = k => false && !(S.coach && S.coach[k]) && !(navigator.webdriver && !window.KEEPWISE_COACH) && !(typeof TOUR !== "undefined" && TOUR.on) && (!S.example || k === "setup");
 // Each step as a small card filled with example answers, so it is clear what the step asks before starting. Swipe across.
 const COACH_DEMO = {
   setup: [["Your pay", "Pay", "$1,422", "monthly · on the 1st"], ["Regular bills", "Bills", "3 · $845", "Rent, utilities, groceries"], ["Subscriptions", "Subscriptions", "2 · $27.48", "Netflix, Spotify"]],
