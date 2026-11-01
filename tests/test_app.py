@@ -69,6 +69,8 @@ async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False, prev
             if route.request.url.endswith("firebase-app-compat.js"): await route.fulfill(path=os.path.join(HERE, "mock_firebase.js"), content_type="application/javascript")
             else: await route.fulfill(body="", content_type="application/javascript")
         await pg.route("https://cdn.jsdelivr.net/npm/firebase@*/**", serve_fb)
+        # anything sent to the KeepWise server that a test doesn't check itself (on the 1st, the monthly split summary) gets a quiet OK
+        await pg.route(re.compile(r"https://keepwise-api\..*"), lambda r: r.fulfill(status=200, content_type="application/json", body='{"sent": 0}', headers={"access-control-allow-origin": "*"}))
     await pg.emulate_media(color_scheme=scheme)
     await pg.goto(URL); await pg.wait_for_timeout(500)
     return pg
