@@ -2123,7 +2123,7 @@ async def giving_is_a_line_you_name_yourself(ctx):
     pg = await open_at(ctx, (2026, 10, 8, 9, 0))
     kept = lambda: kept_month(pg)
     k0 = money(await kept()); await tab(pg, "plan")
-    card = await text(pg, "[data-giving]"); assert "anything you give on a regular basis" in card
+    card = await text(pg, "[data-giving]"); assert "Give on purpose" in card and "Set it once" in card
     await pg.click("[data-give-add]"); f = pg.locator("form[data-form=give]")
     causes = await f.locator("[name=cause] option").all_inner_texts(); assert causes[:4] == ["Children", "Orphans", "Veterans", "Emergency relief"] and causes[-1] == "Other"
     await f.locator("[type=submit]").click(); await pg.wait_for_timeout(100); assert "Enter the amount" in await pg.inner_text("#toast")
