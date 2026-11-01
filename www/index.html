@@ -203,6 +203,23 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .ask-words ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}.ask-words p{margin:0}
 @media (prefers-reduced-motion:no-preference){.ask-panel{animation:viewin .18s ease-out both}}
 @media print{.wise-fab,.ask-sheet{display:none!important}}
+/* Owl sheet: spending tiles wrap into tidy rows (no sideways scroll), "Add something" is one tray of 8 tiles, each kind with its own soft colour. On phones the sheet rises from the bottom. */
+.ask-panel .quick-grid{grid-auto-flow:row;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:none;grid-auto-columns:auto;overflow:visible;gap:7px}
+.ask-panel .quick-ic{padding:9px 2px 7px;border-radius:16px}.ask-panel .quick-ic small{max-width:100%}
+.quick-more{border-style:dashed!important;color:var(--muted)!important}
+.addx-tray{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;padding:6px;margin:0!important;border:1px solid var(--line);border-radius:20px;background:color-mix(in srgb,var(--card) 70%,transparent)}
+.addx-tray .addx-t{border:0;background:transparent;min-height:0;padding:8px 2px 6px;gap:5px;border-radius:14px;font:600 .76rem var(--body);color:var(--ink)}
+.addx-tray .addx-t:hover,.addx-tray .addx-t:focus-visible{background:var(--green-soft)}
+.addx-tray .addx-t span{width:40px;height:40px;border-radius:13px;background:color-mix(in srgb,var(--k,var(--green)) 15%,transparent);color:var(--k,var(--green))}
+.addx-tray .addx-t svg{width:21px;height:21px}
+.addx-trip{--k:#2f7fb0}.addx-event{--k:#b5658f}.addx-loan{--k:#6b5fb0}.addx-receipt{--k:#8a7a3c}.addx-bill{--k:#c0703a}.addx-sub{--k:#c24f4f}.addx-split{--k:#1b8a6b}.addx-income{--k:#2e8a3f}
+:root[data-skin="terminal"] .addx-tray .addx-t span{--k:var(--green)}
+@media (max-width:640px){.ask-sheet{justify-content:flex-end;padding:calc(60px + env(safe-area-inset-top,0px)) 0 0}
+.card.ask-panel{max-width:none;border-radius:26px 26px 0 0;border-bottom:0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+.card.ask-panel::before{content:"";display:block;width:40px;height:5px;border-radius:9px;background:var(--line);margin:-6px auto 10px}
+@media (prefers-reduced-motion:no-preference){.ask-panel{animation:sheetup .22s cubic-bezier(.2,.8,.2,1) both}}}
+@keyframes sheetup{from{transform:translateY(40px);opacity:.4}}
+
 .tab{appearance:none;border:0;background:none;color:var(--muted);font:500 clamp(.6rem,2.9vw,.78rem)/1.2 var(--body);display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 8px;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
 .tab span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em}
 .tab .ti{display:grid;place-items:center;width:52px;max-width:92%;height:30px;border-radius:99px;transition:background .2s ease,color .2s ease}
@@ -3147,7 +3164,7 @@ function spaceSwitch(){
 /* ================= KeepWise Plus: Business space (tester preview) =================
    Plus is not on sale yet. A hidden tester switch turns it on: tap the "KeepWise Plus" label 7 times.
    Business money stays on this phone like everything else. Business runs on calendar months. */
-const plusOn = () => !!S.plusTester || trialOn();
+const plusOn = () => !!S.plusTester || !!S.plusPaid || trialOn();
 const PLUS_TAP = {n: 0, t: 0};
 const BIZ_COST_CATS = ["Supplies", "Office & software", "Advertising & marketing", "Equipment", "Contract labor", "Fees & commissions", "Travel", "Meals", "Car & truck", "Utilities & phone", "Rent", "Insurance", "Returns & refunds", "Other"], BIZ_IN_CATS = ["Sales", "Services", "Other"];
 const BIZ = {lines: null, pick: new Set(), file: "", rcpt: null, view: null};
@@ -3956,17 +3973,18 @@ function quickHistory(exp){ const k = compute().planKey;
 function quickPick(){
   const exp = UI.quickEnv === "exp", list = exp ? EXP_QUICK : QUICK, on = UI.quick && list.find(([k]) => k === UI.quick), line = exp && on ? expFor(on) : null, hist = UI.quickView === "hist";
   const rep = !exp && !hist ? quickRepeat() : [];
+  if (on && list.indexOf(on) >= 14) UI.quickAll = true;
   return `<div class="quick" data-quick><div class="quick-top"><div class="seg quick-env" role="group" aria-label="Where it goes"><button type="button" data-quick-env="misc" aria-pressed="${!exp}">Misc</button><button type="button" data-quick-env="exp" aria-pressed="${exp}">Expenditures</button></div>
     <div class="seg quick-view" role="group" aria-label="Add or look back"><button type="button" data-quick-view="add" aria-pressed="${!hist}">Add</button><button type="button" data-quick-view="hist" aria-pressed="${hist}">History</button></div></div>
     ${hist ? quickHistory(exp) + `</div>` : `${rep.length ? `<div class="chips quick-rep" data-scroll-x aria-label="Log again">${rep.map(g => `<button class="chip rep-chip" type="button" data-rep="${esc(g.key)}"><span aria-hidden="true">${emoFor(g.items[0].name)}</span> ${esc(g.items[0].name)} <b class="tnum">${fmt(g.items[0].amount)}</b></button>`).join("")}</div>` : ""}
-    <div class="quick-grid" data-scroll-x role="group" aria-label="Add spending by category">${list.map(([k, n]) => `<button type="button" class="quick-ic" data-quick-ic="${k}" aria-pressed="${UI.quick === k}" aria-label="${esc(n)}"><span>${I[k]}</span><small>${esc(n.split(" ")[0])}</small></button>`).join("")}</div>
+    <div class="quick-grid" role="group" aria-label="Add spending by category">${(UI.quickAll || list.length <= 15 ? list : list.slice(0, 14)).map(([k, n]) => `<button type="button" class="quick-ic" data-quick-ic="${k}" aria-pressed="${UI.quick === k}" aria-label="${esc(n)}"><span>${I[k]}</span><small>${esc(n.split(" ")[0])}</small></button>`).join("")}${list.length > 15 ? `<button type="button" class="quick-ic quick-more" data-quick-more aria-expanded="${!!UI.quickAll}"><span><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${UI.quickAll ? '<path d="M6 15l6-6 6 6"/>' : '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'}</svg></span><small>${UI.quickAll ? "Less" : "More"}</small></button>` : ""}</div>
     ${on ? `${exp ? `<p class="small muted quick-note">${line ? `${esc(line.name)}: ${fmt(billSpendIn(line.id, compute().planKey))} of ${fmt(+line.amount || 0)} used this month` : `No ${esc(on[1].toLowerCase())} bill yet. This adds one, a month.`}</p>` : ""}
       <form class="inline quick-add" data-form="quick"><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="${exp ? (line ? `${esc(on[1].split(" ")[0])} spent` : `${esc(on[1].split(" ")[0])} a month`) : `${esc(on[1].split(" ")[0])} amount`}" aria-label="${esc(on[1])} amount"></span><button class="btn primary" type="submit">${exp && !line ? "Add bill" : "Add"}</button></form>` : ""}</div>`}`;
 }
 // Add anything from the owl: each tile opens the same form the app already has, on its own screen.
 const ADDX = [["trip", "Trip"], ["event", "Event"], ["loan", "Loan"], ["receipt", "Receipt"], ["bill", "Bill"], ["sub", "Sub"], ["split", "Split"], ["income", "Income"]];
 const ADDX_IC = {"trip": "<path d=\"M3 15l18-7-6 12-3-5-5-1z\"/>", "event": "<path d=\"M4 20l5-14 9 9z\"/><path d=\"M14 4l1 2M19 6l-2 1M18 10h2\"/>", "loan": "<path d=\"M3 9l9-5 9 5M5 9v8M10 9v8M14 9v8M19 9v8M3 20h18\"/>", "receipt": "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 8h6M9 12h6\"/>", "bill": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"15\" rx=\"3\"/><path d=\"M4 10h16M9 3v4M15 3v4\"/>", "sub": "<rect x=\"3\" y=\"7\" width=\"15\" height=\"12\" rx=\"3\"/><path d=\"M7 4h11a3 3 0 0 1 3 3v9\"/><path d=\"M8 13l2 2 3-4\"/>", "split": "<circle cx=\"8\" cy=\"9\" r=\"3\"/><circle cx=\"17\" cy=\"10\" r=\"2.5\"/><path d=\"M3 19c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5M14 18.5c.4-2 1.6-3 3-3s2.6 1 3 3\"/>", "income": "<rect x=\"3\" y=\"6\" width=\"18\" height=\"12\" rx=\"3\"/><circle cx=\"12\" cy=\"12\" r=\"2.6\"/><path d=\"M6 9v.01M18 15v.01\"/>"};
-const addAnything = () => `<div class="addx addx-chips" role="group" aria-label="Add something">${ADDX.map(([k, n]) => `<button type="button" class="addx-t addx-${k}" data-addx="${k}"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ADDX_IC[k]}</svg></span>${n}</button>`).join("")}</div>`;
+const addAnything = () => `<div class="addx addx-tray" role="group" aria-label="Add something">${ADDX.map(([k, n]) => `<button type="button" class="addx-t addx-${k}" data-addx="${k}"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ADDX_IC[k]}</svg></span>${n}</button>`).join("")}</div>`;
 function askCard(sheet){ return `<section class="card${sheet ? " ask-panel" : ""}" aria-labelledby="askh"${sheet ? ' role="dialog" aria-modal="true"' : ""}>
     <div class="inline" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><h2 id="askh" class="h-info">${bizOwl() ? "Ask about your business" : "Ask KeepWise"}${infoBtn("ask", "About Ask KeepWise")}</h2>${sheet ? `<button class="icon-btn" type="button" data-ask-close aria-label="Close Ask KeepWise"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>` : ""}</div>
     ${UI.info === "ask" ? `<div class="info-tip ask-words" role="note" data-info-tip="ask"><p>Type or say it as a sentence. These words decide where it goes:</p><ul>
@@ -5886,7 +5904,7 @@ OUT.backupBox = () => {
 // knows, so the server keeps a sealed copy it cannot read. A new device joins with the same passphrase. Items are merged
 // by id: the newest copy wins, and anything added on this phone since the last sync is kept. App lock stays per device.
 const SYNC = {key: null, busy: false, err: "", t: 0, pullT: 0, quiet: false};
-const SYNC_SKIP = ["tab", "lock", "push", "plusTester", "plusTrial", "sync", "syncAt", "syncIds", "lastBackup"];
+const SYNC_SKIP = ["tab", "lock", "push", "plusTester", "plusPaid", "plusTrial", "sync", "syncAt", "syncIds", "lastBackup"];
 const devId = () => { let d = ""; try { d = localStorage.getItem("keepwise-dev") || ""; if (!d){ d = uid() + uid(); localStorage.setItem("keepwise-dev", d); } } catch(e){} return d; };
 const b64e = buf => { const a = new Uint8Array(buf); let s = ""; for (let i = 0; i < a.length; i += 32768) s += String.fromCharCode.apply(null, a.subarray(i, i + 32768)); return btoa(s); };
 const b64d = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
@@ -7773,17 +7791,33 @@ const HOME_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" str
 const PIN_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.500-5.700-6.500-10.500a6.500 6.500 0 0 1 13 0C18.500 15.300 12 21 12 21z"/><circle cx="12" cy="10.500" r="2.300"/></svg>';
 // What Plus gives, kept honest: what is built first, then what is still being made, marked so.
 const PLUS_REASONS = () => [
+  [I.work, "Your business page", "A page at yourname.mykeepwise.com with your logo, contact and a Pay button for customers."],
   [I.bank, "Connect your bank", "Link a US bank in a few taps through Plaid, with no extra fee. Balances stay hidden until you tap the eye, and you choose which accounts KeepWise uses."],
   [I.redo, "Since last time", "KeepWise reads the accounts you connected and shows only what changed: a new subscription, a price that went up, a new bill, pay that arrived. Add it or ignore it in one tap."],
   [I.share, "Split emails, sent for you", "Everyone in a split gets an email from KeepWise when it is added, changed or settled, with who owes whom. At the start of each month you get your own balance summary."],
   [I.cheaper, "Today’s prices in Cheaper", "In the US, KeepWise matches what you pay for to each company’s own current plans and bundles, and cheaper phone carriers on the same network, with what you’d keep a month and a year."],
   [I.work, "Business Account", "Its own books: invoices you can share, receipt photos read for you, mileage at the IRS rate, quarterly tax estimates, live sales from Stripe, PayPal, Shopify and Square, and a year-end export for your accountant."],
-  [I.users, "Your money on every device", "Sign in and your month follows you to your phone, tablet and computer, up to date on each.", "Coming next"],
+  [I.users, "Your money on every device", "Sign in and your month follows you to your phone, tablet and computer, up to date on each, locked with your passphrase."],
   [I.heart, "Live splits and Moments", "Friends see the same split on their own phones the moment it changes, and a trip's splits become a private album.", "Coming later"],
 ];
-const PLUS_FREE = ["Your month-end number and plan", "Subscriptions, with reminders before payday", "Ideas to pay less, and your promo codes", "Splits on this phone, with ready-made messages to send", "Statement import, monthly statements, trends and backups", "Your cards, with limits and reminders", "12 themes, light and dark", "App lock with Face ID or fingerprint"];
+const PLUS_FREE = ["Your month-end number and plan", "Subscriptions, with reminders before payday", "Ideas to pay less, and your promo codes", "Splits on this phone, with ready-made messages to send", "Statement import, monthly statements, trends and backups", "Your cards, with limits and reminders", "8 themes, light and dark, with Liquid Glass and Terminal", "App lock with Face ID or fingerprint"];
+// Paying for Plus: Paddle checkout opens once window.KEEPWISE_PADDLE = {token, env, monthly, yearly} is set (client token and
+// the two price ids from Paddle; none of these are secret). Until then the buttons keep the waitlist. Android never sells here.
+const PADDLE = () => { const p = window.KEEPWISE_PADDLE; return p && p.token && p.monthly && !window.Capacitor ? p : null; };
+let paddleReady = null;
+function paddleLoad(){ if (paddleReady) return paddleReady; const p = PADDLE(); if (!p) return Promise.reject(new Error("off"));
+  paddleReady = new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdn.paddle.com/paddle/v2/paddle.js"; sc.onload = () => { try { if (p.env === "sandbox") window.Paddle.Environment.set("sandbox"); window.Paddle.Initialize({token: p.token, eventCallback: e => { if (e && e.name === "checkout.completed"){ S.plusPaid = true; S.plusPaidAt = Date.now(); save(); render(true); toast("Welcome to KeepWise Plus. Thank you!"); } }}); ok(window.Paddle); } catch(e){ no(e); } }; sc.onerror = no; document.head.appendChild(sc); });
+  return paddleReady; }
+async function plusBuy(plan){ const p = PADDLE(); if (!p) return false; const u = typeof ACC !== "undefined" && ACC.user;
+  try { const P = await paddleLoad(); P.Checkout.open({items: [{priceId: plan === "yr" ? p.yearly : p.monthly, quantity: 1}], customer: u && u.email ? {email: u.email} : undefined, customData: u ? {uid: u.uid} : undefined, settings: {displayMode: "overlay", theme: "light", successUrl: SITE_URL + "?plus=thanks"}}); return true; }
+  catch(e){ toast("Checkout didn’t open. Try again in a minute."); return true; } }
+// A signed-in person who paid on another device: ask the KeepWise server once a day whether their Plus is active.
+async function plusCheck(){ const u = typeof ACC !== "undefined" && ACC.user; if (!PADDLE() || !u || !u.email) return; if (S.plusCheckedAt && Date.now() - S.plusCheckedAt < 864e5) return;
+  try { const r = await fetch(API_BASE + "/plus/status", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email: u.email})}); const j = await r.json(); S.plusCheckedAt = Date.now(); if (typeof j.plus === "boolean" && j.plus !== !!S.plusPaid){ S.plusPaid = j.plus; render(true); } save(); } catch(e){} }
+const fmtUsdLocal = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
 function plusCta(){
   const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
+  if (PADDLE()) return `<div class="plus-buy"><button class="btn primary" type="button" data-plus-buy="yr">Get Plus yearly · ${esc(fmtUsdLocal(plusPrice().yr))}</button><button class="btn" type="button" data-plus-buy="mo">Monthly · ${esc(fmtUsdLocal(plusPrice().mo))}</button><p class="muted small">Cancel anytime. Secure checkout by Paddle.</p></div>`;
   return joined ? `<p class="plus-joined"><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus opens.</p><button class="link small" type="button" data-acc-plus-off style="align-self:center">Leave the waitlist</button>`
     : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the waitlist</button>`
     : `<button class="btn primary" type="button" data-open-account>Sign in to join the waitlist</button>`;
@@ -7814,7 +7848,7 @@ V.plus = () => { const P = plusPrice(), perMonth = Math.round(P.yr / 12 * 100) /
       <div class="plus-amt"><b>${plusMoney(P.mo)}</b><span>a month</span></div>
       <p class="muted small">Cancel any time.</p>${kwCodeChip(KW_CODES[1])}</div>
   </section>
-  <p class="muted small" style="text-align:center">Prices for ${esc(regionCode() ? countryName(regionCode()) : "your country")}${S.cur && S.cur !== "USD" ? `, shown in ${esc(S.cur)}` : ""}. Plus is not on sale yet. Join the waitlist and we will email you when it opens. <a href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund Policy</a></p>
+  <p class="muted small" style="text-align:center">Prices for ${esc(regionCode() ? countryName(regionCode()) : "your country")}${S.cur && S.cur !== "USD" ? `, shown in ${esc(S.cur)}` : ""}.${PADDLE() ? " Your first week is free. Cancel before it ends and you pay nothing." : " Plus is not on sale yet. Join the waitlist and we will email you when it opens."} <a class="link" href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund policy</a></p>
 `}
   ${plusCta()}
   <section class="card"><h2 style="font-size:1.2rem">Free, and staying free</h2><ul class="plus-free">${PLUS_FREE.map(t => `<li>${I.check}<span>${t}</span></li>`).join("")}</ul></section>`; };
@@ -8325,7 +8359,7 @@ function accInit(){
       await new Promise(done => {
         let first = true;
         ACC.auth.onAuthStateChanged(async u => {
-          ACC.user = u; ACC.profile = null; ACC.draft = {}; ACC.del = false;
+          ACC.user = u; ACC.profile = null; ACC.draft = {}; ACC.del = false; if (u) setTimeout(() => { try { plusCheck(); } catch(e){} }, 1500);
           if (u) ACC.err = "";  // signed in: an earlier "sign-in was closed" message no longer applies
           if (u) await accLoadProfile();
           S.acctOn = !!u; if (u && (!LOCK.on || !S.acct)) S.acct = {uid: u.uid, email: u.email || "", prov: (u.providerData && u.providerData[0] && u.providerData[0].providerId) || "password"};
@@ -8994,6 +9028,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-need-open")){ UI.needOpen = true; refreshOuts(); return; }
   if (b.hasAttribute("data-coming-all")){ UI.comingAll = !UI.comingAll; refreshOuts(); return; }
   if (b.hasAttribute("data-need-next")){ const g = needGroups(), i = Math.max(0, g.findIndex(x => x[0] === UI.needKind)); UI.needKind = g.length ? g[(i + 1) % g.length][0] : null; refreshOuts(); return; }
+  if (b.dataset.plusBuy){ plusBuy(b.dataset.plusBuy); return; }
   if (b.dataset.subKind != null){ UI.subKind = b.dataset.subKind || null; refreshOuts(); return; }
   if (b.dataset.weekDay != null){ const c = view.querySelector("[data-out=comingUp] .card"), m = $("main"); if (c && m){ const seg = m.querySelector(".view>.seg.sub-seg"), under = seg ? 8 + seg.offsetHeight + 8 : 0;
       m.scrollTo({top: m.scrollTop + c.getBoundingClientRect().top - m.getBoundingClientRect().top - under - 12, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); } return; }
@@ -9052,6 +9087,7 @@ view.addEventListener("click", async e => {
     save(); refreshOuts(); const sh = $("asksheet"); if (sh) askRedraw(sh); toast(said, u); return; }
   if (b.hasAttribute("data-qh-all")){ const env = UI.quickEnv === "exp" ? "needs" : "misc"; UI.askOpen = false; UI.mseg = "budget"; UI.openEnv = env; const sh = $("asksheet"); if (sh) sh.hidden = true; goTo("month", `[data-env-open=${env}]`); return; }
   if (b.dataset.quickEnv){ UI.quickEnv = b.dataset.quickEnv; UI.quick = null; const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
+  if (b.dataset.quickMore !== undefined){ UI.quickAll = !UI.quickAll; const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
   if (b.dataset.quickIc){ UI.quick = UI.quick === b.dataset.quickIc ? null : b.dataset.quickIc; const sh = $("asksheet"); if (sh){ askRedraw(sh); const i = sh.querySelector("[data-form=quick] [name=amount]"); if (i) i.focus(); } return; }
   if (b.dataset.glowSet){ S.glow = ["off", "on", "max"].includes(b.dataset.glowSet) ? b.dataset.glowSet : "on"; save(); applyTheme(); render(true); return; }
   if (b.dataset.skinSet){ S.skin = SKINS.some(x => x[0] === b.dataset.skinSet) ? b.dataset.skinSet : "classic"; save(); applyTheme(); render(true); toast(`${(SKINS.find(x => x[0] === S.skin) || [, "Simple"])[1]} theme on.`); return; }
@@ -10130,7 +10166,7 @@ initShared();
   <span class="kws-eye">Simple pricing</span><h2>Free for your month. Plus when you want more.</h2>
   <div class="kws-price">
     <div class="kws-card"><h3>Free</h3><p class="kws-amt">$0</p><ul><li>Month-end number and plan</li><li>Bills and subscriptions</li><li>Trips, splits and loans</li><li>Ask the owl</li></ul><button type="button" class="kws-btn kws-ghost" data-kws-start>Start free</button></div>
-    <div class="kws-card kws-pro"><h3>KeepWise Plus</h3><p class="kws-amt">Free for a week</p><ul><li>Sync on every device</li><li>Bank connections</li><li>Business space and reports</li><li>Receipts and statements</li></ul><button type="button" class="kws-btn" data-kws-start>Try Plus free</button></div>
+    <div class="kws-card kws-pro"><h3>KeepWise Plus</h3><p class="kws-amt">$79 a year</p><p class="kws-or">or $9.99 a month · first week free · cancel anytime</p><ul><li>Sync on every device, end-to-end encrypted</li><li>Bank connections with store logos</li><li>Business space, invoices and reports</li><li>Your own page at yourname.mykeepwise.com</li><li>Split emails and live sales</li></ul><button type="button" class="kws-btn" data-kws-start>Try Plus free for a week</button><p class="kws-or">Prices for the US. Other countries pay less.</p></div>
   </div>
 </div></section>
 
@@ -10277,6 +10313,7 @@ initShared();
 .kws-mx{position:absolute;top:12px;right:12px;appearance:none;border:0;background:var(--chip);width:36px;height:36px;border-radius:50%;cursor:pointer;color:var(--ink)}
 .kws-mtxt h3{font:700 1.7rem var(--display);margin:10px 0 8px}.kws-mtxt ol{margin:0 0 18px;padding-left:20px;display:grid;gap:10px;color:var(--muted);line-height:1.5}.kws-mtxt ol b{color:var(--ink)}
 @media (max-width:700px){.kws-mbox{grid-template-columns:1fr;justify-items:center;text-align:left}.kws-mbox .kws-phone{width:min(230px,60vw)}}
+.kws-or{margin:2px 0 0!important;font-size:.84rem!important;color:rgba(243,250,246,.8)!important}
 </style>
 
 <script>

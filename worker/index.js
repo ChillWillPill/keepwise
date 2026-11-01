@@ -265,6 +265,7 @@ export default {
       if (url.pathname === "/split/email") return await splitEmail(origin, env, b);
       if (url.pathname === "/site/logo") return await siteLogo(origin, b);
       if (url.pathname === "/invoice/email") return await invoiceEmail(origin, env, b);
+      if (url.pathname === "/plus/status") return await plusStatus(origin, env, b);
     } catch(e){ return fail(origin, 502, "That service didn't answer. Try again in a minute."); }
     return fail(origin, 404, "Not found.");
   },
@@ -284,4 +285,14 @@ h1{font:700 1.9rem Georgia,serif;margin:14px 0 4px}p{color:var(--m);margin:4px 0
   const safe = u => /^https:\/\//.test(u) ? u : "";
   return page(d.name, `${/^data:image\//.test(d.logo) ? `<img src="${h(d.logo)}" alt="">` : ""}<h1>${h(d.name)}</h1>${d.address ? `<p>${h(d.address)}</p>` : ""}
     ${safe(d.pay) ? `<a class="b p" href="${h(d.pay)}" rel="noopener">Pay ${h(d.name)}</a>` : ""}${d.email ? `<a class="b" href="mailto:${h(d.email)}">Email ${h(d.email)}</a>` : ""}${d.phone ? `<a class="b" href="tel:${h(d.phone.replace(/[^+\d]/g, ""))}">Call ${h(d.phone)}</a>` : ""}${d.website ? `<a class="b" href="https://${h(d.website.replace(/^https?:\/\//, ""))}" rel="noopener">${h(d.website.replace(/^https?:\/\//, ""))}</a>` : ""}`);
+}
+
+// ---- KeepWise Plus: is this email's subscription active? Asks Paddle with the secret key kept in Cloudflare (PADDLE_API_KEY). ----
+async function plusStatus(origin, env, b){
+  const email = String((b && b.email) || "").trim().toLowerCase();
+  if (!env.PADDLE_API_KEY || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return new Response(JSON.stringify({plus: null}), {headers: {"Content-Type": "application/json", ...cors(origin)}});
+  const base = env.PADDLE_ENV === "production" ? "https://api.paddle.com" : "https://sandbox-api.paddle.com", h = {Authorization: "Bearer " + env.PADDLE_API_KEY};
+  const c = await (await fetch(`${base}/customers?email=${encodeURIComponent(email)}`, {headers: h})).json(), id = c && c.data && c.data[0] && c.data[0].id;
+  let plus = false; if (id){ const s = await (await fetch(`${base}/subscriptions?customer_id=${id}&status=active,trialing`, {headers: h})).json(); plus = !!(s && s.data && s.data.length); }
+  return new Response(JSON.stringify({plus}), {headers: {"Content-Type": "application/json", ...cors(origin)}});
 }
