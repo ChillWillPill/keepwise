@@ -1195,6 +1195,30 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .st-one span{white-space:nowrap}.st-one b{font:600 clamp(1.05rem,5.4vw,1.35rem) var(--display);white-space:nowrap;margin-left:auto}
 .up-list{display:flex;flex-direction:column}
 .up-row{display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
+.btile{width:var(--z);height:var(--z);border-radius:calc(var(--z) * .3);display:inline-grid;place-items:center;flex:none;font:800 calc(var(--z) * .42)/1 var(--body);box-shadow:0 2px 6px -2px rgba(0,0,0,.25);letter-spacing:-.02em}
+.up-row .btile{margin-left:-4px}.up-row.up-next{background:linear-gradient(90deg,var(--rust-soft),transparent 80%);border-radius:14px;padding-left:8px;padding-right:8px;border-top-color:transparent}
+.up-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:10px 0 4px;padding:10px 4px 8px;border-radius:16px;background:var(--bg)}
+.up-day{display:grid;justify-items:center;gap:6px;font-size:.7rem;font-weight:700;color:var(--muted)}.up-day.today span{color:var(--rust)}.up-day>div{display:grid;gap:3px;min-height:24px}
+.up-day .btile{box-shadow:none}
+.sv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:8px}
+.sv-grid .prog-row{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:12px 8px;border-radius:18px;background:var(--bg);border:0;margin:0}
+.sv-grid .prog-row>.inline{flex-direction:column;align-items:center!important;gap:0}.sv-grid .prog-row .name{font-weight:700}
+.sv-grid .meter{display:none}.sv-grid .prog-row p{margin:2px 0 0;font-size:.72rem;line-height:1.35}
+.sv-ring{--c:var(--green);width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p) * 1%),var(--line) 0);display:grid;place-items:center;margin-bottom:4px}
+.bv-head{display:flex;gap:14px;align-items:center}.bv-t h2{margin:0}.bv-ring{width:64px;height:64px;margin:0;flex:none}.bv-ring i{width:50px;height:50px;font-size:.86rem}
+.bv-tiles{display:flex;gap:10px;overflow-x:auto;padding:12px 2px 4px;scrollbar-width:none}.bv-tiles::-webkit-scrollbar{display:none}
+.bv-tile{appearance:none;border:0;background:none;padding:0;display:grid;justify-items:center;gap:4px;position:relative;cursor:pointer;font:600 .7rem var(--body);color:var(--muted);flex:none;width:52px}
+.bv-tile span{max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bv-tile.on .btile{opacity:.45}
+.bv-tile em{position:absolute;top:-4px;right:2px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--on-green);display:grid;place-items:center}.bv-tile em svg{width:12px;height:12px}
+.bills-v .bills-left{margin-top:4px}
+.sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
+.up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
+.up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
+.up-next .up-main::before{content:"NEXT";display:block;font-size:.68rem;font-weight:800;letter-spacing:.08em;color:var(--rust)}
+.up-next .up-main .name{font-size:1.06rem}.up-next>.tnum.name{font:700 1.45rem var(--display)}
+.up-owe{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.up-owe .up-row{border:0;border-radius:16px;padding:10px 12px;background:var(--rust-soft);flex-wrap:wrap;gap:4px 8px;align-items:flex-start}.up-owe .up-row.in{background:var(--green-soft)}
+.up-owe .up-date{width:auto;padding:0;background:none}.up-owe .avatar{width:26px;height:26px;font-size:.7rem}.up-owe .up-main{flex:1 1 60%;min-width:0}.up-owe .up-main .name{font-size:.84rem}.up-owe .up-main .small{display:none}.up-owe .tnum{flex-basis:100%;font:700 1.2rem var(--display)}
 .up-row:first-child{border-top:0;padding-top:2px}
 .up-date{width:48px;flex:none;border-radius:12px;background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:6px 0;line-height:1.05}
 .up-date b{font:600 1.25rem var(--display)}
@@ -3939,10 +3963,11 @@ OUT.billsCard = () => { const C = compute();
     return `<section class="card prog-card bills-done" data-bills-card><button type="button" class="bills-all" data-bills-paid aria-expanded="${open}"><span class="bills-ok" aria-hidden="true">${TICK_SVG}</span><b>All ${items.length} bills paid</b><span class="tnum muted" data-bills-count>${fmt(total)}</span><span class="dt-tog">${KW_CH}</span></button>
       ${open ? `<div class="bills-list">${done.map(x => line(x, true)).join("")}<button class="link small" type="button" data-bills-open>See in Budget ›</button></div>` : ""}</section>`; }
   const show = left.slice(0, 2);
-  return `<section class="card prog-card" data-bills-card><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Bills this month</h2><span class="small muted tnum" data-bills-count>${done.length} of ${items.length} paid</span></div>
-    <div class="meter"><i style="width:${total > 0 ? Math.min(100, paid / total * 100).toFixed(1) : 0}%"></i></div>
-    <div class="bills-list bills-left">${show.map(x => `<div class="bl-row">${tickBtn(x.id, x.n, C.planKey)}<span class="bl-n">${esc(x.n)}<small class="muted">${x.due ? ` · due the ${ordinal(x.due)}` : ""}</small></span><span class="tnum">${fmt(x.a)}</span></div>`).join("")}</div>
-    <div class="bl-foot"><span class="small muted"><b class="tnum">${fmt(r2(total - paid))}</b> still to go${done.length ? ` · <span class="tnum">${fmt(paid)}</span> paid` : ""}</span><button class="link small" type="button" data-bills-open>${left.length > show.length ? `${left.length - show.length} more · ` : ""}See all ›</button></div></section>`; };
+  const pp = total > 0 ? Math.min(100, paid / total * 100) : 0;
+  return `<section class="card prog-card bills-v" data-bills-card><div class="bv-head"><div class="sv-ring bv-ring" style="--p:${pp.toFixed(1)}" aria-hidden="true"><i>${done.length}/${items.length}</i></div>
+    <div class="bv-t"><h2>Bills this month</h2><span class="small muted tnum"><b class="tnum" style="color:var(--ink)">${fmt(r2(total - paid))}</b> to go · <span data-bills-count>${done.length} of ${items.length} paid</span></span></div></div>
+    <div class="bv-tiles" role="group" aria-label="Tap a bill to mark it paid">${items.map(x => { const on = !!paidOn(x.id, C.planKey); return `<button class="bv-tile${on ? " on" : ""}" type="button" data-paid="${x.id}" aria-pressed="${on}" aria-label="${on ? `${esc(x.n)} is paid. Tap to mark it not paid` : `Mark ${esc(x.n)} as paid`}">${brandTile(x.n, 40)}<span>${esc(x.n.split(/\s+/)[0])}</span>${on ? `<em aria-hidden="true">${TICK_SVG}</em>` : ""}</button>`; }).join("")}</div>
+    <div class="bl-foot"><span class="small muted">${left[0] ? `Next: ${esc(left[0].n)} · <b class="tnum">${fmt(left[0].a)}</b>${left[0].due ? ` · due the ${ordinal(left[0].due)}` : ""}` : ""}</span><button class="link small" type="button" data-bills-open>See all ›</button></div></section>`; };
 // Money actually set aside is split the way the person chose: the goal first, the emergency fund first, or half each.
 // The emergency fund is S.efSaved and the goal is S.goalSaved, so each bar shows only real money.
 const goalGap = () => Math.max(0, r2((+S.goalAmt || 0) - (+S.goalSaved || 0)));
@@ -3958,16 +3983,18 @@ const splitText = sp => [sp.goal > 0 ? `${fmt(sp.goal)} to ${S.goalName || "your
 const setAsideMsg = (x, sp) => sp.goal > 0 && sp.ef > 0 ? `Set aside ${fmt(x)}: ${splitText(sp)}.` : `Set aside ${fmt(x)} for ${sp.goal > 0 ? (S.goalName || "your goal") : "the emergency fund"}.`;
 function saveRows(C){ const rows = [];
   if (C.efTarget > 0){ const full = S.efSaved >= C.efTarget;
-    rows.push(`<div class="prog-row" data-save-ef><div class="inline" style="justify-content:space-between;align-items:baseline"><span class="name">Emergency fund</span><span class="small tnum muted">${fmt(S.efSaved)} of ${fmt(C.efTarget)}</span></div>
+    const ep = Math.min(100, S.efSaved / C.efTarget * 100);
+    rows.push(`<div class="prog-row" data-save-ef><div class="sv-ring" style="--p:${ep.toFixed(1)}" aria-hidden="true"><i>${Math.round(ep)}%</i></div><div class="inline" style="justify-content:space-between;align-items:baseline"><span class="name">Emergency fund</span><span class="small tnum muted">${fmt(S.efSaved)} of ${fmt(C.efTarget)}</span></div>
       <div class="meter"><i style="width:${Math.min(100, S.efSaved / C.efTarget * 100).toFixed(1)}%"></i></div>
       <p class="small muted">${full ? "Full. Well done." : C.toEF > 0 ? `${fmt(C.toEF)} planned for ${esc(C.planMonth)}${C.efMonthsLeft ? ` · full in about ${C.efMonthsLeft} month${C.efMonthsLeft > 1 ? "s" : ""}` : ""}.` : +S.goalAmt > 0 && S.priority === "goal" && goalGap() > 0 ? `Nothing planned for it this month: ${esc(S.goalName || "your goal")} comes first.` : "Nothing planned for it this month."}</p></div>`); }
   if (+S.goalAmt > 0){ const saved = +S.goalSaved || 0, gap = goalGap(), n = C.toGoal > 0 ? Math.ceil(gap / C.toGoal) : 0;
-    rows.push(`<div class="prog-row" data-save-goal><div class="inline" style="justify-content:space-between;align-items:baseline"><span class="name">${esc(S.goalName || "Your goal")}</span><span class="small tnum muted">${fmt(saved)} of ${fmt(S.goalAmt)}</span></div>
+    const gp = Math.min(100, saved / S.goalAmt * 100);
+    rows.push(`<div class="prog-row" data-save-goal><div class="sv-ring sv-gold" style="--p:${gp.toFixed(1)}" aria-hidden="true"><i>${Math.round(gp)}%</i></div><div class="inline" style="justify-content:space-between;align-items:baseline"><span class="name">${esc(S.goalName || "Your goal")}</span><span class="small tnum muted">${fmt(saved)} of ${fmt(S.goalAmt)}</span></div>
       <div class="meter"><i class="debt" style="width:${Math.min(100, saved / S.goalAmt * 100).toFixed(1)}%"></i></div>
       <p class="small muted">${gap <= 0 ? "Reached. Well done." : C.toGoal > 0 ? `${fmt(C.toGoal)} planned for ${esc(C.planMonth)} · about ${n} month${n > 1 ? "s" : ""} to go.` : "Nothing planned for it this month."}</p></div>`); }
   return rows; }
 OUT.saveCard = () => { const C = compute(), rows = saveRows(C);
-  return rows.length ? `<section class="card prog-card" data-save-card><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Savings</h2><button class="link plain small" type="button" data-save-go>Change</button></div>${rows.join("")}</section>` : ""; };
+  return rows.length ? `<section class="card prog-card" data-save-card><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Savings</h2><button class="link plain small" type="button" data-save-go>Change</button></div><div class="sv-grid">${rows.join("")}</div></section>` : ""; };
 OUT.planNote = () => esc(compute().planNote);
 OUT.sym = () => esc(sym());
 // The eye on the big number hides it, and it stays hidden on this phone until it is tapped again.
@@ -4440,7 +4467,7 @@ OUT.subsList = () => {
     // A calm row: what it is, what it costs, when it renews and any warning. Keep / Auto / Drop, "I used it today" and Edit sit inside, a tap away.
     const open = UI.subOpen === s.id || k === "drop", unused = f.some(r => /^Unused for/.test(r));
     const usage = !s.last ? "Usage not checked yet" : unused ? "" : d === 0 ? "Last used today" : d === 1 ? "Last used yesterday" : `Last used ${d} days ago`;
-    return `<div class="row sub-row${open ? " open" : ""}${UI.flashSub === s.id ? " flash" : ""}" data-sub="${s.id}"><div class="sub-top" data-sub-toggle><span class="sub-ic emo" aria-hidden="true">${subEmo(s)}</span><div class="sub-t"><div class="name">${esc(s.name)}</div>
+    return `<div class="row sub-row${open ? " open" : ""}${UI.flashSub === s.id ? " flash" : ""}" data-sub="${s.id}"><div class="sub-top" data-sub-toggle>${hasBrand(s.name) ? brandTile(s.name, 40) : `<span class="sub-ic emo" aria-hidden="true">${subEmo(s)}</span>`}<div class="sub-t"><div class="name">${esc(s.name)}</div>
       ${usage ? `<div class="muted small">${usage}</div>` : ""}${s.since ? `<div class="muted small">${esc(paidFor(s))}</div>` : ""}<div>${renew}</div></div>
       <div class="sub-v"><div class="name tnum">${fmt(s.price)}<span class="muted small">/${subUnit(s)}</span></div>${s.cycle === "yr" ? `<div class="muted small" data-sub-yearly>Once a year</div>` : SUB_WK(s.cycle) ? `<div class="muted small" data-sub-weekly>${fmt(subPerMo(s))} a month</div>` : ""}</div>
       <button class="sub-chev" type="button" data-sub-open aria-expanded="${open}" aria-label="${open ? "Hide" : "Show"} choices for ${esc(s.name)}">${KW_CH}</button></div>
@@ -5589,12 +5616,25 @@ OUT.comingUp = () => {
       <p class="small" data-keep>Nothing is due in the next 7 days.${(() => { const nx = [...S.subs.filter(x => x.keep !== "drop").map(x => ({n: x.name, d: nextRenewal(x)})), ...S.expenses.filter(e => e.due).map(e => ({n: e.name, d: billNextDue(e)}))].filter(x => x.d && daysUntil(x.d) > 7).sort((a, b) => a.d - b.d)[0]; return nx ? ` <span data-up-next>Next: <b>${esc(nx.n)}</b> on ${dayMonth(nx.d)}.</span>` : ""; })()}</p>${undated ? `<p class="small muted" data-keep>${undated === 1 ? "1 subscription has no renewal day yet, so it cannot show here." : `${undated} subscriptions have no renewal day yet, so they cannot show here.`}</p><div class="linkrow"><button class="link" data-go="subs" type="button">Add renewal days</button></div>` : ""}</section>`; }
   const total = soon.filter(x => x.s.keep !== "drop").reduce((a, x) => a + x.s.price, 0);
   const upRows = [...items.map(x => x.html), ...(splitRows ? splitRows.split(/(?=<div class="up-row)/).filter(x => x.startsWith("<div")) : [])], upShort = false;   // everything due is always listed
-  return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Coming up</h2><span class="muted small">Next 7 days</span></div>
-    <div class="up-list">${upShort ? upRows.slice(0, 2).join("") : items.map(x => x.html).join("") + splitRows}</div>
+  const nm = h => ((h.match(/<div class="name">([^<]*)/) || [])[1] || "").replace(/&amp;/g, "&");
+  items.forEach(x => { x.name = nm(x.html); x.html = x.html.replace('<div class="up-main">', brandTile(x.name.replace(/^.*?·\s*/, "") || x.name, 36) + '<div class="up-main">'); });
+  const days = [...Array(7)].map((_, i) => dayPlus(t0, i)), strip = `<div class="up-week" aria-hidden="true">${days.map((d, i) => { const on = items.filter(x => isoOf(x.d) === isoOf(d)).slice(0, 2);
+      return `<div class="up-day${i === 0 ? " today" : ""}"><span>${d.toLocaleString("en-US", {weekday: "short"})}</span><div>${on.map(x => brandTile(x.name, 24)).join("")}</div></div>`; }).join("")}</div>`;
+  return `<section class="card up-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Coming up</h2><span class="muted small">Next 7 days${total ? ` · <b class="tnum" style="color:var(--ink)">${fmt(total)}</b>` : ""}</span></div>
+    ${items.length ? strip : ""}
+    <div class="up-list">${upShort ? upRows.slice(0, 2).join("") : items.map((x, i) => i === 0 ? x.html.replace('class="up-row', 'class="up-row up-next') : x.html).join("")}</div>${splitRows ? `<div class="up-owe">${splitRows}</div>` : ""}
     ${total ? `<p class="small muted">${fmt(total)} will be charged this week.</p>` : ""}
     ${soon.length || splitRows ? `<div class="linkrow inline" style="justify-content:space-between;gap:16px">${soon.length ? `<button class="link" type="button" data-go="subs">All subscriptions</button>` : "<span></span>"}${splitRows ? `<button class="link" type="button" data-go="split"${bal.length > 2 ? " data-up-split-more" : ""}>${bal.length > 2 ? `All ${bal.length} in Split` : "Open Split"}</button>` : ""}</div>` : ""}</section>`;
 };
 
+
+/* ================= brand tiles: a company's colors and initial, so a row is known at a glance ================= */
+const BRANDS = [[/netflix/i,"#141414","#e50914","N"],[/hulu/i,"#1ce783","#0b3d22","h"],[/disney/i,"#113ccf","#fff","D+"],[/spotify/i,"#191414","#1db954","S"],[/apple music/i,"#fa2d48","#fff","♪"],[/apple tv/i,"#111","#fff","tv"],[/youtube/i,"#ff0033","#fff","▶"],[/amazon|prime/i,"#232f3e","#ff9900","a"],[/icloud/i,"#e8f1fd","#3693f3","☁"],[/google/i,"#ffffff","#4285f4","G"],[/x premium|twitter/i,"#000","#fff","X"],[/adobe|photoshop/i,"#001e36","#31a8ff","Ps"],[/duolingo/i,"#58cc02","#fff","D"],[/audible/i,"#f7991c","#fff","A"],[/planet fitness/i,"#5b2d8e","#ffd200","PF"],[/verizon/i,"#000","#fff","V"],[/at&t/i,"#00a8e0","#fff","AT"],[/t-mobile/i,"#e20074","#fff","T"],[/sling/i,"#0080ff","#fff","S"],[/philo/i,"#3c1e8c","#fff","P"],[/fubo/i,"#fa4616","#fff","f"],[/directv/i,"#00a6d6","#fff","D"],[/\bmax\b|hbo/i,"#002be7","#fff","M"],[/peacock/i,"#111","#fff","P"],[/paramount/i,"#0064ff","#fff","P+"],[/spectrum/i,"#003057","#fff","S"],[/xfinity|comcast/i,"#6138f5","#fff","X"],[/walmart/i,"#0071ce","#ffc220","W"],[/target/i,"#cc0000","#fff","◎"],[/starbucks/i,"#00704a","#fff","★"],[/7-?eleven/i,"#008c45","#fff","7"],[/chatgpt|openai/i,"#10a37f","#fff","AI"],[/microsoft|xbox|office/i,"#107c10","#fff","M"],[/playstation/i,"#003791","#fff","PS"]];
+const KINDS = [[/rent|mortgage|housing/i,"#fde7e2","#c0533a","🏠"],[/electric|gas|power|con ed|utilit/i,"#fff4d6","#b7791f","⚡"],[/water/i,"#e0f2fe","#0369a1","💧"],[/internet|wifi/i,"#ede9fe","#6d28d9","📶"],[/phone|mobile/i,"#e0e7ff","#4338ca","📱"],[/insur/i,"#dcfce7","#15803d","🛡️"],[/car|auto/i,"#f3e9cc","#9a7417","🚗"],[/loan|student|card/i,"#f3e9cc","#9a7417","🏦"],[/gym|fitness/i,"#fce7f3","#be185d","💪"],[/payday|paycheck|salary/i,"#e4f2ea","#1b6843","💵"]];
+function brandTile(name, size){ const n = String(name || ""), b = BRANDS.find(x => x[0].test(n)) || KINDS.find(x => x[0].test(n)), z = size || 38;
+  const [bg, fg, t] = b ? b.slice(1) : [`hsl(${avatarHue(n)} 55% 88%)`, `hsl(${avatarHue(n)} 45% 32%)`, (n.trim()[0] || "?").toUpperCase()];
+  return `<span class="btile" style="--z:${z}px;background:${bg};color:${fg}" aria-hidden="true">${esc(t)}</span>`; }
+const hasBrand = name => BRANDS.some(x => x[0].test(String(name || "")));
 /* ================= how to cancel (official help pages, checked by hand) ================= */
 const CANCEL_HELP = [
   [/netflix/i, "https://help.netflix.com/en/node/407"],
