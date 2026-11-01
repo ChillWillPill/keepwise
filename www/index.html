@@ -1211,6 +1211,13 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .bv-tile span{max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bv-tile.on .btile{opacity:.45}
 .bv-tile em{position:absolute;top:-4px;right:2px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--on-green);display:grid;place-items:center}.bv-tile em svg{width:12px;height:12px}
 .bills-v .bills-left{margin-top:4px}
+.hero-keep{text-align:left;align-items:stretch;background:linear-gradient(160deg,var(--green-soft),var(--card));position:relative}
+.hero-keep h1{font:800 .74rem var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:2px 0 0;padding-right:36px}.hero-keep .hero-by{color:var(--muted)}
+.hero-keep .big{color:var(--green);text-align:left}.hero-keep .big.neg{color:var(--rust)}
+.hero-keep .hero-eye{position:absolute;top:12px;right:12px}
+.hero-keep .hero-warn{align-self:flex-start;border-radius:99px;padding:5px 12px;font-size:.78rem}
+.hero-spark{display:block;width:100%;height:56px;margin-top:8px;color:var(--green)}
+.hero-keep [data-out=planNote]{order:9;font-size:.74rem}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -3894,7 +3901,7 @@ V.month = () => {
   if (UI.biz) return spaceSwitch() + (plusOn() || bizDemoOn() ? bizSpace() : bizPreview());
   const C = compute(), tabs = monthTabs(), on = k => !tabs || (UI.mseg || "now") === k;
   const top = `${spaceSwitch()}${S.hideNote || TOUR.on || coachOn("month") ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on Budget, or import a bank statement. Everything stays on this device." : "Add your other bills on Budget and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
-  <section class="hero"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
+  <section class="hero hero-keep"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>`;
   const now = `${coach("month", "Your month at a glance")}  <div data-out="autoCard">${OUT.autoCard()}</div>
   <div data-out="monthClose">${OUT.monthClose()}</div>
@@ -4005,9 +4012,17 @@ OUT.headline = () => {
   const tail = S.priority === "ef" ? "if you follow emergency fund first and add nothing else" : S.priority === "goal" ? `if ${esc(S.goalName || "your goal")} comes first and you add nothing else` : "if you split it between goal and emergency fund";
   const hid = !!S.hideBal, eye = `<button class="hero-eye" type="button" data-hide-bal aria-pressed="${hid}" aria-label="${hid ? "Show the amount" : "Hide the amount"}">${hid ? EYE_OFF : EYE_ON}</button>`;
   if (hid) return `${eye}<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"}</h1><div class="big masked" style="margin-top:8px" data-bal-hidden aria-label="Amount hidden">••••••</div>`;
-  return `${eye}<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"}</h1>
+  // the line: money spent so far this month, day by day, and the pace it is on (dotted) to the month's end
+  const P = C.planPeriod, days = Math.max(1, Math.round((P.end - P.start) / DAY) + 1), today = Math.min(days, Math.max(1, Math.round((todayMid() - P.start) / DAY) + 1)), byDay = Array(days).fill(0);
+  spendsIn(C.planKey).forEach(x => { const d = x.date ? Math.round((isoDate(x.date) - P.start) / DAY) : today - 1; if (d >= 0 && d < days) byDay[d] += +x.amount || 0; });
+  let run = 0; const cum = byDay.map(v => run += v), top = Math.max(C.misc || 0, cum[today - 1] / today * days, 1);
+  const X = i => (i / (days - 1 || 1) * 300).toFixed(1), Y = v => (56 - Math.min(1, v / top) * 48).toFixed(1);
+  const done = cum.slice(0, today).map((v, i) => `${X(i)},${Y(v)}`).join(" "), pace = `${X(today - 1)},${Y(cum[today - 1])} ${X(days - 1)},${Y(cum[today - 1] / today * days)}`;
+  const spark = `<svg class="hero-spark" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,60 ${done} ${X(today - 1)},60" fill="currentColor" opacity=".12"/><polyline points="${done}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><polyline points="${pace}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="4 5" opacity=".6" vector-effect="non-scaling-stroke"/></svg>`;
+  return `${eye}<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"} <span class="hero-by">by ${dayMonth(P.end)}</span></h1>
   <div class="big ${C.savings < 0 ? "neg" : ""}" style="margin-top:8px;${fitSize(fmt(Math.abs(C.savings)), 3, 88)}">${fmt(Math.abs(C.savings))}</div>
   ${C.savings < 0 || over > 0.005 ? `<button type="button" class="hero-warn" data-hero-warn data-hero-over>${C.savings < 0 ? `${C.planMonth} spends more than comes in. Drop a flagged subscription or use a cheaper swap to close it.` : ""}${over > 0.005 ? ` Expenditures are ${fmt(over)} over your budget ›` : ""}</button>` : ""}
+  ${spark}
   ${C.savings >= 0 || C.payBonus.extra > 0 ? `<p class="muted" style="margin-top:10px">${C.savings >= 0 ? `${C.planMonth} ends with ${fmt(C.endSaved)} saved ${tail}.` : ""}${C.payBonus.extra > 0 ? ` ${C.planMonth} has ${C.payBonus.count} paydays, so an extra ${fmt(C.payBonus.extra)} is counted.` : ""}</p>` : ""}`;
 };
 OUT.stack = () => {
