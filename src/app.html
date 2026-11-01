@@ -1282,6 +1282,11 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .kpick-days{grid-template-columns:repeat(7,1fr)}.kpick-days .kpick-o{text-align:center;padding:10px 0;display:grid;justify-items:center;gap:1px}.kpick-days .kpick-o b{font:700 1.05rem var(--display)}.kpick-days .kpick-o small{font-size:.56rem;font-weight:700;opacity:.8}
 .kpick-days .kpick-o:first-child,.kpick-days .kpick-o:last-child{grid-column:span 2}
 @media (prefers-reduced-motion:reduce){.kpick-sheet,.kpick-back{transition:none}}
+.act-card .ico{width:44px;height:44px;border-radius:14px;background:var(--gold-soft);display:grid;place-items:center;font-size:1.3rem}
+.act-ppl{display:flex;margin-top:6px}.act-ppl .avatar{width:24px;height:24px;font-size:.62rem;margin-right:-6px;box-shadow:0 0 0 2px var(--card)}.act-ppl em{font-style:normal;font-size:.7rem;margin-left:10px;color:var(--muted)}
+.act-lines{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.act-chip{font-size:.74rem;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--chip);color:var(--muted)}.act-chip.good{background:var(--green-soft);color:var(--green)}.act-chip.bad{background:var(--rust-soft);color:var(--rust)}
+.act-amt{font:700 1.25rem var(--display)!important}
+.act-card .btn.small{padding:6px 12px;font-size:.8rem}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -5051,8 +5056,9 @@ V.split = () => {
     const by = c.kind === "shared" && x.createdBy && x.createdBy !== c.me ? ` · added by ${esc(person(x.createdBy, c).name)}` : "";
     return `${head}<div class="card act-card" data-split="${esc(x.id)}"><div class="entry"><div class="ico" aria-hidden="true">${splitIcon(x)}</div>
       <div style="min-width:0"><div class="name" style="font-size:1.1rem">${esc(x.title)}</div><div class="muted small">${esc(x.tag)} · ${METHOD_LABEL[x.method] || ""}${x.paidBy !== c.me ? ` · ${esc(person(x.paidBy, c).name)} paid` : ""}${by}</div>
-      <p class="small" style="margin-top:4px">${lines.length ? lines.map(l => `<span class="${l.good ? "good" : "bad"}">${esc(l.t)}</span>`).join(" · ") : `<span class="muted">Doesn’t involve you</span>`}</p></div>
-      <div class="name tnum" style="font-size:1.1rem">${fmt(x.amount)}</div></div>
+      ${(() => { const ids = Object.keys(shares(x)).filter(id => id !== c.me); return ids.length ? `<div class="act-ppl" aria-hidden="true">${ids.slice(0, 5).map(id => { const n = person(id, c).name || "?"; return `<span class="avatar" style="--h:${avatarHue(n)}">${esc(initials(n))}</span>`; }).join("")}${ids.length > 5 ? `<em>+${ids.length - 5}</em>` : ""}</div>` : ""; })()}
+      <p class="small act-lines">${lines.length ? lines.map(l => `<span class="act-chip ${l.good ? "good" : "bad"}">${esc(l.t)}</span>`).join("") : `<span class="act-chip">Doesn’t involve you</span>`}</p></div>
+      <div class="name tnum act-amt">${fmt(x.amount)}</div></div>
       <div class="inline" style="justify-content:flex-end"><button class="btn small" type="button" data-edit-split aria-label="Edit ${esc(x.title)}">Edit</button><button class="btn small danger" type="button" data-del-split aria-label="Delete ${esc(x.title)}">Delete</button></div></div>${c.kind === "local" && UI.tell && UI.tell.at === x.id ? tellCard() : ""}`; }).join("") : `<p class="empty">No splits${S.filter !== "All" ? ` tagged ${esc(S.filter)}` : ""} yet.</p>`}
   ${historySection(c)}
   ${c.kind === "shared" ? `<section style="display:flex;flex-direction:column;gap:12px"><h2 class="h-info">Your circle${infoBtn("circle", "About your circle")}</h2>
