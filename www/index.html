@@ -7887,12 +7887,12 @@ const PLUS_FREE = ["Your month-end number and plan", "Subscriptions, with remind
 // ▼ Fill these in from Paddle (Developer tools → Authentication for the client-side token; Catalog → Prices for the ids).
 // None of them are secret. While any still says REPLACE, checkout stays off and Plus shows the waitlist.
 const PADDLE_CONFIG = {
-  env: "sandbox",                         // "sandbox" while testing, then "production"
+  env: "production",                      // live Paddle account
   token: "test_REPLACE_client_side_token", // live tokens start with live_
-  monthly: "pri_REPLACE_monthly_9_99",     // $9.99 a month price, with a 7-day free trial set on it
-  yearly: "pri_REPLACE_yearly_79",         // $79 a year price, with a 7-day free trial set on it
-  ultraMonthly: "pri_REPLACE_ultra_monthly_19_99", // Plus Ultra, $19.99 a month, 7-day free trial
-  ultraYearly: "pri_REPLACE_ultra_yearly_159",     // Plus Ultra, $159 a year, 7-day free trial
+  monthly: "pri_01m6cf2j5h6b9wf0wgp4jwy93g",     // $9.99 a month price, with a 7-day free trial set on it
+  yearly: "pri_01m6cf3ksjn0fwqqv96pk20j5m",         // $79 a year price, with a 7-day free trial set on it
+  ultraMonthly: "pri_01m6cf50e7a1vcvdtfvb6cmpza", // Plus Ultra, $19.99 a month, 7-day free trial
+  ultraYearly: "pri_01m6cf5t9t0b05zcnd7zdazz2d",     // Plus Ultra, $159 a year, 7-day free trial
 };
 const PADDLE = () => { const p = window.KEEPWISE_PADDLE || PADDLE_CONFIG; return p && p.token && p.monthly && p.yearly && !/REPLACE/.test(p.token + p.monthly + p.yearly) && !window.Capacitor ? p : null; };
 let paddleReady = null;
