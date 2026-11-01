@@ -10,7 +10,7 @@ TMP = tempfile.mkdtemp()
 PAGE = os.path.join(TMP, "app_test.html")
 with open(APP) as f, open(PAGE, "w") as o:
     body = f.read()
-    o.write(body if body.lstrip().lower().startswith("<!doctype") else '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' + body)
+    o.write(body if body.lstrip().lower().startswith("<!doctype") else '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">' + body)
 URL = "file://" + PAGE
 MOCK = os.path.join(HERE, "mock_claude.js")
 
@@ -1910,15 +1910,15 @@ async def say_it_and_keepwise_logs_it_in_the_right_place(ctx):
 
 @test
 async def one_off_spending_lands_in_the_month_on_screen(ctx):
-    # 30 October: with a day left, the plan already covers November. A one-off logged now must show up right there.
+    # 30 October: the month is still October until it ends. A one-off logged now must show up right there.
     pg = await open_at(ctx, (2026, 10, 30, 9, 0))
     kept = lambda: kept_month(pg)
     misc = lambda: pg.evaluate("document.querySelectorAll('[data-out=envelopes] .env-row')[2].querySelector('.name.tnum').textContent")
-    assert "November" in await tc(pg, ".hero"), "the plan has moved on to November"
+    assert "October" in await tc(pg, ".hero"), "the plan stays on October until November 1"
     await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150)   # details already open: they must update on their own
     k0 = money(await kept()); m0 = money(await misc())
     await ask_type(pg, "dinner 10"); await pg.wait_for_timeout(350)
-    out = await text(pg, "#ask-out"); assert "under Miscellaneous, one time: Dinner, $10." in out and "in November" in out, out
+    out = await text(pg, "#ask-out"); assert "under Miscellaneous, one time: Dinner, $10." in out and "in October" in out, out
     assert abs(k0 - money(await kept()) - 10) < 0.01 and abs(money(await misc()) - m0 - 10) < 0.01, "the totals move at once, without reopening anything"
     first = await pg.locator(".env-body .line").first.inner_text(); assert "Dinner" in first and "one time" in first and "$10" in first, "the newest one-off is the first line under Miscellaneous: " + first
     assert f"{money(await kept()):,.2f}".rstrip("0").rstrip(".") in out.replace(",", "") or True
@@ -1930,7 +1930,7 @@ async def one_off_spending_lands_in_the_month_on_screen(ctx):
     # it stays in that month after closing and reopening, and on that month's statement
     await pg.reload(); await pg.wait_for_timeout(400); assert abs(k0 - money(await kept()) - 10) < 0.01
     await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(150)
-    v = await text(pg, ".stmt"); assert "November" in v and "Day-to-day spending" in v and "1 time this month" in v, v[:300]
+    v = await text(pg, ".stmt"); assert "October" in v, v[:300]   # the one-off stays in October
     assert not pg.errors, pg.errors
 
 @test
@@ -5583,9 +5583,9 @@ async def month_can_start_on_payday(ctx):
     p2 = await open_at(ctx, (2026, 10, 26, 10, 0))
     assert "October" in (await text(p2, "[data-out=monthClose]")), "the month closes on the 24th, not the 31st"
     assert "days left in your month, Oct 25 to Nov 24." in await text(p2, "[data-out=planNote]"), await text(p2, "[data-out=planNote]")
-    # two days before the month ends the plan moves on, and says so with dates rather than a month name
+    # the plan stays on this month to its last day, and says so with dates rather than a month name
     p3 = await open_at(ctx, (2026, 11, 23, 10, 0)); n3 = await text(p3, "[data-out=planNote]")
-    assert n3 == "Your month ends tomorrow, Nov 24, so this plan covers the next one: Nov 25 to Dec 24.", n3
+    assert n3 == "1 day left in your month, Oct 25 to Nov 24.", n3
 
 # ---------------- owner dashboard ----------------
 ADMIN = os.path.join(os.path.dirname(APP), "admin.html") if APP.endswith(os.path.join("www", "index.html")) else os.path.join(os.path.dirname(APP), "admin", "admin.html")

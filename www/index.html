@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="description" content="See what you keep at month end: subscriptions, cheaper swaps, codes, budget and bill splitting.">
 <link rel="canonical" href="https://mykeepwise.com/">
 <meta property="og:type" content="website">
@@ -1594,13 +1594,13 @@ function compute(){
   const efMonthsLeft = toEF > 0 ? Math.ceil(efGap / toEF) : null;
   const inactiveSwaps = S.swaps.map(w => ({w, save: swapSaving(w)})).filter(x => !x.w.on && x.save > 0).sort((a,b) => b.save - a.save);
   const now = new Date(), P0 = periodOf(now), left = Math.round((P0.end - todayMid()) / DAY);
-  const nextMonth = left <= 2;
+  const nextMonth = false;   // the plan stays on this month until its last day is over
   const P = nextMonth ? periodOf(new Date(P0.end.getFullYear(), P0.end.getMonth(), P0.end.getDate() + 1)) : P0;
   // With a month that starts on payday, calendar names mislead ("September ends tomorrow" on 3 October), so dates are used.
   const own = monthStartDay() !== 1, endDay = dayMonth(P0.end);
   const planNote = own
-    ? (nextMonth ? (left === 0 ? `Your month ends today, so this plan covers the next one: ${rangeText(P)}.` : left === 1 ? `Your month ends tomorrow, ${endDay}, so this plan covers the next one: ${rangeText(P)}.` : `${left} days left in your month, which ends ${endDay}. This plan covers the next one: ${rangeText(P)}.`) : `${left} days left in your month, ${rangeText(P0)}.`)
-    : (nextMonth ? (left === 0 ? `Today is the last day of ${P0.name}, so this plan covers ${P.name}.` : left === 1 ? `${P0.name} ends tomorrow, so this plan covers ${P.name}.` : `${left} days left in ${P0.name}. This plan covers ${P.name}.`) : `${left} days left in ${P0.name}. This plan covers ${P0.name}.`);
+    ? (nextMonth ? (left === 0 ? `Your month ends today, so this plan covers the next one: ${rangeText(P)}.` : left === 1 ? `Your month ends tomorrow, ${endDay}, so this plan covers the next one: ${rangeText(P)}.` : `${left} days left in your month, which ends ${endDay}. This plan covers the next one: ${rangeText(P)}.`) : `${left === 0 ? "Last day of your month" : left === 1 ? "1 day left in your month" : left + " days left in your month"}, ${rangeText(P0)}.`)
+    : (nextMonth ? (left === 0 ? `Today is the last day of ${P0.name}, so this plan covers ${P.name}.` : left === 1 ? `${P0.name} ends tomorrow, so this plan covers ${P.name}.` : `${left} days left in ${P0.name}. This plan covers ${P.name}.`) : `${left === 0 ? `Today is the last day of ${P0.name}` : left === 1 ? `1 day left in ${P0.name}` : `${left} days left in ${P0.name}`}. This plan covers ${P0.name}.`);
   const planKey = P.key;
   const setAside = (S.deposits || []).filter(x => x.month === planKey).reduce((a,x) => a + x.amount, 0);
   const endSaved = S.efSaved + savings - setAside;
@@ -6289,16 +6289,17 @@ function closeMonth(key, amount){
 /* ================= your month and your paydays ================= */
 // A month normally runs from the 1st. It can start on another day (for example the 25th, payday), and is then named
 // after the month most of it falls in: 25 Oct to 24 Nov is "November".
-function planPeriodNow(){ const now = new Date(), P0 = periodOf(now); return Math.round((P0.end - todayMid()) / DAY) <= 2 ? periodOf(new Date(P0.end.getFullYear(), P0.end.getMonth(), P0.end.getDate() + 1)) : P0; }
-const monthStartDay = () => Math.min(28, Math.max(1, +S.monthStart || 1));
+function planPeriodNow(){ return periodOf(new Date()); }   // the new month starts on its first day, never early
+const monthStartDay = () => Math.min(31, Math.max(1, +S.monthStart || 1));
+const msDate = (y, m) => { const dim = new Date(y, m + 1, 0).getDate(); return new Date(y, m, Math.min(monthStartDay(), dim)); };   // the 29th-31st fall on the last day in shorter months
 function periodOf(date){
   const ms = monthStartDay(), d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const start = d.getDate() >= ms ? new Date(d.getFullYear(), d.getMonth(), ms) : new Date(d.getFullYear(), d.getMonth() - 1, ms);
-  const end = new Date(start.getFullYear(), start.getMonth() + 1, ms - 1);
+  const here = msDate(d.getFullYear(), d.getMonth()), start = d >= here ? here : msDate(d.getFullYear(), d.getMonth() - 1);
+  const nx = msDate(start.getFullYear(), start.getMonth() + 1), end = new Date(nx.getFullYear(), nx.getMonth(), nx.getDate() - 1);
   const named = ms <= 15 ? start : new Date(start.getFullYear(), start.getMonth() + 1, 1);
   return {start, end, key: `${named.getFullYear()}-${String(named.getMonth() + 1).padStart(2, "0")}`, name: named.toLocaleString("en-US", {month: "long"})};
 }
-function periodForKey(k){ const [y, m] = k.split("-").map(Number), ms = monthStartDay(); return periodOf(ms <= 15 ? new Date(y, m - 1, ms) : new Date(y, m - 2, ms)); }
+function periodForKey(k){ const [y, m] = k.split("-").map(Number), ms = monthStartDay(); return periodOf(ms <= 15 ? msDate(y, m - 1) : msDate(y, m - 2)); }
 const periodKeyOfIso = iso => { if (!iso) return ""; const [y, m, d] = iso.split("-").map(Number); return periodOf(new Date(y, m - 1, d)).key; };
 const dayMonth = d => d.toLocaleDateString("en-US", {month: "short", day: "numeric"});
 const rangeText = p => `${dayMonth(p.start)} to ${dayMonth(p.end)}`;
@@ -6342,7 +6343,7 @@ OUT.payBox = () => {
       ${d.when === "twice" ? `<label class="field"><span>Second payday</span><select name="day2">${dayOpts(d.day2, true)}</select></label>` : ""}
       <label class="field"><span>Each paycheck, after tax</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${esc(d.amount)}"></span>
         ${d.when === "biweekly" || d.when === "weekly" ? `<small class="muted small">Your plan counts ${PAY_BASE[d.when]} paychecks a month. A month with one more shows it as extra you can save.</small>` : ""}</label>
-      <label class="field"><span>My month starts on</span><select name="monthStart">${Array.from({length: 28}, (_, i) => `<option value="${i + 1}" ${+d.monthStart === i + 1 ? "selected" : ""}>${i === 0 ? "The 1st (calendar month)" : "The " + ordinal(i + 1)}</option>`).join("")}</select>
+      <label class="field"><span>My month starts on</span><select name="monthStart">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+d.monthStart === i + 1 ? "selected" : ""}>${i === 0 ? "The 1st (calendar month)" : i === 30 ? "The last day of the month" : "The " + ordinal(i + 1) + (i > 27 ? " (or the last day)" : "")}</option>`).join("")}</select>
         <small class="muted small">Paid near the end of the month? Start your month on payday so each statement covers one paycheck.</small></label>
       <div class="grid2"><button class="btn" type="button" data-payday-cancel>Cancel</button><button class="btn primary" type="submit" style="padding:10px">Save</button></div>
       ${payOn() ? `<button class="link plain small" type="button" data-payday-clear style="align-self:center">Remove my pay schedule</button>` : ""}</form>`; }
@@ -9225,7 +9226,7 @@ view.addEventListener("submit", async e => {
     S.pay = {when, amount, day: fd.get("day") ? +fd.get("day") : undefined, day2: when === "twice" ? +fd.get("day2") || 15 : undefined, wd: when === "weekly" ? +fd.get("wd") : undefined, next: when === "biweekly" ? String(fd.get("next") || isoDaysAgo(0)) : undefined};
     if (prevPay && S.pay.next && sameBiweekly(prevPay.next, S.pay.next)) S.pay.next = prevPay.next;   // same schedule: keep the first date it was counted from
     S.pay.since = prevPay && prevPay.when === S.pay.when && prevPay.day === S.pay.day && prevPay.day2 === S.pay.day2 && prevPay.wd === S.pay.wd && sameBiweekly(prevPay.next, S.pay.next) && prevPay.since ? prevPay.since : isoDaysAgo(0);
-    S.income = r2(amount * PAY_BASE[when]); S.monthStart = Math.min(28, Math.max(1, +fd.get("monthStart") || 1));
+    S.income = r2(amount * PAY_BASE[when]); S.monthStart = Math.min(31, Math.max(1, +fd.get("monthStart") || 1));
     UI.payEdit = false; save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Saved. Your plan counts ${fmt(S.income)} a month from pay.`); return; }
   if (kind === "loan" && fd.get("kind") === "carins"){
     const premium = numv(fd.get("premium")), start = String(fd.get("start") || "");
