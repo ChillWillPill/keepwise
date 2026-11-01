@@ -1303,6 +1303,15 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .note-grp{margin:14px 4px 6px;font-size:.72rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .note-brand{background:none!important;position:relative}.note-brand .note-dot{position:absolute;top:-2px;right:-2px}
 .note-row.unread{background:linear-gradient(90deg,var(--green-soft),transparent 60%)}
+.kpick{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:flex-end;justify-content:center}.kpick-back{position:absolute;inset:0;border:0;background:rgba(15,22,18,.45);opacity:0;transition:opacity .2s}
+.kpick-sheet{position:relative;width:min(560px,100%);max-height:78vh;display:flex;flex-direction:column;background:var(--bg);border-radius:24px 24px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.9,.3,1)}
+.kpick.in .kpick-back{opacity:1}.kpick.in .kpick-sheet{transform:none}
+.kpick-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.kpick-h b{font:700 1.1rem var(--body)}.kpick-x{appearance:none;border:0;background:var(--chip);width:34px;height:34px;border-radius:50%;cursor:pointer;color:var(--ink)}
+.kpick-list{overflow:auto;display:grid;gap:6px}.kpick-o{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 .98rem var(--body);text-align:left;padding:14px 16px;border-radius:14px;cursor:pointer}
+.kpick-o.on{background:var(--green);color:var(--on-green);border-color:transparent}.kpick-o:disabled{opacity:.4}
+.kpick-days{grid-template-columns:repeat(7,1fr)}.kpick-days .kpick-o{text-align:center;padding:10px 0;display:grid;justify-items:center;gap:1px}.kpick-days .kpick-o b{font:700 1.05rem var(--display)}.kpick-days .kpick-o small{font-size:.56rem;font-weight:700;opacity:.8}
+.kpick-days .kpick-o:first-child,.kpick-days .kpick-o:last-child{grid-column:span 2}
+@media (prefers-reduced-motion:reduce){.kpick-sheet,.kpick-back{transition:none}}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -9970,6 +9979,24 @@ $("vcf").addEventListener("change", e => {
     toast(n ? `${n} contact${n === 1 ? "" : "s"} ready to search when you add people to a split.` : "Those contacts are already here."); };
   rd.readAsText(file);
 });
+
+// Every dropdown opens KeepWise's own picker: a sheet with big tappable choices (days of the month as a calendar grid)
+// instead of the phone's plain list. The real <select> stays underneath, so forms and saving work as before.
+(() => { let open = null;
+  const close = () => { if (open){ open.remove(); open = null; } };
+  document.addEventListener("pointerdown", e => { const sel = e.target.closest && e.target.closest("select"); if (!sel || sel.disabled || sel.multiple || sel.hasAttribute("data-native") || window.__kwTour) return;
+    e.preventDefault(); sel.focus({preventScroll: true}); close();
+    const lab = (sel.closest("label") && sel.closest("label").querySelector("span")) || (sel.id && document.querySelector(`label[for="${sel.id}"]`)), title = lab ? lab.textContent.trim() : (sel.getAttribute("aria-label") || "Choose");
+    const opts = [...sel.options].filter(o => !o.hidden), days = opts.length >= 28 && opts.every(o => /^the\s|^\d|1st|2nd|3rd|\dth|last day/i.test(o.text.trim()));
+    const el = document.createElement("div"); el.className = "kpick"; el.innerHTML = `<button class="kpick-back" type="button" aria-label="Close"></button><div class="kpick-sheet" role="dialog" aria-label="${esc(title)}"><div class="kpick-h"><b>${esc(title)}</b><button type="button" class="kpick-x" aria-label="Close">✕</button></div>
+      <div class="kpick-list${days ? " kpick-days" : ""}">${opts.map((o, i) => `<button type="button" class="kpick-o${o.selected ? " on" : ""}" data-i="${i}" ${o.disabled ? "disabled" : ""}>${days ? (/last day of the month/i.test(o.text) ? `<b>Last</b><small>day of month</small>` : `<b>${esc(o.text.replace(/^the\s*/i, "").replace(/\s*\(.*\)$/, "").replace(/(st|nd|rd|th)$/, "") || o.text)}</b>${/calendar/i.test(o.text) ? `<small>Calendar</small>` : ""}`) : esc(o.text)}</button>`).join("")}</div></div>`;
+    document.body.appendChild(el); open = el; requestAnimationFrame(() => el.classList.add("in"));
+    const cur = el.querySelector(".kpick-o.on"); if (cur && !days) cur.scrollIntoView({block: "center"});
+    el.addEventListener("click", ev => { if (ev.target.closest(".kpick-back,.kpick-x")){ close(); return; } const b = ev.target.closest(".kpick-o"); if (!b) return;
+      const o = opts[+b.dataset.i]; sel.value = o.value; close(); sel.dispatchEvent(new Event("input", {bubbles: true})); sel.dispatchEvent(new Event("change", {bubbles: true})); });
+  }, true);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+})();
 
 // A first visit gets the short setup instead of someone else's numbers. People who already use KeepWise never see it.
 let firstRun = false; try { if (localStorage.getItem(KEY)) welcomeDone(); else firstRun = !localStorage.getItem(WELCOME_KEY) && !window.KEEPWISE_NO_SETUP; } catch(e){}  // tests can skip the setup
