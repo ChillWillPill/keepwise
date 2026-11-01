@@ -1176,10 +1176,10 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .sv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:8px}
 .sv-grid .prog-row{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:12px 8px;border-radius:18px;background:var(--bg);border:0;margin:0}
 .sv-grid .prog-row>.inline{flex-direction:column;align-items:center!important;gap:0}.sv-grid .prog-row .name{font-weight:700}
-.sv-grid .prog-row:only-child{flex-direction:row;text-align:left;gap:16px;padding:14px 16px}.sv-grid .prog-row:only-child>.inline{align-items:flex-start!important}.sv-grid .prog-row:only-child .sv-ring{margin:0;flex:none}
+.sv-grid .prog-row:only-child{display:grid;grid-template-columns:auto 1fr;column-gap:16px;align-items:center;text-align:left;padding:14px 16px}.sv-grid .prog-row:only-child>.inline{align-items:flex-start!important;align-self:end}.sv-grid .prog-row:only-child .sv-ring{margin:0;grid-row:span 3}.sv-grid .prog-row:only-child p{align-self:start}
 .sv-grid .meter{display:none}.sv-grid .prog-row p{margin:2px 0 0;font-size:.72rem;line-height:1.35}
 .sv-ring{--c:var(--green);width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p) * 1%),var(--line) 0);display:grid;place-items:center;margin-bottom:4px}
-.bv-head{display:flex;gap:14px;align-items:center}.bv-t h2{margin:0}.bv-ring{width:64px;height:64px;margin:0;flex:none}.bv-ring i{width:50px;height:50px;font-size:.86rem}
+.bv-head{display:flex;gap:14px;align-items:center}.bv-t h2{margin:0}.sv-ring.bv-ring{width:64px;height:64px;margin:0;flex:none}.sv-ring.bv-ring i{width:50px;height:50px;font-size:.86rem;background:var(--card)}
 .bv-tiles{display:flex;gap:10px;overflow-x:auto;padding:12px 2px 4px;scrollbar-width:none}.bv-tiles::-webkit-scrollbar{display:none}
 .bv-tile{appearance:none;border:0;background:none;padding:0;display:grid;justify-items:center;gap:4px;position:relative;cursor:pointer;font:600 .7rem var(--body);color:var(--muted);flex:none;width:52px}
 .bv-tile span{max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bv-tile.on .btile{opacity:.45}
