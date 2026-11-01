@@ -1237,6 +1237,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .rv-top{display:flex;gap:12px;align-items:center}.rv-t{min-width:0}.rv-t .label{margin:0}.rv-t h3{margin:2px 0;font-size:1.05rem}.rv-t p{margin:0}
 .rv-btns .btn{display:grid;justify-items:center;gap:2px;padding:10px 4px;border:0;font-size:.8rem}.rv-btns .btn span{font-size:1.25rem;line-height:1}.rv-a{background:var(--green-soft)!important;color:var(--green)!important}.rv-b{background:var(--gold-soft)!important;color:var(--gold)!important}.rv-c{background:var(--rust-soft)!important;color:var(--rust)!important}
 .ih-in{display:grid;gap:12px;padding-bottom:14px;margin-bottom:4px;border-bottom:1px solid var(--line)}.ih-row b{display:inline}.ih-row>div>b{display:block}
+.ih-edit{appearance:none;border:0;background:none;padding:0;width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit}.ih-chg{margin-left:6px;font-size:.66rem;font-weight:800;color:var(--green);background:var(--green-soft);padding:2px 8px;border-radius:99px;letter-spacing:0;text-transform:none}
 .ih-set{appearance:none;border:1px dashed color-mix(in srgb,var(--green) 45%,transparent);background:var(--green-soft);border-radius:16px;padding:10px 12px;display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;color:var(--ink);font:inherit}.ih-set>span:nth-child(2){flex:1}.ih-set b{display:block}.ih-set small{font-size:.78rem}.ih-go{font-size:1.4rem;color:var(--green)}
 .ih-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.ih-big{display:block;font:700 2rem var(--display)}.ih-cd{display:flex;gap:6px}.ih-cd span{display:grid;justify-items:center;background:var(--green-soft);border-radius:12px;padding:6px 10px}.ih-cd b{font:700 1.5rem var(--display);color:var(--green)}.ih-cd small{font-size:.66rem;color:var(--muted)}
 .ih-row{display:flex;gap:14px;align-items:center}.ih-row b{display:block}.sv-ring.ih-ring,.sv-ring.pc-ring{width:64px;height:64px;margin:0;flex:none}.sv-ring.ih-ring i,.sv-ring.pc-ring i{width:50px;height:50px;font-size:.86rem;background:var(--card)}
@@ -3976,7 +3977,7 @@ V.month = () => {
   <div data-out="saveCard">${OUT.saveCard()}</div>`;
   const fields = `  <div data-out="incomeHero">${OUT.incomeHero()}</div><div class="grid2">
     <div class="field"><span class="h-info"><label for="m-cur">Currency</label>${infoBtn("cur", "About changing currency")}</span><select data-bind="cur" id="m-cur">${curOptions(S.cur)}</select></div>
-    <div class="field"><span class="h-info"><label for="m-income" data-out="incomeLabel">${OUT.incomeLabel()}</label>${payOn() ? infoBtn("pay", "About your pay schedule") : ""}</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month">${payOn() && !UI.payEdit ? `<button class="link small" type="button" data-payday-edit style="flex:none">Change</button>` : ""}</span></div>
+    <div class="field"><span class="h-info"><label for="m-income" data-out="incomeLabel">${OUT.incomeLabel()}</label></span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month">${payOn() && !UI.payEdit ? `<button class="link small" type="button" data-payday-edit style="flex:none">Change</button>` : ""}</span></div>
   </div>
   ${infoTip("cur", "Changing currency does not convert the numbers. 90 stays 90.")}`;
   const income = `  <div data-out="payBox">${OUT.payBox()}</div>
@@ -6541,8 +6542,8 @@ function incomeForm(x){
 OUT.incomeHero = () => { const C = compute(), n = payOn() ? nextPayday() : null, k = todayKey();
   const got = r2((S.extras || []).reduce((a, x) => a + gotIn(x, k), 0) + (payOn() && S.payGot && inMonth(S.payGot, k) ? +S.pay.amount || 0 : 0)), exp = C.income || 0, pct = exp > 0 ? Math.min(100, got / exp * 100) : 0;
   const d = n ? daysUntil(n) : null, hrs = n ? Math.max(0, Math.floor((n - new Date()) / 36e5) % 24) : 0;
-  return `<div class="ih-in">${n ? `<div class="ih-top"><div><span class="label">Next payday</span><b class="ih-big">${esc(dayMonth(n))}</b><small class="muted">${d === 0 ? "Today" : d === 1 ? "Tomorrow" : `In ${d} days`} · ${fmt(+S.pay.amount || 0)}</small></div>
-      <div class="ih-cd"><span><b class="tnum">${d}</b><small>days</small></span><span><b class="tnum">${String(hrs).padStart(2, "0")}</b><small>hrs</small></span></div></div>` : `<button type="button" class="ih-set" data-payday-edit><span class="btile" style="--z:44px;background:var(--green-soft);color:var(--green)">📅</span><span><b>How are you paid?</b><small class="muted">Set your payday to see the countdown and each paycheck</small></span><span class="ih-go" aria-hidden="true">›</span></button>`}
+  return `<div class="ih-in">${n ? `<button type="button" class="ih-top ih-edit" data-payday-edit aria-label="Change your pay schedule"><div><span class="label">Next payday <span class="ih-chg">Edit</span></span><b class="ih-big">${esc(dayMonth(n))}</b><small class="muted">${d === 0 ? "Today" : d === 1 ? "Tomorrow" : `In ${d} days`} · ${fmt(+S.pay.amount || 0)}</small></div>
+      <div class="ih-cd"><span><b class="tnum">${d}</b><small>days</small></span><span><b class="tnum">${String(hrs).padStart(2, "0")}</b><small>hrs</small></span></div></button>` : `<button type="button" class="ih-set" data-payday-edit><span class="btile" style="--z:44px;background:var(--green-soft);color:var(--green)">📅</span><span><b>How are you paid?</b><small class="muted">Set your payday to see the countdown and each paycheck</small></span><span class="ih-go" aria-hidden="true">›</span></button>`}
     <div class="ih-row"><div class="sv-ring ih-ring" style="--p:${pct.toFixed(1)}" aria-hidden="true"><i>${Math.round(pct)}%</i></div><div><b>${esc(C.planMonth)}</b><small class="muted"><b class="tnum" style="color:var(--ink)">${fmt(got)}</b> of ${fmt(exp)} received</small></div></div></div>`; };
 OUT.extraIncome = () => {
   const list = S.extras || [], k = todayKey(), mName = periodOf(new Date()).name;
@@ -6677,7 +6678,8 @@ OUT.payBox = () => {
   if (!payOn()) return "";   // the pay card above asks "How are you paid?" itself
   if (false) return `<button class="link small inc-add" type="button" data-payday-edit>${I.month.replace("<svg ", '<svg width="16" height="16" style="vertical-align:-3px;margin-right:6px" ')}How are you paid? <span class="muted">optional</span></button>`;
   const n = nextPayday(), ms = monthStartDay(), P = periodOf(new Date());
-  if (UI.info !== "pay") return "";   // the schedule sits behind the (i) beside Regular pay; Change is in the pay box itself
+  return "";   // the pay card at the top shows the schedule and opens it for changes
+  if (UI.info !== "pay") return "";
   return `<div class="pay-line" data-info-tip="pay" role="note"><span>${I.month.replace("<svg ", '<svg width="18" height="18" ')}<span><b>${fmt(+S.pay.amount || 0)}</b> ${esc(payWhenText())}${n ? ` · next payday <b>${daysUntil(n) === 0 ? "today" : daysUntil(n) === 1 ? "tomorrow" : n.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})}</b>` : S.pay.when === "biweekly" ? " · add your next payday" : ""}${ms !== 1 ? `<br><span class="muted small">Your ${esc(P.name)} runs ${rangeText(P)}.</span>` : ""}</span></span></div>`;
 };
 
