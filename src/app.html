@@ -217,6 +217,30 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .addx-tray .addx-t:hover,.addx-tray .addx-t:focus-visible{background:var(--green-soft)}
 .addx-tray .addx-t span{width:40px;height:40px;border-radius:13px;background:color-mix(in srgb,var(--k,var(--green)) 15%,transparent);color:var(--k,var(--green))}
 .addx-tray .addx-t svg{width:21px;height:21px}
+.save-goals{gap:14px}.save-goals h3{font:700 1rem var(--body);margin:0}
+.sg-hero{background:linear-gradient(150deg,#0f5a43,#0b3a2b);color:#f3faf6;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.sg-hero .link{color:#f3d27a}.sg-hero p{margin:0;color:#cfe5da;font-size:.85rem}
+.sg-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sg-chip{font:700 .74rem var(--body);padding:5px 10px;border-radius:99px;background:rgba(255,255,255,.14)}
+.sg-main{display:flex;gap:14px;align-items:center;min-width:0}.sg-main>div:last-child{display:flex;flex-direction:column;gap:2px}
+.sg-hero .sv-ring{--ring-bg:rgba(255,255,255,.18)}.sg-hero .sv-ring i{background:#0d4a37;color:#f3faf6}
+.sg-name{font:700 1.7rem/1.05 var(--display);overflow-wrap:anywhere}
+.sg-plan{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.1);border-radius:14px;padding:10px 12px;font-size:.88rem}
+.sg-ef,.sg-form{border:1px solid var(--line);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.sg-ef .sg-main>div:last-child{display:block}.sg-prio{display:flex;flex-direction:column;gap:8px}
+.sg-seg{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}.sg-seg button{white-space:normal;line-height:1.2;padding:9px 4px}
+.sg-picks{display:flex;flex-wrap:wrap;gap:6px}
+.env-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.env-sum div{background:var(--bg);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.env-sum small{color:var(--muted);font-size:.74rem;display:flex;align-items:center;gap:5px}.env-sum small i{width:8px;height:8px;border-radius:50%;flex:none}.env-sum b{font:700 1.08rem var(--display)}
+.inc-card .inc-row{background:none!important;border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;padding:12px 0 4px!important}
+.inc-card .inc-row .row-top{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.act-more{border:0;background:none;color:var(--muted);font:800 1.1rem var(--body);letter-spacing:1px;padding:0 4px;cursor:pointer;line-height:1}
+.act-menu{display:flex;justify-content:flex-end;gap:8px}
+
+/* The Ask sheet fits a phone screen without scrolling: tiles tighten on shorter screens. */
+@media (max-height:900px){.ask-panel .ow-h{margin:8px 0 6px!important}.ask-panel .quick{gap:6px!important}.ask-panel .quick-ic{padding:6px 2px 4px;gap:3px;min-height:0}.ask-panel .quick-ic svg{width:19px;height:19px}.addx-tray .addx-t{padding:5px 2px 4px;gap:3px}.addx-tray .addx-t span{width:34px;height:34px;border-radius:11px}.addx-tray .addx-t svg{width:18px;height:18px}.ask-panel form.inline{margin-top:8px!important}}
+@media (max-height:700px){.ask-sheet{padding-top:28px!important}.ask-panel .ask-chips{display:none}.ask-panel .ow-h{margin:6px 0 4px!important}}
+@media (max-height:760px){.ask-panel .quick-ic small{font-size:.68rem}.addx-tray{padding:3px}.card.ask-panel{padding-top:8px}}
 .addx-trip{--k:#2f7fb0}.addx-event{--k:#b5658f}.addx-loan{--k:#6b5fb0}.addx-receipt{--k:#8a7a3c}.addx-bill{--k:#c0703a}.addx-sub{--k:#c24f4f}.addx-split{--k:#1b8a6b}.addx-income{--k:#2e8a3f}
 :root[data-skin="terminal"] .addx-tray .addx-t span{--k:var(--green)}
 @media (max-width:640px){.ask-sheet{justify-content:flex-end;padding:calc(60px + env(safe-area-inset-top,0px)) 0 0}
@@ -1314,6 +1338,12 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 @media (prefers-color-scheme: dark){:root[data-skin="glass"]:not([data-theme="light"]){--bg:#0d1714;--card:rgba(20,30,27,var(--glass-a,.55));--ink:#eaf2ee;--muted:#a6b5ae;--line:rgba(255,255,255,.12);--chip:rgba(255,255,255,.08);--green:#6fd3a8;--green-soft:rgba(111,211,168,.14)}:root[data-skin="glass"]:not([data-theme="light"]){background:radial-gradient(600px 420px at 10% 0%,#1f5f4a 0,transparent 60%),radial-gradient(520px 420px at 100% 30%,#5a4a1a 0,transparent 60%),radial-gradient(600px 500px at 40% 100%,#1d3557 0,transparent 60%),#0d1714;background-attachment:fixed}}
 :root[data-skin="terminal"] .card{box-shadow:0 0 0 1px rgba(57,255,136,calc(.08 + var(--glow,.5) * .25)),0 0 calc(var(--glow,.5) * 40px) rgba(57,255,136,calc(var(--glow,.5) * .14))!important}
 /* a full-screen form inside a card must cover the page: glass blur on cards would trap it, so it is switched off while one is open */
+:root[data-skin="glass"] .view>.seg.sub-seg,:root[data-skin="glass"] .bz-filt,:root[data-skin="glass"] .rep-tabs,:root[data-skin="glass"] .st-wiz .sf-top{background:color-mix(in srgb,var(--bg) 94%,transparent)!important;-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);box-shadow:0 0 0 8px color-mix(in srgb,var(--bg) 94%,transparent)!important}
+:root[data-skin="glass"] .st-hero{background:linear-gradient(150deg,rgba(18,122,87,.92),rgba(10,70,52,.9))!important;color:#f3faf6!important;border-color:rgba(255,255,255,.25)!important}
+:root[data-skin="glass"] .st-hero *{color:inherit}
+:root[data-skin="glass"]:not([data-theme="dark"]){--muted:#3d4a44;--green:#0b6346}
+:root[data-skin="glass"][data-theme="dark"]{--rust:#ff9a80;--rust-soft:rgba(255,154,128,.16);--bad:#ff9a80;--muted:#b9c7c0}
+@media (prefers-color-scheme: dark){:root[data-skin="glass"]:not([data-theme="light"]){--rust:#ff9a80;--rust-soft:rgba(255,154,128,.16);--bad:#ff9a80;--muted:#b9c7c0;--green:#6fd3a8}}
 :root[data-skin="glass"]:has(.wiz-top) .card,:root[data-skin="glass"]:has(.wiz-top) .hero{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 .skin-glass i:nth-child(1){background:linear-gradient(135deg,#a8e6cf,#b9d7ff)}.skin-glass i:nth-child(2){background:rgba(255,255,255,.7);box-shadow:inset 0 0 0 1px #dfe7e3}.skin-glass i:nth-child(3){background:#127a57}
 .skin-card{border:1px solid var(--line);border-radius:14px;background:var(--card);display:flex;flex-direction:column}.skin-card.on{border:2px solid var(--green)}.skin-card .skin-opt{border:0!important;background:none!important;box-shadow:none!important;outline:0}
@@ -1782,6 +1812,7 @@ function compute(){
   if (S.priority === "ef"){ toEF = Math.min(pos, efGap); toGoal = pos - toEF; }
   else if (S.priority === "goal"){ toGoal = Math.min(pos, +S.goalAmt > 0 ? goalGap() : pos); toEF = pos - toGoal; }
   else { toEF = Math.min(pos / 2, efGap); toGoal = pos - toEF; }
+  if (+S.goalAmt > 0 && toGoal > goalGap()){ toGoal = goalGap(); toEF = Math.min(pos - toGoal, Math.max(toEF, efGap)); }   // a goal never gets more than it still needs
   const efMonthsLeft = toEF > 0 ? Math.ceil(efGap / toEF) : null;
   const inactiveSwaps = S.swaps.map(w => ({w, save: swapSaving(w)})).filter(x => !x.w.on && x.save > 0).sort((a,b) => b.save - a.save);
   const now = new Date(), P0 = periodOf(now), left = Math.round((P0.end - todayMid()) / DAY);
@@ -4051,11 +4082,12 @@ V.month = () => {
   const donut = `  <div data-out="donut"${tabs ? ' class="dn-compact"' : ""}>${OUT.donut()}</div>`;
   const progress = `  <div data-out="billsCard">${OUT.billsCard()}</div>
   <div data-out="saveCard">${OUT.saveCard()}</div>`;
-  const fields = `  <div data-out="incomeHero">${OUT.incomeHero()}</div><div class="grid2">
+  // Once pay is set up, the hero card says it all; currency and the amount come back with Edit.
+  const fields = `  <div data-out="incomeHero">${OUT.incomeHero()}</div>${+S.income > 0 && payOn() && !UI.payEdit ? "" : `<div class="grid2">
     <div class="field"><span class="h-info"><label for="m-cur">Currency</label>${infoBtn("cur", "About changing currency")}</span><select data-bind="cur" id="m-cur">${curOptions(S.cur)}</select></div>
     <div class="field"><span class="h-info"><label for="m-income" data-out="incomeLabel">${OUT.incomeLabel()}</label></span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month">${payOn() && !UI.payEdit ? `<button class="link small" type="button" data-payday-edit style="flex:none">Change</button>` : ""}</span></div>
   </div>
-  ${infoTip("cur", "Changing currency does not convert the numbers. 90 stays 90.")}`;
+  ${infoTip("cur", "Changing currency does not convert the numbers. 90 stays 90.")}`}`;
   const income = `  <div data-out="payBox">${OUT.payBox()}</div>
   <div data-out="extraIncome">${OUT.extraIncome()}</div>`;
   const trips = `  <div data-out="trips">${OUT.trips()}</div>`;
@@ -4862,24 +4894,48 @@ const dataCard = (inBanks) => `<section class="card" data-your-data><p class="mu
 OUT.envTotal = () => { const C = compute(); if (!(C.income > 0)) return "Add your pay to split it into three envelopes.";
   const n = Math.max(0, C.envNeeds), m = Math.max(0, C.envMisc), v = Math.max(0, C.envSave), t = n + m + v || 1;
   return `<span class="env-tot"><b class="tnum">${fmt(C.income)}</b> a month</span><span class="env-bar" aria-label="Expenditures ${fmt(n)}, Misc ${fmt(m)}, Savings ${fmt(v)}"><i style="width:${(n / t * 100).toFixed(1)}%;background:#3e7bc4"></i><i style="width:${(m / t * 100).toFixed(1)}%;background:var(--gold,#c9a24a)"></i><i style="width:${(v / t * 100).toFixed(1)}%;background:var(--green)"></i></span>`; };
-const envSplitCard = () => `
+const envSplitCard = () => UI.envEdit ? envSplitEdit() : (() => { const C = compute(), t = Math.max(1, C.envNeeds + C.envMisc + Math.max(0, C.envSave)), pc = v => C.income > 0 ? Math.round(v / C.income * 100) : 0;
+  const parts = [["Expenditures", C.envNeeds, "#3e7bc4"], ["Misc", C.envMisc, "var(--gold,#c9a24a)"], ["Savings", Math.max(0, C.envSave), "var(--green)"]];
+  return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:center"><h2 class="h-info">How your pay splits${infoBtn("envelopes", "About Envelopes")}</h2><button class="link small" type="button" data-env-edit>Change</button></div>${infoTip("envelopes", "Expenditures and Misc get a share of your income. Savings is what is left. Subscriptions count toward Misc.")}
+    <span class="env-bar" style="height:14px">${parts.map(([, v, c]) => `<i style="width:${(v / t * 100).toFixed(1)}%;background:${c}"></i>`).join("")}</span>
+    <div class="env-sum">${parts.map(([n, v, c]) => `<div><small><i style="background:${c}"></i>${n}</small><b class="tnum">${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>
+    <div data-out="envCheck">${OUT.envCheck()}</div></section>`; })();
+const envSplitEdit = () => `
   <section class="card"><div class="inline" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><h2 class="h-info">How your pay splits${infoBtn("envelopes", "About Envelopes")}</h2><span class="seg env-mode" role="group" aria-label="Set envelopes as"><button type="button" data-envmode="pct" aria-pressed="${!envFlatOn()}">%</button><button type="button" data-envmode="flat" aria-pressed="${envFlatOn()}">${esc(sym())}</button></span></div>${infoTip("envelopes", envFlatOn() ? "Set a fixed amount each month for Expenditures and Misc. Savings is what is left of your income. Subscriptions are on the Subs tab and count toward Miscellaneous." : "Set the share of income for Expenditures and Misc. Savings is what is left, so they always total 100%. Subscriptions are on the Subs tab and count toward Miscellaneous.")}
     <p class="muted small" style="margin:0" data-out="envTotal">${OUT.envTotal()}</p>
     <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr));align-items:end" data-env-grid>
       ${envFlatOn() ? [["needs","Expenditures"],["misc","Misc"]].map(([k,n]) => `<label class="field"><span>${n}</span><span class="money-in"><em>${esc(sym())}</em><input data-envflat="${k}" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${+S.envFlat[k] || 0}"></span></label>`).join("") + `<div class="field"><span>Savings</span><span class="money-in auto" role="status" aria-label="Savings, worked out as what is left"><b class="tnum" data-env-save>${fmtBar(compute().envSave)}${compute().income > 0 && compute().envSave > 0 ? `<small class="muted"> · ${Math.round(compute().envSave / compute().income * 100)}%</small>` : ""}</b></span></div>` : [["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => k === "save" ? `<div class="field"><span>${n}</span><span class="money-in auto" role="status" aria-label="Savings, worked out as what is left"><b class="tnum" data-env-save>${S.env.save}</b><em>%</em></span></div>` : `<label class="field"><span>${n}</span><span class="money-in"><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"><em>%</em></span></label>`).join("")}
-    </div><div data-out="envCheck">${OUT.envCheck()}</div></section>`;
+    </div><div data-out="envCheck">${OUT.envCheck()}</div><button class="btn" type="button" data-env-edit>Done</button></section>`;
 const expCard = () => `
   <section class="card" data-col="b"><h2>What goes out each month</h2>
     <div data-out="expTotal">${OUT.expTotal()}</div>
     <div data-out="expList" style="display:flex;flex-direction:column;gap:10px">${OUT.expList()}</div></section>`;
-const savingsCard = () => `
+const GOAL_PICKS = ["Umrah", "Laptop", "Car", "Home", "Trip", "Wedding"];
+const savingsCard = () => { const C = compute(), cur = esc(sym());
+  const money = (k, label, v) => `<label class="field"><span>${label}</span><span class="money-in"><em>${cur}</em><input data-bind="${k}" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${v}"></span></label>`;
+  const hasGoal = !!S.goalName || +S.goalAmt > 0;
+  let goal;
+  if (!hasGoal && !UI.goalSet) goal = esBlock("data-goal-empty", ES.goal(), "What are you saving for?", "Name it and set an amount. Whatever’s left each month moves it closer, and you’ll see the ring fill up.", `<button class="btn primary" type="button" data-goal-set>${I.plus}Set a goal</button>`);
+  else if (UI.goalSet || UI.goalEdit) goal = `<div class="sg-form"><h3>What are you saving for?</h3>
+    <div class="chips sg-picks" role="group" aria-label="Quick picks">${GOAL_PICKS.map(n => `<button class="chip" type="button" data-goal-pick="${n}" aria-pressed="${S.goalName === n}">${n}</button>`).join("")}</div>
+    <label class="field"><span>Saving for</span><input data-bind="goalName" type="text" enterkeyhint="done" value="${esc(S.goalName || "")}" placeholder="Name your goal"></label>
+    <div class="grid2">${money("goalAmt", "Goal amount", S.goalAmt || "")}${money("goalSaved", "Already saved", +S.goalSaved || 0)}</div>
+    <button class="btn primary" type="button" data-goal-done>Save goal</button></div>`;
+  else { const saved = +S.goalSaved || 0, amt = +S.goalAmt || 0, gp = amt > 0 ? Math.min(100, saved / amt * 100) : 0, gap = goalGap(), n = C.toGoal > 0 ? Math.ceil(gap / C.toGoal) : 0;
+    goal = `<div class="sg-hero"><div class="sg-top"><span class="sg-chip">Saving for</span><button class="link small" type="button" data-goal-edit>Edit</button></div>
+      <div class="sg-main"><div class="sv-ring sv-gold" style="--p:${gp.toFixed(1)}" aria-hidden="true"><i>${Math.round(gp)}%</i></div><div style="min-width:0"><b class="sg-name">${esc(S.goalName || "Your goal")}</b><span class="tnum">${fmt(saved)} of ${fmt(amt)}</span></div></div>
+      <div class="sg-plan"><span>${amt > 0 && gap <= 0 ? "Reached" : `Planned for ${esc(C.planMonth)}`}</span><b class="tnum">${amt > 0 && gap <= 0 ? "Well done" : fmt(C.toGoal)}</b></div>
+      <p>${amt > 0 && gap <= 0 ? "You reached it. Set a new one any time." : C.toGoal > 0 ? `About ${n} month${n > 1 ? "s" : ""} to go at this pace.` : "Nothing is planned for it this month."}</p></div>`; }
+  const ep = C.efTarget > 0 ? Math.min(100, S.efSaved / C.efTarget * 100) : 0;
+  const ef = UI.efEdit ? `<div class="sg-ef"><h3>Emergency fund</h3><div class="grid2">${money("efSaved", "Saved so far", S.efSaved)}<label class="field"><span>Months of bills</span><input data-bind="efMonths" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.efMonths}"></label></div><button class="btn" type="button" data-ef-done>Done</button></div>`
+    : `<div class="sg-ef"><div class="sg-top"><h3>Emergency fund</h3><button class="link small" type="button" data-ef-edit>Edit</button></div>
+      <div class="sg-main"><div class="sv-ring" style="--p:${ep.toFixed(1)}" aria-hidden="true"><i>${Math.round(ep)}%</i></div><div style="flex:1;min-width:0"><div class="inline" style="justify-content:space-between"><b class="tnum">${fmt(S.efSaved)}</b><span class="muted small tnum">of ${fmt(C.efTarget)}</span></div><div class="meter"><i style="width:${ep.toFixed(1)}%"></i></div>
+      <p class="muted small" style="margin:6px 0 0">${S.efMonths} month${+S.efMonths === 1 ? "" : "s"} of bills${ep >= 100 ? " · full" : C.efMonthsLeft ? ` · full in about ${C.efMonthsLeft} month${C.efMonthsLeft > 1 ? "s" : ""}` : ""}</p></div></div></div>`;
+  return `
   <section class="card save-goals"><h2>Savings goals</h2>
-    <div class="grid2"><label class="field"><span>Fund so far</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="efSaved" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.efSaved}"></span></label>
-    <label class="field"><span>Target, months</span><input data-bind="efMonths" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.efMonths}"></label></div>
-    ${!S.goalName && !(+S.goalAmt > 0) && !UI.goalSet ? esBlock("data-goal-empty", ES.goal(), "What are you saving for?", "Name it and set an amount. Whatever’s left each month moves it closer, and you’ll see the ring fill up.", `<button class="btn primary" type="button" data-goal-set>${I.plus}Set a goal</button>`) : `<div class="grid2"><label class="field"><span>Saving for</span><input data-bind="goalName" type="text" enterkeyhint="done" value="${esc(S.goalName)}" placeholder="Hawaii trip"></label>
-    <label class="field"><span>Goal amount</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="goalAmt" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.goalAmt}"></span></label></div>`}
-    <label class="field"><span>Leftover money goes to</span><select data-bind="priority"><option value="ef" ${S.priority==="ef"?"selected":""}>Emergency fund first</option><option value="goal" ${S.priority==="goal"?"selected":""}>My goal first</option><option value="split" ${S.priority==="split"?"selected":""}>Half and half</option></select></label>
-    <div data-out="saveSplit">${OUT.saveSplit()}</div></section>`;
+    ${goal}${ef}
+    <div class="sg-prio"><h3>Leftover money goes to</h3><div class="seg sg-seg" role="group" aria-label="Leftover money goes to">${[["ef", "Emergency fund"], ["goal", "My goal"], ["split", "Half and half"]].map(([k, n]) => `<button type="button" data-prio="${k}" aria-pressed="${S.priority === k}">${n}</button>`).join("")}</div></div>
+    <div data-out="saveSplit">${OUT.saveSplit()}</div></section>`; };
 
 // Empty screens show a faded preview of what they become (marked Example, never the person's numbers), a plain headline,
 // one sentence and one clear button, the same way Banks shows its card fan.
@@ -5051,7 +5107,7 @@ function envFix(edited){
 }
 OUT.envCheck = () => envFlatOn() ? (C => C.envSave > 0 ? "" : `<p class="err small">Expenditures and Misc add up to ${fmt(r2((+S.envFlat.needs || 0) + (+S.envFlat.misc || 0)))}, ${C.envSave < 0 ? `${fmt(-C.envSave)} more than` : "all of"} what comes in. Lower one to leave some for Savings.</p>`)(compute()) : S.env.save > 0 ? "" : `<p class="err small">Nothing is left for Savings. Lower Expenditures or Misc to set some aside.</p>`;
 OUT.expTotal = () => { const C = compute(); return `<p class="small tnum">Expenditures ${fmt(r2(C.needs - C.loans))} · Misc ${fmt(C.misc)} (with subscriptions and swaps)${C.loans > 0 ? ` · Loans & debts ${fmt(C.loans)}` : ""}</p>`; };
-OUT.saveSplit = () => { const C = compute(); return C.savings > 0 ? `<p class="small tnum">This month: ${fmt(C.toEF)} to emergency fund, ${fmt(C.toGoal)} to ${esc(S.goalName || "your goal")}.${C.efTarget ? ` Fund target ${fmt(C.efTarget)}.` : ""}</p>` : `<p class="err">Nothing is left to save this month.</p>`; };
+OUT.saveSplit = () => { const C = compute(); const free = r2(Math.max(0, C.savings) - C.toEF - C.toGoal); return C.savings > 0 ? `<p class="small tnum">This month: ${fmt(C.toEF)} to emergency fund, ${fmt(C.toGoal)} to ${esc(S.goalName || "your goal")}${free > 0 ? `, ${fmt(free)} left over` : ""}.${C.efTarget ? ` Fund target ${fmt(C.efTarget)}.` : ""}</p>` : `<p class="err">Nothing is left to save this month.</p>`; };
 
 // ---- Split ----
 let splitDraft = null, splitErr = "";
@@ -5135,8 +5191,8 @@ V.split = () => {
       <div style="min-width:0"><div class="name" style="font-size:1.1rem">${esc(x.title)}</div><div class="muted small">${esc(x.tag)} · ${METHOD_LABEL[x.method] || ""}${x.paidBy !== c.me ? ` · ${esc(person(x.paidBy, c).name)} paid` : ""}${by}</div>
       ${(() => { const ids = Object.keys(shares(x)).filter(id => id !== c.me); return ids.length ? `<div class="act-ppl" aria-hidden="true">${ids.slice(0, 5).map(id => { const n = person(id, c).name || "?"; return `<span class="avatar" style="--h:${avatarHue(n)}">${esc(initials(n))}</span>`; }).join("")}${ids.length > 5 ? `<em>+${ids.length - 5}</em>` : ""}</div>` : ""; })()}
       <p class="small act-lines">${lines.length ? lines.map(l => `<span class="act-chip ${l.good ? "good" : "bad"}">${esc(l.t)}</span>`).join("") : `<span class="act-chip">Doesn’t involve you</span>`}</p></div>
-      <div class="name tnum act-amt">${fmt(x.amount)}</div></div>
-      <div class="inline" style="justify-content:flex-end"><button class="btn small" type="button" data-edit-split aria-label="Edit ${esc(x.title)}">Edit</button><button class="btn small danger" type="button" data-del-split aria-label="Delete ${esc(x.title)}">Delete</button></div></div>${c.kind === "local" && UI.tell && UI.tell.at === x.id ? tellCard() : ""}`; }).join("") : `<p class="empty">No splits${S.filter !== "All" ? ` tagged ${esc(S.filter)}` : ""} yet.</p>`}
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="name tnum act-amt">${fmt(x.amount)}</div><button class="act-more" type="button" data-act-more aria-expanded="${UI.actMenu === x.id}" aria-label="More for ${esc(x.title)}">···</button></div></div>
+      ${UI.actMenu === x.id ? `<div class="act-menu"><button class="btn small" type="button" data-edit-split aria-label="Edit ${esc(x.title)}">Edit</button><button class="btn small danger" type="button" data-del-split aria-label="Delete ${esc(x.title)}">Delete</button></div>` : ""}</div>${c.kind === "local" && UI.tell && UI.tell.at === x.id ? tellCard() : ""}`; }).join("") : `<p class="empty">No splits${S.filter !== "All" ? ` tagged ${esc(S.filter)}` : ""} yet.</p>`}
   ${historySection(c)}
   ${c.kind === "shared" ? `<section style="display:flex;flex-direction:column;gap:12px"><h2 class="h-info">Your circle${infoBtn("circle", "About your circle")}</h2>
     ${infoTip("circle", "Everyone who has opened this page and joined. To invite more people, use the Share menu.")}
@@ -5767,17 +5823,17 @@ function weekItems(){ const t0 = todayMid(), out = [], add = (d, name, sub, amt,
   billsSoon(6).forEach(({e, d}) => add(d, e.name, "Bill due", -(+e.amount || 0), "bill"));
   if (payOn()) paydaysBetween(t0, dayPlus(t0, 6)).forEach(d => add(d, "Payday", "Money in", +S.pay.amount || 0, "in"));
   (S.extras || []).forEach(x => { const d = nextIncome(x); if (d && daysUntil(d) >= 0 && daysUntil(d) <= 6 && extraFixed(x)) add(d, x.name, "Money in", +x.amount || 0, "in"); });
-  (S.trips || []).forEach(t => { if (tripState(t) === "active") for (let i = 0; i < 7; i++){ const d = dayPlus(t0, i); if (isoOf(d) <= t.end) add(d, t.name, isEvent(t) ? "Event day" : "Trip day", 0, "trip"); }
-    else if (tripState(t) === "upcoming" && daysUntil(isoDate(t.start)) <= 6) add(isoDate(t.start), t.name, isEvent(t) ? "Event starts" : "Trip starts", 0, "trip"); });
+  (S.trips || []).forEach(t => { if (tripState(t) === "active") for (let i = 0; i < 7; i++){ const d = dayPlus(t0, i); if (isoOf(d) <= t.end) add(d, t.name, isEvent(t) ? "Event day" : "Trip day", 0, isEvent(t) ? "event" : "trip"); }
+    else if (tripState(t) === "upcoming" && daysUntil(isoDate(t.start)) <= 6) add(isoDate(t.start), t.name, isEvent(t) ? "Event starts" : "Trip starts", 0, isEvent(t) ? "event" : "trip"); });
   return out; }
 OUT.week = () => { const t0 = todayMid(), it = weekItems(), sel = Math.min(6, Math.max(0, +UI.weekDay || 0)), days = [...Array(7)].map((_, i) => dayPlus(t0, i));
   const out = r2(it.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0)), inn = r2(it.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0)), sd = isoOf(days[sel]), list = it.filter(x => x.d === sd);
-  const tile = x => x.kind === "trip" ? `<span class="btile" style="--z:24px;background:#e0f2fe;color:#0369a1">✈️</span>` : brandTile(x.name, 24);
+  const tile = x => x.kind === "trip" ? `<span class="btile" style="--z:24px;background:#e0f2fe;color:#0369a1">✈️</span>` : x.kind === "event" ? `<span class="btile" style="--z:24px;background:#fef3c7;color:#92400e">🎉</span>` : brandTile(x.name, 24);
   return `<section class="card wk-card"><div class="wk-head"><h2>This week</h2><span class="wk-sum">${inn ? `<span class="wk-in"><b class="tnum">+${fmt(inn)}</b> in</span>` : ""}${out ? `<span class="wk-out"><b class="tnum">−${fmt(out)}</b> out</span>` : ""}${!inn && !out ? `<span class="muted small">Nothing due</span>` : ""}</span></div>
     <div class="wk-days">${days.map((d, i) => { const on = it.filter(x => x.d === isoOf(d)), o = r2(on.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0)), n = r2(on.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0));
       const k = n && o ? "both" : n ? "in" : o ? "out" : on.length ? "trip" : "";
       return `<button type="button" class="wk-day ${k ? "d-" + k : ""}${i === 0 ? " today" : ""}" data-week-day="${i}" aria-label="${d.toLocaleString("en-US", {weekday: "long", month: "short", day: "numeric"})}${n ? `, ${fmt(n)} coming in` : ""}${o ? `, ${fmt(o)} going out` : ""}${!on.length ? ", nothing due" : ""}">
-      <span>${d.toLocaleString("en-US", {weekday: "short"})}</span><b>${d.getDate()}</b>${n ? `<em class="wk-p">+${fmtKs(n)}</em>` : ""}${o ? `<em class="wk-m">−${fmtKs(o)}</em>` : ""}${k === "trip" ? `<em>✈️</em>` : ""}</button>`; }).join("")}</div></section>`; };
+      <span>${d.toLocaleString("en-US", {weekday: "short"})}</span><b>${d.getDate()}</b>${n ? `<em class="wk-p">+${fmtKs(n)}</em>` : ""}${o ? `<em class="wk-m">−${fmtKs(o)}</em>` : ""}${k === "trip" ? `<em>${on.some(x => x.kind === "trip") ? "✈️" : "🎉"}</em>` : ""}</button>`; }).join("")}</div></section>`; };
 // Day cells are tiny: a currency written as letters (PKR, CHF) is left off there; the total above names it.
 const fmtKs = v => { const t = fmtK(v); return sym().trim().length > 2 ? t.replace(sym(), "") : t; };
 const fmtK = v => v >= 1000 ? sym() + (v / 1000).toFixed(v >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : sym() + Math.round(v);
@@ -6272,6 +6328,7 @@ function siteOpen(){
   const t = document.getElementById("site-tpl"); if (!t || document.getElementById("kws")) return;
   document.body.appendChild(t.content.cloneNode(true)); const root = document.getElementById("kws"); document.documentElement.style.overflow = "hidden";
   const close = then => { root.remove(); document.documentElement.style.overflow = ""; if (then) then(); };
+  root.addEventListener("click", e => { const c = e.target.closest("[data-kws-cyc]"); if (c){ const v = c.dataset.kwsCyc; root.querySelector(".kws-price").dataset.cyc = v; root.querySelectorAll("[data-kws-cyc]").forEach(x => x.setAttribute("aria-pressed", String(x === c))); return; } });
   root.addEventListener("click", e => { const b = e.target.closest("[data-kws-start],[data-kws-signin],[data-kws-top],a[href^='#kws']"); if (!b) return;
     if (b.matches("a[href^='#kws']")){ e.preventDefault(); root.querySelector(b.getAttribute("href")).scrollIntoView({behavior: "smooth"}); return; }
     if (b.hasAttribute("data-kws-top")){ e.preventDefault(); root.scrollTo({top: 0, behavior: "smooth"}); return; }
@@ -6672,7 +6729,7 @@ OUT.extraIncome = () => {
     if (UI.incEdit === x.id) return `<div class="inc-row editing" data-inc="${x.id}">${incomeForm(x)}</div>`;
     const got = gotIn(x, k), exp = extraMonthly(x), pct = exp > 0 ? Math.min(100, got / exp * 100) : (got ? 100 : 0), av = extraAverage(x);
     const pays = (x.got || []).filter(p => inMonth(p.date, k)).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-    return `<div class="inc-row" data-inc="${x.id}"><div class="row-top"><div><div class="name">${esc(x.name)}</div><div class="muted small">${extraFixed(x) ? `${fmt(extraMonthly(x))}/mo` : "No fixed amount"} · ${esc(whenText(x))}</div></div>
+    return `<div class="inc-row" data-inc="${x.id}"><div class="row-top">${brandTile(x.name, 40)}<div style="min-width:0"><div class="name">${esc(x.name)}</div><div class="muted small">${extraFixed(x) ? `${fmt(extraMonthly(x))}/mo` : "No fixed amount"} · ${esc(whenText(x))}</div></div>
         <div style="text-align:right"><div class="name tnum ${got >= exp && got > 0 ? "good" : ""}">${fmt(got)}</div><div class="muted small">${monthStartDay() !== 1 ? `received since ${dayMonth(periodOf(new Date()).start)}` : `received in ${mName}`}</div></div></div>
       <div class="meter"><i style="width:${pct}%"></i></div>
       ${UI.incLog === x.id ? `<form class="inc-log" data-form="incomeLog"><span class="money-in" style="flex:1 1 110px"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="Amount" value="${x.when && x.when !== "any" && extraFixed(x) ? esc(x.amount) : ""}" aria-label="Amount received"></span><input name="date" type="date" value="${isoDaysAgo(0)}" max="${isoDaysAgo(0)}" aria-label="Date received" style="flex:1 1 130px"><button class="btn small primary" type="submit">Save</button><button class="link plain small" type="button" data-inc-log-cancel>Cancel</button></form>`
@@ -7047,7 +7104,7 @@ async function logSpend(text, force){  // returns what to say back, or null when
   const lines = parseSpend(String(text).replace(SPEND_NOISE, " "), trip && trip.cur); if (!lines.length) return null;
   const bad = await convertLines(lines); if (bad) return FX_FAIL(bad);
   const conv = l => l.ocur ? `${fmtIn(l.orig, l.ocur)} (${fmt(l.amount)} at today’s rate)` : fmt(l.amount), each = lines.map(l => `${l.name}, ${conv(l)}`).join("; ");
-  if (trip){ tripAddSpend(trip, lines); save(); ASK.go = {tab: "month", sel: `[data-trip="${trip.id}"]`, pre: () => { UI.tripOpen = trip.id; }}; return tripSpendReply(trip, lines); }
+  if (trip){ tripAddSpend(trip, lines); save(); ASK.go = {tab: "month", sel: `[data-trip="${trip.id}"]`, pre: () => {}}; return tripSpendReply(trip, lines); }
   if (kind === "sub"){ const sid = uid(); ASK.go = {tab: "subs", sel: `[data-sub="${sid}"]`}; lines.forEach((l, i) => S.subs.push({id: i ? uid() : sid, name: l.name, price: l.amount, cycle: yearly ? "yr" : "mo", last: isoDaysAgo(0), group: "", env: "misc", keep: "auto"})); S.subs.slice(-lines.length).forEach(x => startCycle(x)); save();
     return `Added to Subs: ${each}${yearly ? " a year" : " a month"}.`; }
   if (kind === "bill"){ const bid = uid(); ASK.go = {tab: "plan", sel: `[data-exp="${bid}"]`}; lines.forEach((l, i) => S.expenses.push({id: i ? uid() : bid, name: l.name, amount: l.amount, env: "needs"})); save();
@@ -9023,7 +9080,8 @@ view.addEventListener("input", e => {
   const lineBox = t.closest("[data-add-line]");
   if (lineBox){ const d = LINE_DRAFT[lineBox.dataset.addLine] = LINE_DRAFT[lineBox.dataset.addLine] || {}; if (t.hasAttribute("data-new-name")) d.n = t.value; if (t.hasAttribute("data-new-amt")) d.a = t.value; return; }
   if (t.dataset.bind){
-    const k = t.dataset.bind; S[k] = t.hasAttribute("data-num") ? numv(t.value) : t.value;
+    const k = t.dataset.bind; if (k === "goalName" && S.goalName === "New laptop" && +S.goalSaved === 300 && !(S.deposits || []).some(d => +d.goal)) S.goalSaved = 0;   // the example's saved amount never carries over to a new goal
+    S[k] = t.hasAttribute("data-num") ? numv(t.value) : t.value;
     if (k === "cur" || k === "country"){ if (k === "country" && !S.country) delete S.country; save(); render(true); return; }
     if (k === "income" && payOn()) S.pay.amount = r2(S.income / payBase());  // the monthly number and the paycheck stay in step
     if (k === "efMonths") S.efMonths = Math.max(0, Math.round(S.efMonths));
@@ -9184,6 +9242,14 @@ view.addEventListener("click", async e => {
     save(); refreshOuts(); const sh = $("asksheet"); if (sh) askRedraw(sh); toast(said, u); return; }
   if (b.hasAttribute("data-qh-all")){ const env = UI.quickEnv === "exp" ? "needs" : "misc"; UI.askOpen = false; UI.mseg = "budget"; UI.openEnv = env; const sh = $("asksheet"); if (sh) sh.hidden = true; goTo("month", `[data-env-open=${env}]`); return; }
   if (b.dataset.quickEnv){ UI.quickEnv = b.dataset.quickEnv; UI.quick = null; const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
+  if (b.hasAttribute("data-goal-edit")){ UI.goalEdit = true; render(true); return; }
+  if (b.hasAttribute("data-goal-done")){ UI.goalEdit = false; UI.goalSet = false; save(); render(true); return; }
+  if (b.dataset.goalPick){ if (S.goalName === "New laptop" && +S.goalSaved === 300 && !(S.deposits || []).some(d => +d.goal)) S.goalSaved = 0; S.goalName = b.dataset.goalPick; save(); render(true); return; }
+  if (b.hasAttribute("data-ef-edit")){ UI.efEdit = true; render(true); return; }
+  if (b.hasAttribute("data-ef-done")){ UI.efEdit = false; save(); render(true); return; }
+  if (b.dataset.prio){ S.priority = b.dataset.prio; save(); render(true); return; }
+  if (b.hasAttribute("data-env-edit")){ UI.envEdit = !UI.envEdit; render(true); return; }
+  if (b.hasAttribute("data-act-more")){ const id = b.closest("[data-split]").dataset.split; UI.actMenu = UI.actMenu === id ? null : id; render(true); return; }
   if (b.hasAttribute("data-goal-set")){ UI.goalSet = true; render(true); const i = view.querySelector('[data-bind="goalName"]'); if (i) i.focus(); return; }
   if (b.dataset.subPick != null){ const d = view.querySelector('form[data-form="addSub"]'); const det = d && d.closest("details"); if (det){ det.open = true; const n = d.querySelector("[name=name]"); if (b.dataset.subPick) n.value = b.dataset.subPick; det.scrollIntoView({behavior: "smooth", block: "start"}); (b.dataset.subPick ? d.querySelector("[name=price]") : n).focus({preventScroll: true}); } return; }
   if (b.hasAttribute("data-drop-flag")){ UI.subKind = "flag"; render(true); const l = view.querySelector('[data-out="subsList"]'); if (l) l.scrollIntoView({behavior: "smooth", block: "start"}); return; }
@@ -9951,7 +10017,7 @@ view.addEventListener("submit", async e => {
     const tidy = x => { if (!x.place) delete x.place; if (!x.geo) delete x.geo; return x; };
     const tid = old ? old.id : uid();
     if (old) tidy(Object.assign(old, {name, start, end, budget, cur}, more)); else tripList().push(tidy({id: tid, name, start, end, budget, cur, items: [], settled: null, ...more}));
-    UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; UI.tripStep = 0; UI.tripOpen = tid; save(); if (isField(document.activeElement)) document.activeElement.blur(); if (UI.biz || !goTo("month", `[data-trip="${tid}"]`)) render(true);   // land on the trip just made, never somewhere else
+    UI.tripAdd = false; UI.tripEdit = null; UI.tripDraft = null; UI.tripStep = 0; save(); if (isField(document.activeElement)) document.activeElement.blur(); if (UI.biz || !goTo("month", `[data-trip="${tid}"]`)) render(true);   // land on the trip just made, never somewhere else
     (old ? savedToast : toast)(old ? `Updated ${name}.` : `${name} is set. Spending you add on ${start === end ? "that day" : "those days"} goes to the ${ev ? "event" : "trip"}.`); return; }
   if (kind === "ask" && bizOwl()){ const q = tidySaid($("ask-in").value); if (!q) return; $("toast").hidden = true;
     const asking = /\?|^\s*(how|what|when|who|which|is|are|do|does|did|should|can)\b/i.test(q);
@@ -10265,9 +10331,10 @@ initShared();
 
 <section class="kws-sec" id="kws-plus"><div class="kws-in">
   <span class="kws-eye">Simple pricing</span><h2>Free for your month. Plus when you want more.</h2>
-  <div class="kws-price">
+  <div class="kws-cyc" role="group" aria-label="Billing"><button type="button" data-kws-cyc="mo" aria-pressed="false">Monthly</button><button type="button" data-kws-cyc="yr" aria-pressed="true">Yearly <span>Save 34%</span></button></div>
+  <div class="kws-price" data-cyc="yr">
     <div class="kws-card"><h3>Free</h3><p class="kws-amt">$0</p><ul><li>Month-end number and plan</li><li>Bills and subscriptions</li><li>Trips, splits and loans</li><li>Ask the owl</li></ul><button type="button" class="kws-btn kws-ghost" data-kws-start>Start free</button></div>
-    <div class="kws-card kws-pro"><h3>KeepWise Plus</h3><p class="kws-amt">$79 a year</p><p class="kws-or">or $9.99 a month · first week free · cancel anytime</p><ul><li>Connect up to 2 banks</li><li>Sync on every device, end-to-end encrypted</li><li>Live balances with store logos</li><li>Business space, invoices and reports</li><li>Your own page at yourname.mykeepwise.com</li><li>Split emails and live sales</li></ul><button type="button" class="kws-btn" data-kws-start>Try Plus free for a week</button></div><div class="kws-card kws-ultra"><span class="kws-ubadge">For more banks</span><h3>Plus Ultra</h3><p class="kws-amt">$159 a year</p><p class="kws-or2">or $19.99 a month · first week free · cancel anytime</p><ul><li>Everything in Plus</li><li>Connect up to 5 banks</li><li>Personal and business banks side by side</li></ul><button type="button" class="kws-btn kws-btn-dark" data-kws-start>Try Ultra free for a week</button></div>
+    <div class="kws-card kws-pro"><h3>KeepWise Plus</h3><p class="kws-amt"><span class="y">$79 a year</span><span class="m">$9.99 a month</span></p><p class="kws-or"><span class="y">That’s $6.58 a month · first week free · cancel anytime</span><span class="m">Billed monthly · first week free · cancel anytime</span></p><ul><li>Connect up to 2 banks</li><li>Sync on every device, end-to-end encrypted</li><li>Live balances with store logos</li><li>Business space, invoices and reports</li><li>Your own page at yourname.mykeepwise.com</li><li>Split emails and live sales</li></ul><button type="button" class="kws-btn" data-kws-start>Try Plus free for a week</button></div><div class="kws-card kws-ultra"><span class="kws-ubadge">For more banks</span><h3>Plus Ultra</h3><p class="kws-amt"><span class="y">$159 a year</span><span class="m">$19.99 a month</span></p><p class="kws-or2"><span class="y">That’s $13.25 a month · first week free · cancel anytime</span><span class="m">Billed monthly · first week free · cancel anytime</span></p><ul><li>Everything in Plus</li><li>Connect up to 5 banks</li><li>Personal and business banks side by side</li></ul><button type="button" class="kws-btn kws-btn-dark" data-kws-start>Try Ultra free for a week</button></div>
   </div>
 </div></section>
 
@@ -10448,4 +10515,9 @@ initShared();
 .kws-list li:not(.on) i{display:none}
 .kws-list{gap:10px!important}
 @media (min-width:881px){.kws-list li{margin-bottom:14vh}.kws-list li:last-child{margin-bottom:16vh}}
+.kws-cyc{display:flex;width:max-content;max-width:100%;margin:18px auto 24px;padding:4px;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:var(--lift)}
+.kws-cyc button{font:600 .95rem var(--body);border:0;background:none;color:var(--muted);padding:9px 18px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.kws-cyc button[aria-pressed="true"]{background:#0f5a43;color:#f3faf6}
+.kws-cyc span{font-size:.72rem;font-weight:800;background:#e0bb5e;color:#1a1205;padding:2px 8px;border-radius:999px}
+.kws-price[data-cyc="yr"] .m,.kws-price[data-cyc="mo"] .y{display:none}
 </style>

@@ -87,9 +87,10 @@
 
 <section class="kws-sec" id="kws-plus"><div class="kws-in">
   <span class="kws-eye">Simple pricing</span><h2>Free for your month. Plus when you want more.</h2>
-  <div class="kws-price">
+  <div class="kws-cyc" role="group" aria-label="Billing"><button type="button" data-kws-cyc="mo" aria-pressed="false">Monthly</button><button type="button" data-kws-cyc="yr" aria-pressed="true">Yearly <span>Save 34%</span></button></div>
+  <div class="kws-price" data-cyc="yr">
     <div class="kws-card"><h3>Free</h3><p class="kws-amt">$0</p><ul><li>Month-end number and plan</li><li>Bills and subscriptions</li><li>Trips, splits and loans</li><li>Ask the owl</li></ul><button type="button" class="kws-btn kws-ghost" data-kws-start>Start free</button></div>
-    <div class="kws-card kws-pro"><h3>KeepWise Plus</h3><p class="kws-amt">$79 a year</p><p class="kws-or">or $9.99 a month · first week free · cancel anytime</p><ul><li>Connect up to 2 banks</li><li>Sync on every device, end-to-end encrypted</li><li>Live balances with store logos</li><li>Business space, invoices and reports</li><li>Your own page at yourname.mykeepwise.com</li><li>Split emails and live sales</li></ul><button type="button" class="kws-btn" data-kws-start>Try Plus free for a week</button></div><div class="kws-card kws-ultra"><span class="kws-ubadge">For more banks</span><h3>Plus Ultra</h3><p class="kws-amt">$159 a year</p><p class="kws-or2">or $19.99 a month · first week free · cancel anytime</p><ul><li>Everything in Plus</li><li>Connect up to 5 banks</li><li>Personal and business banks side by side</li></ul><button type="button" class="kws-btn kws-btn-dark" data-kws-start>Try Ultra free for a week</button></div>
+    <div class="kws-card kws-pro"><h3>KeepWise Plus</h3><p class="kws-amt"><span class="y">$79 a year</span><span class="m">$9.99 a month</span></p><p class="kws-or"><span class="y">That’s $6.58 a month · first week free · cancel anytime</span><span class="m">Billed monthly · first week free · cancel anytime</span></p><ul><li>Connect up to 2 banks</li><li>Sync on every device, end-to-end encrypted</li><li>Live balances with store logos</li><li>Business space, invoices and reports</li><li>Your own page at yourname.mykeepwise.com</li><li>Split emails and live sales</li></ul><button type="button" class="kws-btn" data-kws-start>Try Plus free for a week</button></div><div class="kws-card kws-ultra"><span class="kws-ubadge">For more banks</span><h3>Plus Ultra</h3><p class="kws-amt"><span class="y">$159 a year</span><span class="m">$19.99 a month</span></p><p class="kws-or2"><span class="y">That’s $13.25 a month · first week free · cancel anytime</span><span class="m">Billed monthly · first week free · cancel anytime</span></p><ul><li>Everything in Plus</li><li>Connect up to 5 banks</li><li>Personal and business banks side by side</li></ul><button type="button" class="kws-btn kws-btn-dark" data-kws-start>Try Ultra free for a week</button></div>
   </div>
 </div></section>
 
@@ -270,4 +271,9 @@
 .kws-list li:not(.on) i{display:none}
 .kws-list{gap:10px!important}
 @media (min-width:881px){.kws-list li{margin-bottom:14vh}.kws-list li:last-child{margin-bottom:16vh}}
+.kws-cyc{display:flex;width:max-content;max-width:100%;margin:18px auto 24px;padding:4px;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:var(--lift)}
+.kws-cyc button{font:600 .95rem var(--body);border:0;background:none;color:var(--muted);padding:9px 18px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.kws-cyc button[aria-pressed="true"]{background:#0f5a43;color:#f3faf6}
+.kws-cyc span{font-size:.72rem;font-weight:800;background:#e0bb5e;color:#1a1205;padding:2px 8px;border-radius:999px}
+.kws-price[data-cyc="yr"] .m,.kws-price[data-cyc="mo"] .y{display:none}
 </style>
