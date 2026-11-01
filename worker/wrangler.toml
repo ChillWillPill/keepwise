@@ -21,3 +21,16 @@ ULTRA_PRICE_IDS = ""
 #   PADDLE_API_KEY  = pdl_sdbx_apikey_xxxxxxxxxxxxxxxx   (Paddle → Developer tools → Authentication → API keys)
 #   RESEND_API_KEY  = re_xxxxxxxxxxxxxxxx                (already used for split and invoice emails)
 #   PLAID_CLIENT_ID / PLAID_SECRET                        (already used for bank connections)
+
+# Once a day, close bank links for anyone whose Plus has ended (backup for the Paddle webhook).
+[triggers]
+crons = ["23 7 * * *"]
+
+# Bank links to close when Plus ends. Create a KV namespace named keepwise-plaid in Cloudflare (Storage & Databases → KV),
+# paste its id below and remove the # from the three lines. Until then everything works; links just close when the app opens.
+# [[kv_namespaces]]
+# binding = "PLAID_ITEMS"
+# id = "PASTE_KV_NAMESPACE_ID_HERE"
+#
+# Also add the secret PADDLE_WEBHOOK_SECRET (Paddle → Developer tools → Notifications → your destination's secret key),
+# with the destination URL https://keepwise-api.keepwise.workers.dev/paddle/webhook and the subscription.* events.

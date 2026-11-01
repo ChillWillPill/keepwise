@@ -80,7 +80,10 @@ async function plaid(origin, env, path, b){
   if (path === "/plaid/exchange"){
     const pt = String(b.public_token || ""); if (!/^public-[a-z]+-[0-9a-f-]{20,80}$/.test(pt)) return fail(origin, 400, "Bad request.");
     const {ok, data} = await plaidCall(env, "/item/public_token/exchange", {public_token: pt});
-    return ok ? reply(origin, 200, {item: await seal(env, data.access_token)}) : fail(origin, 502, plaidErr(data));
+    if (!ok) return fail(origin, 502, plaidErr(data));
+    const item = await seal(env, data.access_token);
+    try { const u = b.idToken ? await firebaseUser(b.idToken) : null; if (u && u.email && u.email_verified) await linkRemember(env, String(u.email).toLowerCase(), item); } catch(e){}
+    return reply(origin, 200, {item});
   }
   let access; try { access = await unseal(env, b.item); } catch(e){ return fail(origin, 401, "This bank link isn't valid anymore. Disconnect it and connect again."); }
   if (path === "/plaid/sync"){
@@ -95,7 +98,7 @@ async function plaid(origin, env, path, b){
     const {ok, data} = await plaidCall(env, "/item/get", {access_token: access});
     return reply(origin, 200, {name: ok && data.item && data.item.institution_name || ""});
   }
-  if (path === "/plaid/remove"){ const {ok, data} = await plaidCall(env, "/item/remove", {access_token: access}); return ok ? reply(origin, 200, {removed: true}) : fail(origin, 502, plaidErr(data)); }
+  if (path === "/plaid/remove"){ const {ok, data} = await plaidCall(env, "/item/remove", {access_token: access}); await linkForget(env, b.item); return ok || data.error_code === "ITEM_NOT_FOUND" ? reply(origin, 200, {removed: true}) : fail(origin, 502, plaidErr(data)); }
   return fail(origin, 404, "Not found.");
 }
 
@@ -250,6 +253,7 @@ async function square(origin, b){
 }
 
 export default {
+  async scheduled(event, env, ctx){ ctx.waitUntil(linkSweep(env)); },
   async fetch(req, env = {}){
     const origin = req.headers.get("Origin"), url = new URL(req.url);
     const sub = url.hostname.match(/^([a-z0-9][a-z0-9-]{2,29})\.mykeepwise\.com$/);
@@ -257,6 +261,7 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, {status: 204, headers: cors(origin)});
     if (req.method === "GET" && url.pathname === "/") return new Response("KeepWise API", {headers: {"Content-Type": "text/plain", ...cors(origin)}});
     if (req.method !== "POST") return fail(origin, 405, "Not allowed.");
+    if (url.pathname === "/paddle/webhook") return await paddleWebhook(req, env);
     if (origin && !ORIGINS.some(r => r.test(origin))) return fail(origin, 403, "Not allowed.");
     let b; try { b = await readJson(req, url.pathname === "/invoice/email" ? 900000 : MAX_BODY); } catch(e){ return fail(origin, 400, "Bad request."); }
     try {
@@ -339,3 +344,34 @@ async function plusActivate(origin, env, b){
   const res = await fetch(`${base}/subscriptions/${r.subId}/activate`, {method: "POST", headers: {Authorization: "Bearer " + env.PADDLE_API_KEY}});
   return res.ok ? reply(origin, 200, {ok: true}) : fail(origin, 502, "Paddle didn’t start the plan. Try again in a minute.");
 }
+
+// ---- Closing bank links when Plus ends, even if the app is never opened again ----
+// KV (binding PLAID_ITEMS) keeps, per account email, only the sealed Plaid keys for that person's banks: no balances, no
+// transactions, nothing readable without the server's own secret. When Paddle reports a cancellation (webhook), or the daily
+// check finds Plus no longer active, each link is closed at Plaid and the entry is deleted.
+const LK = email => "u:" + email;
+async function linkRemember(env, email, item){ if (!env.PLAID_ITEMS) return; const k = LK(email), cur = JSON.parse(await env.PLAID_ITEMS.get(k) || "[]"); if (!cur.includes(item)) cur.push(item); await env.PLAID_ITEMS.put(k, JSON.stringify(cur.slice(-10))); await env.PLAID_ITEMS.put("i:" + (await itemKey(item)), email); }
+async function linkForget(env, item){ if (!env.PLAID_ITEMS || !item) return; try { const ik = "i:" + (await itemKey(item)), email = await env.PLAID_ITEMS.get(ik); if (email){ const k = LK(email), cur = JSON.parse(await env.PLAID_ITEMS.get(k) || "[]").filter(x => x !== item); cur.length ? await env.PLAID_ITEMS.put(k, JSON.stringify(cur)) : await env.PLAID_ITEMS.delete(k); } await env.PLAID_ITEMS.delete(ik); } catch(e){} }
+async function itemKey(item){ const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(item)); return [...new Uint8Array(h)].slice(0, 16).map(x => x.toString(16).padStart(2, "0")).join(""); }
+async function linkCloseAll(env, email){ if (!env.PLAID_ITEMS) return 0; const k = LK(email), cur = JSON.parse(await env.PLAID_ITEMS.get(k) || "[]"); let n = 0;
+  for (const item of cur){ try { const access = await unseal(env, item); const {ok, data} = await plaidCall(env, "/item/remove", {access_token: access}); if (ok || (data && data.error_code === "ITEM_NOT_FOUND")) n++; } catch(e){} await env.PLAID_ITEMS.delete("i:" + (await itemKey(item))); }
+  await env.PLAID_ITEMS.delete(k); return n; }
+// Paddle signs each webhook: Paddle-Signature "ts=…;h1=…", h1 = HMAC-SHA256(secret, ts + ":" + raw body).
+async function paddleWebhook(req, env){
+  const raw = await req.text(), sig = req.headers.get("Paddle-Signature") || "", ts = (sig.match(/ts=(\d+)/) || [])[1], h1 = (sig.match(/h1=([0-9a-f]+)/) || [])[1];
+  if (!env.PADDLE_WEBHOOK_SECRET || !ts || !h1 || Math.abs(Date.now() / 1000 - +ts) > 300) return new Response("no", {status: 401});
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(env.PADDLE_WEBHOOK_SECRET), {name: "HMAC", hash: "SHA-256"}, false, ["sign"]);
+  const mac = [...new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(ts + ":" + raw)))].map(x => x.toString(16).padStart(2, "0")).join("");
+  if (mac.length !== h1.length || [...mac].reduce((a, c, i) => a | (c.charCodeAt(0) ^ h1.charCodeAt(i)), 0)) return new Response("no", {status: 401});
+  let ev; try { ev = JSON.parse(raw); } catch(e){ return new Response("bad", {status: 400}); }
+  const st = ev && ev.data && ev.data.status, cust = ev && ev.data && ev.data.customer_id;
+  if (/^subscription\./.test(ev.event_type || "") && ["canceled", "paused"].includes(st) && cust && env.PADDLE_API_KEY){
+    const base = env.PADDLE_ENV === "production" ? "https://api.paddle.com" : "https://sandbox-api.paddle.com";
+    const c = await (await fetch(`${base}/customers/${cust}`, {headers: {Authorization: "Bearer " + env.PADDLE_API_KEY}})).json(), email = c && c.data && String(c.data.email || "").toLowerCase();
+    if (email){ const still = await paddleSub(env, email); if (!(still && still.plus)) await linkCloseAll(env, email); }
+  }
+  return new Response("ok");
+}
+// Once a day: anyone with bank links but no active Plus (a missed webhook, a failed payment) has their links closed.
+async function linkSweep(env){ if (!env.PLAID_ITEMS || !env.PADDLE_API_KEY) return; let cursor;
+  do { const page = await env.PLAID_ITEMS.list({prefix: "u:", cursor}); for (const k of page.keys){ const email = k.name.slice(2); try { const r = await paddleSub(env, email); if (r && r.plus === false) await linkCloseAll(env, email); } catch(e){} } cursor = page.list_complete ? null : page.cursor; } while (cursor); }

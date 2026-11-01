@@ -2014,7 +2014,7 @@ async function plaidConnect(forBiz){
     const [{link_token}] = await Promise.all([salesCall("/plaid/link", {uid: s.uid, idToken: ACC.user ? await ACC.user.getIdToken() : ""}), window.Plaid ? null : loadScript("https://cdn.plaid.com/link/v2/stable/link-initialize.js")]);
     if (!window.Plaid) throw new Error("The bank connection couldn't load. Check your connection and try again.");
     await new Promise((done, stop) => { const h = window.Plaid.create({token: link_token,
-      onSuccess: async (public_token, meta) => { try { busy("Connecting your bank"); const {item} = await salesCall("/plaid/exchange", {public_token}); const s2 = plaidStore(), inst = (meta && meta.institution) || {};
+      onSuccess: async (public_token, meta) => { try { busy("Connecting your bank"); const {item} = await salesCall("/plaid/exchange", {public_token, idToken: ACC.user ? await ACC.user.getIdToken() : ""}); const s2 = plaidStore(), inst = (meta && meta.institution) || {};
           const dup = inst.institution_id && s2.items.find(x => x.instId === inst.institution_id);
           if (dup){ salesCall("/plaid/remove", {item}).catch(() => {}); busy(false); toast(`${dup.inst} is already connected. Tap Refresh to update it.`); UI.banks = true; done(); return; }   // one connection per bank, so nothing is counted twice
           const it = {id: uid(), item, instId: inst.institution_id || "", inst: String(inst.name || "Your bank").slice(0, 60), cursor: "", tx: {}, accounts: []}; s2.items.push(it); const mk = todayKey(); s2.adds = s2.adds && s2.adds.m === mk ? {m: mk, n: s2.adds.n + 1} : {m: mk, n: 1};

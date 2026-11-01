@@ -170,6 +170,9 @@
 <h3>KeepWise Plus: paying for Plus</h3>
 <p>On the website, Plus is sold by Paddle.com, our reseller and merchant of record. You enter your payment details in Paddle's checkout, not in KeepWise, and we never receive your card number. Paddle shares with us the email address you paid with, your country, the plan, and whether the subscription is active, in its free trial, or cancelled. When you are signed in, our server (run on Cloudflare) sends Paddle the verified email address of your KeepWise account to check whether your Plus is active, and tells the app only yes or no and, during a free trial, the date it ends. We keep no copy of your payment history; Paddle keeps your receipts and invoices under its own <a href="https://www.paddle.com/legal/privacy">privacy policy</a>.</p>
 
+<h3>KeepWise Plus: closing bank connections when Plus ends</h3>
+<p>So that a bank connection never stays open after your Plus ends, our server keeps, next to the email address of your KeepWise account, the encrypted key for each bank you connect. This key can only be read by our server, and it holds no balances, transactions or account numbers. When Paddle tells us your subscription was cancelled or paused, or our daily check finds Plus no longer active, the server closes those connections at Plaid and deletes the entry. Disconnecting a bank in the app deletes its key straight away.</p>
+
 <h3>KeepWise Plus: your business page</h3>
 <p>If you publish a business page at yourname.mykeepwise.com, the details you choose to show (your business name, logo, a short description, contact details and payment links) are stored in Cloud Firestore and are <strong>public</strong>: anyone with the address can see them. Nothing else from your Business space is published. You can change or remove the page at any time from the app; removing it deletes it from our server.</p>
 
