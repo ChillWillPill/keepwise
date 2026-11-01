@@ -1227,6 +1227,15 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .wk-day .btile{box-shadow:none}
 .wk-list{display:grid;gap:6px}.wk-it{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:14px;background:var(--bg)}.wk-it>div{flex:1;min-width:0}.wk-it b{display:block;font-size:.92rem}.wk-it small{color:var(--muted);font-size:.76rem}
 .wk-it .tnum{font-weight:800}.wk-none{margin:2px 4px}
+.ss-top{display:flex;justify-content:space-between;align-items:flex-end}.ss-big{display:block;font:700 2.2rem var(--display)}.ss-yr{color:var(--muted);font-size:.86rem}.ss-yr b{color:var(--ink)}
+.ss-bar{display:flex;gap:2px;height:14px;border-radius:8px;overflow:hidden}.ss-bar i{min-width:4px}
+.ss-waste{appearance:none;border:0;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:16px;background:var(--rust-soft);color:var(--ink);font:inherit}
+.ss-waste b{display:block;color:var(--rust)}.ss-waste small{color:var(--muted)}.ss-waste>span:nth-child(2){flex:1}.ss-w-ic{font-size:1.2rem;color:var(--rust)}
+.ss-stack{display:flex}.ss-stack .btile{margin-left:-8px;border:2px solid var(--rust-soft)}
+.ss-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.ss-chip{appearance:none;border:0;cursor:pointer;white-space:nowrap;padding:7px 12px;border-radius:99px;background:var(--chip);color:var(--ink);font:700 .78rem var(--body)}.ss-chip small{opacity:.7}.ss-chip.on{background:var(--ink);color:var(--card)}.ss-chip.bad{background:var(--rust-soft);color:var(--rust)}.ss-chip.bad.on{background:var(--rust);color:#fff}
+.subs-sum .summary3{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px}.subs-sum .summary3>div{background:var(--bg);border-radius:14px;padding:8px 10px;border:0!important;display:flex!important;flex-direction:column;align-items:flex-start!important;justify-content:flex-start!important}.subs-sum .summary3 .label{font-size:.6rem}.subs-sum .summary3 b{font-size:1.02rem!important;margin-top:2px}
+.rv-top{display:flex;gap:12px;align-items:center}.rv-t{min-width:0}.rv-t .label{margin:0}.rv-t h3{margin:2px 0;font-size:1.05rem}.rv-t p{margin:0}
+.rv-btns .btn{display:grid;justify-items:center;gap:2px;padding:10px 4px;border:0;font-size:.8rem}.rv-btns .btn span{font-size:1.25rem;line-height:1}.rv-a{background:var(--green-soft)!important;color:var(--green)!important}.rv-b{background:var(--gold-soft)!important;color:var(--gold)!important}.rv-c{background:var(--rust-soft)!important;color:var(--rust)!important}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -2984,10 +2993,10 @@ OUT.needs = () => { const g = needGroups(); if (!g.length) return "";
 OUT.reviewCard = () => {
   const s = reviewPick(); if (!s) return "";
   const since = s.since ? `You’ve paid ${fmt(s.paid || 0)} since ${monthsLabel(s.since)}.` : s.cycle === "yr" ? `It costs ${fmt(s.price)} a year${nextRenewal(s) ? `, next charged ${shortDate(isoOf(nextRenewal(s)))}` : ""}.` : `It costs ${fmt(s.price)} a month.`;
-  return `<section class="card review" data-review-id="${s.id}"><p class="label">Quick check</p>
-    <h3 style="font-size:1.15rem">${UI.survey === s.id ? `Still using ${esc(s.name)}?` : `How much do you use ${esc(s.name)}?`}</h3>
-    <p class="muted">${since}</p>
-    <div class="review-btns"><button class="btn" type="button" data-review="lot">A lot</button><button class="btn" type="button" data-review="barely">Barely</button><button class="btn danger" type="button" data-review="none">Not at all</button></div>
+  return `<section class="card review rv-v" data-review-id="${s.id}"><div class="rv-top">${brandTile(s.name, 48)}<div class="rv-t"><p class="label">Quick check</p>
+    <h3>${UI.survey === s.id ? `Still using ${esc(s.name)}?` : `How much do you use ${esc(s.name)}?`}</h3>
+    <p class="muted small">${since}</p></div></div>
+    <div class="review-btns rv-btns"><button class="btn rv-a" type="button" data-review="lot"><span aria-hidden="true">👍</span>A lot</button><button class="btn rv-b" type="button" data-review="barely"><span aria-hidden="true">🤏</span>Barely</button><button class="btn danger rv-c" type="button" data-review="none"><span aria-hidden="true">👎</span>Not at all</button></div>
     <button class="link plain small" type="button" data-review="later" style="align-self:center">Ask me later</button></section>`;
 };
 function handleReview(kind, id){
@@ -4457,7 +4466,9 @@ V.subs = () => `
 const STMT_IC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg>';
 const SUB_CYCLES = [["all", "All"], ["mo", "Monthly"], ["yr", "Yearly"]];
 const subCycleOf = s => s.cycle === "yr" ? "yr" : "mo";
-const subInCycle = s => (UI.subCycle || "all") === "all" || subCycleOf(s) === UI.subCycle;
+const SUB_KINDS = [["tv", "📺 Live TV", /youtube\s*tv|sling|live tv|fubo|directv|philo|spectrum|xfinity|vidgo|frndly/i], ["video", "🎬 Streaming", /netflix|hulu|disney|max\b|hbo|peacock|paramount|apple tv|prime video|crunchyroll|youtube premium/i], ["music", "🎵 Music", /spotify|apple music|tidal|pandora|sirius|youtube music|amazon music/i]];
+const subKindOf = s => (SUB_KINDS.find(k => k[2].test(s.name || "")) || [""])[0];
+const subInCycle = s => ((UI.subCycle || "all") === "all" || subCycleOf(s) === UI.subCycle) && (!UI.subKind || (UI.subKind === "flag" ? compute().flagged.includes(s) : subKindOf(s) === UI.subKind));
 OUT.subsSummary = () => {
   const C = compute(), cyc = UI.subCycle || "all", live = C.liveSubs.filter(subInCycle), flagged = C.flagged.filter(subInCycle), dropped = S.subs.filter(s => s.keep === "drop" && subInCycle(s));
   const now = r2(live.reduce((a,s) => a + subCostIn(s, C.planKey), 0)), n = c => S.subs.filter(s => c === "all" || subCycleOf(s) === c).length;
@@ -4466,6 +4477,13 @@ OUT.subsSummary = () => {
     : cyc === "yr" ? [["A year", fmt(subPer(live).year), "data-subs-year"], next ? ["Next renewal", dayMonth(next.d), "", 0, next.s.name] : ["Next renewal", "Add dates", "", 0, "Tap “+ Renewal date” below"], ["Flagged a year", fmt(subPer(flagged).year), "", flagged.length]]
     : [["This month", fmt(now), "data-subs-now"], ["A year", fmt(subPer(live).year), "data-subs-year"], ["Flagged a year", fmt(subPer(flagged).year), "", flagged.length]];
   return `<div class="card subs-sum"><div class="seg sub-cycle" role="group" aria-label="Show subscriptions">${SUB_CYCLES.map(([k, t]) => `<button type="button" data-sub-cycle="${k}" aria-pressed="${cyc === k}">${t}<small>${n(k)}</small></button>`).join("")}</div>
+    ${(() => { const mo = r2(live.reduce((a, s) => a + subMonthly(s), 0)); if (!live.length) return "";
+      const bg = n => { const b = BRANDS.find(x => x[0].test(n)); return b ? b[1] : `hsl(${avatarHue(n)} 50% 60%)`; };
+      return `<div class="ss-top"><div><span class="label">Every month</span><b class="ss-big tnum">${fmt(mo)}</b></div><span class="ss-yr tnum"><b>${fmt(subPer(live).year)}</b> a year</span></div>
+      <div class="ss-bar" aria-hidden="true">${live.slice().sort((a, b) => subMonthly(b) - subMonthly(a)).map(x => `<i style="flex:${subMonthly(x).toFixed(2)};background:${bg(x.name)}" title="${esc(x.name)}"></i>`).join("")}</div>
+      ${flagged.length ? `<button type="button" class="ss-waste" data-sub-kind="flag"><span class="ss-w-ic" aria-hidden="true">⚠</span><span><b>${flagged.length} you don’t use</b><small>${fmt(subPer(flagged).year)} a year</small></span><span class="ss-stack" aria-hidden="true">${flagged.slice(0, 4).map(x => brandTile(x.name, 28)).join("")}</span></button>` : ""}`; })()}
+    ${(() => { const all = C.liveSubs, kinds = SUB_KINDS.map(([k, t]) => [k, t, all.filter(x => subKindOf(x) === k).length]).filter(x => x[2]); if (!kinds.length && !C.flagged.length) return "";
+      return `<div class="ss-chips" role="group" aria-label="Show a kind">${[["", "All", all.length], ...kinds, ...(C.flagged.length ? [["flag", "⚠ Unused", C.flagged.length]] : [])].map(([k, t, n]) => `<button type="button" class="ss-chip${(UI.subKind || "") === k ? " on" : ""}${k === "flag" ? " bad" : ""}" data-sub-kind="${k}">${t} <small>${n}</small></button>`).join("")}</div>`; })()}
     <div class="summary3">${rows.map(([l, v, attr, bad, sub]) => `<div><span class="label">${l}</span><b ${attr} class="${bad ? "bad" : ""}">${esc(v)}${sub ? `<small class="muted sub-next">${esc(sub)}</small>` : ""}</b></div>`).join("")}</div>
     ${(() => { const P = periodOf(new Date()), from = isoOf(P.start), to = isoOf(P.end), m = S.subs.filter(x => x.keep !== "drop" && x.cycle !== "yr" && x.renewDay), n = m.filter(x => (x.paidOn || "") >= from && (x.paidOn || "") <= to).length;
       return m.length && cyc !== "yr" ? `<p class="small muted" data-subs-charged style="margin:0">${n} of ${m.length} monthly ${m.length === 1 ? "subscription" : "subscriptions"} charged this month</p>` : ""; })()}
@@ -6247,7 +6265,7 @@ const cfSheet = (ic, title, body, btns) => `<div class="cf-back" role="dialog" a
 document.addEventListener("click", e => { if (e.target.classList && e.target.classList.contains("cf-back")){ const no = e.target.querySelector(":scope > .cf-sheet [data-reset-no], :scope > .cf-sheet [data-restore-no], :scope > .cf-sheet [data-del-toggle], :scope > .cf-sheet [data-st-confirm]"); if (no) no.click(); } });   // a tap outside the sheet keeps everything as it is
 // Set up your month: one calm screen per step, the answers so far folded at the top, Clear and Next at the bottom.
 const SETUP_BILLS = [["rent", "🏠", "Rent"], ["util", "💡", "Utilities"], ["groc", "🛒", "Groceries"], ["phone", "📱", "Phone"], ["net", "🌐", "Internet"], ["car", "🚗", "Car"], ["family", "👪", "Family"], ["ins", "🛡️", "Insurance"]];
-const SETUP_SUBS = [["Netflix", "🎬", 15.49], ["Spotify", "🎵", 11.99], ["YouTube Premium", "▶️", 13.99], ["iCloud+", "☁️", 2.99], ["Disney+", "✨", 9.99], ["Amazon Prime", "📦", 14.99], ["Hulu", "📺", 9.99], ["Gym", "💪", 30]];
+const SETUP_SUBS = [["Netflix", "🎬", 15.49], ["Spotify", "🎵", 11.99], ["YouTube Premium", "▶️", 13.99], ["iCloud+", "☁️", 2.99], ["Disney+", "✨", 9.99], ["Amazon Prime", "📦", 14.99], ["Hulu", "📺", 9.99], ["YouTube TV", "📺", 82.99], ["Sling TV", "📺", 45.99], ["Hulu + Live TV", "📺", 82.99], ["Fubo", "📺", 84.99], ["DirecTV Stream", "📺", 86.99], ["Philo", "📺", 33], ["Max", "🎬", 16.99], ["Peacock", "🎬", 10.99], ["Paramount+", "🎬", 12.99], ["Apple TV+", "🎬", 12.99], ["Gym", "💪", 30]];   // TV prices are typical; each one can be edited
 const setupSym = () => { try { return new Intl.NumberFormat("en-US", {style: "currency", currency: DRAFT.cur, maximumFractionDigits: 0}).formatToParts(0).find(p => p.type === "currency").value; } catch(e){ return "$"; } };
 const setupFmt = n => { try { return new Intl.NumberFormat("en-US", {style: "currency", currency: DRAFT.cur, maximumFractionDigits: n % 1 ? 2 : 0}).format(n); } catch(e){ return "$" + n; } };
 function setupBills(){ const out = (DRAFT.bills || []).map(k => { const b = SETUP_BILLS.find(x => x[0] === k); return {k, ic: b ? b[1] : "🧾", n: b ? b[2] : k, amt: numv((DRAFT.amts || {})[k])}; });
@@ -8836,6 +8854,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-need-open")){ UI.needOpen = true; refreshOuts(); return; }
   if (b.hasAttribute("data-coming-all")){ UI.comingAll = !UI.comingAll; refreshOuts(); return; }
   if (b.hasAttribute("data-need-next")){ const g = needGroups(), i = Math.max(0, g.findIndex(x => x[0] === UI.needKind)); UI.needKind = g.length ? g[(i + 1) % g.length][0] : null; refreshOuts(); return; }
+  if (b.dataset.subKind != null){ UI.subKind = b.dataset.subKind || null; refreshOuts(); return; }
   if (b.dataset.weekDay != null){ const c = view.querySelector("[data-out=comingUp] .card"), m = $("main"); if (c && m){ const seg = m.querySelector(".view>.seg.sub-seg"), under = seg ? 8 + seg.offsetHeight + 8 : 0;
       m.scrollTo({top: m.scrollTop + c.getBoundingClientRect().top - m.getBoundingClientRect().top - under - 12, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); } return; }
   if (b.hasAttribute("data-addx")){ const k = b.getAttribute("data-addx"); if (VOICE.rec) voiceFinish(false); UI.askOpen = false;
