@@ -1187,7 +1187,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .hero-keep{text-align:left;align-items:stretch;background:linear-gradient(160deg,var(--green-soft),var(--card));position:relative}
 .hero.hero-keep h1,:root .hero.hero-keep h1{font:800 .74rem/1.3 var(--body)!important;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:2px 0 0;padding-right:36px}.hero-keep .hero-by{color:var(--muted)}
 .hero-keep .big{color:var(--green);text-align:left}.hero-keep .big.neg{color:var(--rust)}
-.hero-keep .hero-eye{position:absolute;top:12px;right:12px}
+.hero-keep .hero-eye{position:absolute;top:8px;right:46px}
 .hero-keep .hero-warn{align-self:flex-start;border-radius:99px;padding:5px 12px;font-size:.78rem}
 .hero-spark{display:block;width:100%;height:56px;margin-top:8px;color:var(--green)}
 .hero-keep [data-out=planNote]{order:9;font-size:.74rem}
@@ -1207,6 +1207,10 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .td-it>div{flex:1;min-width:0}.td-it b{display:block;font-size:.95rem}.td-it small{color:var(--muted);font-size:.78rem}
 .td-chip{font-size:.74rem;font-weight:800;padding:4px 10px;border-radius:99px;background:var(--chip);white-space:nowrap}.td-chip.good{background:var(--green-soft);color:var(--green)}.td-chip.bad{background:var(--rust-soft);color:var(--rust)}.td-chip.gold{background:var(--gold-soft);color:var(--gold)}
 .td-cta{width:100%;margin-top:2px}
+.acc-hero{border-radius:24px;padding:22px 18px;text-align:center;color:#f3faf6;background:radial-gradient(500px 220px at 85% 0%,rgba(224,187,94,.35),transparent 60%),linear-gradient(160deg,#0e8571,#1b6843 60%,#123f30);display:grid;justify-items:center;gap:6px}
+.acc-hero img{border-radius:50%;background:#fff;box-shadow:0 10px 24px -10px rgba(0,0,0,.5)}.acc-hero h2{margin:6px 0 0;color:#fff;font:700 1.7rem var(--display)}.acc-hero p{margin:0;color:rgba(243,250,246,.85);font-size:.9rem;max-width:36ch}
+.acc-perks{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}.acc-perks span{font-size:.74rem;font-weight:700;padding:5px 10px;border-radius:99px;background:rgba(255,255,255,.14)}
+.acc-card .g-btn{background:#fff;color:#1f1f1f;border:1px solid var(--line);box-shadow:var(--lift)}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -8200,7 +8204,7 @@ const helpCard = () => `<section class="card" data-help><h2>Help and contact</h2
   ${SOCIAL.map(([net, handle, url]) => `<a class="btn" href="${url}" target="_blank" rel="noopener" data-help-link="${net}">Message ${esc(handle)} on ${esc(net)}</a>`).join("")}
   <p class="muted small">KeepWise will never ask for your password, your passcode or your bank details in a message. Please keep personal and financial details out of public posts.</p></section>`;
 const accView = () => {
-  if (ACC.state === "preview") return `${accHeader()}<section class="card"><h2>Sign in on the KeepWise website</h2><p class="muted">Accounts can’t open inside this preview. Open the website to sign in with Google or email. Everything else works here as normal.</p><a class="btn primary" href="${SITE_URL}" target="_blank" rel="noopener">Open KeepWise</a></section>`;
+  if (ACC.state === "preview") return `${accHeader()}${accHero("Sign in on mykeepwise.com", "Sign-in doesn’t open inside this preview. Everything else works here as normal.")}<section class="card acc-card"><a class="btn primary" href="${SITE_URL}" target="_blank" rel="noopener">Open mykeepwise.com</a></section>`;
   if (ACC.state === "off") return `${accHeader()}<section class="card"><h2>Accounts are coming soon</h2><p class="muted">KeepWise works fully without an account. Everything you enter stays on this phone.</p></section>`;
   if (ACC.state === "idle" || ACC.state === "loading") return `${accHeader()}<section class="card"><p class="muted">Connecting…</p></section>`;
   if (ACC.state === "error") return `${accHeader()}<section class="card"><h2>Can’t reach sign-in</h2><p class="muted">Check your connection and try again. KeepWise still works on this phone without an account.</p><button class="btn" type="button" data-acc-retry>Try again</button></section>`;
@@ -8331,10 +8335,12 @@ function tidyHints(){
     b.setAttribute("aria-expanded", H.has(key));
   });
 }
+const accHero = (t, sub) => `<section class="acc-hero"><img src="${document.querySelector("img.logo").src}" alt="" width="64" height="64"><h2>${t}</h2><p>${sub}</p>
+  <div class="acc-perks"><span>🔄 Sync every device</span><span>👥 Friends find you</span><span>🔒 Encrypted backup</span></div></section>`;
 function accSignIn(){
   const m = ACC.mode;
   return `${accHeader()}
-  <p class="muted">An account saves your profile so friends can find you. Your budget, statements and subscriptions still stay on this phone.</p>
+  ${accHero(m === "create" ? "Create your free account" : m === "reset" ? "Reset your password" : "Welcome back", "Your budget, statements and subscriptions still stay on this phone. An account adds your profile, so friends can find you.")}
   <section class="card acc-card">
     ${IN_APP ? `<p class="note small">Google sign-in is coming to the Android app. Use email here, or sign in with Google on the website.</p>`
              : `<button class="btn g-btn" type="button" data-acc-google>${I.google}Continue with Google</button><div class="or" role="separator"><span>or use email</span></div>`}
