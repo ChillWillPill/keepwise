@@ -10019,7 +10019,7 @@ $("vcf").addEventListener("change", e => {
 (() => { let open = null;
   const close = () => { if (open){ open.remove(); open = null; } };
   document.addEventListener("pointerdown", e => { const sel = e.target.closest && e.target.closest("select"); if (!sel || sel.disabled || sel.multiple || sel.hasAttribute("data-native") || window.__kwTour) return;
-    e.preventDefault(); sel.focus({preventScroll: true}); close();
+    e.preventDefault(); close();   // no focus(): on iPhone, focusing a <select> opens the phone's own list on top of ours
     const lab = (sel.closest("label") && sel.closest("label").querySelector("span")) || (sel.id && document.querySelector(`label[for="${sel.id}"]`)), title = lab ? lab.textContent.trim() : (sel.getAttribute("aria-label") || "Choose");
     const opts = [...sel.options].filter(o => !o.hidden), days = opts.length >= 28 && opts.every(o => /^the\s|^\d|1st|2nd|3rd|\dth|last day/i.test(o.text.trim()));
     const el = document.createElement("div"); el.className = "kpick"; el.innerHTML = `<button class="kpick-back" type="button" aria-label="Close"></button><div class="kpick-sheet" role="dialog" aria-label="${esc(title)}"><div class="kpick-h"><b>${esc(title)}</b><button type="button" class="kpick-x" aria-label="Close">✕</button></div>
@@ -10030,6 +10030,9 @@ $("vcf").addEventListener("change", e => {
       const o = opts[+b.dataset.i]; sel.value = o.value; close(); sel.dispatchEvent(new Event("input", {bubbles: true})); sel.dispatchEvent(new Event("change", {bubbles: true})); });
   }, true);
   document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+  // Safari still opens its own list from the touch or the click that follows; stop those so only one list ever shows.
+  const ours = e => { const sel = e.target.closest && e.target.closest("select"); return sel && !sel.disabled && !sel.multiple && !sel.hasAttribute("data-native") && !window.__kwTour; };
+  for (const t of ["touchstart", "touchend", "mousedown", "click"]) document.addEventListener(t, e => { if (ours(e)) e.preventDefault(); }, {capture: true, passive: false});
 })();
 
 // A first visit gets the short setup instead of someone else's numbers. People who already use KeepWise never see it.
