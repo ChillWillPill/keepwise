@@ -17,7 +17,7 @@
 </header>
 
 <h1>Privacy Policy</h1>
-<p class="meta">Effective date: 18 October 2026</p>
+<p class="meta">Effective date: 1 November 2026</p>
 
 <section class="summary">
   <h2>Summary</h2>
@@ -167,6 +167,12 @@
 <h3>KeepWise Plus: emailing invoices to your clients</h3>
 <p>If you add a client's email address to an invoice and are signed in to KeepWise Plus, you can have KeepWise email them the invoice. If it becomes late, KeepWise sends the client a polite reminder 3 days and again 10 days after the due date, unless you turn reminders off. For each email, the KeepWise server passes the client's name and email address, your business name, the message, the invoice picture and your account email (for replies) to Resend, which delivers it from invoices@notify.mykeepwise.com. Nothing is kept on the KeepWise server. Before adding a client's email, make sure they expect invoices from you.</p>
 
+<h3>KeepWise Plus: paying for Plus</h3>
+<p>On the website, Plus is sold by Paddle.com, our reseller and merchant of record. You enter your payment details in Paddle's checkout, not in KeepWise, and we never receive your card number. Paddle shares with us the email address you paid with, your country, the plan, and whether the subscription is active, in its free trial, or cancelled. When you are signed in, our server (run on Cloudflare) sends Paddle the verified email address of your KeepWise account to check whether your Plus is active, and tells the app only yes or no and, during a free trial, the date it ends. We keep no copy of your payment history; Paddle keeps your receipts and invoices under its own <a href="https://www.paddle.com/legal/privacy">privacy policy</a>.</p>
+
+<h3>KeepWise Plus: your business page</h3>
+<p>If you publish a business page at yourname.mykeepwise.com, the details you choose to show (your business name, logo, a short description, contact details and payment links) are stored in Cloud Firestore and are <strong>public</strong>: anyone with the address can see them. Nothing else from your Business space is published. You can change or remove the page at any time from the app; removing it deletes it from our server.</p>
+
 <h3>KeepWise Plus: your logo from your website</h3>
 <p>In the Business space you can ask KeepWise to find your logo on your website. Only the website address you entered is sent to the KeepWise server, which opens that site's home page, finds its icon or share image and hands the picture back to your device. Nothing is kept on the server. The logo is then stored with your business profile on your device. If you add a PayPal.me, Venmo or Cash App username, your invoices carry a payment link to that service; your clients open it on that service's own website.</p>
 
@@ -189,6 +195,7 @@
     <tr><td>GitHub, Inc. (GitHub Actions)</td><td>Runs the daily job that sends web app notifications</td><td>Reads the push addresses, nudge dates and time zones to send that day's nudges</td></tr>
     <tr><td>SimpleFIN (SimpleFIN Bridge)</td><td>Keeps a bank link made in an earlier version working, until you disconnect it; new links are no longer offered</td><td>The setup token you paste, then requests from your device for your accounts, balances and transactions, plus technical data</td></tr>
     <tr><td>Cloudflare, Inc. (Cloudflare Workers)</td><td>Runs the KeepWise server that passes KeepWise Plus bank and sales requests to Plaid, Stripe and PayPal, acting as our processor</td><td>Those requests and answers while they pass through, plus technical data. Nothing is stored or logged by KeepWise.</td></tr>
+    <tr><td>Paddle.com Market Ltd and its affiliates</td><td>Sells KeepWise Plus on the website as reseller and merchant of record, handles payment, taxes, receipts, cancellations and refunds</td><td>What you enter in Paddle's checkout (name, email, payment details, country, postcode where required), and, to confirm your Plus, the verified email address of your KeepWise account</td></tr>
     <tr><td>Plaid Inc.</td><td>Connects your US bank in KeepWise Plus, only if you choose to</td><td>Your bank sign-in (entered in Plaid's window, not KeepWise), then your accounts, balances and transactions from your bank</td></tr>
     <tr><td>Stripe, PayPal, Shopify and Square (Block, Inc.)</td><td>Your own payment accounts, read for live sales in KeepWise Plus, only if you connect them</td><td>The read-only key you created and the dates to read; they send back your sales</td></tr>
     <tr><td>Resend</td><td>Delivers split emails in KeepWise Plus, only when you tap to send them, acting as our processor</td><td>For each person you send to: their first name and email address, the split's title and message, your first name and your account email for replies</td></tr>
