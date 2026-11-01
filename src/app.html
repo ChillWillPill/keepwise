@@ -291,6 +291,11 @@ a.btn{display:block;text-decoration:none}
 .dn-strip{display:flex;gap:2px;height:34px;border-radius:12px;overflow:hidden;width:100%}
 .dn-strip span{display:flex;align-items:center;justify-content:center;min-width:3px}
 .dn-strip b{font:700 .72rem var(--body);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+/* bar view: the legend fills the card as two columns of tiles, no empty sides */
+.dn-k-line .dn-list{display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important;width:100%;flex:none!important}
+.dn-k-line .dn-list li{grid-template-columns:10px minmax(0,1fr) auto!important;gap:8px;align-items:center;padding:9px 10px;border-radius:12px;background:var(--chip);font-size:.84rem}
+.dn-k-line .dn-list li .dn-amt{display:none}
+.dn-k-line .dn-list li.keep{grid-column:1/-1;border-top:0;padding-top:9px;background:var(--green-soft)}
 .dn-bars{height:auto!important;aspect-ratio:1}
 .dn-base{stroke:var(--line);stroke-width:.8}
 .dn-pct-out{fill:var(--muted);font-size:5.6px}
