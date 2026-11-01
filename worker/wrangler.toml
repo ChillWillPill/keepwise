@@ -13,6 +13,8 @@ enabled = false
 PLAID_ENV = "sandbox"
 # Paddle for Plus: "sandbox" while testing, "production" when you go live (must match PADDLE_CONFIG.env in src/app.html).
 PADDLE_ENV = "sandbox"
+# Plus Ultra price ids from Paddle, monthly then yearly (not secret): "pri_xxx_monthly,pri_xxx_yearly"
+ULTRA_PRICE_IDS = ""
 
 # Secrets: never put these in this file or in chat. Add each in Cloudflare → Workers → keepwise-api → Settings →
 # Variables and Secrets → Add → Type: Secret. Example shapes only:

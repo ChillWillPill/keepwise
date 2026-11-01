@@ -269,6 +269,7 @@ export default {
       if (url.pathname === "/site/logo") return await siteLogo(origin, b);
       if (url.pathname === "/invoice/email") return await invoiceEmail(origin, env, b);
       if (url.pathname === "/plus/status") return await plusStatus(origin, env, b);
+      if (url.pathname === "/plus/upgrade") return await plusUpgrade(origin, env, b);
     } catch(e){ return fail(origin, 502, "That service didn't answer. Try again in a minute."); }
     return fail(origin, 404, "Not found.");
   },
@@ -299,8 +300,10 @@ async function paddleSub(env, email){
   if (!id) return {plus: false};
   const s = await (await fetch(`${base}/subscriptions?customer_id=${id}&status=active,trialing`, {headers: h})).json(), sub = s && s.data && s.data[0];
   if (!sub) return {plus: false};
+  const ultraIds = String(env.ULTRA_PRICE_IDS || "").split(",").map(x => x.trim()).filter(Boolean), priceId = sub.items && sub.items[0] && sub.items[0].price && sub.items[0].price.id;
+  const tier = ultraIds.includes(priceId) ? "ultra" : "plus";
   const trial = sub.status === "trialing" ? ((sub.items && sub.items[0] && sub.items[0].trial_dates && sub.items[0].trial_dates.ends_at) || sub.next_billed_at || null) : null;
-  return {plus: true, trialEnds: trial};
+  return {plus: true, tier, trialEnds: trial, subId: sub.id, cycle: sub.billing_cycle && sub.billing_cycle.interval === "year" ? "yr" : "mo"};
 }
 const needPlus = async (env, user) => { if (!env.PADDLE_API_KEY) return true; const r = await paddleSub(env, user && user.email_verified ? String(user.email).toLowerCase() : ""); return !!(r && r.plus); };
 async function plusStatus(origin, env, b){
@@ -308,5 +311,18 @@ async function plusStatus(origin, env, b){
   let user; try { user = await firebaseUser(b && b.idToken); } catch(e){ return json({plus: null}); }
   if (!env.PADDLE_API_KEY) return json({plus: null});
   if (!user.email || !user.email_verified) return json({plus: false});
-  return json(await paddleSub(env, String(user.email).toLowerCase()) || {plus: null});
+  const r = await paddleSub(env, String(user.email).toLowerCase()); if (r) delete r.subId;
+  return json(r || {plus: null});
+}
+// Plus to Plus Ultra: the same subscription moves to the Ultra price, and Paddle charges only the difference right away.
+async function plusUpgrade(origin, env, b){
+  if (!env.PADDLE_API_KEY || !env.ULTRA_PRICE_IDS) return fail(origin, 503, "Plus Ultra isn’t switched on yet.");
+  let user; try { user = await firebaseUser(b && b.idToken); } catch(e){ return fail(origin, 401, "Sign in again, then try once more."); }
+  if (!user.email || !user.email_verified) return fail(origin, 403, "Verify your account email first.");
+  const r = await paddleSub(env, String(user.email).toLowerCase()); if (!r || !r.plus || !r.subId) return fail(origin, 404, "No Plus subscription found for this account.");
+  if (r.tier === "ultra") return reply(origin, 200, {ok: true});
+  const [uMo, uYr] = String(env.ULTRA_PRICE_IDS).split(",").map(x => x.trim()), price = r.cycle === "yr" ? uYr : uMo;
+  const base = env.PADDLE_ENV === "production" ? "https://api.paddle.com" : "https://sandbox-api.paddle.com";
+  const res = await fetch(`${base}/subscriptions/${r.subId}`, {method: "PATCH", headers: {Authorization: "Bearer " + env.PADDLE_API_KEY, "Content-Type": "application/json"}, body: JSON.stringify({items: [{price_id: price, quantity: 1}], proration_billing_mode: "prorated_immediately"})});
+  return res.ok ? reply(origin, 200, {ok: true}) : fail(origin, 502, "Paddle didn’t accept the change. Try again in a minute.");
 }

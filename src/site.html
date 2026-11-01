@@ -89,7 +89,7 @@
   <span class="kws-eye">Simple pricing</span><h2>Free for your month. Plus when you want more.</h2>
   <div class="kws-price">
     <div class="kws-card"><h3>Free</h3><p class="kws-amt">$0</p><ul><li>Month-end number and plan</li><li>Bills and subscriptions</li><li>Trips, splits and loans</li><li>Ask the owl</li></ul><button type="button" class="kws-btn kws-ghost" data-kws-start>Start free</button></div>
-    <div class="kws-card kws-pro"><h3>KeepWise Plus</h3><p class="kws-amt">$79 a year</p><p class="kws-or">or $9.99 a month · first week free · cancel anytime</p><ul><li>Sync on every device, end-to-end encrypted</li><li>Bank connections with store logos</li><li>Business space, invoices and reports</li><li>Your own page at yourname.mykeepwise.com</li><li>Split emails and live sales</li></ul><button type="button" class="kws-btn" data-kws-start>Try Plus free for a week</button><p class="kws-or">Prices for the US. Other countries pay less.</p></div>
+    <div class="kws-card kws-pro"><h3>KeepWise Plus</h3><p class="kws-amt">$79 a year</p><p class="kws-or">or $9.99 a month · first week free · cancel anytime</p><ul><li>Connect up to 2 banks</li><li>Sync on every device, end-to-end encrypted</li><li>Live balances with store logos</li><li>Business space, invoices and reports</li><li>Your own page at yourname.mykeepwise.com</li><li>Split emails and live sales</li></ul><button type="button" class="kws-btn" data-kws-start>Try Plus free for a week</button><p class="kws-or">Prices for the US. Other countries pay less.</p></div><div class="kws-card kws-ultra"><span class="kws-ubadge">For more banks</span><h3>Plus Ultra</h3><p class="kws-amt">$159 a year</p><p class="kws-or2">or $19.99 a month · first week free · cancel anytime</p><ul><li>Everything in Plus</li><li>Connect up to 5 banks</li><li>Personal and business banks side by side</li></ul><button type="button" class="kws-btn kws-btn-dark" data-kws-start>Try Ultra free for a week</button></div>
   </div>
 </div></section>
 
@@ -191,7 +191,7 @@
 .kws-two{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}.kws-two>*,.kws-hero-in>*,.kws-steps>*{min-width:0}.kws-duo{overflow:hidden;padding:20px 0}
 .kws-play-dark{margin-top:24px}
 .kws-duo{position:relative;display:flex;justify-content:center;gap:0}.kws-duo .kws-back{transform:rotate(-7deg) translate(30px,20px);opacity:.92}.kws-duo>div:last-child{transform:rotate(4deg) translateX(-30px)}
-.kws-price{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+.kws-price{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:24px;align-items:start}
 .kws-price ul{list-style:none;padding:0;margin:14px 0 20px;display:grid;gap:8px}.kws-price li::before{content:"✓";color:var(--green);font-weight:800;margin-right:8px}
 .kws-amt{font:700 2rem var(--display)!important;color:var(--ink)!important;margin:6px 0 0!important}
 .kws-pro{background:linear-gradient(160deg,#0f5a43,#0c3b2c);color:#f3faf6;border-color:transparent}.kws-pro .kws-amt{color:#f3d27a!important}.kws-pro li::before{color:#f3d27a}.kws-pro .kws-btn{background:#e0bb5e;color:#1a1205}
@@ -262,6 +262,8 @@
 @keyframes kwBar{from{transform:scaleY(0)}}
 .kw-see{font-size:.8rem;font-weight:700;color:var(--green);flex:none}
 .kw-tiles{justify-content:space-between}.kw-tl{display:grid;justify-items:center;gap:4px}.kw-tl small{font-size:.66rem;font-weight:700;color:var(--muted)}
+.kws-ultra{border:2px solid #c9a24d!important;position:relative}.kws-ubadge{position:absolute;top:-12px;left:22px;background:#e0bb5e;color:#1a1205;font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:99px}.kws-or2{margin:2px 0 0;font-size:.84rem;color:var(--muted)}.kws-btn-dark{background:var(--ink)!important;color:var(--bg)!important}
+@media (max-width:880px){.kws-price{grid-template-columns:1fr!important}}
 /* the steps on the left: no tall empty boxes, one slim progress line on the step you're on */
 .kws-list li{min-height:0!important;padding:22px 24px 24px 66px!important}
 .kws-list li i{left:66px!important;right:24px!important;bottom:12px!important;height:3px!important;background:var(--green)!important}
