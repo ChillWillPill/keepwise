@@ -5998,12 +5998,38 @@ function siteOpen(){
   const st = root.querySelector("[data-kws-tilt]");
   if (st && !calm) hero.addEventListener("pointermove", e => { const r = hero.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
     st.style.transform = `rotateY(${x * 14}deg) rotateX(${-y * 10}deg)`; });
+  // globes of connected dots that turn with the cursor
+  root.querySelectorAll("[data-kws-globe]").forEach(c => { const x = c.getContext && c.getContext("2d"); if (!x) return; const N = 110, P = [], E = [], gold = c.classList.contains("kws-globe2") ? "rgba(165,125,44," : "rgba(243,210,122,", grn = c.classList.contains("kws-globe2") ? "rgba(27,104,67," : "rgba(160,230,200,";
+    for (let i = 0; i < N; i++){ const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), t = i * 2.39996; P.push([Math.cos(t) * r, y, Math.sin(t) * r]); }
+    for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++){ const d = Math.hypot(P[i][0] - P[j][0], P[i][1] - P[j][1], P[i][2] - P[j][2]); if (d < .36) E.push([i, j]); }
+    let ry = 0, tx = 0, ty = 0, rx = 0, w = 0, h = 0; const dpr = Math.min(2, devicePixelRatio || 1);
+    const fit = () => { w = c.offsetWidth; h = c.offsetHeight; c.width = w * dpr; c.height = h * dpr; x.setTransform(dpr, 0, 0, dpr, 0, 0); }; fit(); addEventListener("resize", fit);
+    const host = c.closest("section") || root; host.addEventListener("pointermove", e => { const r = host.getBoundingClientRect(); tx = ((e.clientX - r.left) / r.width - .5) * 1.6; ty = ((e.clientY - r.top) / r.height - .5) * 1.2; });
+    const frame = () => { if (!document.getElementById("kws")) return; ry += calm ? 0 : .0025; rx += (ty - rx) * .05; const ay = ry + tx * .9; const R = Math.min(w, h) * .44, cx = w / 2, cy = h / 2;
+      const sy = Math.sin(ay), cyy = Math.cos(ay), sx = Math.sin(rx), cxx = Math.cos(rx);
+      const Q = P.map(([px, py, pz]) => { const x1 = px * cyy + pz * sy, z1 = -px * sy + pz * cyy, y1 = py * cxx - z1 * sx, z2 = py * sx + z1 * cxx; return [cx + x1 * R, cy + y1 * R, z2]; });
+      x.clearRect(0, 0, w, h); x.lineWidth = 1;
+      E.forEach(([i, j]) => { const z = (Q[i][2] + Q[j][2]) / 2; x.strokeStyle = grn + (z > 0 ? .22 + z * .45 : .08) + ")"; x.beginPath(); x.moveTo(Q[i][0], Q[i][1]); x.lineTo(Q[j][0], Q[j][1]); x.stroke(); });
+      Q.forEach(([qx, qy, z], i) => { x.fillStyle = (i % 3 ? grn : gold) + (z > 0 ? .45 + z * .55 : .15) + ")"; x.beginPath(); x.arc(qx, qy, z > 0 ? 2.2 + z * 1.6 : 1.4, 0, 7); x.fill(); });
+      requestAnimationFrame(frame); }; frame(); });
+  // the step window: a small live screen for each step
+  const WB = root.querySelector("[data-kws-wbody]"), WS = root.querySelector("[data-kws-wstep]");
+  const L = (bg, fg, t) => `<span class="kws-lg" style="background:${bg};color:${fg}">${t}</span>`;
+  const SCR = [
+    `<div class="kws-wl">HOW OFTEN ARE YOU PAID?</div><div class="kws-seg2"><span>Weekly</span><span class="on">Every 2 weeks</span><span>Twice a month</span><span>Monthly</span></div><div class="kws-wl">EACH PAYCHECK</div><div class="kws-bignum" data-kws-count="1422">$0</div><div class="kws-wl">NEXT PAYDAY</div><div class="kws-cal">${[...Array(14)].map((_, i) => `<span class="${i === 5 ? "on" : ""}">${i + 1}</span>`).join("")}</div>`,
+    `<div class="kws-wl">TAP A NAME, THE PRICE FILLS ITSELF IN</div>${[["#fde7e2", "#c0533a", "⌂", "Rent", "$1,450", "Bill"], ["#141414", "#e50914", "N", "Netflix", "$17.99", "Sub"], ["#ff0033", "#fff", "▶", "YouTube TV", "$82.99", "Sub"], ["#000", "#fff", "V", "Verizon", "$65", "Bill"], ["#1ce783", "#0b3d22", "h", "Hulu", "$18.99", "Sub"]].map(([a, b, c, n, p, t]) => `<div class="kws-li">${L(a, b, c)}<b>${n}</b><span class="kws-tag">${t}</span><em>${p}</em></div>`).join("")}`,
+    `<div class="kws-tiles2">${[["✈️", "Trip", "#e0f2fe"], ["🎉", "Event", "#fce7f3"], ["🏦", "Loan", "#ede9fe"], ["🧾", "Receipt", "#fff1db"], ["📅", "Bill", "#fde7e2"], ["🔁", "Sub", "#dbeafe"], ["👥", "Split", "#dcfce7"], ["💵", "Income", "#e4f2ea"]].map(([e, n, b]) => `<span style="background:${b};color:#1c2420"><b style="font-size:1.3rem">${e}</b>${n}</span>`).join("")}</div><div class="kws-msg">coffee 5</div><div class="kws-rep">Added Coffee, $5 to this month. You'll keep $1,451.99.</div>`,
+    `<div class="kws-wl" style="text-align:center">YOU'LL KEEP BY PAYDAY</div><div class="kws-ring2" data-kws-ring><i data-kws-count="1456.99">$0</i></div><div class="kws-li">${L("#fde7e2", "#c0533a", "⚡")}<b>Con Edison due Friday</b><em style="color:var(--rust)">$84</em></div><div class="kws-li">${L("#e4f2ea", "#1b6843", "🌴")}<b>Hawaii fund 64%</b><em style="color:var(--green)">+$200</em></div>`];
+  let wcur = -1;
+  const showWin = i => { if (!WB || i === wcur) return; wcur = i; WB.style.opacity = 0; setTimeout(() => { WB.innerHTML = SCR[i]; WS.textContent = `Step ${i + 1} of 4`; WB.style.opacity = 1;
+      WB.querySelectorAll("[data-kws-count]").forEach(el => { const to = +el.dataset.kwsCount, t0 = performance.now(); const tick = t => { const k = Math.min(1, (t - t0) / 900), v = to * (1 - Math.pow(1 - k, 3)); el.textContent = "$" + v.toLocaleString("en-US", {minimumFractionDigits: to % 1 ? 2 : 0, maximumFractionDigits: 2}); if (k < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); });
+      const rg = WB.querySelector("[data-kws-ring]"); if (rg){ let p = 0; const go = () => { p += 3; rg.style.setProperty("--p", Math.min(p, 68)); if (p < 68) requestAnimationFrame(go); }; requestAnimationFrame(go); } }, 200); };
   // steps: the one in the middle of the screen lights up, fills its bar and swaps the phone screen
   const steps = [...root.querySelectorAll("[data-kws-step]")], shot = root.querySelector("[data-kws-shot]"), shots = ["site/month.webp", "site/subs.webp", "site/owl.webp", "site/month.webp"];
   const onScroll = () => { const mid = innerHeight * .5; let cur = 0;
     steps.forEach((li, i) => { const r = li.getBoundingClientRect(); if (r.top < mid) cur = i; const p = Math.min(1, Math.max(0, (mid - r.top) / (r.height || 1))); li.querySelector("i").style.transform = `scaleX(${p})`; });
     steps.forEach((li, i) => { li.classList.toggle("on", i === cur); li.classList.toggle("done", i < cur); });
-    if (shot && !shot.src.endsWith(shots[cur])){ shot.style.opacity = 0; setTimeout(() => { shot.src = shots[cur]; shot.style.opacity = 1; }, 180); } };
+    showWin(cur); };
   root.addEventListener("scroll", onScroll, {passive: true}); onScroll();
 }
 const welcomeDone = () => { try { localStorage.setItem(WELCOME_KEY, "1"); } catch(e){} };
@@ -9684,7 +9710,7 @@ initShared();
       <a class="kws-play" href="https://play.google.com/store/apps/details?id=com.mykeepwise.app" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="#34a853" d="M3.6 2.2 13.4 12l-9.8 9.8c-.4-.2-.6-.6-.6-1.1V3.3c0-.5.2-.9.6-1.1z"/><path fill="#fbbc04" d="m16.7 15.3-3.3-3.3 3.3-3.3 3.8 2.2c1 .6 1 1.6 0 2.2z"/><path fill="#ea4335" d="M16.7 15.3 13.4 12l-9.8 9.8c.4.2.9.2 1.4-.1z"/><path fill="#4285f4" d="M16.7 8.7 5 2.3c-.5-.3-1-.3-1.4-.1l9.8 9.8z"/></svg><span><small>Get it on</small>Google Play</span></a></div>
     <ul class="kws-checks"><li>Free to start</li><li>No ads, ever</li><li>iPhone, Android, computer</li><li>Your data stays yours</li></ul>
   </div>
-  <div class="kws-stage" data-kws-tilt><div class="kws-phone"><img src="site/month.webp" alt="KeepWise Month screen" width="585" height="1266"></div>
+  <div class="kws-stage" data-kws-tilt><canvas class="kws-globe" data-kws-globe aria-hidden="true"></canvas><div class="kws-phone"><img src="site/month.webp" alt="KeepWise Month screen" width="585" height="1266"></div>
     <div class="kws-chip kws-c1"><b>$1,456.99</b><small>you'll keep</small></div>
     <div class="kws-chip kws-c2"><span class="kws-dot r"></span>Hulu renews tomorrow</div>
     <div class="kws-chip kws-c3"><span class="kws-dot g"></span>Split settled with Sam</div></div>
@@ -9718,6 +9744,7 @@ initShared();
 </div></section>
 
 <section class="kws-sec kws-how" id="kws-how"><div class="kws-in">
+  <canvas class="kws-globe kws-globe2" data-kws-globe aria-hidden="true"></canvas>
   <span class="kws-eye">Getting started</span>
   <h2>From download to your month-end number in <span class="kws-g">1 minute</span>.</h2>
   <p class="kws-sub">No bank login needed. Keep scrolling to walk through it.</p>
@@ -9728,7 +9755,7 @@ initShared();
       <li data-kws-step="2"><b>Log spending your way</b><p>Tap the owl, type "coffee 5", or snap a receipt. Trips, splits and loans are one tap away.</p><i></i></li>
       <li data-kws-step="3"><b>Watch what you keep</b><p>Your month-end number updates as you go, with a heads-up before every bill.</p><i></i></li>
     </ol>
-    <div class="kws-sticky"><div class="kws-phone kws-sm"><img data-kws-shot src="site/month.webp" alt="KeepWise screen" width="585" height="1266"></div></div>
+    <div class="kws-sticky"><div class="kws-win"><div class="kws-win-top"><i></i><i></i><i></i><span data-kws-wstep>Step 1 of 4</span></div><div class="kws-win-body" data-kws-wbody></div></div></div>
   </div>
 </div></section>
 
@@ -9823,7 +9850,23 @@ initShared();
 .kws-list li.done::before{content:"✓";background:var(--green);color:var(--on-green)}
 .kws-list li i{position:absolute;left:22px;right:22px;bottom:0;height:3px;border-radius:3px;background:var(--green);transform:scaleX(0);transform-origin:left;transition:transform .2s}
 .kws-sticky{position:sticky;top:96px;display:grid;justify-items:center}.kws-sm{width:min(270px,62vw)}
-.kws-sticky img{transition:opacity .35s}
+.kws-how .kws-in{position:relative}
+.kws-globe{position:absolute;left:-55%;top:-20%;width:210%;height:140%;pointer-events:none;z-index:0}.kws-stage .kws-phone,.kws-stage .kws-chip{position:relative;z-index:1}.kws-stage .kws-chip{position:absolute}
+.kws-globe2{inset:-40px -40px auto auto;width:420px;height:420px;opacity:.9}
+.kws-win{width:100%;max-width:520px;background:var(--bg);border:1px solid var(--line);border-radius:22px;box-shadow:0 30px 60px -34px rgba(28,36,32,.45);overflow:hidden;position:relative;z-index:1}
+.kws-win-top{display:flex;align-items:center;gap:6px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card);font:600 .8rem ui-monospace,Menlo,monospace;color:var(--muted)}.kws-win-top i{width:10px;height:10px;border-radius:50%;background:var(--line)}.kws-win-top span{margin-left:8px}
+.kws-win-body{padding:18px;min-height:360px;display:grid;gap:12px;align-content:start;transition:opacity .25s}
+.kws-wl{font-size:.74rem;font-weight:800;color:var(--muted);letter-spacing:.06em}
+.kws-seg2{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.kws-seg2 span{padding:12px 6px;text-align:center;border-radius:14px;background:var(--card);border:1px solid var(--line);font-weight:700;font-size:.86rem}.kws-seg2 .on{background:var(--green);color:var(--on-green);border-color:transparent}
+.kws-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.kws-cal span{aspect-ratio:1;display:grid;place-items:center;border-radius:10px;background:var(--card);border:1px solid var(--line);font-weight:700;font-size:.8rem}.kws-cal .on{background:#e0bb5e;color:#1a1205;border-color:transparent;transform:scale(1.08)}
+.kws-bignum{font:700 2.6rem var(--display);color:var(--green)}
+.kws-li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);animation:kwsIn .45s both}.kws-li b{flex:1}.kws-li em{font-style:normal;font-weight:700}
+.kws-li:nth-child(2){animation-delay:.1s}.kws-li:nth-child(3){animation-delay:.2s}.kws-li:nth-child(4){animation-delay:.3s}.kws-li:nth-child(5){animation-delay:.4s}
+@keyframes kwsIn{from{opacity:0;transform:translateY(10px)}}
+.kws-tag{font-size:.7rem;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--green-soft);color:var(--green)}
+.kws-msg{justify-self:end;background:var(--green);color:var(--on-green);padding:10px 14px;border-radius:18px 18px 4px 18px;font-weight:600;animation:kwsIn .4s both}.kws-rep{justify-self:start;background:var(--green-soft);padding:10px 14px;border-radius:18px 18px 18px 4px;font-weight:600;animation:kwsIn .4s .5s both}
+.kws-tiles2{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.kws-tiles2 span{display:grid;justify-items:center;gap:3px;padding:10px 2px;border-radius:14px;font-size:.74rem;font-weight:700}
+.kws-ring2{width:120px;height:120px;border-radius:50%;display:grid;place-items:center;margin:4px auto;background:conic-gradient(var(--green) calc(var(--p,0)*1%),var(--line) 0);transition:--p 1s}.kws-ring2 i{width:96px;height:96px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1.2rem var(--display);font-style:normal}
 .kws-android{background:linear-gradient(160deg,var(--green-soft),var(--bg))}
 .kws-two{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}.kws-two>*,.kws-hero-in>*,.kws-steps>*{min-width:0}.kws-duo{overflow:hidden;padding:20px 0}
 .kws-play-dark{margin-top:24px}
