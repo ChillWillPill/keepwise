@@ -1216,8 +1216,10 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .wk-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .wk-day{appearance:none;border:0;cursor:pointer;display:grid;justify-items:center;gap:3px;padding:8px 0 6px;border-radius:14px;background:var(--bg);color:var(--muted);font:700 .66rem var(--body)}
 .wk-day b{font:700 1.05rem var(--display);color:var(--ink)}.wk-day>div{display:grid;gap:3px;justify-items:center;min-height:24px}.wk-day em{font-style:normal;font-size:.62rem}
-.wk-day.today span{color:var(--rust)}.wk-day.on{background:var(--green);color:var(--on-green)}.wk-day.on b{color:var(--on-green)}.wk-day.on.today span{color:var(--on-green)}
-.wk-day .btile{box-shadow:none}.wk-dot{width:6px;height:6px;border-radius:50%;background:var(--green);margin-top:-2px}.wk-day.on .wk-dot{background:#f3d27a}
+.wk-day.today{box-shadow:inset 0 0 0 2px var(--ink)}.wk-day.today span{color:var(--ink)}
+.wk-day em{font-style:normal;font-size:.62rem;font-weight:800;line-height:1.1}.wk-p{color:var(--green)}.wk-m{color:var(--rust)}
+.wk-day.d-out{background:var(--rust-soft)}.wk-day.d-in{background:var(--green-soft)}.wk-day.d-both{background:var(--gold-soft)}.wk-day.d-trip{background:#e0f2fe}
+.wk-day .btile{box-shadow:none}
 .wk-list{display:grid;gap:6px}.wk-it{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:14px;background:var(--bg)}.wk-it>div{flex:1;min-width:0}.wk-it b{display:block;font-size:.92rem}.wk-it small{color:var(--muted);font-size:.76rem}
 .wk-it .tnum{font-weight:800}.wk-none{margin:2px 4px}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
@@ -5609,10 +5611,11 @@ OUT.week = () => { const t0 = todayMid(), it = weekItems(), sel = Math.min(6, Ma
   const out = r2(it.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0)), inn = r2(it.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0)), sd = isoOf(days[sel]), list = it.filter(x => x.d === sd);
   const tile = x => x.kind === "trip" ? `<span class="btile" style="--z:24px;background:#e0f2fe;color:#0369a1">✈️</span>` : brandTile(x.name, 24);
   return `<section class="card wk-card"><div class="wk-head"><h2>This week</h2><span class="wk-sum">${inn ? `<span class="wk-in"><b class="tnum">+${fmt(inn)}</b> in</span>` : ""}${out ? `<span class="wk-out"><b class="tnum">−${fmt(out)}</b> out</span>` : ""}${!inn && !out ? `<span class="muted small">Nothing due</span>` : ""}</span></div>
-    <div class="wk-days" role="tablist" aria-label="Days this week">${days.map((d, i) => { const on = it.filter(x => x.d === isoOf(d)); return `<button type="button" role="tab" class="wk-day${i === sel ? " on" : ""}${i === 0 ? " today" : ""}" data-week-day="${i}" aria-selected="${i === sel}" aria-label="${d.toLocaleString("en-US", {weekday: "long", month: "short", day: "numeric"})}, ${on.length} item${on.length === 1 ? "" : "s"}">
-      <span>${i === 0 ? "Today" : d.toLocaleString("en-US", {weekday: "short"})}</span><b>${d.getDate()}</b>${on.some(x => x.amt > 0) ? `<i class="wk-dot" aria-hidden="true"></i>` : ""}<div>${on.slice(0, 2).map(tile).join("")}${on.length > 2 ? `<em>+${on.length - 2}</em>` : ""}</div></button>`; }).join("")}</div>
-    <div class="wk-list">${list.length ? list.map(x => `<div class="wk-it">${x.kind === "trip" ? `<span class="btile" style="--z:36px;background:#e0f2fe;color:#0369a1">✈️</span>` : brandTile(x.name, 36)}<div><b>${esc(x.name)}</b><small>${esc(x.sub)}</small></div>${x.amt ? `<span class="tnum ${x.amt > 0 ? "good" : ""}">${x.amt > 0 ? "+" : ""}${fmt(Math.abs(x.amt))}</span>` : ""}</div>`).join("")
-      : `<div class="muted small wk-none">${sel === 0 ? "Nothing due today. A good day to keep." : "Nothing due this day."}</div>`}</div></section>`; };
+    <div class="wk-days">${days.map((d, i) => { const on = it.filter(x => x.d === isoOf(d)), o = r2(on.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0)), n = r2(on.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0));
+      const k = n && o ? "both" : n ? "in" : o ? "out" : on.length ? "trip" : "";
+      return `<button type="button" class="wk-day ${k ? "d-" + k : ""}${i === 0 ? " today" : ""}" data-week-day="${i}" aria-label="${d.toLocaleString("en-US", {weekday: "long", month: "short", day: "numeric"})}${n ? `, ${fmt(n)} coming in` : ""}${o ? `, ${fmt(o)} going out` : ""}${!on.length ? ", nothing due" : ""}">
+      <span>${i === 0 ? "Today" : d.toLocaleString("en-US", {weekday: "short"})}</span><b>${d.getDate()}</b>${n ? `<em class="wk-p">+${fmtK(n)}</em>` : ""}${o ? `<em class="wk-m">−${fmtK(o)}</em>` : ""}${k === "trip" ? `<em>✈️</em>` : ""}</button>`; }).join("")}</div></section>`; };
+const fmtK = v => v >= 1000 ? sym() + (v / 1000).toFixed(v >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : sym() + Math.round(v);
 OUT.today = () => { const t0 = todayMid(), it = []; let cta = "";
   const chip = (txt, k) => `<span class="td-chip ${k || ""}">${txt}</span>`;
   if (payOn()) paydaysBetween(t0, dayPlus(t0, 1)).filter(d => !((S.payGot || "") >= isoOf(d))).slice(0, 1).forEach(d => { const n = daysUntil(d);
@@ -8828,7 +8831,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-need-open")){ UI.needOpen = true; refreshOuts(); return; }
   if (b.hasAttribute("data-coming-all")){ UI.comingAll = !UI.comingAll; refreshOuts(); return; }
   if (b.hasAttribute("data-need-next")){ const g = needGroups(), i = Math.max(0, g.findIndex(x => x[0] === UI.needKind)); UI.needKind = g.length ? g[(i + 1) % g.length][0] : null; refreshOuts(); return; }
-  if (b.dataset.weekDay != null){ UI.weekDay = +b.dataset.weekDay; const w = view.querySelector("[data-out=week]"); if (w) w.innerHTML = OUT.week(); return; }
+  if (b.dataset.weekDay != null){ const c = view.querySelector("[data-out=comingUp] .card"); if (c){ c.scrollIntoView({behavior: "smooth", block: "start"}); c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); } return; }
   if (b.hasAttribute("data-addx")){ const k = b.getAttribute("data-addx"); if (VOICE.rec) voiceFinish(false); UI.askOpen = false;
     const fire = at => { const t = document.createElement("button"); t.type = "button"; t.hidden = true; t.setAttribute(at, ""); view.appendChild(t); t.click(); t.remove(); };
     if (k === "receipt"){ render(true); fire("data-rcpt-snap"); return; }
