@@ -1212,12 +1212,22 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .bv-tile em{position:absolute;top:-4px;right:2px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--on-green);display:grid;place-items:center}.bv-tile em svg{width:12px;height:12px}
 .bills-v .bills-left{margin-top:4px}
 .hero-keep{text-align:left;align-items:stretch;background:linear-gradient(160deg,var(--green-soft),var(--card));position:relative}
-.hero-keep h1{font:800 .74rem var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:2px 0 0;padding-right:36px}.hero-keep .hero-by{color:var(--muted)}
+.hero.hero-keep h1,:root .hero.hero-keep h1{font:800 .74rem/1.3 var(--body)!important;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:2px 0 0;padding-right:36px}.hero-keep .hero-by{color:var(--muted)}
 .hero-keep .big{color:var(--green);text-align:left}.hero-keep .big.neg{color:var(--rust)}
 .hero-keep .hero-eye{position:absolute;top:12px;right:12px}
 .hero-keep .hero-warn{align-self:flex-start;border-radius:99px;padding:5px 12px;font-size:.78rem}
 .hero-spark{display:block;width:100%;height:56px;margin-top:8px;color:var(--green)}
 .hero-keep [data-out=planNote]{order:9;font-size:.74rem}
+.card.hap-card,[data-mseg-switch]~[data-out] .card.hap-card{padding:0!important;gap:0;overflow:hidden}.hap-top{padding:14px 16px 16px;background:linear-gradient(135deg,#0e8571,#1b6843 58%,#a57d2c);color:#f3faf6}
+.hap-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.hap-row+.hap-row{margin-top:10px}
+.hap-pill{font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.18);padding:4px 10px;border-radius:99px}.hap-day{font-size:.78rem;opacity:.9}
+.hap-top h2{margin:0;color:#fff;font:700 1.4rem var(--display)}.hap-dates{font-size:.78rem;opacity:.85}
+.hap-card .hap-ring{--c:#f3d27a;width:64px;height:64px;margin:0;background:conic-gradient(var(--c) calc(var(--p) * 1%),rgba(255,255,255,.25) 0)}.hap-card .hap-ring i{width:50px;height:50px;background:#17614a;color:#fff;font-size:.86rem}
+.hap-stats{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;padding:12px 8px 4px;background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 10%,var(--card)),var(--card))}
+.hap-stats b{display:block;font:700 1.3rem var(--display)}.hap-stats span{font-size:.74rem;color:var(--muted);font-weight:600}
+.hap-tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px 14px 14px}
+.hap-t{appearance:none;border:0;cursor:pointer;display:grid;justify-items:center;gap:3px;padding:8px 2px;border-radius:14px;background:var(--gold-soft);color:var(--ink);font:700 .68rem var(--body)}.hap-t span{font-size:1.15rem;line-height:1}
+.hap-t:nth-child(2){background:var(--rust-soft)}.hap-t:nth-child(3){background:var(--green-soft)}.hap-t:nth-child(4){background:var(--chip)}.hap-plus{background:var(--green);color:var(--on-green)}.hap-plus span{font-weight:800}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -1563,12 +1573,13 @@ const THEME_ICON = {
   system:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
   light:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>',
   dark:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>'};
-const SKINS = [["simple", "Simple", "Clean white or deep grey"], ["ledger", "Ledger", "Warm paper and ink"], ["terminal", "Terminal", "A trading screen, always dark"], ["blue", "Blue", "Blue on white, or blue on black"], ["classic", "Classic", "Cream and forest, the original"], ["midnight", "Midnight", "True black for night"], ["contrast", "High contrast", "Bold text, easiest to read"], ["ocean", "Ocean", "Calm blues"], ["plum", "Plum", "Soft purple"], ["sand", "Sand", "Warm beige"], ["rose", "Rose", "Gentle pink"], ["slate", "Slate", "Cool grey and teal"], ["forest", "Forest", "Deep greens"], ["mocha", "Mocha", "Soft brown and cream"]];
-const skinNow = () => SKINS.some(x => x[0] === S.skin) ? S.skin : "simple";
+const SKINS = [["classic", "KeepWise", "Cream and green, the default"], ["midnight", "Midnight", "Deep dark with gold"], ["ocean", "Ocean", "Blues and teal"], ["mocha", "Mocha", "Warm browns and cream"], ["rose", "Blossom", "Soft rose and plum"], ["contrast", "Mono", "Black and white, easiest to read"], ["terminal", "Terminal", "A trading screen, always dark"]];
+const SKIN_MAP = {simple: "classic", ledger: "mocha", blue: "ocean", plum: "rose", sand: "mocha", slate: "midnight", forest: "classic"};   // themes that were folded into the seven
+const skinNow = () => { const k = SKIN_MAP[S.skin] || S.skin; return SKINS.some(x => x[0] === k) ? k : "classic"; };
 function applyTheme(){
   let setting = false; try { setting = UI.welcome != null; } catch(e){}   // every new person sets up their month in the light look
   const t = setting ? "light" : THEMES.includes(S.theme) ? S.theme : "system", root = document.documentElement;
-  root.setAttribute("data-skin", setting ? "simple" : skinNow()); root.setAttribute("data-glow", ["off", "on", "max"].includes(S.glow) ? S.glow : "on");
+  root.setAttribute("data-skin", setting ? "classic" : skinNow()); root.setAttribute("data-glow", ["off", "on", "max"].includes(S.glow) ? S.glow : "on");
   if (t === "system") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
   const dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   let m = document.querySelector('meta[name="theme-color"]'); if (!m){ m = document.createElement("meta"); m.name = "theme-color"; document.head.appendChild(m); }
@@ -3907,7 +3918,7 @@ V.month = () => {
   <div data-out="monthClose">${OUT.monthClose()}</div>
   <div data-out="keepSafe">${OUT.keepSafe()}</div>
   <div data-out="needs">${OUT.needs()}</div>`;
-  const coming = `  <div data-out="comingUp">${OUT.comingUp()}</div>`;
+  const coming = `  <div data-out="happening">${OUT.happening()}</div><div data-out="comingUp">${OUT.comingUp()}</div>`;
   const donut = `  <div data-out="donut"${tabs ? ' class="dn-compact"' : ""}>${OUT.donut()}</div>`;
   const progress = `  <div data-out="billsCard">${OUT.billsCard()}</div>
   <div data-out="saveCard">${OUT.saveCard()}</div>`;
@@ -4022,7 +4033,7 @@ OUT.headline = () => {
   return `${eye}<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"} <span class="hero-by">by ${dayMonth(P.end)}</span></h1>
   <div class="big ${C.savings < 0 ? "neg" : ""}" style="margin-top:8px;${fitSize(fmt(Math.abs(C.savings)), 3, 88)}">${fmt(Math.abs(C.savings))}</div>
   ${C.savings < 0 || over > 0.005 ? `<button type="button" class="hero-warn" data-hero-warn data-hero-over>${C.savings < 0 ? `${C.planMonth} spends more than comes in. Drop a flagged subscription or use a cheaper swap to close it.` : ""}${over > 0.005 ? ` Expenditures are ${fmt(over)} over your budget ›` : ""}</button>` : ""}
-  ${spark}
+  ${cum[today - 1] > 0 && today > 2 ? spark : ""}
   ${C.savings >= 0 || C.payBonus.extra > 0 ? `<p class="muted" style="margin-top:10px">${C.savings >= 0 ? `${C.planMonth} ends with ${fmt(C.endSaved)} saved ${tail}.` : ""}${C.payBonus.extra > 0 ? ` ${C.planMonth} has ${C.payBonus.count} paydays, so an extra ${fmt(C.payBonus.extra)} is counted.` : ""}</p>` : ""}`;
 };
 OUT.stack = () => {
@@ -5589,6 +5600,14 @@ function setRenewalFrom(s, iso){  // iso date of a charge
   if (!iso) return; const [y, m, d] = iso.split("-").map(Number);
   if (s.cycle === "yr") s.renewDate = isoOf(new Date(y + 1, m - 1, d)); else if (SUB_WK(s.cycle)) s.renewDate = isoOf(new Date(y, m - 1, d + subStep(s.cycle))); else s.renewDay = d;
 }
+// A trip or event going on today gets its own card on Month: how far in, what is spent and left, and a tap to log more.
+OUT.happening = () => { const live = (S.trips || []).filter(t => tripState(t) === "active"); if (!live.length) return "";
+  return live.map(t => { const n = tripDays(t), day = Math.min(n, Math.round((todayMid() - isoDate(t.start)) / DAY) + 1), spent = tripTotal(t), b = +t.budget || 0, left = r2(b - spent), per = b > 0 ? r2(Math.max(0, left) / Math.max(1, n - day + 1)) : 0, pct = b > 0 ? Math.min(100, spent / b * 100) : 0;
+    const tiles = isEvent(t) ? [["🎟️", "Tickets"], ["🍽️", "Food"], ["🎁", "Gifts"], ["🚕", "Rides"]] : [["🏨", "Stay"], ["🍽️", "Food"], ["🚕", "Rides"], ["🎟️", "Fun"]];
+    return `<section class="card hap-card" data-hap="${t.id}"><div class="hap-top"><div class="hap-row"><span class="hap-pill">● Happening now</span><span class="hap-day">Day ${day} of ${n}</span></div>
+      <div class="hap-row"><div><h2>${isEvent(t) ? "🎉" : "✈️"} ${esc(t.name)}</h2><span class="hap-dates">${esc(shortDate(t.start))} – ${esc(shortDate(t.end))}</span></div>${b > 0 ? `<div class="sv-ring hap-ring" style="--p:${pct.toFixed(1)}" aria-hidden="true"><i>${Math.round(pct)}%</i></div>` : ""}</div></div>
+      <div class="hap-stats"><div><b class="tnum">${fmt(spent)}</b><span>spent</span></div>${b > 0 ? `<div><b class="tnum ${left < 0 ? "bad" : "good"}">${fmt(Math.abs(left))}</b><span>${left < 0 ? "over" : "left"}</span></div><div><b class="tnum">${fmt(per)}</b><span>a day</span></div>` : ""}</div>
+      <div class="hap-tiles">${tiles.map(([e, l]) => `<button type="button" class="hap-t" data-trip-goto="${t.id}" aria-label="Add ${l.toLowerCase()} to ${esc(t.name)}"><span aria-hidden="true">${e}</span>${l}</button>`).join("")}<button type="button" class="hap-t hap-plus" data-trip-goto="${t.id}" aria-label="Open ${esc(t.name)}"><span aria-hidden="true">+</span>Add</button></div></section>`; }).join(""); };
 OUT.comingUp = () => {
   // One list in date order, money out and money in together, so the week reads top to bottom as it will happen.
   // What Split says is owed has no date, so it comes last.
@@ -6216,7 +6235,7 @@ function finishWelcome(){
   const bills = typeof setupBills === "function" && DRAFT.bills ? setupBills().filter(x => x.amt > 0) : [], dayNow = todayMid().getDate();
   Object.assign(ex, {cur: DRAFT.cur, income: r2(numv(DRAFT.income) * (PAY_BASE[DRAFT.pay] || 1)), pay: DRAFT.pay !== "monthly" ? {when: DRAFT.pay, amount: numv(DRAFT.income), day: DRAFT.pay === "twice" ? 1 : undefined, day2: DRAFT.pay === "twice" ? 15 : undefined} : numv(DRAFT.income) && DRAFT.day ? {when: "monthly", amount: numv(DRAFT.income), day: +DRAFT.day} : null, efSaved: 0,
     expenses: bills.length ? bills.map(x => ({id: uid(), name: x.n, amount: x.amt, env: "needs"})) : numv(DRAFT.home) ? [{id: uid(), name: "Rent or mortgage", amount: numv(DRAFT.home), env: "needs"}] : [],
-    theme: "light", skin: "simple", coach: S.coach || {},
+    theme: "light", skin: "classic", coach: S.coach || {},
     subs: (DRAFT.subs || []).map(n => { const x = SETUP_SUBS.find(y => y[0] === n); return {id: uid(), name: n, price: x ? x[2] : 0, cycle: "mo", renewDay: dayNow, group: "", env: "misc", keep: "auto"}; }).concat((DRAFT.subx || []).filter(x => String(x.n || "").trim()).map(x => ({id: uid(), name: String(x.n).trim(), price: numv(x.a), cycle: "mo", renewDay: dayNow, group: "", env: "misc", keep: "auto"}))), swaps: [], codes: [], splits: [], settlements: [], people: [{id: "me", name: "You"}], goalName: "", goalAmt: 0, statements: {}, example: false, hideNote: false, tab: "month", started: isoDaysAgo(0)});
   S = ex; UI.welcome = null; welcomeDone(); save();
 }
@@ -8822,7 +8841,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.quickEnv){ UI.quickEnv = b.dataset.quickEnv; UI.quick = null; const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
   if (b.dataset.quickIc){ UI.quick = UI.quick === b.dataset.quickIc ? null : b.dataset.quickIc; const sh = $("asksheet"); if (sh){ askRedraw(sh); const i = sh.querySelector("[data-form=quick] [name=amount]"); if (i) i.focus(); } return; }
   if (b.dataset.glowSet){ S.glow = ["off", "on", "max"].includes(b.dataset.glowSet) ? b.dataset.glowSet : "on"; save(); applyTheme(); render(true); return; }
-  if (b.dataset.skinSet){ S.skin = SKINS.some(x => x[0] === b.dataset.skinSet) ? b.dataset.skinSet : "simple"; save(); applyTheme(); render(true); toast(`${(SKINS.find(x => x[0] === S.skin) || [, "Simple"])[1]} theme on.`); return; }
+  if (b.dataset.skinSet){ S.skin = SKINS.some(x => x[0] === b.dataset.skinSet) ? b.dataset.skinSet : "classic"; save(); applyTheme(); render(true); toast(`${(SKINS.find(x => x[0] === S.skin) || [, "Simple"])[1]} theme on.`); return; }
   if (b.hasAttribute("data-push-set")){ if (S.push && S.push.on) await pushTurnOff(); else await pushTurnOn(); return; }
   if (b.hasAttribute("data-remind-bell")){ UI.settings = false; render(false); $("bell").click(); return; }
   if (b.hasAttribute("data-remind-set")){ if (S.remind && S.remind.on){ S.remind = {on: false, hide: true}; save(); render(true); toast("Reminders are off."); } else await remindTurnOn(); return; }
