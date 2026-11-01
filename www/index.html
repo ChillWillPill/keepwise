@@ -1214,7 +1214,11 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .bv-tile{appearance:none;border:0;background:none;padding:0;display:grid;justify-items:center;gap:4px;position:relative;cursor:pointer;font:600 .7rem var(--body);color:var(--muted);flex:none;width:52px}
 .bv-tile span{max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bv-tile.on .btile{opacity:.45}
 .bv-tile em{position:absolute;top:-4px;right:2px;width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--on-green);display:grid;place-items:center}.bv-tile em svg{width:12px;height:12px}
-.bills-v .bills-left{margin-top:4px}.bv-full i{color:var(--green)}.bv-full i svg{width:26px;height:26px}.bills-done .bv-tile.on .btile{opacity:.8}
+.bills-v .bills-left{margin-top:4px}.bv-full i{color:var(--green)}.bv-full i svg{width:26px;height:26px}.bills-done .bv-tile.on .btile{opacity:.85}
+.bd-row{display:flex;align-items:center;gap:12px}.bd-t{flex:1;min-width:0}.bd-t h2{margin:0;font-size:1.05rem}
+.bd-tiles{display:flex;gap:8px;align-items:center}.bd-tiles .bv-tile{width:auto}
+.bd-more{appearance:none;border:0;cursor:pointer;position:relative;width:36px;height:36px;border-radius:11px;background:var(--green-soft);color:var(--green);font:800 .8rem var(--body)}
+.bd-more em{position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--green);color:var(--on-green);display:grid;place-items:center}.bd-more em svg{width:11px;height:11px}
 .hero-keep{text-align:left;align-items:stretch;background:linear-gradient(160deg,var(--green-soft),var(--card));position:relative}
 .hero.hero-keep h1,:root .hero.hero-keep h1{font:800 .74rem/1.3 var(--body)!important;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:2px 0 0;padding-right:36px}.hero-keep .hero-by{color:var(--muted)}
 .hero-keep .big{color:var(--green);text-align:left}.hero-keep .big.neg{color:var(--rust)}
@@ -4004,10 +4008,9 @@ OUT.billsCard = () => { const C = compute();
   if (!items.length) return "";
   const done = items.filter(x => paidOn(x.id, C.planKey)), left = items.filter(x => !paidOn(x.id, C.planKey)), total = r2(items.reduce((a, x) => a + x.a, 0)), paid = r2(done.reduce((a, x) => a + x.a, 0)), all = !left.length;
   const line = (x, isPaid) => `<div class="line ln bills-ln">${tickBtn(x.id, x.n, C.planKey)}<span class="ln-ic emo" aria-hidden="true">${x.emo}</span><div class="ln-t"><div>${esc(x.n)}</div><div class="muted small">${isPaid ? `Paid ${shortDate(paidOn(x.id, C.planKey))}` : x.due ? `Due on the ${ordinal(x.due)}` : "This month"}</div></div><span class="tnum ln-v">${fmt(x.a)}</span></div>`;
-  if (all) return `<section class="card prog-card bills-v bills-done" data-bills-card><div class="bv-head"><div class="sv-ring bv-ring bv-full" style="--p:100" aria-hidden="true"><i>${TICK_SVG}</i></div>
-    <div class="bv-t"><h2>${items.length === 1 ? "Your bill is paid" : `All ${items.length} bills paid`}</h2><span class="small muted tnum"><b class="tnum" style="color:var(--green)">${fmt(total)}</b> paid this month · <span data-bills-count>${items.length} of ${items.length} paid</span></span></div></div>
-    <div class="bv-tiles" role="group" aria-label="Paid bills, tap one to mark it not paid">${items.map(x => `<button class="bv-tile on" type="button" data-paid="${x.id}" aria-pressed="true" aria-label="${esc(x.n)} is paid. Tap to mark it not paid">${brandTile(x.n, 40)}<span>${esc(x.n.split(/\s+/)[0])}</span><em aria-hidden="true">${TICK_SVG}</em></button>`).join("")}</div>
-    <div class="bl-foot"><span class="small muted">Nice. Nothing left to pay this month.</span><button class="link small" type="button" data-bills-open>See all ›</button></div></section>`;
+  if (all){ const fit = 3, more = items.length - fit;
+    return `<section class="card prog-card bills-v bills-done" data-bills-card><div class="bd-row"><div class="bd-t"><h2>${items.length === 1 ? "Bill paid" : "All bills paid"}</h2><span class="small muted tnum"><b class="tnum" style="color:var(--green)">${fmt(total)}</b> · <span data-bills-count>${items.length} of ${items.length} paid</span></span></div>
+    <div class="bd-tiles">${items.slice(0, more > 0 ? fit - 1 : fit).map(x => `<button class="bv-tile on" type="button" data-paid="${x.id}" aria-pressed="true" aria-label="${esc(x.n)} is paid. Tap to mark it not paid">${brandTile(x.n, 36)}<em aria-hidden="true">${TICK_SVG}</em></button>`).join("")}${more > 0 ? `<button class="bd-more" type="button" data-bills-open aria-label="See all ${items.length} paid bills">+${more + 1}<em aria-hidden="true">${TICK_SVG}</em></button>` : ""}</div></div></section>`; }
   const show = left.slice(0, 2);
   const pp = total > 0 ? Math.min(100, paid / total * 100) : 0;
   return `<section class="card prog-card bills-v" data-bills-card><div class="bv-head"><div class="sv-ring bv-ring" style="--p:${pp.toFixed(1)}" aria-hidden="true"><i>${done.length}/${items.length}</i></div>
