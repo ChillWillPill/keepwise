@@ -8831,7 +8831,8 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-need-open")){ UI.needOpen = true; refreshOuts(); return; }
   if (b.hasAttribute("data-coming-all")){ UI.comingAll = !UI.comingAll; refreshOuts(); return; }
   if (b.hasAttribute("data-need-next")){ const g = needGroups(), i = Math.max(0, g.findIndex(x => x[0] === UI.needKind)); UI.needKind = g.length ? g[(i + 1) % g.length][0] : null; refreshOuts(); return; }
-  if (b.dataset.weekDay != null){ const c = view.querySelector("[data-out=comingUp] .card"); if (c){ c.scrollIntoView({behavior: "smooth", block: "start"}); c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); } return; }
+  if (b.dataset.weekDay != null){ const c = view.querySelector("[data-out=comingUp] .card"), m = $("main"); if (c && m){ const seg = m.querySelector(".view>.seg.sub-seg"), under = seg ? 8 + seg.offsetHeight + 8 : 0;
+      m.scrollTo({top: m.scrollTop + c.getBoundingClientRect().top - m.getBoundingClientRect().top - under - 12, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); } return; }
   if (b.hasAttribute("data-addx")){ const k = b.getAttribute("data-addx"); if (VOICE.rec) voiceFinish(false); UI.askOpen = false;
     const fire = at => { const t = document.createElement("button"); t.type = "button"; t.hidden = true; t.setAttribute(at, ""); view.appendChild(t); t.click(); t.remove(); };
     if (k === "receipt"){ render(true); fire("data-rcpt-snap"); return; }
