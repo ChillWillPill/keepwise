@@ -6174,7 +6174,7 @@ function siteOpen(){
     if (isOwl){ const ring = (cx, cy, rx, ry, n, a0 = 0, a1 = Math.PI * 2) => { for (let i = 0; i < n; i++){ const t = a0 + (a1 - a0) * i / n; P.push([cx + Math.cos(t) * rx, cy + Math.sin(t) * ry, 0]); } };
       ring(0, .12, .62, .78, 40, Math.PI * .08, Math.PI * .92);                       // body, lower half
       ring(0, -.18, .58, .5, 30, Math.PI * 1.05, Math.PI * 1.95);                     // head, top
-      P.push([-.52, -.78, 0], [-.42, -.6, 0], [.52, -.78, 0], [.42, -.6, 0]);          // ear tufts
+      ring(-.4, -.62, .1, .08, 6, Math.PI, Math.PI * 2); ring(.4, -.62, .1, .08, 6, Math.PI, Math.PI * 2);   // soft rounded tufts
       ring(-.24, -.18, .2, .2, 16); ring(.24, -.18, .2, .2, 16);                      // eye rings
       P.push([0, .02, 0], [-.05, -.06, 0], [.05, -.06, 0]);                           // beak
       ring(-.36, .34, .14, .3, 10, Math.PI * .6, Math.PI * 1.6); ring(.36, .34, .14, .3, 10, -Math.PI * .6, Math.PI * .4);   // wings
@@ -6189,8 +6189,16 @@ function siteOpen(){
       else { ry += calm ? 0 : .0025; const ay = ry + tx * 1.4, sy = Math.sin(ay), cyy = Math.cos(ay); Q = P.map(([px, py, pz]) => [cx + (px * cyy + pz * sy) * R, cy + py * R, -px * sy + pz * cyy]); }
       E.forEach(([i, j]) => { const z = (Q[i][2] + Q[j][2]) / 2; x.strokeStyle = teal + (z > 0 ? .16 + z * .4 : .07) + ")"; x.beginPath(); x.moveTo(Q[i][0], Q[i][1]); x.lineTo(Q[j][0], Q[j][1]); x.stroke(); });
       Q.forEach(([qx, qy, z], i) => { x.fillStyle = (i % 4 ? teal : gold) + (z > 0 ? .4 + z * .5 : .15) + ")"; x.beginPath(); x.arc(qx, qy, z > 0 ? 1.8 + z * 1.4 : 1.2, 0, 7); x.fill(); });
-      if (isOwl){ [-.24, .24].forEach(ex => { const ox = cx + ex * R, oy = cy - .18 * R, px = ox + Math.max(-1, Math.min(1, tx * 2)) * R * .07, py = oy + Math.max(-1, Math.min(1, ty * 2)) * R * .07;
-          x.fillStyle = "rgba(214,138,52,.9)"; x.beginPath(); x.arc(px, py, R * .065, 0, 7); x.fill(); x.fillStyle = "rgba(255,255,255,.9)"; x.beginPath(); x.arc(px - R * .02, py - R * .02, R * .018, 0, 7); x.fill(); }); }
+      if (isOwl){ const t = performance.now(), blink = calm ? 1 : Math.max(.08, Math.min(1, Math.abs(((t % 4200) - 4050) / 150))), lx = Math.max(-1, Math.min(1, tx * 2)), ly = Math.max(-1, Math.min(1, ty * 2));
+        [-.24, .24].forEach(ex => { const ox = cx + ex * R, oy = cy - .18 * R;
+          x.save(); x.translate(ox, oy); x.scale(1, blink);
+          x.fillStyle = "rgba(255,253,248,.95)"; x.strokeStyle = "rgba(14,133,113,.5)"; x.lineWidth = 1.5; x.beginPath(); x.arc(0, 0, R * .17, 0, 7); x.fill(); x.stroke();
+          const px = lx * R * .04, py = ly * R * .04;
+          x.fillStyle = "#1c2420"; x.beginPath(); x.arc(px, py, R * .085, 0, 7); x.fill();
+          x.fillStyle = "#fff"; x.beginPath(); x.arc(px - R * .03, py - R * .03, R * .028, 0, 7); x.fill(); x.beginPath(); x.arc(px + R * .025, py + R * .025, R * .012, 0, 7); x.fill(); x.restore(); });
+        x.fillStyle = "rgba(214,138,52,.85)"; x.beginPath(); x.moveTo(cx - R * .05, cy - R * .05); x.lineTo(cx + R * .05, cy - R * .05); x.lineTo(cx, cy + R * .04); x.closePath(); x.fill();   // small beak
+        x.fillStyle = "rgba(244,160,150,.35)"; [-.42, .42].forEach(ex => { x.beginPath(); x.ellipse(cx + ex * R, cy - .02 * R, R * .07, R * .04, 0, 0, 7); x.fill(); });   // cheeks
+      }
       requestAnimationFrame(frame); }; frame(); });
   // hero calculator: pay minus bills minus spending, a month and a year
   const calc = root.querySelector("[data-kws-calc]");
