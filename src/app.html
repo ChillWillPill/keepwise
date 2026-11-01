@@ -7931,7 +7931,7 @@ function tourStart(){
   window.__kwTour = true; TOUR.on = true; TOUR.i = 0; TOUR.paused = false; TOUR.welcome = UI.welcome; TOUR.saved = UI.welcome != null ? null : S; TOUR.tab = S.tab;
   if (TOUR.saved){ window.__kwTour = false; save(); window.__kwTour = true; S = example(); }   // the person's month is saved first, then set aside
   UI.welcome = null; UI.inbox = false; UI.account = false; UI.plus = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.biz = false; UI.share = false;
-  TOUR.skin = S.skin; S.skin = "blue"; applyTheme();   // the tour is shown in the Blue look, then each person's own look comes back
+  TOUR.skin = S.skin; S.skin = "classic"; applyTheme();   // the tour is shown in the default KeepWise look, then each person's own look comes back
   appEl.classList.add("touring"); tourShow();
 }
 // On the step about asking, the owl itself is shown, lifted just above the tour card, then put back where it was.
