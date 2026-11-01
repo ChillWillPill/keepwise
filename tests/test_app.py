@@ -2440,6 +2440,7 @@ async def plus_emails_the_people_in_a_split(ctx):
     await tab(pg, "split"); await pg.wait_for_timeout(200)
     # signed in: a new split emails everyone in it by itself
     await new_split("Pizza night 2")
+    sent[:] = [x for x in sent if x.get("kind") != "self"]   # on the 1st the monthly summary also goes out
     assert len(sent) == 1 and sent[0]["kind"] == "split" and sent[0]["title"] == "Pizza night 2" and sent[0]["idToken"].startswith("mock-id-token-"), sent
     it = sent[0]["items"]; assert len(it) == 1 and it[0]["to"] == "sam@example.com" and "Gina added a split: Pizza night 2, $60." in it[0]["text"] and "Gina paid. Your share is $20, so you owe Gina $20." in it[0]["text"] and it[0]["subject"] == "Pizza night 2: you owe Gina $20" and "I paid" not in it[0]["text"], it
     assert "Emailed 1 of 2 automatically" in await text(pg, "[data-tell]") and "Emailed everyone in Pizza night 2" in await pg.inner_text("#toast")
@@ -3531,6 +3532,27 @@ async def shared_links_show_a_preview_card(ctx):
     data = open(img, "rb").read(); assert int.from_bytes(data[16:20], "big") == 1200 and int.from_bytes(data[20:24], "big") == 630
 
 @test
+async def plus_free_week_cannot_be_restarted_or_faked(ctx):
+    pg = await open_app(ctx)
+    async def plus_screen():
+        await pg.evaluate("(() => { const b = document.createElement('button'); b.setAttribute('data-plus-open', ''); b.style.cssText = 'position:fixed;top:0;left:0;z-index:999'; b.textContent = 'P'; document.querySelector('#view').appendChild(b); b.click(); })()"); await pg.wait_for_timeout(300)
+    # an old free week saved on the phone, or a paid flag the server hasn't confirmed lately, is not Plus
+    await seed(pg, "s.plusTrial = {start: '2026-10-01', end: '2099-01-01'}; s.plusPaid = true; s.plusCheckedAt = Date.now() - 4 * 864e5")
+    await plus_screen(); assert "Plus is on" not in await text(pg, "#view") and await pg.locator("[data-plus-trial]").count() == 0
+    assert await pg.locator("[data-trial-start]").count() == 0, "no free week without a card on file"
+    # with checkout keys: the free week starts only through Paddle checkout
+    await pg.add_init_script("window.KEEPWISE_PADDLE = {env: 'sandbox', token: 'test_abc', monthly: 'pri_m', yearly: 'pri_y'}")
+    await seed(pg, "s.plusPaid = false; s.plusTrial = null; s.plusCheckedAt = 0"); await plus_screen()
+    t = await text(pg, "[data-plus-trial]"); assert "7 DAYS FREE" in t.upper() and "pay nothing" in t, t
+    assert "Start free week" in await text(pg, "[data-plus-buy=yr]")
+    await pg.click("[data-plus-buy=yr]"); await pg.wait_for_timeout(250)
+    assert await pg.locator("[data-plus-trial]").count() == 0 or "Sign in" in await text(pg, "body"), "buying asks to sign in first"
+    # confirmed by the server as trialing: the week counts down and buy buttons go away
+    await seed(pg, "s.plusPaid = true; s.plusCheckedAt = Date.now(); s.plusTrial = {src: 'paddle', end: new Date(Date.now() + 5 * 864e5).toISOString().slice(0, 10)}"); await plus_screen()
+    t = await text(pg, "[data-plus-trial]"); assert "Free week on" in t and "renews" in t, t
+    assert await pg.locator("[data-plus-buy]").count() == 0
+
+@test
 async def plus_screen_gives_reasons_and_prices(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(150)
@@ -3538,22 +3560,18 @@ async def plus_screen_gives_reasons_and_prices(ctx):
     v = await text(pg, "#view")
     for reason in ("Connect your bank", "Since last time", "Split emails, sent for you", "Business Account", "Your money on every device", "Live splits and Moments"):
         assert reason in v, reason
-    assert await pg.locator(".plus-list li.soon").count() == 2 and "Coming next" in v and "Coming later" in v, "what isn't built yet says so"
+    assert await pg.locator(".plus-list li.soon").count() == 1 and "Coming later" in v and "Your business page" in v, "what isn't built yet says so"
     for unbuilt in ("shared household", "Offers near you", "Reminders on every phone", "only you can unlock", "birthday"):   # only promises we can keep
         assert unbuilt not in v, unbuilt
-    assert await pg.locator(".plus-list li").count() == 7
+    assert await pg.locator(".plus-list li").count() == 8
     # prices by country tier: the US pays $9.99 a month or $79 a year
     m = await text(pg, ".plus-price:not(.best)"); y = await text(pg, ".plus-price.best")
     assert "$9.99" in m and "a month" in m, m
     assert "$79" in y and "a year" in y and "About $6.58 a month" in y and "You save 34%" in y, y
     assert "not on sale yet" in v and "Free, and staying free" in v and "Claude" not in v and "Business space" not in v
     assert "EARLY140" in y and "EARLY12" in m, "each price shows its code"
-    # the free week: says when it ends, charges nothing, and reminds 2 days before
-    t = await text(pg, "[data-plus-trial]"); assert "7 days free" in t.upper() or "7 DAYS FREE" in t.upper(), t
-    await pg.click("[data-trial-start]"); await pg.wait_for_timeout(200)
-    st = await state(pg); assert st["plusTrial"]["start"] and st["plusTrial"]["end"], st.get("plusTrial")
-    assert "Free week on" in await text(pg, "[data-plus-trial]") and "nothing is charged" in (await text(pg, "[data-plus-trial]")).lower()
-    await pg.click("[data-trial-stop]"); await pg.wait_for_timeout(200); assert (await state(pg))["plusTrial"].get("cancelled")
+    # no checkout keys yet: no free week to start, and an old free week saved on the phone never turns Plus on
+    assert await pg.locator("[data-plus-trial]").count() == 0 and await pg.locator("[data-trial-start]").count() == 0
     assert await pg.locator("[data-open-account]").count() >= 1, "signed out: the button leads to sign-in"
     w = await pg.evaluate("Math.max(...[...document.querySelectorAll('#view *')].map(e => e.getBoundingClientRect().right))"); assert w <= 390.5, f"nothing runs off the screen: {w}"
     await pg.click("[data-plus-close]"); await pg.wait_for_timeout(150)

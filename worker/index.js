@@ -73,6 +73,7 @@ async function plaid(origin, env, path, b){
   if (!env.PLAID_CLIENT_ID || !env.PLAID_SECRET) return fail(origin, 503, "Bank connection isn't switched on yet.");
   if (path === "/plaid/link"){
     const uid = String(b.uid || ""); if (!/^[a-z0-9]{8,40}$/.test(uid)) return fail(origin, 400, "Bad request.");
+    if (env.PADDLE_API_KEY){ let user; try { user = await firebaseUser(b.idToken); } catch(e){ return fail(origin, 401, "Sign in again to connect a bank."); } if (!(await needPlus(env, user))) return fail(origin, 402, "Connecting a bank needs KeepWise Plus."); }
     const {ok, data} = await plaidCall(env, "/link/token/create", {client_name: "KeepWise", language: "en", country_codes: ["US"], user: {client_user_id: uid}, products: ["transactions"], transactions: {days_requested: 90}, ...(env.PLAID_REDIRECT ? {redirect_uri: env.PLAID_REDIRECT} : {})});
     return ok ? reply(origin, 200, {link_token: data.link_token, env: env.PLAID_ENV || "sandbox"}) : fail(origin, 502, plaidErr(data));
   }
@@ -145,6 +146,7 @@ async function splitEmail(origin, env, b){
   if (!env.RESEND_API_KEY) return fail(origin, 503, "Email isn't switched on yet.");
   let user; try { user = await firebaseUser(b.idToken); } catch(e){ return fail(origin, 401, "Sign in again to send emails."); }
   if (!user.email || !user.email_verified) return fail(origin, 403, "Verify your account email first, then try again.");
+  if (!(await needPlus(env, user))) return fail(origin, 402, "This needs KeepWise Plus.");
   const from = String(b.from || "").replace(/[\r\n<>"]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40) || "A friend", title = String(b.title || "").replace(/[\r\n]/g, " ").trim().slice(0, 60) || "a split";
   if (b.kind === "self"){   // the monthly summary goes only to the signed-in person's own address
     const x = (Array.isArray(b.items) && b.items[0]) || {}, name = String(x.name || "").replace(/[\r\n<>"]/g, " ").trim().slice(0, 40) || "there", text = String(x.text || "").trim().slice(0, 3000);
@@ -195,6 +197,7 @@ async function invoiceEmail(origin, env, b){
   if (!env.RESEND_API_KEY) return fail(origin, 503, "Email isn't switched on yet.");
   let user; try { user = await firebaseUser(b.idToken); } catch(e){ return fail(origin, 401, "Sign in again to send emails."); }
   if (!user.email || !user.email_verified) return fail(origin, 403, "Verify your account email first, then try again.");
+  if (!(await needPlus(env, user))) return fail(origin, 402, "This needs KeepWise Plus.");
   const to = String(b.to || "").trim(); if (!EMAIL_RE.test(to)) return fail(origin, 400, "Check the client's email address.");
   const clean = (v, n) => String(v || "").replace(/[\r\n<>"]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
   const biz = clean(b.business, 50) || "Your supplier", client = clean(b.client, 60) || "there", subject = clean(b.subject, 120) || `Invoice from ${biz}`, text = String(b.text || "").trim().slice(0, 2000);
@@ -287,12 +290,23 @@ h1{font:700 1.9rem Georgia,serif;margin:14px 0 4px}p{color:var(--m);margin:4px 0
     ${safe(d.pay) ? `<a class="b p" href="${h(d.pay)}" rel="noopener">Pay ${h(d.name)}</a>` : ""}${d.email ? `<a class="b" href="mailto:${h(d.email)}">Email ${h(d.email)}</a>` : ""}${d.phone ? `<a class="b" href="tel:${h(d.phone.replace(/[^+\d]/g, ""))}">Call ${h(d.phone)}</a>` : ""}${d.website ? `<a class="b" href="https://${h(d.website.replace(/^https?:\/\//, ""))}" rel="noopener">${h(d.website.replace(/^https?:\/\//, ""))}</a>` : ""}`);
 }
 
-// ---- KeepWise Plus: is this email's subscription active? Asks Paddle with the secret key kept in Cloudflare (PADDLE_API_KEY). ----
-async function plusStatus(origin, env, b){
-  const email = String((b && b.email) || "").trim().toLowerCase();
-  if (!env.PADDLE_API_KEY || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return new Response(JSON.stringify({plus: null}), {headers: {"Content-Type": "application/json", ...cors(origin)}});
+// ---- KeepWise Plus: the server, not the phone, decides who has Plus. It asks Paddle with the secret key kept in Cloudflare
+// (PADDLE_API_KEY). Active or trialing counts; once a free week ends without payment, Paddle cancels and Plus turns off. ----
+async function paddleSub(env, email){
+  if (!env.PADDLE_API_KEY || !email) return null;
   const base = env.PADDLE_ENV === "production" ? "https://api.paddle.com" : "https://sandbox-api.paddle.com", h = {Authorization: "Bearer " + env.PADDLE_API_KEY};
   const c = await (await fetch(`${base}/customers?email=${encodeURIComponent(email)}`, {headers: h})).json(), id = c && c.data && c.data[0] && c.data[0].id;
-  let plus = false; if (id){ const s = await (await fetch(`${base}/subscriptions?customer_id=${id}&status=active,trialing`, {headers: h})).json(); plus = !!(s && s.data && s.data.length); }
-  return new Response(JSON.stringify({plus}), {headers: {"Content-Type": "application/json", ...cors(origin)}});
+  if (!id) return {plus: false};
+  const s = await (await fetch(`${base}/subscriptions?customer_id=${id}&status=active,trialing`, {headers: h})).json(), sub = s && s.data && s.data[0];
+  if (!sub) return {plus: false};
+  const trial = sub.status === "trialing" ? ((sub.items && sub.items[0] && sub.items[0].trial_dates && sub.items[0].trial_dates.ends_at) || sub.next_billed_at || null) : null;
+  return {plus: true, trialEnds: trial};
+}
+const needPlus = async (env, user) => { if (!env.PADDLE_API_KEY) return true; const r = await paddleSub(env, user && user.email_verified ? String(user.email).toLowerCase() : ""); return !!(r && r.plus); };
+async function plusStatus(origin, env, b){
+  const json = o => new Response(JSON.stringify(o), {headers: {"Content-Type": "application/json", ...cors(origin)}});
+  let user; try { user = await firebaseUser(b && b.idToken); } catch(e){ return json({plus: null}); }
+  if (!env.PADDLE_API_KEY) return json({plus: null});
+  if (!user.email || !user.email_verified) return json({plus: false});
+  return json(await paddleSub(env, String(user.email).toLowerCase()) || {plus: null});
 }

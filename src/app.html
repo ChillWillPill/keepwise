@@ -1971,7 +1971,7 @@ async function plaidConnect(forBiz){
   if (PLAID.busy) return; PLAID.busy = "link"; PLAID.err = ""; render(true);
   const s = plaidStore(); if (!s.uid){ s.uid = Array.from(crypto.getRandomValues(new Uint8Array(12)), x => x.toString(36).padStart(2, "0")).join("").slice(0, 20); plaidKeep(s); }
   try {
-    const [{link_token}] = await Promise.all([salesCall("/plaid/link", {uid: s.uid}), window.Plaid ? null : loadScript("https://cdn.plaid.com/link/v2/stable/link-initialize.js")]);
+    const [{link_token}] = await Promise.all([salesCall("/plaid/link", {uid: s.uid, idToken: ACC.user ? await ACC.user.getIdToken() : ""}), window.Plaid ? null : loadScript("https://cdn.plaid.com/link/v2/stable/link-initialize.js")]);
     if (!window.Plaid) throw new Error("The bank connection couldn't load. Check your connection and try again.");
     await new Promise((done, stop) => { const h = window.Plaid.create({token: link_token,
       onSuccess: async (public_token, meta) => { try { busy("Connecting your bank"); const {item} = await salesCall("/plaid/exchange", {public_token}); const s2 = plaidStore(), inst = (meta && meta.institution) || {};
@@ -3134,7 +3134,12 @@ function spaceSwitch(){
 /* ================= KeepWise Plus: Business space (tester preview) =================
    Plus is not on sale yet. A hidden tester switch turns it on: tap the "KeepWise Plus" label 7 times.
    Business money stays on this phone like everything else. Business runs on calendar months. */
-const plusOn = () => !!S.plusTester || !!S.plusPaid || trialOn();
+// Plus is on only when the KeepWise server confirmed an active or trialing subscription in the last 3 days. The free week
+// is a Paddle trial (card on file, cancel any time before it ends), so it can't be restarted by clearing the app. The
+// hidden tester switch works only in a local test build, never on mykeepwise.com.
+const devBuild = () => /^(file:|https?:\/\/(localhost|127\.0\.0\.1)[:/])/.test(location.href);
+const plusPaidOk = () => !!S.plusPaid && !!S.plusCheckedAt && Date.now() - S.plusCheckedAt < 3 * 864e5;
+const plusOn = () => (devBuild() && !!S.plusTester) || plusPaidOk();
 const PLUS_TAP = {n: 0, t: 0};
 const BIZ_COST_CATS = ["Supplies", "Office & software", "Advertising & marketing", "Equipment", "Contract labor", "Fees & commissions", "Travel", "Meals", "Car & truck", "Utilities & phone", "Rent", "Insurance", "Returns & refunds", "Other"], BIZ_IN_CATS = ["Sales", "Services", "Other"];
 const BIZ = {lines: null, pick: new Set(), file: "", rcpt: null, view: null};
@@ -3917,7 +3922,7 @@ function bizPreview(){
       ${joined ? `<p><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p>`
         : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`
         : `<button class="btn primary" type="button" data-open-account>Sign in to join the waitlist</button>`}
-      ${!window.Capacitor && !(S.plusTrial && S.plusTrial.start) ? `<button class="btn" type="button" data-trial-start>Try it free for 7 days</button>` : ""}
+      ${PADDLE() ? `<button class="btn" type="button" data-plus-open>Try Plus free for 7 days</button>` : ""}
       <button class="btn" type="button" data-bz-demo-on>👀 Explore a demo business</button>
       ${plusLink()}
       <button class="link small" type="button" data-space="personal" style="align-self:center">Back to Personal</button>
@@ -4068,7 +4073,7 @@ OUT.billsCard = () => { const C = compute();
   const pp = total > 0 ? Math.min(100, paid / total * 100) : 0;
   return `<section class="card prog-card bills-v" data-bills-card><div class="bv-head"><div class="sv-ring bv-ring" style="--p:${pp.toFixed(1)}" aria-hidden="true"><i>${done.length}/${items.length}</i></div>
     <div class="bv-t"><h2>Bills this month</h2><span class="small muted tnum"><b class="tnum" style="color:var(--ink)">${fmt(r2(total - paid))}</b> to go · <span data-bills-count>${done.length} of ${items.length} paid</span></span></div></div>
-    <div class="bv-tiles" role="group" aria-label="Tap a bill to mark it paid">${items.map(x => { const on = !!paidOn(x.id, C.planKey); return `<button class="bv-tile${on ? " on" : ""}" type="button" data-paid="${x.id}" aria-pressed="${on}" aria-label="${on ? `${esc(x.n)} is paid. Tap to mark it not paid` : `Mark ${esc(x.n)} as paid`}">${brandTile(x.n, 40)}<span>${esc(x.n.split(/\s+/)[0])}</span>${on ? `<em aria-hidden="true">${TICK_SVG}</em>` : ""}</button>`; }).join("")}</div>
+    <div class="bv-tiles" data-scroll-x role="group" aria-label="Tap a bill to mark it paid">${items.map(x => { const on = !!paidOn(x.id, C.planKey); return `<button class="bv-tile${on ? " on" : ""}" type="button" data-paid="${x.id}" aria-pressed="${on}" aria-label="${on ? `${esc(x.n)} is paid. Tap to mark it not paid` : `Mark ${esc(x.n)} as paid`}">${brandTile(x.n, 40)}<span>${esc(x.n.split(/\s+/)[0])}</span>${on ? `<em aria-hidden="true">${TICK_SVG}</em>` : ""}</button>`; }).join("")}</div>
     <div class="bl-foot"><span class="small muted">${left[0] ? `Next: ${esc(left[0].n)} · <b class="tnum">${fmt(left[0].a)}</b>${left[0].due ? ` · due the ${ordinal(left[0].due)}` : ""}` : ""}</span><button class="link small" type="button" data-bills-open>See all ›</button></div></section>`; };
 // Money actually set aside is split the way the person chose: the goal first, the emergency fund first, or half each.
 // The emergency fund is S.efSaved and the goal is S.goalSaved, so each bar shows only real money.
@@ -5281,7 +5286,7 @@ function localNotes(){
   yearlySoon(3).forEach(v => { const n = daysUntil(v.d); add(`yd:${v.x.key}:${isoOf(v.d)}`, `${v.x.name} is due ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `${fmt(v.x.amount)} on ${dayMonth(v.d)}. It comes once a year.`, v.x.go[0], v.x.go[1]); });
   yearlyDue().forEach(v => add(`ya:${v.x.key}:${isoOf(v.date)}`, YR_ASK[v.x.kind](v.x.name), `${fmt(v.x.amount)} was due ${dayMonth(v.date)}.`, "month", `[data-yr-due="${v.x.key}"]`));
   billsDue().forEach(v => add(`b:${v.e.id}:${isoOf(v.date)}`, `Did you pay ${v.e.name}?`, `${fmt(v.e.amount)} was due ${dayMonth(v.date)}.`, "month", `[data-bill-due="${v.e.id}"]`));
-  if (trialOn() && daysUntil(trialEnds()) <= 2) add(`trial:${S.plusTrial.end}`, daysUntil(trialEnds()) <= 1 ? "Your free week of Plus ends tomorrow" : "Your free week of Plus ends in 2 days", `It ends on ${dateWithYear(isoDate(S.plusTrial.end))}. Nothing is charged; everything free stays.`, "month", null);
+  if (trialOn() && daysUntil(trialEnds()) <= 2) add(`trial:${S.plusTrial.end}`, daysUntil(trialEnds()) <= 1 ? "Your free week of Plus ends tomorrow" : "Your free week of Plus ends in 2 days", `It ends on ${dateWithYear(isoDate(S.plusTrial.end))}. After that Plus renews at your plan price. Cancel before then from your Paddle receipt email and you pay nothing.`, "month", null);
   (S.loans || []).filter(loanNeedsDetails).forEach(l => add(`ld:${l.id}`, `Finish the details for ${l.name || loanKind(l.kind)}`, "Add the amount left or the end date, so KeepWise can show when it ends and your statement is complete.", "plan", `[data-loan="${l.id}"]`, null, l.id));
   (S.loans || []).filter(l => l.end && !loanDone(l)).forEach(l => { const f = loanFinish(l), n = f ? daysUntil(f.date) : 99; if (n >= 0 && n <= 30) add(`l:${l.id}:${l.end}`, `${l.name || loanKind(l.kind)} ends ${n === 0 ? "today" : n === 1 ? "tomorrow" : "in " + n + " days"}`, `After that, ${fmt(loanMonthly(l))} a month stays with you.`, "plan", `[data-loan="${l.id}"]`); });
   return out;
@@ -7754,7 +7759,7 @@ const PLUS_PRICE = (() => { const t = PLUS_TIERS[1]; return {monthly: t.mo, year
 const plusPrice = () => PLUS_TIERS[plusTier()];
 // The free week: 7 days of everything in Plus, then the country's price. It is offered at natural moments only, says the
 // day it ends and the price after it, and reminds 2 days before. Nothing is charged here: Plus is not on sale yet.
-const trialOn = () => !!(S.plusTrial && S.plusTrial.end && isoOf(todayMid()) < S.plusTrial.end && !S.plusTrial.cancelled);
+const trialOn = () => !!(plusPaidOk() && S.plusTrial && S.plusTrial.src === "paddle" && S.plusTrial.end && isoOf(todayMid()) < S.plusTrial.end);
 const trialEnds = () => S.plusTrial ? isoDate(S.plusTrial.end) : null;
 const usd = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
 const HOME_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>';
@@ -7773,21 +7778,30 @@ const PLUS_REASONS = () => [
 const PLUS_FREE = ["Your month-end number and plan", "Subscriptions, with reminders before payday", "Ideas to pay less, and your promo codes", "Splits on this phone, with ready-made messages to send", "Statement import, monthly statements, trends and backups", "Your cards, with limits and reminders", "8 themes, light and dark, with Liquid Glass and Terminal", "App lock with Face ID or fingerprint"];
 // Paying for Plus: Paddle checkout opens once window.KEEPWISE_PADDLE = {token, env, monthly, yearly} is set (client token and
 // the two price ids from Paddle; none of these are secret). Until then the buttons keep the waitlist. Android never sells here.
-const PADDLE = () => { const p = window.KEEPWISE_PADDLE; return p && p.token && p.monthly && !window.Capacitor ? p : null; };
+// ▼ Fill these in from Paddle (Developer tools → Authentication for the client-side token; Catalog → Prices for the ids).
+// None of them are secret. While any still says REPLACE, checkout stays off and Plus shows the waitlist.
+const PADDLE_CONFIG = {
+  env: "sandbox",                         // "sandbox" while testing, then "production"
+  token: "test_REPLACE_client_side_token", // live tokens start with live_
+  monthly: "pri_REPLACE_monthly_9_99",     // $9.99 a month price, with a 7-day free trial set on it
+  yearly: "pri_REPLACE_yearly_79",         // $79 a year price, with a 7-day free trial set on it
+};
+const PADDLE = () => { const p = window.KEEPWISE_PADDLE || PADDLE_CONFIG; return p && p.token && p.monthly && p.yearly && !/REPLACE/.test(p.token + p.monthly + p.yearly) && !window.Capacitor ? p : null; };
 let paddleReady = null;
 function paddleLoad(){ if (paddleReady) return paddleReady; const p = PADDLE(); if (!p) return Promise.reject(new Error("off"));
-  paddleReady = new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdn.paddle.com/paddle/v2/paddle.js"; sc.onload = () => { try { if (p.env === "sandbox") window.Paddle.Environment.set("sandbox"); window.Paddle.Initialize({token: p.token, eventCallback: e => { if (e && e.name === "checkout.completed"){ S.plusPaid = true; S.plusPaidAt = Date.now(); save(); render(true); toast("Welcome to KeepWise Plus. Thank you!"); } }}); ok(window.Paddle); } catch(e){ no(e); } }; sc.onerror = no; document.head.appendChild(sc); });
+  paddleReady = new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdn.paddle.com/paddle/v2/paddle.js"; sc.onload = () => { try { if (p.env === "sandbox") window.Paddle.Environment.set("sandbox"); window.Paddle.Initialize({token: p.token, eventCallback: e => { if (e && e.name === "checkout.completed"){ toast("Welcome to KeepWise Plus. Thank you!"); setTimeout(() => plusCheck(true), 4000); setTimeout(() => plusCheck(true), 15000); } }}); ok(window.Paddle); } catch(e){ no(e); } }; sc.onerror = no; document.head.appendChild(sc); });
   return paddleReady; }
-async function plusBuy(plan){ const p = PADDLE(); if (!p) return false; const u = typeof ACC !== "undefined" && ACC.user;
+async function plusBuy(plan){ const p = PADDLE(); if (!p) return false; const u = typeof ACC !== "undefined" && ACC.user; if (!u || !u.email){ UI.plus = false; UI.account = true; render(false); toast("Sign in first, so Plus works on all your devices."); return true; }
   try { const P = await paddleLoad(); P.Checkout.open({items: [{priceId: plan === "yr" ? p.yearly : p.monthly, quantity: 1}], customer: u && u.email ? {email: u.email} : undefined, customData: u ? {uid: u.uid} : undefined, settings: {displayMode: "overlay", theme: "light", successUrl: SITE_URL + "?plus=thanks"}}); return true; }
   catch(e){ toast("Checkout didn’t open. Try again in a minute."); return true; } }
 // A signed-in person who paid on another device: ask the KeepWise server once a day whether their Plus is active.
-async function plusCheck(){ const u = typeof ACC !== "undefined" && ACC.user; if (!PADDLE() || !u || !u.email) return; if (S.plusCheckedAt && Date.now() - S.plusCheckedAt < 864e5) return;
-  try { const r = await fetch(API_BASE + "/plus/status", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email: u.email})}); const j = await r.json(); S.plusCheckedAt = Date.now(); if (typeof j.plus === "boolean" && j.plus !== !!S.plusPaid){ S.plusPaid = j.plus; render(true); } save(); } catch(e){} }
+async function plusCheck(force){ const u = typeof ACC !== "undefined" && ACC.user; if (!PADDLE() || !u || !u.email) return; if (!force && S.plusCheckedAt && S.plusPaid != null && Date.now() - S.plusCheckedAt < 432e5) return;
+  try { const idToken = await u.getIdToken(); const r = await fetch(API_BASE + "/plus/status", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({idToken})}); const j = await r.json();
+    if (typeof j.plus !== "boolean") return; const was = plusOn(); S.plusPaid = j.plus; S.plusCheckedAt = Date.now(); S.plusTrial = j.plus && j.trialEnds ? {src: "paddle", end: String(j.trialEnds).slice(0, 10)} : null; save(); if (was !== plusOn()) render(true); } catch(e){} }
 const fmtUsdLocal = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
 function plusCta(){
   const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
-  if (PADDLE()) return `<div class="plus-buy"><button class="btn primary" type="button" data-plus-buy="yr">Get Plus yearly · ${esc(fmtUsdLocal(plusPrice().yr))}</button><button class="btn" type="button" data-plus-buy="mo">Monthly · ${esc(fmtUsdLocal(plusPrice().mo))}</button><p class="muted small">Cancel anytime. Secure checkout by Paddle.</p></div>`;
+  if (PADDLE()) return plusOn() ? "" : `<div class="plus-buy"><button class="btn primary" type="button" data-plus-buy="yr">Start free week · then ${esc(fmtUsdLocal(plusPrice().yr))} a year</button><button class="btn" type="button" data-plus-buy="mo">Or ${esc(fmtUsdLocal(plusPrice().mo))} a month after the free week</button><p class="muted small">Secure checkout by Paddle. Cancel any time before the week ends and you pay nothing.</p></div>`;
   return joined ? `<p class="plus-joined"><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus opens.</p><button class="link small" type="button" data-acc-plus-off style="align-self:center">Leave the waitlist</button>`
     : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the waitlist</button>`
     : `<button class="btn primary" type="button" data-open-account>Sign in to join the waitlist</button>`;
@@ -7795,16 +7809,14 @@ function plusCta(){
 const plusMoney = usdAmt => { const r = UI.plusRate, cur = S.cur || "USD"; return cur !== "USD" && r > 0 ? fmtIn(Math.round(usdAmt * r * 100) / 100, cur) : usd(usdAmt); };
 V.plus = () => { const P = plusPrice(), perMonth = Math.round(P.yr / 12 * 100) / 100, save = Math.round((P.mo * 12 - P.yr) / (P.mo * 12) * 100);
   if (S.cur && S.cur !== "USD" && UI.plusRate == null){ UI.plusRate = 0; fxRate("USD", S.cur).then(r => { UI.plusRate = r || 0; if (UI.plus) render(true); }).catch(() => {}); }
-  const t = S.plusTrial, used = !!(t && t.start), on = trialOn(), end = trialEnds(), left = on ? daysUntil(end) : 0;
+  const on = trialOn(), end = trialEnds(), left = on ? daysUntil(end) : 0;
   const trialCard = window.Capacitor ? "" : on ? `<section class="card plus-trial on" data-plus-trial>
       <div class="pt-top"><div class="pt-ring" style="--pt:${Math.max(0, Math.min(7, left)) / 7}"><b>${left}</b><span>${left === 1 ? "day" : "days"}</span></div>
         <div><span class="pill ok">Free week on</span><h3>${left <= 1 ? "Your free week ends tomorrow" : "Enjoy every part of Plus"}</h3><p class="muted small">Ends ${dateWithYear(end)}</p></div></div>
       <div class="pt-days" aria-hidden="true">${Array.from({length: 7}, (_, i) => `<i class="${i < 7 - left ? "used" : ""}"></i>`).join("")}</div>
-      <p class="muted small" data-keep>Nothing is charged. When Plus opens it will be ${plusMoney(P.mo)} a month or ${plusMoney(P.yr)} a year, and you choose then.</p>
-      <div class="pt-foot"><button class="link small muted" type="button" data-trial-stop>End the free week early</button></div></section>`
-    : used ? `<section class="card plus-trial" data-plus-trial><h3>Your free week has ended</h3><p class="muted small" data-keep>Everything free is still here. Join the waitlist and we’ll email you when Plus opens.</p></section>`
-    : `<section class="card plus-trial" data-plus-trial><span class="pill gold">7 days free</span><h3>Try everything in Plus for a week</h3><p class="muted small" data-keep>Free until <b>${dateWithYear(dayPlus(todayMid(), 7))}</b>. No card needed and nothing is charged. We’ll remind you 2 days before it ends.</p>
-      <button class="btn primary" type="button" data-trial-start>Start my free week</button></section>`;
+      <p class="muted small" data-keep>After ${dateWithYear(end)} your plan renews at its price. To stop, cancel from the Paddle receipt email before then and you pay nothing.</p></section>`
+    : plusOn() ? `<section class="card plus-trial on" data-plus-trial><span class="pill ok">Plus is on</span><h3>Thank you for supporting KeepWise</h3><p class="muted small" data-keep>Manage or cancel any time from your Paddle receipt email.</p></section>`
+    : PADDLE() ? `<section class="card plus-trial" data-plus-trial><span class="pill gold">7 days free</span><h3>Try everything in Plus for a week</h3><p class="muted small" data-keep>Pick a plan below. Nothing is charged until <b>${dateWithYear(dayPlus(todayMid(), 7))}</b>. Cancel before then and you pay nothing. We’ll remind you 2 days before.</p></section>` : "";
   return `<div class="inline" style="justify-content:space-between"><span class="pill gold">KeepWise Plus</span><button class="btn small" type="button" data-plus-close>Done</button></div>
   <h1 class="plus-h">Everything free stays free.</h1>
   <p class="plus-sub">Plus adds what one phone cannot do alone.</p>
@@ -8824,7 +8836,7 @@ $("main").addEventListener("scroll", owlAtEnd, {passive: true}); window.addEvent
 // The hidden Plus tester switch: tap the "KeepWise Plus" label 7 times in a row.
 document.addEventListener("click", e => { const t = e.target.closest && e.target.closest("[data-plus-tap]"); if (!t) return;
   const now = Date.now(); PLUS_TAP.n = now - PLUS_TAP.t < 1500 ? PLUS_TAP.n + 1 : 1; PLUS_TAP.t = now;
-  if (PLUS_TAP.n >= 7){ PLUS_TAP.n = 0; S.plusTester = !S.plusTester; save(); render(false); toast(S.plusTester ? "Plus preview is on. Business is ready to try." : "Plus preview is off."); } });
+  if (PLUS_TAP.n >= 7 && devBuild()){ PLUS_TAP.n = 0; S.plusTester = !S.plusTester; save(); render(false); toast(S.plusTester ? "Plus preview is on. Business is ready to try." : "Plus preview is off."); } });
 document.addEventListener("change", e => { const t = e.target;
   if (t.matches && t.matches("[data-bz-profitpct]")){ bizData().profitPct = Math.max(0, Math.min(90, Math.round(numv(t.value)) || 0)); save(); render(true); return; }
   if (t.matches && t.matches("[data-pl-per]")){ UI.plPer = t.value; render(true); return; }
@@ -9567,8 +9579,6 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-mem-del-play")){ const m = memPlayItem(); if (!m) return; const u = undoable(); S.memories = memList().filter(v => v.id !== m.id); const al = memAlbum(UI.memPlay.key); if (!al || !al.items.length) UI.memPlay = null; else UI.memPlay.i = Math.min(UI.memPlay.i || 0, al.items.length - 1); save(); render(false); toast("Memory removed.", u); return; }
   if (b.dataset.memView){ photoView(b.dataset.memView); return; }
   if (b.hasAttribute("data-mem-del")){ const id = b.closest("[data-mem]").dataset.mem, u = undoable(); S.memories = memList().filter(m => m.id !== id); save(); render(true); memPaint(); toast("Memory removed.", u); return; }
-  if (b.hasAttribute("data-trial-start")){ if (window.Capacitor) return; S.plusTrial = {start: isoOf(todayMid()), end: isoOf(dayPlus(todayMid(), 7))}; save(); render(true); toast("Free week started. Enjoy Plus!"); return; }
-  if (b.hasAttribute("data-trial-stop")){ if (S.plusTrial) S.plusTrial.cancelled = isoOf(todayMid()); UI.biz = false; save(); render(true); toast("Your free week has ended. Everything free is still here."); return; }
   if (b.hasAttribute("data-plus-close")){ UI.plus = false; render(false); return; }
   if (b.hasAttribute("data-open-account")){ if (b.dataset.accStart && typeof ACC !== "undefined"){ ACC.mode = b.dataset.accStart; ACC.err = ""; } UI.account = true; UI.inbox = false; if (typeof accInit === "function") accInit(); render(false); return; }
   const sp = b.closest("[data-split]");

@@ -11,3 +11,11 @@ enabled = false
 [vars]
 # Switch to "production" only after Plaid approves production access and Plus checks who has paid.
 PLAID_ENV = "sandbox"
+# Paddle for Plus: "sandbox" while testing, "production" when you go live (must match PADDLE_CONFIG.env in src/app.html).
+PADDLE_ENV = "sandbox"
+
+# Secrets: never put these in this file or in chat. Add each in Cloudflare → Workers → keepwise-api → Settings →
+# Variables and Secrets → Add → Type: Secret. Example shapes only:
+#   PADDLE_API_KEY  = pdl_sdbx_apikey_xxxxxxxxxxxxxxxx   (Paddle → Developer tools → Authentication → API keys)
+#   RESEND_API_KEY  = re_xxxxxxxxxxxxxxxx                (already used for split and invoice emails)
+#   PLAID_CLIENT_ID / PLAID_SECRET                        (already used for bank connections)
