@@ -127,7 +127,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .lock-pad button:active{background:var(--chip)}
 .lock-pad button.ghost{border-color:transparent;background:none;font-size:.95rem;font-weight:500}
 @media (max-height:620px){.lock-pad{grid-template-columns:repeat(3,60px);gap:8px}.lock-pad button{width:60px;height:60px;font-size:1.25rem}}
-#ask-mic.listening{background:var(--green);color:var(--card);border-color:var(--green);animation:micpulse 1.2s ease-in-out infinite}
+#ask-mic.listening{background:var(--green);color:var(--bg);border-color:var(--green);animation:micpulse 1.2s ease-in-out infinite}
 #ask-mic{position:relative}#ask-mic.listening.quiet::after{content:"";position:absolute;inset:-5px;border-radius:50%;background:conic-gradient(var(--green) var(--qa,360deg),transparent 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));animation:qring var(--quiet,4000ms) linear forwards;pointer-events:none}
 @property --qa{syntax:"<angle>";inherits:false;initial-value:360deg}@keyframes qring{from{--qa:360deg}to{--qa:0deg}}
 @keyframes micpulse{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--green) 22%,transparent)}}
@@ -137,7 +137,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .note-dot{flex:none;width:9px;height:9px;border-radius:50%;margin-top:7px;background:transparent}
 .note-row.unread .note-dot{background:var(--green)}
 .note-row:not(.unread) .name{font-weight:500;color:var(--muted)}
-.bell-n{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:99px;background:var(--rust);color:var(--card);font:700 .72rem/20px var(--body);text-align:center;padding:0 5px}
+.bell-n{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:99px;background:var(--rust);color:var(--bg);font:700 .72rem/20px var(--body);text-align:center;padding:0 5px}
 .app-main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .view{max-width:720px;margin:0 auto;padding:20px 16px 32px;display:flex;flex-direction:column;gap:18px}
 .view [data-out]:empty{display:none}  /* a section with nothing to show takes no room, so it leaves no gap */
@@ -149,7 +149,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .wise-fab img{width:52px;height:52px}
 .app:not(.touring) .view{padding-bottom:max(24px,var(--view-pb,0px))}
 #view form{scroll-margin-top:12px}
-.wise-fab::after{content:"+";position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:var(--green);color:var(--card);font:700 16px/22px var(--body);text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.wise-fab::after{content:"+";position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:var(--green);color:var(--bg);font:700 16px/22px var(--body);text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .wise-fab.moving{transform:scale(1.12);box-shadow:0 10px 26px rgba(0,0,0,.28);cursor:grabbing}
 .app.typing .wise-fab,.app.welcoming .wise-fab,.app.touring .wise-fab{display:none}
 .app.touring .wise-fab.tour-focus{display:grid;position:fixed;z-index:70;pointer-events:none;border-radius:50%;width:64px;height:64px;animation:owlHi 1.6s ease-in-out infinite}.app.touring .wise-fab.tour-focus img{width:52px;height:52px}
@@ -664,7 +664,7 @@ details summary::-webkit-details-marker{display:none}
 .quick-top{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;align-items:center}.quick-top .seg{width:100%;margin:0}.quick-top .seg{display:flex}.quick-top .seg button{flex:1 1 0;white-space:nowrap;padding:8px 6px;font-size:.84rem;min-height:38px;text-align:center}.quick-top .seg{flex:1 1 150px}.quick-view button{font-size:.86rem}.quick-rep{margin:10px 0 2px}.rep-chip{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;background:var(--card);border:1px solid var(--line);box-shadow:var(--lift);border-radius:99px}.rep-chip b{font-weight:700}
 .qh-list{margin-top:8px}.qh-row{gap:10px;padding:9px 0}.qh-row:first-child{border-top:0}.qh-row .btn.small{padding:6px 12px}.qh-row .ln-t{min-width:0}.qh-row .ln-t>div:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qh-x{appearance:none;border:0;background:none;color:var(--muted);width:32px;height:32px;margin:0 -6px 0 -4px;border-radius:50%;display:grid;place-items:center;cursor:pointer;flex:none}.qh-x:hover{background:var(--chip);color:var(--rust)}
 [data-out=envTotal]{display:flex;flex-direction:column;gap:8px}.env-tot{font-size:.95rem;color:var(--muted)}.env-tot b{color:var(--ink);font-size:1.05rem}.env-bar{display:flex;height:8px;border-radius:8px;overflow:hidden;background:var(--chip)}.env-bar i{display:block;height:100%}
-.bills-list .line:first-of-type{border-top:0}.bills-left{margin-top:4px}.bl-row{display:flex;align-items:center;gap:10px;padding:5px 0}.bl-row .tick{width:24px;height:24px;flex:none}.bl-n{flex:1;min-width:0;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bl-foot{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}.bills-ln{padding:9px 0}.bills-all{appearance:none;border:0;background:none;font:inherit;color:inherit;width:100%;display:flex;align-items:center;gap:10px;padding:0;cursor:pointer;text-align:left}.bills-all b{flex:1;font-size:1.02rem}.bills-ok{width:28px;height:28px;border-radius:50%;background:var(--green);color:var(--card);display:grid;place-items:center;flex:none}.bills-ok svg{width:15px;height:15px}.bills-all[aria-expanded=true] .dt-tog svg{transform:rotate(90deg)}.bills-done .bills-list{margin-top:8px}
+.bills-list .line:first-of-type{border-top:0}.bills-left{margin-top:4px}.bl-row{display:flex;align-items:center;gap:10px;padding:5px 0}.bl-row .tick{width:24px;height:24px;flex:none}.bl-n{flex:1;min-width:0;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bl-foot{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}.bills-ln{padding:9px 0}.bills-all{appearance:none;border:0;background:none;font:inherit;color:inherit;width:100%;display:flex;align-items:center;gap:10px;padding:0;cursor:pointer;text-align:left}.bills-all b{flex:1;font-size:1.02rem}.bills-ok{width:28px;height:28px;border-radius:50%;background:var(--green);color:var(--bg);display:grid;place-items:center;flex:none}.bills-ok svg{width:15px;height:15px}.bills-all[aria-expanded=true] .dt-tog svg{transform:rotate(90deg)}.bills-done .bills-list{margin-top:8px}
 .up-tick{width:28px;height:28px;margin-left:8px;flex:none}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.grid3 .btn{padding-left:6px;padding-right:6px;font-size:.84rem}
 /* Calm, consistent type: card titles in the clean sans; the serif stays for big numbers, page titles and the logo. */
 .card h2,.card>.inline>h2,section.card h2,.debt-top .name{font-family:var(--body)!important;font-weight:700;letter-spacing:-.012em}.card h2{font-size:1.18rem}.debt-top .name{font-size:1.06rem}
@@ -1096,7 +1096,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .st-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:.8rem}.st-stats span{opacity:.9}.st-stats span:nth-child(2){text-align:center}.st-stats span:last-child{text-align:right}.st-stats b{display:block;font-size:1rem;opacity:1}
 .st-taxon{margin:4px 0 0;font-size:.8rem;opacity:.85}
 .st-wiz .st-ask{background:var(--gold-soft);border-color:color-mix(in srgb,var(--gold) 35%,var(--line))}.st-ask h2{display:flex;gap:8px;align-items:center;font:800 1rem var(--body)!important}
-.st-qn{background:var(--gold);color:var(--card);font-size:.7rem;font-weight:800}
+.st-qn{background:var(--gold);color:var(--bg);font-size:.7rem;font-weight:800}
 .st-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
 .st-main{appearance:none;border:0;background:none;font:inherit;color:inherit;text-align:left;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;cursor:pointer;min-width:0}
 .st-tile{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:.95rem;flex:none;background:var(--green-soft);color:var(--green)}
@@ -1304,7 +1304,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .ss-waste{appearance:none;border:0;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:16px;background:var(--rust-soft);color:var(--ink);font:inherit}
 .ss-waste b{display:block;color:var(--rust)}.ss-waste small{color:var(--muted)}.ss-waste>span:nth-child(2){flex:1}.ss-w-ic{font-size:1.2rem;color:var(--rust)}
 .ss-stack{display:flex}.ss-stack .btile{margin-left:-8px;border:2px solid var(--rust-soft)}
-.ss-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}@media (min-width:700px){.ss-chips{flex-wrap:wrap;overflow:visible}}.ss-chip{appearance:none;border:0;cursor:pointer;white-space:nowrap;padding:7px 12px;border-radius:99px;background:var(--chip);color:var(--ink);font:700 .78rem var(--body)}.ss-chip small{opacity:.7}.ss-chip.on{background:var(--ink);color:var(--card)}.ss-chip.bad{background:var(--rust-soft);color:var(--rust)}.ss-chip.bad.on{background:var(--rust);color:#fff}
+.ss-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}@media (min-width:700px){.ss-chips{flex-wrap:wrap;overflow:visible}}.ss-chip{appearance:none;border:0;cursor:pointer;white-space:nowrap;padding:7px 12px;border-radius:99px;background:var(--chip);color:var(--ink);font:700 .78rem var(--body)}.ss-chip small{opacity:.7}.ss-chip.on{background:var(--ink);color:var(--bg)}.ss-chip.bad{background:var(--rust-soft);color:var(--rust)}.ss-chip.bad.on{background:var(--rust);color:#fff}
 .subs-sum .summary3{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px}.subs-sum .summary3>div{background:var(--bg);border-radius:14px;padding:8px 10px;border:0!important;display:flex!important;flex-direction:column;align-items:flex-start!important;justify-content:flex-start!important}.subs-sum .summary3 .label{font-size:.6rem}.subs-sum .summary3 b{font-size:1.02rem!important;margin-top:2px}
 .rv-top{display:flex;gap:12px;align-items:center}.rv-t{min-width:0}.rv-t .label{margin:0}.rv-t h3{margin:2px 0;font-size:1.05rem}.rv-t p{margin:0}
 .rv-btns .btn{display:grid;justify-items:center;gap:2px;padding:10px 4px;border:0;font-size:.8rem}.rv-btns .btn span{font-size:1.25rem;line-height:1}.rv-a{background:var(--green-soft)!important;color:var(--green)!important}.rv-b{background:var(--gold-soft)!important;color:var(--gold)!important}.rv-c{background:var(--rust-soft)!important;color:var(--rust)!important}
@@ -1347,7 +1347,13 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 :root[data-skin="glass"]:has(.wiz-top) .card,:root[data-skin="glass"]:has(.wiz-top) .hero{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 .skin-glass i:nth-child(1){background:linear-gradient(135deg,#a8e6cf,#b9d7ff)}.skin-glass i:nth-child(2){background:rgba(255,255,255,.7);box-shadow:inset 0 0 0 1px #dfe7e3}.skin-glass i:nth-child(3){background:#127a57}
 .skin-card{border:1px solid var(--line);border-radius:14px;background:var(--card);display:flex;flex-direction:column}.skin-card.on{border:2px solid var(--green)}.skin-card .skin-opt{border:0!important;background:none!important;box-shadow:none!important;outline:0}
-.lvl-pick{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:0 12px 12px}.lvl-pick input{accent-color:var(--green);width:100%}
+.lvl-pick{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;padding:0 12px 12px;outline:none}.lvl-pick:focus,.lvl-pick:focus-within{outline:none;box-shadow:none}
+.lvl-pick input{grid-column:1/-1;grid-row:2;-webkit-appearance:none;appearance:none;width:100%;height:22px;margin:0;background:transparent;cursor:pointer;--p:50%}
+.lvl-pick input::-webkit-slider-runnable-track{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--green) var(--p),color-mix(in srgb,var(--ink) 14%,transparent) var(--p))}
+.lvl-pick input::-moz-range-track{height:8px;border-radius:99px;background:color-mix(in srgb,var(--ink) 14%,transparent)}.lvl-pick input::-moz-range-progress{height:8px;border-radius:99px;background:var(--green)}
+.lvl-pick input::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--bg);border:3px solid var(--green);margin-top:-7px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.lvl-pick input::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--bg);border:3px solid var(--green)}
+.lvl-pick input:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px var(--green-soft)}
 .note-grp{margin:14px 4px 6px;font-size:.72rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .note-brand{background:none!important;position:relative}.note-brand .note-dot{position:absolute;top:-2px;right:-2px}
 .note-row.unread{background:linear-gradient(90deg,var(--green-soft),transparent 60%)}
@@ -1357,6 +1363,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .kpick-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.kpick-h b{font:700 1.1rem var(--body)}.kpick-x{appearance:none;border:0;background:var(--chip);width:34px;height:34px;border-radius:50%;cursor:pointer;color:var(--ink)}
 .kpick-list{overflow:auto;display:grid;gap:6px}.kpick-o{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 .98rem var(--body);text-align:left;padding:14px 16px;border-radius:14px;cursor:pointer}
 .kpick-o.on{background:var(--green);color:var(--on-green);border-color:transparent}.kpick-o:disabled{opacity:.4}
+.subs-add{width:100%}.sub-pop{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}.sub-pop-o{appearance:none;flex:none;width:74px;display:flex;flex-direction:column;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:16px;padding:10px 4px;cursor:pointer;color:var(--ink)}.sub-pop-o small{font:600 .7rem var(--body);text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sub-pop-o.on{border-color:var(--green);background:var(--green-soft)}
 .kd-nav{display:flex;justify-content:space-between;align-items:center;padding:4px 2px 10px}.kd-nav b{font:700 1.15rem var(--display)}
 .kd-m{appearance:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:700 1.3rem var(--body);cursor:pointer}.kd-m:disabled{opacity:.3}
 .kd-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;justify-items:center}.kd-wk span{font:700 .72rem var(--body);color:var(--muted);padding:2px 0 4px}
@@ -4611,9 +4618,11 @@ V.subs = () => `
   <div data-out="subsList">${OUT.subsList()}</div>
   <div data-out="dropCard">${OUT.dropCard()}</div>
   <button class="link small subs-import" type="button" data-import-open>${STMT_IC}Find subscriptions in a bank statement</button>
-  <details class="card"><summary>Add a subscription</summary>
-    <form data-form="addSub" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
-      <label class="field"><span>Name</span><input name="name" required placeholder="e.g. YouTube Premium"></label>
+  <button class="btn subs-add" type="button" data-sub-new>${I.plus}Add a subscription</button>${UI.subAdd ? subAddWiz() : ""}`;
+const SUB_POPULAR = ["Netflix", "Spotify", "Hulu", "YouTube Premium", "Disney+", "Max", "Apple Music", "Prime Video", "Peacock", "ChatGPT Plus", "iCloud+", "Xbox Game Pass"];
+const subAddWiz = () => `<form class="wiz sf" data-form="addSub"><div class="wiz-top sf-top"><button class="icon-btn" type="button" data-sub-new-close aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button><b>New subscription</b><button class="icon-btn" type="button" data-sub-new-close aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
+    <div class="wiz-card"><p class="label" style="margin:0">Popular</p><div class="sub-pop" data-scroll-x>${SUB_POPULAR.map(n => `<button type="button" class="sub-pop-o${UI.subAddName === n ? " on" : ""}" data-sub-fill="${esc(n)}">${brandTile(n, 36)}<small>${esc(n)}</small></button>`).join("")}</div>
+      <label class="field"><span>Name</span><input name="name" required placeholder="e.g. YouTube Premium" value="${esc(UI.subAddName || "")}" autocomplete="off"></label>
       <div class="grid2"><label class="field"><span>Price</span><input name="price" required inputmode="decimal" placeholder="13.99"></label>
       <label class="field"><span>Billed</span><select name="cycle">${subCycOpts("mo")}</select></label></div>
       <div class="grid2"><label class="field"><span>Last used</span><input name="last" type="date"${dUpTo()} value="${isoDaysAgo(0)}"></label>
@@ -4621,8 +4630,7 @@ V.subs = () => `
       <label class="field" data-renew-yr hidden><span>Next charge <span class="muted small">(optional)</span></span><input name="renew" type="date"${dFrom("")}></label></div>
       <label class="field"><span>Kind</span><input name="group" placeholder="Video, Music, Fitness…" list="groups"></label>
       <datalist id="groups">${[...new Set(S.subs.map(s => s.group).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("")}</datalist>
-      <button class="btn primary" type="submit">Add subscription</button>
-    </form></details>`;
+      <button class="btn primary" type="submit">Add subscription</button></div></form>`;
 // All, Monthly or Yearly: the totals and the list below follow the switch.
 const STMT_IC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg>';
 const SUB_CYCLES = [["all", "All"], ["mo", "Monthly"], ["yr", "Yearly"]];
@@ -8604,7 +8612,7 @@ const themesCard = bare => `<section class="card" data-set-look>${bare ? "" : "<
     <p class="muted small" style="margin:0">Auto follows your phone.</p>
     <div class="skin-list" role="radiogroup" aria-label="Optional themes">${SKINS.map(([k, n, d]) => { const lvl = k === "terminal" || k === "glass", on = skinNow() === k, v = k === "glass" ? (S.glassLvl ?? 60) : (S.glowLvl ?? 50);
       const btn = `<button type="button" class="skin-opt" role="radio" aria-checked="${on}" data-skin-set="${k}"><span class="skin-sw skin-${k}" aria-hidden="true"><i></i><i></i><i></i></span><span><b>${n}</b><small class="muted">${d}</small></span></button>`;
-      return lvl ? `<div class="skin-card${on ? " on" : ""}">${btn}<label class="lvl-pick" data-lvl-pick><span class="small muted">${k === "glass" ? "Glass" : "Glow"}</span><input type="range" min="0" max="100" step="5" value="${v}" data-lvl="${k}" aria-label="${k === "glass" ? "Glass level" : "Glow level"}"><b class="tnum" data-lvl-out>${v}%</b></label></div>` : btn; }).join("")}</div>
+      return lvl ? `<div class="skin-card${on ? " on" : ""}">${btn}<label class="lvl-pick" data-lvl-pick><span class="small muted">${k === "glass" ? "Glass" : "Glow"}</span><input type="range" min="0" max="100" step="5" value="${v}" style="--p:${v}%" data-lvl="${k}" aria-label="${k === "glass" ? "Glass level" : "Glow level"}"><b class="tnum" data-lvl-out>${v}%</b></label></div>` : btn; }).join("")}</div>
     </section>`;
 const setHead = t => `<div class="inline" style="justify-content:space-between"><h1>${t}</h1><button class="btn small" type="button" data-settings-close>Done</button></div>`;
 // Four screens, each with one job and nothing repeated: Settings (how the app looks and behaves), Security & privacy
@@ -8853,7 +8861,7 @@ function menuGo(k){
   if (k === "banks"){ UI.biz = false; openBanks(); return; }
   UI.settings = k === "security" || k === "support" || k === "data" || k === "backup" ? k : "settings"; render(false); $("main").scrollTop = 0;
 }
-document.addEventListener("input", e => { const l = e.target.closest && e.target.closest("[data-lvl]"); if (!l) return; const v = +l.value; if (l.dataset.lvl === "glass") S.glassLvl = v; else S.glowLvl = v; if (skinNow() !== l.dataset.lvl){ S.skin = l.dataset.lvl; document.querySelectorAll(".skin-card,.skin-opt").forEach(x => { if (x.classList.contains("skin-card")) x.classList.toggle("on", !!x.querySelector(`[data-lvl="${l.dataset.lvl}"]`)); else x.setAttribute("aria-checked", x.dataset.skinSet === l.dataset.lvl); }); } const o = l.parentElement.querySelector("[data-lvl-out]"); if (o) o.textContent = v + "%"; applyTheme(); clearTimeout(window.__lvlT); window.__lvlT = setTimeout(save, 300); });
+document.addEventListener("input", e => { const l = e.target.closest && e.target.closest("[data-lvl]"); if (!l) return; const v = +l.value; if (l.dataset.lvl === "glass") S.glassLvl = v; else S.glowLvl = v; if (skinNow() !== l.dataset.lvl){ S.skin = l.dataset.lvl; document.querySelectorAll(".skin-card,.skin-opt").forEach(x => { if (x.classList.contains("skin-card")) x.classList.toggle("on", !!x.querySelector(`[data-lvl="${l.dataset.lvl}"]`)); else x.setAttribute("aria-checked", x.dataset.skinSet === l.dataset.lvl); }); } l.style.setProperty("--p", v + "%"); const o = l.parentElement.querySelector("[data-lvl-out]"); if (o) o.textContent = v + "%"; applyTheme(); clearTimeout(window.__lvlT); window.__lvlT = setTimeout(save, 300); });
 document.addEventListener("input", e => { const q = e.target.closest && e.target.closest("[data-place-q]"); if (!q) return; clearTimeout(PLACE.t); PLACE.t = setTimeout(() => placeSearch(q), 450); });
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-place-pick], [data-place-manual]"); if (!b) return; e.preventDefault(); e.stopPropagation();
   const fld = b.closest(".place-field"), f = fld.closest("form"), inp = fld.querySelector("[data-place-q]"), box = fld.querySelector("[data-place-res]");
@@ -9197,7 +9205,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-addx")){ const k = b.getAttribute("data-addx"); if (VOICE.rec) voiceFinish(false); UI.askOpen = false;
     const fire = at => { const t = document.createElement("button"); t.type = "button"; t.hidden = true; t.setAttribute(at, ""); view.appendChild(t); t.click(); t.remove(); };
     if (k === "receipt"){ render(true); fire("data-rcpt-snap"); return; }
-    if (k === "sub"){ goTo("subs"); const d = [...view.querySelectorAll("details")].find(x => /Add a subscription/.test(x.querySelector("summary")?.textContent || "")); if (d){ d.open = true; d.scrollIntoView({block: "start"}); } return; }
+    if (k === "sub"){ UI.subAdd = true; UI.subAddName = ""; goTo("subs"); return; }
     const G = {trip: ["budget", "month", "[data-out=trips]", "data-trip-add"], event: ["budget", "month", "[data-out=trips]", "data-event-add"], loan: ["budget", "plan", "[data-out=loans]", "data-loan-add"], bill: ["budget", "month", "[data-env-open=needs]", "data-add-exp"], income: ["more", "month", null, "data-inc-add"], split: [null, "split", null, "data-new-split"]}[k];
     if (G[0]) UI.mseg = G[0]; if (k === "bill") UI.openEnv = "needs"; goTo(G[1], G[2]); fire(G[3]); return; }
   if (b.hasAttribute("data-ask-close")){ if (VOICE.rec) voiceFinish(false); UI.askOpen = false; render(true); return; }
@@ -9258,7 +9266,10 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-env-edit")){ UI.envEdit = !UI.envEdit; render(true); return; }
   if (b.hasAttribute("data-act-more")){ const id = b.closest("[data-split]").dataset.split; UI.actMenu = UI.actMenu === id ? null : id; render(true); return; }
   if (b.hasAttribute("data-goal-set")){ UI.goalSet = true; render(true); const i = view.querySelector('[data-bind="goalName"]'); if (i) i.focus(); return; }
-  if (b.dataset.subPick != null){ const d = view.querySelector('form[data-form="addSub"]'); const det = d && d.closest("details"); if (det){ det.open = true; const n = d.querySelector("[name=name]"); if (b.dataset.subPick) n.value = b.dataset.subPick; det.scrollIntoView({behavior: "smooth", block: "start"}); (b.dataset.subPick ? d.querySelector("[name=price]") : n).focus({preventScroll: true}); } return; }
+  if (b.dataset.subPick != null){ UI.subAdd = true; UI.subAddName = b.dataset.subPick || ""; render(true); const f = document.querySelector('form[data-form="addSub"]'); if (f) f.querySelector(UI.subAddName ? "[name=price]" : "[name=name]").focus({preventScroll: true}); return; }
+  if (b.hasAttribute("data-sub-new")){ UI.subAdd = true; UI.subAddName = ""; render(true); const f = document.querySelector('form[data-form="addSub"] [name=name]'); if (f) f.focus({preventScroll: true}); return; }
+  if (b.hasAttribute("data-sub-new-close")){ UI.subAdd = false; UI.subAddName = ""; render(true); return; }
+  if (b.dataset.subFill){ const f = b.closest("form"); f.querySelector("[name=name]").value = b.dataset.subFill; f.querySelectorAll(".sub-pop-o").forEach(x => x.classList.toggle("on", x === b)); const pr = f.querySelector("[name=price]"); if (pr) pr.focus({preventScroll: true}); return; }
   if (b.hasAttribute("data-drop-flag")){ UI.subKind = "flag"; render(true); const l = view.querySelector('[data-out="subsList"]'); if (l) l.scrollIntoView({behavior: "smooth", block: "start"}); return; }
   if (b.dataset.quickMore !== undefined){ UI.quickAll = !UI.quickAll; const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
   if (b.dataset.quickIc){ UI.quick = UI.quick === b.dataset.quickIc ? null : b.dataset.quickIc; const sh = $("asksheet"); if (sh){ askRedraw(sh); const i = sh.querySelector("[data-form=quick] [name=amount]"); if (i) i.focus(); } return; }
@@ -10117,7 +10128,7 @@ view.addEventListener("submit", async e => {
   if (kind === "addSub"){ const name = String(fd.get("name")).trim(), price = numv(fd.get("price")); if (!name || !price){ toast("Add a name and a price."); return; }
     const ns = {id:uid(), name, price, cycle:fd.get("cycle"), last:fd.get("last") || isoDaysAgo(0), group:String(fd.get("group")||"").trim(), env:"misc", keep:"auto"};
     const rn = String(fd.get("renew") || ""), rd = +fd.get("renewDay") || 0; if ((ns.cycle === "yr" || SUB_WK(ns.cycle)) && rn) ns.renewDate = rn; else if (ns.cycle !== "yr" && !SUB_WK(ns.cycle) && rd >= 1 && rd <= 31) ns.renewDay = rd; else startCycle(ns);
-    S.subs.push(ns); save(); goTo("subs", `[data-sub="${ns.id}"]`); toast(`Added ${name}.`); return; }   // show the one just added, wherever it sorts
+    S.subs.push(ns); UI.subAdd = false; UI.subAddName = ""; save(); goTo("subs", `[data-sub="${ns.id}"]`); toast(`Added ${name}.`); return; }   // show the one just added, wherever it sorts
   if (kind === "addSwap"){ const link = fd.get("link"), alt = String(fd.get("alt")).trim(); if (!link || !alt){ toast("Pick what you pay for and name the cheaper option."); return; }
     const [type,id] = link.split(":"), src = type === "expense" ? S.expenses.find(x=>x.id===id) : S.subs.find(x=>x.id===id);
     S.swaps.push({id:uid(), link, title: src ? src.name : "", alt, altCost:numv(fd.get("altCost")), note:"", on:false}); save(); render(true); toast("Comparison added."); return; }
