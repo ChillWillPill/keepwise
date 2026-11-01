@@ -203,6 +203,33 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .ask-words ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}.ask-words p{margin:0}
 @media (prefers-reduced-motion:no-preference){.ask-panel{animation:viewin .18s ease-out both}}
 @media print{.wise-fab,.ask-sheet{display:none!important}}
+/* Empty screens: a faded Example preview, a headline, one sentence, one action */
+.es-card{display:grid;gap:10px}.es-card.es-in{padding:4px 0}
+.es-stage{position:relative;height:156px;border-radius:18px;background:linear-gradient(160deg,var(--green-soft),transparent 78%);overflow:hidden}
+.es-ex{position:absolute;top:10px;left:12px;font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);z-index:3}
+.es-h{margin:4px 0 0;font:700 1.15rem var(--body)}.es-p{margin:0;color:var(--muted);line-height:1.5}
+.es-card>.btn{width:100%}.es-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.es-two .btn{display:flex;align-items:center;justify-content:center;gap:6px}.es-two .btn svg{width:18px;height:18px}
+.es-f{position:absolute;border-radius:16px;box-shadow:0 14px 28px -16px rgba(0,0,0,.55);padding:11px 13px;display:grid;gap:4px;color:#fff;transition:transform .5s cubic-bezier(.2,.9,.3,1)}
+.es-f small{font-size:.68rem;font-weight:700;opacity:.88}.es-f b{font:700 1.2rem var(--display)}.es-f i{font-style:normal;font-size:.7rem;opacity:.9}
+.es-bar{display:block;height:5px;border-radius:5px;background:rgba(255,255,255,.28);overflow:hidden}.es-bar u{display:block;height:100%;background:#fff}.es-bar.dk{background:var(--line);margin-top:4px}.es-bar.dk u{background:var(--green)}
+.es-pill{position:absolute;display:flex;align-items:center;gap:8px;padding:8px 13px 8px 8px;border-radius:99px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 22px -14px rgba(0,0,0,.5);font-weight:700;font-size:.86rem;white-space:nowrap}
+.es-pill>i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-style:normal;font-size:.8rem}.es-pill em{font-style:normal;color:var(--green)}
+.es-cc{position:absolute;width:62%;height:104px;border-radius:16px;padding:12px 14px;color:#fff;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 16px 30px -16px rgba(0,0,0,.6)}
+.es-chip{display:block;width:26px;height:19px;border-radius:5px;background:linear-gradient(135deg,#f1d17a,#b88a2c)}
+.es-num{font:600 .86rem ui-monospace,Menlo,monospace;letter-spacing:.12em}.es-net{position:absolute;right:12px;top:10px;display:flex}.es-net i{width:20px;height:20px;border-radius:50%;background:#eb001b;opacity:.9}.es-net i+i{background:#f79e1b;margin-left:-8px}
+.es-lim{display:flex;justify-content:space-between;font-size:.66rem;font-weight:700;opacity:.9}
+.es-pass{position:absolute;left:7%;right:7%;top:30px;height:104px;border-radius:18px;background:var(--card);border:1px solid var(--line);display:grid;grid-template-columns:1fr 92px;overflow:hidden;box-shadow:0 16px 30px -18px rgba(0,0,0,.45)}
+.es-pass>span{padding:12px 14px;display:grid;gap:3px;align-content:center}.es-pass .es-pr{border-left:2px dashed var(--line);background:var(--green-soft);justify-items:center;text-align:center}
+.es-pass b{font:700 1.15rem var(--display)}.es-pass small{font-size:.7rem;color:var(--muted);font-weight:700}
+.es-paper{position:absolute;left:16%;right:16%;top:22px;height:150px;border-radius:12px 12px 0 0;background:#fffdf8;border:1px solid var(--line);padding:12px 14px;display:grid;gap:6px;align-content:start;color:#1c2420;box-shadow:0 16px 30px -18px rgba(0,0,0,.45)}
+.es-row{display:flex;justify-content:space-between;align-items:center}.es-row b{font:700 .9rem var(--display)}.es-row small{font-size:.66rem;color:#5a625b}.es-ln{display:block;height:6px;border-radius:4px;background:#ece4d6}
+.es-amt{font:700 1.1rem var(--display)!important;color:#1b6843}.es-pay{background:#1b6843;color:#fff;font-size:.7rem;font-weight:800;padding:5px 10px;border-radius:8px}
+.es-gl{justify-items:center}.es-ring{width:40px;height:40px;border-radius:50%;background:conic-gradient(#fff calc(var(--p)*1%),rgba(255,255,255,.25) 0);display:grid;place-items:center;font-size:.6rem;font-weight:800;position:relative}
+.es-ring::before{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--bgc)}.es-ring{isolation:isolate}.es-ring::before{z-index:-1}
+.es-cloud{position:absolute;inset:0;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-content:center;padding:22px 18px 14px}
+.es-logo{appearance:none;border:0;background:none;padding:0;cursor:pointer;transition:transform .2s}.es-logo:nth-child(odd){transform:translateY(7px)}.es-logo:hover{transform:translateY(-3px)}.es-subs .es-stage{pointer-events:auto}.es-subs .es-stage[aria-hidden]{}
+@media (prefers-reduced-motion:reduce){.es-f,.es-logo{transition:none}}
+
 /* Owl sheet: spending tiles wrap into tidy rows (no sideways scroll), "Add something" is one tray of 8 tiles, each kind with its own soft colour. On phones the sheet rises from the bottom. */
 .ask-panel .quick-grid{grid-auto-flow:row;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:none;grid-auto-columns:auto;overflow:visible;gap:7px}
 .ask-panel .quick-ic{padding:9px 2px 7px;border-radius:16px}.ask-panel .quick-ic small{max-width:100%}
@@ -3888,7 +3915,7 @@ function bizSpace(){
       <div class="grid2"><label class="field"><span>Date</span><input name="date" type="date" value="${esc(ed ? ed.date : isoDaysAgo(0))}"></label><label class="field"><span>Due</span><input name="due" type="date" value="${esc(ed ? ed.due || "" : isoOf(dayPlus(todayMid(), 14)))}"></label></div>
       <label class="field"><span>Note <small class="muted">optional</small></span><input name="note" maxlength="160" value="${esc(ed ? ed.note || "" : "")}" placeholder="e.g. Pay by bank transfer to …"></label>
       </div><div class="wiz-bar"><button class="btn primary" type="submit" style="width:100%">${ed ? "Save" : "Create invoice"}</button></div></form>`
-      : `<button class="btn primary" type="button" data-inv-add>${I.plus}New invoice</button>`}
+      : list.length ? `<button class="btn primary" type="button" data-inv-add>${I.plus}New invoice</button>` : esBlock("data-inv-empty", ES.invoice(), "Get paid faster", "Send a clean invoice with a Pay button. KeepWise reminds you when it’s late and marks it paid.", `<button class="btn primary" type="button" data-inv-add>${I.plus}New invoice</button>`)}
     ${mailOk() && b.invoices.some(i => i.email) ? `<p class="small muted" data-inv-remind>${b.remindOff ? `Late invoice reminders are off. <button class="link small" type="button" data-inv-remind="on">Turn on</button>` : `Late invoices get a polite email reminder by themselves, 3 and 10 days after they're due. <button class="link plain small" type="button" data-inv-remind="off">Turn off</button>`}</p>` : ""}
     <section class="card" data-inv-list><h2>All invoices</h2>${list.length ? `<div class="rows">${list.map(i => `<div class="line inv-row bz-line" data-inv="${i.id}">${stTile(i.client || "?", i.status === "paid" ? "i" : invLate(i) ? "o" : "b")}<div style="min-width:0;flex:1"><div>${esc(i.client || "No name")} <span class="muted small">${invNo(i.no)}</span></div>
         <div class="small ${i.status === "paid" ? "good" : invLate(i) ? "bad" : "muted"}">${i.status === "paid" ? `Paid ${shortDate(i.paidOn)}${i.paidBy ? ` · via ${SALES_SRC[i.paidBy] || i.paidBy}` : ""}` : invLate(i) ? `Late · was due ${shortDate(i.due)}` : i.due ? `Due ${shortDate(i.due)}` : "Open"}</div>
@@ -4249,9 +4276,10 @@ OUT.dropCard = () => {
     return `<section class="card">
       ${toggle}${true ? compareChart(now, now + swapSave, "With swaps") + `<button class="link" data-go="cheaper" type="button">See the swaps</button>` : ""}${shareRow()}</section>`;
   }
-  return `<section class="card"><p class="muted">If you drop what your rules flag, ${esc(C.planMonth)} ends with</p>
+  const nF = C.flagged.length;
+  return `<section class="card drop-card"><h2>What you’d keep</h2><p class="muted">Cancel the ${nF === 1 ? "subscription" : `${nF} subscriptions`} you barely use and ${esc(C.planMonth)} ends with</p>
     <div style="font:600 1.875rem/1.1 var(--display);letter-spacing:-.025em;${fitSize(fmt(now + C.flaggedSave), 1.875, 110)}" class="tnum bigsoft">${fmt(now + C.flaggedSave)}</div>
-    <div class="linkrow"><button class="link" data-go="subs" type="button">Review subscriptions</button></div>
+    ${UI.tab === "subs" ? `<div class="linkrow"><button class="link" type="button" data-drop-flag>Show the ${nF === 1 ? "one" : nF} to cancel</button></div>` : `<div class="linkrow"><button class="link" data-go="subs" type="button">Review subscriptions</button></div>`}
     ${toggle}${compareChart(now, now + C.flaggedSave, "After cuts")}${shareRow()}</section>`;
 };
 // What is typed in "Add a line" is kept here until it is added, so redrawing the list (after tapping away or closing the keyboard) never wipes it.
@@ -4559,6 +4587,7 @@ V.subs = () => `
   <div data-out="subsSummary">${OUT.subsSummary()}</div>
   <div data-out="remindBox">${OUT.remindBox()}</div>
   <div data-out="subsList">${OUT.subsList()}</div>
+  <div data-out="dropCard">${OUT.dropCard()}</div>
   <button class="link small subs-import" type="button" data-import-open>${STMT_IC}Find subscriptions in a bank statement</button>
   <details class="card"><summary>Add a subscription</summary>
     <form data-form="addSub" style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
@@ -4602,7 +4631,7 @@ OUT.subsSummary = () => {
 };
 OUT.subsList = () => {
   const C = compute();
-  if (!S.subs.length) return `<p class="empty">No subscriptions yet. Add one below.</p>`;
+  if (!S.subs.length) return (esCard("es-subs", "data-subs-empty", `<span class="es-cloud">${["Netflix", "Spotify", "Hulu", "YouTube TV", "Disney+", "Prime Video", "Apple Music", "Max"].map(n => `<button type="button" class="es-logo" data-sub-pick="${esc(n)}" aria-label="Add ${esc(n)}">${brandTile(n, 44)}</button>`).join("")}</span>`, "What are you paying for?", "Tap a logo to start, or find them all at once in a bank statement.", `<button class="btn primary" type="button" data-sub-pick="">${I.plus}Add a subscription</button><button class="link" type="button" data-import-open style="align-self:center">Find them in a statement</button>`)).replace('class="es-stage" aria-hidden="true"><span class="es-ex">Example</span>', 'class="es-stage"><span class="es-ex">Tap one to add</span>');
   if (!S.subs.some(subInCycle)) return `<p class="empty">No ${UI.subCycle === "yr" ? "yearly" : "monthly"} subscriptions.</p>`;
   const order = S.subs.filter(subInCycle).sort((a,b) => (C.flags[b.id].length - C.flags[a.id].length) || subMonthly(b) - subMonthly(a));
   return `<div class="rows">${order.map(s => {
@@ -4864,10 +4893,26 @@ const savingsCard = () => `
   <section class="card save-goals"><h2>Savings goals</h2>
     <div class="grid2"><label class="field"><span>Fund so far</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="efSaved" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.efSaved}"></span></label>
     <label class="field"><span>Target, months</span><input data-bind="efMonths" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.efMonths}"></label></div>
-    <div class="grid2"><label class="field"><span>Saving for</span><input data-bind="goalName" type="text" enterkeyhint="done" value="${esc(S.goalName)}"></label>
-    <label class="field"><span>Goal amount</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="goalAmt" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.goalAmt}"></span></label></div>
+    ${!S.goalName && !(+S.goalAmt > 0) && !UI.goalSet ? esBlock("data-goal-empty", ES.goal(), "What are you saving for?", "Name it and set an amount. Whatever’s left each month moves it closer, and you’ll see the ring fill up.", `<button class="btn primary" type="button" data-goal-set>${I.plus}Set a goal</button>`) : `<div class="grid2"><label class="field"><span>Saving for</span><input data-bind="goalName" type="text" enterkeyhint="done" value="${esc(S.goalName)}" placeholder="Hawaii trip"></label>
+    <label class="field"><span>Goal amount</span><span class="money-in"><em>${esc(sym())}</em><input data-bind="goalAmt" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.goalAmt}"></span></label></div>`}
     <label class="field"><span>Leftover money goes to</span><select data-bind="priority"><option value="ef" ${S.priority==="ef"?"selected":""}>Emergency fund first</option><option value="goal" ${S.priority==="goal"?"selected":""}>My goal first</option><option value="split" ${S.priority==="split"?"selected":""}>Half and half</option></select></label>
     <div data-out="saveSplit">${OUT.saveSplit()}</div></section>`;
+
+// Empty screens show a faded preview of what they become (marked Example, never the person's numbers), a plain headline,
+// one sentence and one clear button, the same way Banks shows its card fan.
+const esCard = (cls, attrs, stage, h, p, btns) => `<section class="card es-card ${cls}" ${attrs}><div class="es-stage" aria-hidden="true"><span class="es-ex">Example</span>${stage}</div><h2 class="es-h">${h}</h2><p class="es-p">${p}</p>${btns}</section>`;
+const esBlock = (attrs, stage, h, p, btns) => `<div class="es-card es-in" ${attrs}><div class="es-stage" aria-hidden="true"><span class="es-ex">Example</span>${stage}</div><h3 class="es-h">${h}</h3><p class="es-p">${p}</p>${btns}</div>`;
+const esPill = (bg, ic, t, amt, pos) => `<span class="es-pill" style="${pos}"><i style="background:${bg}">${ic}</i>${t} <em>${amt}</em></span>`;
+const esFan = (bg, t, amt, pct, sub, pos) => `<span class="es-f" style="background:${bg};${pos}"><small>${t}</small><b>${amt}</b>${pct != null ? `<span class="es-bar"><u style="width:${pct}%"></u></span>` : ""}<i>${sub}</i></span>`;
+const ES = {
+  loans: () => esFan("linear-gradient(135deg,#1e3a8a,#1d4ed8)", "Car loan", "$412/mo", 38, "38% paid · done Aug 2028", "left:4%;top:30px;width:52%;transform:rotate(-5deg)") + esFan("linear-gradient(135deg,#065f46,#0e8571)", "Student loan", "$260/mo", 61, "61% paid", "right:4%;top:44px;width:46%;transform:rotate(5deg);z-index:1"),
+  giving: () => esPill("#b5658f", "♥", "Church", "$50/mo", "left:6%;top:26px") + esPill("#c24f4f", "✚", "Red Cross", "$25/mo", "right:6%;top:64px;z-index:1") + esPill("#a57d2c", "M", "Help for Mom", "$200/mo", "left:10%;top:104px;z-index:2"),
+  income: () => esPill("#2e8a3f", "$", "Side job", "+$600", "left:6%;top:26px") + esPill("#f56400", "E", "Etsy shop", "+$320", "right:6%;top:64px;z-index:1") + esPill("#6b5fb0", "⌂", "Room rent", "+$900", "left:10%;top:104px;z-index:2"),
+  cards: () => `<span class="es-cc" style="left:5%;top:36px;background:linear-gradient(135deg,#232526,#414345);transform:rotate(-6deg)"><i class="es-chip"></i><span class="es-net"><i></i><i></i></span><span class="es-num">•••• 1180</span><span class="es-lim"><span>Debit</span><span>Checking</span></span></span><span class="es-cc" style="right:5%;top:30px;background:linear-gradient(135deg,#1b6843,#0b3d2a);transform:rotate(5deg);z-index:1"><i class="es-chip"></i><span class="es-num">•••• 4821</span><span><span class="es-bar"><u style="width:32%"></u></span><span class="es-lim" style="margin-top:4px"><span>$1,600 of $5,000</span><span>Due Nov 18</span></span></span></span>`,
+  trip: () => `<span class="es-pass"><span><small>TRIP · NOV 21 – 24</small><b>Miami weekend</b><small style="font-weight:600">4 days · 2 people</small><span class="es-bar dk"><u style="width:45%"></u></span></span><span class="es-pr"><small>BUDGET</small><b>$900</b><small>$164/day</small></span></span>`,
+  invoice: () => `<span class="es-paper"><span class="es-row"><b>INV-0001</b><small>Due Nov 30</small></span><i class="es-ln" style="width:70%"></i><i class="es-ln" style="width:50%"></i><span class="es-row" style="margin-top:6px"><b class="es-amt">$1,200</b><span class="es-pay">Pay now</span></span></span>`,
+  goal: () => `<span class="es-f es-gl" style="left:5%;top:26px;width:42%;background:linear-gradient(135deg,#0e8571,#065f46);transform:rotate(-4deg)"><span class="es-ring" style="--p:24;--bgc:#0b6e5c">24%</span><small>Emergency fund</small></span><span class="es-f es-gl" style="right:5%;top:32px;width:42%;background:linear-gradient(135deg,#a57d2c,#7a5a1c);transform:rotate(4deg);z-index:1"><span class="es-ring" style="--p:64;--bgc:#8f6c22">64%</span><small>Hawaii trip</small></span>`,
+};
 const planCards = {loans: () => `<div data-out="loans">${OUT.loans()}</div>`, giving: () => `<div data-out="giving">${OUT.giving()}</div>`};
 /* ---- Trends: bars or a line, by day, week, month or year ----
    Days and weeks use the spending you log (one-offs from Ask or Misc). Months and years use the monthly statements:
@@ -4991,6 +5036,7 @@ function cardForm(c, credit){
 }
 function cardsView(){
   const cr = creditCards(), db = S.cards || [], lim = cr.reduce((a, l) => a + (+l.limit || 0), 0), used = cr.filter(l => +l.limit > 0).reduce((a, l) => a + (+l.total || 0), 0);
+  if (!cr.length && !db.length && !UI.cardAdd) return esCard("", "data-cards", ES.cards(), "All your cards, one place", "Limits, what you owe and due dates, with a reminder before each payment. Only the last 4 digits, never the full number.", `<button class="btn primary" type="button" data-card-add>${I.plus}Add a card</button>`);
   return `<section class="card inc-card${S.hideLoans ? " amt-hide" : ""}" data-cards><div class="inline cards-h" style="justify-content:space-between;align-items:center"><h2>Cards</h2><span class="inline" style="gap:4px">${lim > 0 ? `<span class="muted small tnum" data-cards-use>${Math.round(used / lim * 100)}% of credit used</span>` : ""}${cr.length || db.length ? `<button type="button" class="amt-eye in-h" data-amt-eye="cards" aria-pressed="${!!S.hideLoans}" aria-label="${S.hideLoans ? "Show amounts" : "Hide amounts"}" title="${S.hideLoans ? "Show amounts" : "Hide amounts"}">${S.hideLoans ? EYE_OFF : EYE_ON}</button>` : ""}</span></div>
     ${cr.map(l => cardTile(l, true)).join("")}${db.map(c => cardTile(c, false)).join("")}
     ${UI.cardAdd ? `<div class="inc-row editing">${cardForm(null)}</div>` : `<button class="btn" type="button" data-card-add>${I.plus}Add a card</button>`}
@@ -5002,8 +5048,7 @@ const bankSeg = () => `<div class="seg sub-seg" role="group" aria-label="Parts o
 V.bankTab = () => (UI.bankSeg || "accounts") === "cards" ? `${bankSeg()}${cardsView()}`
   : UI.bankSeg === "statements" ? `${bankSeg()}
   <div data-out="trends">${OUT.trends()}</div>
-  <div data-out="historyCard">${OUT.historyCard()}</div>
-  <div data-out="dropCard">${OUT.dropCard()}</div>`
+  <div data-out="historyCard">${OUT.historyCard()}</div>`
   : `${bankSeg()}${coach("banks", "Your banks in one place")}${V.banks(autoOn() ? `<div data-out="autoCard">${OUT.autoCard()}</div>` : "")}
   ${plusOn() ? "" : `<button class="w-choice plus-entry" type="button" data-plus-open><span class="pill gold">Plus</span><span><b>KeepWise Plus</b><span class="muted small">Live splits with friends, every device, and more.</span></span>${I.chev}</button>`}`;
 // The three shares always total 100: Expenditures and Miscellaneous are chosen, Savings is what is left. If the two
@@ -6350,8 +6395,8 @@ function siteOpen(){
      ${[["Rent", "$1,450", "Bill"], ["Netflix", "$17.99", "Sub"], ["YouTube TV", "$82.99", "Sub"], ["Verizon", "$65", "Bill"], ["Hulu", "$18.99", "Sub"]].map(([n, pr, t]) => `<div class="kw-li">${brandTile(n, 38)}<b>${n}</b><span class="kws-tag">${t}</span><em>${pr}</em></div>`).join("")}</div>`,
     `<div class="kw-c"><div class="kw-l">Log spending</div><div class="kw-q">${[["food", "Food"], ["coffee", "Coffee"], ["car", "Car"], ["fuel", "Fuel"], ["bag", "Shopping"]].map(([k, n]) => `<span class="${k === "coffee" ? "on" : ""}">${I[k] || ""}<small>${n}</small></span>`).join("")}</div></div>
      <div class="kw-c kw-tray">${addAnything()}</div><div class="kws-msg">coffee 5</div><div class="kws-rep">Added Coffee, $5. You'll keep $1,451.99.</div>`,
-    `<div class="kw-c kw-hero"><div class="kw-l">You'll have saved by Nov 30</div><b class="kw-num" data-kws-count="1456.99">$0</b><small class="kw-up">▲ $212 more than October</small></div>
-     <div class="kw-c"><div class="kw-row">${ring(60, "3/5")}<div><b>Bills this month</b><small><b>$84</b> to go · 3 of 5 paid</small></div></div><div class="kw-tiles">${tile("Rent", 40, 1)}${tile("Verizon", 40, 1)}${tile("Netflix", 40, 1)}${tile("Con Edison", 40)}${tile("Car payment", 40)}</div><div class="kw-foot">Next: Con Edison · <b>$84</b> · due Friday</div></div>
+    `<div class="kw-c kw-hero kw-row"><div><div class="kw-l">You'll have saved by Nov 30</div><b class="kw-num" data-kws-count="1456.99">$0</b><small class="kw-up">▲ $212 more than October</small></div><div class="kw-bars" aria-hidden="true">${[["Aug", 52], ["Sep", 64], ["Oct", 78], ["Nov", 100]].map(([m, h], i) => `<span><i style="height:${h}%;animation-delay:${i * .08}s"${i === 3 ? ' class="on"' : ""}></i><small>${m}</small></span>`).join("")}</div></div>
+     <div class="kw-c"><div class="kw-row">${ring(60, "3/5")}<div><b>Bills this month</b><small><b>$84</b> to go · 3 of 5 paid</small></div><span class="kw-see">See all ›</span></div><div class="kw-tiles">${[["Rent", 1, "Rent"], ["Verizon", 1, "Verizon"], ["Netflix", 1, "Netflix"], ["Con Edison", 0, "Con Ed"], ["Car payment", 0, "Car"]].map(([n, on, l]) => `<span class="kw-tl">${tile(n, 42, on)}<small>${l}</small></span>`).join("")}</div><div class="kw-foot">Next: Con Edison · <b>$84</b> · due Friday</div></div>
      <div class="kw-two"><div class="kw-c kw-sv">${ring(24, "24%")}<b>Emergency fund</b><small>$2,400 of $10,000</small></div><div class="kw-c kw-sv">${ring(64, "64%", "#a57d2c")}<b>Hawaii trip</b><small>$1,920 of $3,000</small></div></div>`];
   let wcur = -1;
   const showWin = i => { if (!WB || i === wcur) return; wcur = i; WB.style.opacity = 0; setTimeout(() => { WB.innerHTML = SCR[i]; WS.textContent = `Step ${i + 1} of 4`; root.querySelectorAll("[data-kws-wdots] i").forEach((d, j) => d.classList.toggle("on", j <= i)); WB.style.opacity = 1;
@@ -6639,7 +6684,7 @@ OUT.incomeHero = () => { const C = compute(), n = payOn() ? nextPayday() : null,
     <div class="ih-row"><div class="sv-ring ih-ring" style="--p:${pct.toFixed(1)}" aria-hidden="true"><i>${Math.round(pct)}%</i></div><div><b>${esc(C.planMonth)}</b><small class="muted"><b class="tnum" style="color:var(--ink)">${fmt(got)}</b> of ${fmt(exp)} received</small></div></div></div>`; };
 OUT.extraIncome = () => {
   const list = S.extras || [], k = todayKey(), mName = periodOf(new Date()).name;
-  if (!list.length && !UI.incAdd) return `<button class="link small inc-add" type="button" data-inc-add>${I.plus}Add other income <span class="muted inc-hint">Side job, creator, trading, rental</span></button>`;
+  if (!list.length && !UI.incAdd) return esCard("", "data-income-empty", ES.income(), "More than one paycheck?", "Side jobs, a shop, rent from a room. Each one counts toward your month as it arrives.", `<button class="btn primary" type="button" data-inc-add>${I.plus}Add other income</button>`);
   const rows = list.map(x => {
     if (UI.incEdit === x.id) return `<div class="inc-row editing" data-inc="${x.id}">${incomeForm(x)}</div>`;
     const got = gotIn(x, k), exp = extraMonthly(x), pct = exp > 0 ? Math.min(100, got / exp * 100) : (got ? 100 : 0), av = extraAverage(x);
@@ -7195,10 +7240,7 @@ const TRIP_IC = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" str
 const EVENT_IC = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 13h18M12 8c-1.5-3-5-4-5.5-2S9 8 12 8zm0 0c1.5-3 5-4 5.5-2S15 8 12 8z"/></svg>`;
 OUT.trips = () => {
   const list = (S.trips || []).slice().sort((a, b) => (b.start || "").localeCompare(a.start || ""));
-  if (!list.length && !UI.tripAdd) return `<section class="card trip-empty" data-plan-row data-trips-empty><h2 class="h-info">Trips and events${infoBtn("tripsEmpty", "About trips and events")}</h2>
-    ${infoTip("tripsEmpty", "Give a trip, a wedding or a birthday a budget of its own. What you spend on it stays out of your month until it is over, when you choose to count it or keep it separate.")}
-    <div class="trip-tiles"><button class="trip-tile" type="button" data-trip-add><span class="trip-ic">${TRIP_IC}</span><b>Plan a trip</b><span class="muted small">Flights, stays, food</span></button>
-    <button class="trip-tile" type="button" data-event-add><span class="trip-ic ev">${EVENT_IC}</span><b>Plan an event</b><span class="muted small">Wedding, party, concert</span></button></div></section>`;
+  if (!list.length && !UI.tripAdd) return esCard("trip-empty", "data-plan-row data-trips-empty", ES.trip(), "Plan a trip, keep your month", "Give a trip, a wedding or a birthday its own budget. Spend on it without touching what you keep this month.", `<div class="es-two"><button class="btn primary" type="button" data-trip-add>${TRIP_IC}Plan a trip</button><button class="btn" type="button" data-event-add>${EVENT_IC}Plan an event</button></div>`);
   const order = {active: 0, ended: 1, upcoming: 2, separate: 3, counted: 3}, sorted = list.sort((a, b) => order[tripState(a)] - order[tripState(b)]), done = sorted.filter(t => order[tripState(t)] === 3), live = sorted.filter(t => order[tripState(t)] < 3);
   const shown = UI.tripsAll ? sorted : [...live, ...done.slice(0, 1)];
   return `<section class="card inc-card" data-trips><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Trips and events${infoBtn("trips", "About trips and events")}</h2></div>
@@ -7553,6 +7595,7 @@ function giveTick(g, k){
     <form class="inline bs-add" data-form="giveGift" data-g="${g.id}"><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" placeholder="${list.length ? "0.00" : plan}" aria-label="How much you gave" enterkeyhint="done"></span><input name="date" type="date"${dUpTo()} value="${isoDaysAgo(0)}" aria-label="When"><button class="btn small" type="submit">${list.length ? "Add another" : "Add"}</button></form></div>` : ""}</div>`;
 }
 OUT.giving = () => { if (!GIVING_ON) return ""; const list = S.giving || [], tot = givingMonthly(), k = planPeriodNow().key, now = givingIn(k), anyYr = list.some(g => g.every === "yr");
+  if (!list.length && !UI.giveAdd) return esCard("", "data-giving", ES.giving(), "Give on purpose", "Charity, family support, your place of worship. Set it once and it’s part of your plan every month.", `<button class="btn primary" type="button" data-give-add>${I.plus}Add giving</button>`);
   return `<section class="card inc-card" data-giving><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Giving${infoBtn("giving", "About Giving")}</h2>${list.length ? `<span class="muted small tnum" data-giving-now>${anyYr ? `${fmt(now)} this month` : `${fmt(tot)}/mo`}</span>` : ""}</div>
     ${infoTip("giving", "Money you give regularly, to anyone you choose. It counts under Miscellaneous: monthly and weekly giving every month, yearly giving in full in the month you give it. KeepWise does not collect or send donations.")}
     ${list.map(g => UI.giveEdit === g.id ? `<div class="inc-row editing" data-give="${g.id}">${giveForm(g)}</div>` : `<div class="inc-row" data-give="${g.id}"><div class="row-top"><div><div class="name">${esc(g.name || giveCause(g.cause))}</div><div class="muted small">${esc(giveCause(g.cause))} · ${esc(giveEvery(g.every)[1].toLowerCase())}</div></div><div style="text-align:right"><div class="name tnum">${fmt(g.amount)}${g.every === "yr" ? `<span class="muted small">/yr</span>` : ""}</div>${g.every === "mo" ? "" : g.every === "yr" ? `<div class="muted small" data-give-next>${g.on ? (giveCostIn(g, k) ? "Given this month" : `Next ${dateWithYear(nextAnniv(g.on), true)}`) : "Add the date"}</div>` : `<div class="muted small tnum">${fmt(giveMonthly(g))}/mo</div>`}</div></div>
@@ -7784,6 +7827,7 @@ OUT.loans = () => {
       return `<button class="loan-mini" type="button" data-loan="${l.id}" data-loan-open><span class="ln-ic emo" aria-hidden="true">${LOAN_EMO[l.kind] || LOAN_EMO.other}</span><span class="ln-t"><b>${esc(l.name || loanKind(l.kind))}</b><small>${done ? "Paid off" : F && F.end ? `Paid off by ${monthYear(F.end)}` : fin ? `${fin.est ? "About " : "Ends "}${monthYear(fin.date)}` : esc(loanKind(l.kind))}</small></span><span class="v tnum">${fmt(loanMonthly(l))}<small>${+l.total > 0 ? `${fmt(l.total)} left` : "a month"}</small></span>${I.chev}</button>`; }
     if (l.kind === "carins") return insRow(l);
     return debtCard(l); }).join("");
+  if (!rows.trim() && !UI.loanAdd) return esCard("loan-card", "data-loans-empty", ES.loans(), "See when you’ll be debt-free", "Add a car loan, student debt or car insurance. KeepWise shows what’s left, the payoff date, and reminds you before each payment.", `<button class="btn primary" type="button" data-loan-add>${I.plus}Add a loan</button>`);
   return `<section class="card inc-card loan-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2 class="h-info">Loans and debt${infoBtn("loans", "About loans and debt")}</h2>${live.length ? `<span class="muted small tnum">${fmt(loansMonthly())}${live.some(loanYearly) ? " this month" : "/mo"}</span>` : ""}</div>
     ${infoTip("loans", "Loan and credit card payments come out of what you keep each month until the end date passes, and show as Loans & debts on the Month tab. A card’s yearly fee, and anything paid once a year, counts in full in the month it is charged. Interest is worked out only when the payment, amount left, installments left and end date are all filled in. With an amount left and no end date, the finish is estimated from your payments and does not include interest. Car insurance runs for its policy length: monthly installments count each month, a premium paid in full counts in the month it is paid.")}
     ${rows}${UI.loanAdd ? `<div class="inc-row editing">${loanForm(null)}</div>` : `<button class="btn" type="button" data-loan-add>${I.plus}Add a loan or car insurance</button>`}
@@ -9110,6 +9154,9 @@ view.addEventListener("click", async e => {
     save(); refreshOuts(); const sh = $("asksheet"); if (sh) askRedraw(sh); toast(said, u); return; }
   if (b.hasAttribute("data-qh-all")){ const env = UI.quickEnv === "exp" ? "needs" : "misc"; UI.askOpen = false; UI.mseg = "budget"; UI.openEnv = env; const sh = $("asksheet"); if (sh) sh.hidden = true; goTo("month", `[data-env-open=${env}]`); return; }
   if (b.dataset.quickEnv){ UI.quickEnv = b.dataset.quickEnv; UI.quick = null; const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
+  if (b.hasAttribute("data-goal-set")){ UI.goalSet = true; render(true); const i = view.querySelector('[data-bind="goalName"]'); if (i) i.focus(); return; }
+  if (b.dataset.subPick != null){ const d = view.querySelector('form[data-form="addSub"]'); const det = d && d.closest("details"); if (det){ det.open = true; const n = d.querySelector("[name=name]"); if (b.dataset.subPick) n.value = b.dataset.subPick; det.scrollIntoView({behavior: "smooth", block: "start"}); (b.dataset.subPick ? d.querySelector("[name=price]") : n).focus({preventScroll: true}); } return; }
+  if (b.hasAttribute("data-drop-flag")){ UI.subKind = "flag"; render(true); const l = view.querySelector('[data-out="subsList"]'); if (l) l.scrollIntoView({behavior: "smooth", block: "start"}); return; }
   if (b.dataset.quickMore !== undefined){ UI.quickAll = !UI.quickAll; const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
   if (b.dataset.quickIc){ UI.quick = UI.quick === b.dataset.quickIc ? null : b.dataset.quickIc; const sh = $("asksheet"); if (sh){ askRedraw(sh); const i = sh.querySelector("[data-form=quick] [name=amount]"); if (i) i.focus(); } return; }
   if (b.dataset.glowSet){ S.glow = ["off", "on", "max"].includes(b.dataset.glowSet) ? b.dataset.glowSet : "on"; save(); applyTheme(); render(true); return; }
@@ -10347,7 +10394,7 @@ initShared();
 .kw-l{font-size:.7rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .kw-num{font:600 2.1rem/1 var(--display);color:var(--green);letter-spacing:-.02em}
 .kw-hero{background:linear-gradient(150deg,var(--green-soft),var(--card) 70%)}.kw-up{color:var(--green);font-weight:700;font-size:.8rem}
-.kw-row{display:flex;align-items:center;gap:14px;justify-content:space-between}.kw-row>div:not(.sv-ring):not(.kw-cd){flex:1;min-width:0;display:grid;gap:2px}.kw-row small,.kw-sv small{color:var(--muted);font-size:.8rem}
+.kw-row{display:flex;align-items:center;gap:14px;justify-content:space-between}.kw-row>div:not(.sv-ring):not(.kw-cd):not(.kw-bars){flex:1;min-width:0;display:grid;gap:2px}.kw-row small,.kw-sv small{color:var(--muted);font-size:.8rem}
 .kw-big{font:600 1.5rem var(--display)}
 .kw-cd{display:flex;gap:6px}.kw-cd span{display:grid;justify-items:center;background:var(--bg);border-radius:12px;padding:6px 10px;min-width:48px}.kw-cd b{font:600 1.2rem var(--display)}.kw-cd small{font-size:.62rem;color:var(--muted);font-weight:700}
 .kw-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--bg)}.kw-seg span{text-align:center;padding:8px 2px;border-radius:10px;font-weight:700;font-size:.78rem;color:var(--muted)}.kw-seg .on{background:var(--card);color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.08)}
@@ -10359,6 +10406,10 @@ initShared();
 .kw-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.kw-sv{justify-items:center;text-align:center;gap:4px}.kw-sv b{font-size:.9rem}
 .kw-q{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.kw-q span{display:grid;justify-items:center;gap:4px;padding:9px 2px 7px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.kw-q span.on{border-color:var(--green);background:var(--green-soft);color:var(--green)}.kw-q svg{width:22px;height:22px}.kw-q small{font-size:.66rem;color:var(--muted)}
 .kw-tray{padding:6px}.kw-tray .addx-tray{border:0;background:transparent;padding:0}
+.kw-bars{display:flex;align-items:flex-end;gap:8px;height:74px;flex:none}.kw-bars span{display:grid;justify-items:center;gap:4px;height:100%;grid-template-rows:1fr auto}.kw-bars i{width:20px;align-self:end;border-radius:6px 6px 3px 3px;background:color-mix(in srgb,var(--green) 30%,transparent);animation:kwBar .6s both;transform-origin:bottom}.kw-bars i.on{background:var(--green)}.kw-bars small{font-size:.62rem;font-weight:700;color:var(--muted)}
+@keyframes kwBar{from{transform:scaleY(0)}}
+.kw-see{font-size:.8rem;font-weight:700;color:var(--green);flex:none}
+.kw-tiles{justify-content:space-between}.kw-tl{display:grid;justify-items:center;gap:4px}.kw-tl small{font-size:.66rem;font-weight:700;color:var(--muted)}
 /* the steps on the left: no tall empty boxes, one slim progress line on the step you're on */
 .kws-list li{min-height:0!important;padding:22px 24px 24px 66px!important}
 .kws-list li i{left:66px!important;right:24px!important;bottom:12px!important;height:3px!important;background:var(--green)!important}

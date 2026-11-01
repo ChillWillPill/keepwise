@@ -246,7 +246,7 @@
 .kw-l{font-size:.7rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .kw-num{font:600 2.1rem/1 var(--display);color:var(--green);letter-spacing:-.02em}
 .kw-hero{background:linear-gradient(150deg,var(--green-soft),var(--card) 70%)}.kw-up{color:var(--green);font-weight:700;font-size:.8rem}
-.kw-row{display:flex;align-items:center;gap:14px;justify-content:space-between}.kw-row>div:not(.sv-ring):not(.kw-cd){flex:1;min-width:0;display:grid;gap:2px}.kw-row small,.kw-sv small{color:var(--muted);font-size:.8rem}
+.kw-row{display:flex;align-items:center;gap:14px;justify-content:space-between}.kw-row>div:not(.sv-ring):not(.kw-cd):not(.kw-bars){flex:1;min-width:0;display:grid;gap:2px}.kw-row small,.kw-sv small{color:var(--muted);font-size:.8rem}
 .kw-big{font:600 1.5rem var(--display)}
 .kw-cd{display:flex;gap:6px}.kw-cd span{display:grid;justify-items:center;background:var(--bg);border-radius:12px;padding:6px 10px;min-width:48px}.kw-cd b{font:600 1.2rem var(--display)}.kw-cd small{font-size:.62rem;color:var(--muted);font-weight:700}
 .kw-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--bg)}.kw-seg span{text-align:center;padding:8px 2px;border-radius:10px;font-weight:700;font-size:.78rem;color:var(--muted)}.kw-seg .on{background:var(--card);color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.08)}
@@ -258,6 +258,10 @@
 .kw-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.kw-sv{justify-items:center;text-align:center;gap:4px}.kw-sv b{font-size:.9rem}
 .kw-q{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.kw-q span{display:grid;justify-items:center;gap:4px;padding:9px 2px 7px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.kw-q span.on{border-color:var(--green);background:var(--green-soft);color:var(--green)}.kw-q svg{width:22px;height:22px}.kw-q small{font-size:.66rem;color:var(--muted)}
 .kw-tray{padding:6px}.kw-tray .addx-tray{border:0;background:transparent;padding:0}
+.kw-bars{display:flex;align-items:flex-end;gap:8px;height:74px;flex:none}.kw-bars span{display:grid;justify-items:center;gap:4px;height:100%;grid-template-rows:1fr auto}.kw-bars i{width:20px;align-self:end;border-radius:6px 6px 3px 3px;background:color-mix(in srgb,var(--green) 30%,transparent);animation:kwBar .6s both;transform-origin:bottom}.kw-bars i.on{background:var(--green)}.kw-bars small{font-size:.62rem;font-weight:700;color:var(--muted)}
+@keyframes kwBar{from{transform:scaleY(0)}}
+.kw-see{font-size:.8rem;font-weight:700;color:var(--green);flex:none}
+.kw-tiles{justify-content:space-between}.kw-tl{display:grid;justify-items:center;gap:4px}.kw-tl small{font-size:.66rem;font-weight:700;color:var(--muted)}
 /* the steps on the left: no tall empty boxes, one slim progress line on the step you're on */
 .kws-list li{min-height:0!important;padding:22px 24px 24px 66px!important}
 .kws-list li i{left:66px!important;right:24px!important;bottom:12px!important;height:3px!important;background:var(--green)!important}
