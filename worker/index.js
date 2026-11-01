@@ -74,7 +74,7 @@ async function plaid(origin, env, path, b){
   if (path === "/plaid/link"){
     const uid = String(b.uid || ""); if (!/^[a-z0-9]{8,40}$/.test(uid)) return fail(origin, 400, "Bad request.");
     if (env.PADDLE_API_KEY){ let user; try { user = await firebaseUser(b.idToken); } catch(e){ return fail(origin, 401, "Sign in again to connect a bank."); } if (!(await needPlus(env, user))) return fail(origin, 402, "Connecting a bank needs KeepWise Plus."); const st = await paddleSub(env, String(user.email || "").toLowerCase()); if (st && st.trialEnds) return fail(origin, 402, "Banks connect once your plan starts. Tap Start my plan now, or wait for your free week to end."); }
-    const {ok, data} = await plaidCall(env, "/link/token/create", {client_name: "KeepWise", language: "en", country_codes: ["US"], user: {client_user_id: uid}, products: ["transactions"], transactions: {days_requested: 90}, ...(env.PLAID_REDIRECT ? {redirect_uri: env.PLAID_REDIRECT} : {})});
+    const {ok, data} = await plaidCall(env, "/link/token/create", {client_name: "KeepWise: Budget & Bills", language: "en", country_codes: ["US"], user: {client_user_id: uid}, products: ["transactions"], transactions: {days_requested: 90}, ...(env.PLAID_REDIRECT ? {redirect_uri: env.PLAID_REDIRECT} : {})});
     return ok ? reply(origin, 200, {link_token: data.link_token, env: env.PLAID_ENV || "sandbox"}) : fail(origin, 502, plaidErr(data));
   }
   if (path === "/plaid/exchange"){
