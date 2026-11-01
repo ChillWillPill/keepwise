@@ -1239,6 +1239,12 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .ih-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.ih-big{display:block;font:700 2rem var(--display)}.ih-cd{display:flex;gap:6px}.ih-cd span{display:grid;justify-items:center;background:var(--green-soft);border-radius:12px;padding:6px 10px}.ih-cd b{font:700 1.5rem var(--display);color:var(--green)}.ih-cd small{font-size:.66rem;color:var(--muted)}
 .ih-row{display:flex;gap:14px;align-items:center;padding-top:10px;border-top:1px solid var(--line)}.ih-row b{display:block}.sv-ring.ih-ring,.sv-ring.pc-ring{width:64px;height:64px;margin:0;flex:none}.sv-ring.ih-ring i,.sv-ring.pc-ring i{width:50px;height:50px;font-size:.86rem;background:var(--card)}
 .pc-top{display:flex;gap:14px;align-items:center}.pc-big{display:block;font:700 1.8rem var(--display)}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.sp-bub{display:flex;gap:12px;overflow-x:auto;padding:4px 2px;scrollbar-width:none;justify-content:flex-start}.sp-b{display:grid;justify-items:center;gap:2px;flex:none;width:62px}
+.sp-b .avatar{width:50px;height:50px;font-size:1rem;box-shadow:0 0 0 3px var(--card),0 0 0 5px var(--green)}.sp-b.out .avatar{box-shadow:0 0 0 3px var(--card),0 0 0 5px var(--rust)}
+.sp-b b{font-size:.78rem;margin-top:4px}.sp-b small{font-size:.74rem;font-weight:800;color:var(--green)}.sp-b.out small{color:var(--rust)}
+.bk-cards{position:relative;height:110px;margin-bottom:6px}.bk-c{position:absolute;width:62%;height:84px;border-radius:16px;padding:10px 12px;color:#fff;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 14px 28px -16px rgba(0,0,0,.6)}
+.bk-c small{font-size:.7rem;opacity:.85;font-weight:700}.bk-c b{font:700 1.3rem var(--display)}.bk-c.c1{left:0;top:16px;background:linear-gradient(135deg,#1d4ed8,#1e3a8a);transform:rotate(-4deg)}.bk-c.c2{left:20%;top:6px;background:linear-gradient(135deg,#0e8571,#065f46);z-index:1}.bk-c.c3{right:0;top:22px;width:46%;background:linear-gradient(135deg,#1c2420,#3a443e);transform:rotate(5deg);z-index:2}
+.bk-perks{display:flex;flex-wrap:wrap;gap:6px}.bk-perks span{font-size:.74rem;font-weight:700;padding:5px 10px;border-radius:99px;background:var(--chip)}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -1942,8 +1948,10 @@ function plaidSection(){
 }
 function bankCard(){
   if (UI.biz) return "";
-  if (!plusOn() && !bankOn()) return `<section class="card bank-card" data-bank-plus><h3 class="inline" style="gap:8px">Connect your bank <span class="pill gold">Plus</span></h3>
-    <p class="muted small" style="margin:0">Your accounts and transactions come in by themselves through Plaid, and KeepWise shows what changed. Included with KeepWise Plus.</p>
+  if (!plusOn() && !bankOn()) return `<section class="card bank-card bk-hero" data-bank-plus><div class="bk-cards" aria-hidden="true"><div class="bk-c c1"><small>Checking</small><b>$3,402</b></div><div class="bk-c c2"><small>Savings</small><b>$4,812</b></div><div class="bk-c c3"><small>Card</small><b>−$620</b></div></div>
+    <h3 class="inline" style="gap:8px">Connect your bank <span class="pill gold">Plus</span></h3>
+    <p class="muted small" style="margin:0">Balances, transactions and store logos come in by themselves through Plaid, and KeepWise shows what changed. Included with KeepWise Plus.</p>
+    <div class="bk-perks"><span>🏦 Every account</span><span>🔄 Auto updates</span><span>🧾 Store logos</span></div>
     <button class="btn" type="button" data-plus-open>See KeepWise Plus</button></section>`;
   const on = bankOn(), list = (S.bank && S.bank.accounts) || [], when = S.bank && S.bank.updated ? new Date(S.bank.updated) : null;
   const head = `<h3 class="h-info">Connect your bank <span class="pill grey" style="font-size:.7rem">US</span>${infoBtn("bank", "About connecting your bank")}</h3>${infoTip("bank", plusOn() ? (bankOn() ? "With KeepWise Plus, connect through Plaid in a few taps, included at no extra cost. Your SimpleFIN connection keeps working too. Either way, your bank data is kept only on this phone, never in backups." : "With KeepWise Plus, connect through Plaid in a few taps, included at no extra cost. Your bank data is kept only on this phone, never in backups.") : "Your SimpleFIN link from before keeps working until you disconnect it. Your phone talks to SimpleFIN directly, and the link is kept only on this phone, never in backups. New bank connections come with KeepWise Plus.")}`;
@@ -5036,7 +5044,8 @@ OUT.splitSum = () => {
     ${b.length ? `<p class="label">${net >= 0 ? "Overall you’re owed" : "Overall you owe"}</p><div class="big tnum ${net >= 0 ? "good" : "bad"}" style="${fitSize(fmt(Math.abs(net)), 2.6, 90)}">${fmt(Math.abs(net))}</div>`
       : `<p class="label">All square</p><p class="split-square">Everyone is square.</p>`}
     <div class="summary3 split-mini"><div class="sm-in"><span class="small">You're owed</span><b class="good tnum">${fmt(owed)}</b><small class="muted">${owedL.length ? `from ${pp(owedL.length)}` : "by no one"}</small></div>
-      <div class="sm-out"><span class="small">You owe</span><b class="bad tnum">${fmt(owe)}</b><small class="muted">${oweL.length ? `to ${pp(oweL.length)}` : "to no one"}</small></div></div></section>`;
+      <div class="sm-out"><span class="small">You owe</span><b class="bad tnum">${fmt(owe)}</b><small class="muted">${oweL.length ? `to ${pp(oweL.length)}` : "to no one"}</small></div></div>
+    ${b.length ? `<div class="sp-bub" aria-label="Balances by person">${b.slice().sort((a, c) => c.net - a.net).map(x => `<div class="sp-b ${x.net > 0 ? "in" : "out"}"><span class="avatar" style="--h:${avatarHue(x.p.name)}" aria-hidden="true">${esc(initials(x.p.name))}</span><b>${esc(x.p.name.split(" ")[0])}</b><small class="tnum">${x.net > 0 ? "+" : "−"}${fmt(Math.abs(x.net))}</small></div>`).join("")}</div>` : ""}</section>`;
   const card = x => {
     const they = x.net > 0, id = x.p.id, sl = personSplits(id, c), open = UI.pbOpen === id, sentence = they ? `${x.p.name} owes you ${fmt(x.net)}` : `You owe ${x.p.name} ${fmt(-x.net)}`;
     if (UI.settle === id) return `<form class="settle-form" data-form="settle" data-settle="${esc(x.p.id)}" data-amt="${Math.abs(x.net)}"><span class="${x.net > 0 ? "good" : "bad"}">${x.net > 0 ? `${esc(x.p.name)} owes you ${fmt(x.net)}` : `You owe ${esc(x.p.name)} ${fmt(-x.net)}`}</span>
