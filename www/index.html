@@ -1228,6 +1228,12 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .hap-tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px 14px 14px}
 .hap-t{appearance:none;border:0;cursor:pointer;display:grid;justify-items:center;gap:3px;padding:8px 2px;border-radius:14px;background:var(--gold-soft);color:var(--ink);font:700 .68rem var(--body)}.hap-t span{font-size:1.15rem;line-height:1}
 .hap-t:nth-child(2){background:var(--rust-soft)}.hap-t:nth-child(3){background:var(--green-soft)}.hap-t:nth-child(4){background:var(--chip)}.hap-plus{background:var(--green);color:var(--on-green)}.hap-plus span{font-weight:800}
+.hap-more{padding:0 14px 14px;display:grid;gap:10px}.hap-more .trip-card>.debt-top,.hap-more .trip-card>.debt-owed,.hap-more .trip-card>.meter,.hap-more .trip-card>.debt-tiles{display:none}.hap-more .trip-card{border:0;padding:0;background:none}
+.td-card{background:linear-gradient(160deg,var(--green-soft),var(--card))}.td-head{display:flex;justify-content:space-between;align-items:baseline}.td-head h2{margin:0;font-family:var(--display)}
+.td-list{display:grid;gap:8px}.td-it{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.td-it>div{flex:1;min-width:0}.td-it b{display:block;font-size:.95rem}.td-it small{color:var(--muted);font-size:.78rem}
+.td-chip{font-size:.74rem;font-weight:800;padding:4px 10px;border-radius:99px;background:var(--chip);white-space:nowrap}.td-chip.good{background:var(--green-soft);color:var(--green)}.td-chip.bad{background:var(--rust-soft);color:var(--rust)}.td-chip.gold{background:var(--gold-soft);color:var(--gold)}
+.td-cta{width:100%;margin-top:2px}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -3912,13 +3918,14 @@ V.month = () => {
   if (UI.biz) return spaceSwitch() + (plusOn() || bizDemoOn() ? bizSpace() : bizPreview());
   const C = compute(), tabs = monthTabs(), on = k => !tabs || (UI.mseg || "now") === k;
   const top = `${spaceSwitch()}${S.hideNote || TOUR.on || coachOn("month") ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on Budget, or import a bank statement. Everything stays on this device." : "Add your other bills on Budget and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
+  <div data-out="today">${OUT.today()}</div>
   <section class="hero hero-keep"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>`;
   const now = `${coach("month", "Your month at a glance")}  <div data-out="autoCard">${OUT.autoCard()}</div>
   <div data-out="monthClose">${OUT.monthClose()}</div>
   <div data-out="keepSafe">${OUT.keepSafe()}</div>
   <div data-out="needs">${OUT.needs()}</div>`;
-  const coming = `  <div data-out="happening">${OUT.happening()}</div><div data-out="comingUp">${OUT.comingUp()}</div>`;
+  const coming = `  <div data-out="comingUp">${OUT.comingUp()}</div>`;
   const donut = `  <div data-out="donut"${tabs ? ' class="dn-compact"' : ""}>${OUT.donut()}</div>`;
   const progress = `  <div data-out="billsCard">${OUT.billsCard()}</div>
   <div data-out="saveCard">${OUT.saveCard()}</div>`;
@@ -5601,13 +5608,29 @@ function setRenewalFrom(s, iso){  // iso date of a charge
   if (s.cycle === "yr") s.renewDate = isoOf(new Date(y + 1, m - 1, d)); else if (SUB_WK(s.cycle)) s.renewDate = isoOf(new Date(y, m - 1, d + subStep(s.cycle))); else s.renewDay = d;
 }
 // A trip or event going on today gets its own card on Month: how far in, what is spent and left, and a tap to log more.
-OUT.happening = () => { const live = (S.trips || []).filter(t => tripState(t) === "active"); if (!live.length) return "";
-  return live.map(t => { const n = tripDays(t), day = Math.min(n, Math.round((todayMid() - isoDate(t.start)) / DAY) + 1), spent = tripTotal(t), b = +t.budget || 0, left = r2(b - spent), per = b > 0 ? r2(Math.max(0, left) / Math.max(1, n - day + 1)) : 0, pct = b > 0 ? Math.min(100, spent / b * 100) : 0;
+// Today: the two or three things that matter on this day, from the person's own month, with one button for the most useful one.
+OUT.today = () => { const t0 = todayMid(), it = []; let cta = "";
+  const chip = (txt, k) => `<span class="td-chip ${k || ""}">${txt}</span>`;
+  if (payOn()) paydaysBetween(t0, dayPlus(t0, 1)).filter(d => !((S.payGot || "") >= isoOf(d))).slice(0, 1).forEach(d => { const n = daysUntil(d);
+    it.push(`<div class="td-it">${brandTile("Payday", 40)}<div><b>${n ? "Payday tomorrow" : "Payday"}</b><small>${fmt(+S.pay.amount || 0)} ${n ? "lands tomorrow" : "lands today"}</small></div>${chip("+" + fmt(+S.pay.amount || 0), "good")}</div>`);
+    if (+S.goalAmt > 0 && goalGap() > 0) cta = `<button class="btn primary td-cta" type="button" data-save-go>Put some toward ${esc(S.goalName || "your goal")}</button>`; });
+  (S.trips || []).filter(t => tripState(t) === "active").slice(0, 1).forEach(t => { const n = tripDays(t), day = Math.min(n, Math.round((t0 - isoDate(t.start)) / DAY) + 1), b = +t.budget || 0, left = r2(b - tripTotal(t));
+    it.push(`<div class="td-it"><span class="btile" style="--z:40px;background:#e0f2fe;color:#0369a1">${isEvent(t) ? "🎉" : "✈️"}</span><div><b>${esc(t.name)} · day ${day}</b><small>${b > 0 ? `${fmt(Math.max(0, left))} left` : "Going on now"}</small></div>${b > 0 ? chip(Math.round(Math.min(100, tripTotal(t) / b * 100)) + "%", "gold") : ""}</div>`);
+    if (!cta) cta = `<button class="btn primary td-cta" type="button" data-trip-goto="${t.id}">Log trip spending</button>`; });
+  S.subs.filter(x => x.keep !== "drop").map(x => ({x, d: nextRenewal(x)})).filter(v => v.d && daysUntil(v.d) <= 1 && daysUntil(v.d) >= 0).slice(0, 2).forEach(({x, d}) => { const idle = x.last && Math.round((t0 - isoDate(x.last)) / DAY) > 30;
+    it.push(`<div class="td-it">${brandTile(x.name, 40)}<div><b>${esc(x.name)} renews ${daysUntil(d) ? "tomorrow" : "today"}</b><small>${idle ? `Unused ${Math.round((t0 - isoDate(x.last)) / DAY)} days` : "Still using it?"}</small></div>${chip(fmt(x.price), idle ? "bad" : "")}</div>`); });
+  billsSoon(1).slice(0, 2).forEach(({e, d}) => { it.push(`<div class="td-it">${brandTile(e.name, 40)}<div><b>${esc(e.name)} due ${daysUntil(d) ? "tomorrow" : "today"}</b><small>You pay this yourself</small></div>${chip(fmt(e.amount), "bad")}</div>`); });
+  const P = planPeriodNow(), wd = t0.getDay();
+  if (isoOf(P.end) === isoOf(t0)) it.push(`<div class="td-it">${brandTile("Payday", 40)}<div><b>Last day of ${esc(P.name)}</b><small>You keep ${fmt(compute().savings)}</small></div>${chip("Month ends", "good")}</div>`);
+  else if (wd === 5 && it.length < 3) it.push(`<div class="td-it"><span class="btile" style="--z:40px;background:#ede9fe;color:#6d28d9">🎉</span><div><b>Weekend starts</b><small>Pick a weekend budget with the owl</small></div>${chip("Plan it")}</div>`);
+  if (!it.length) return "";
+  return `<section class="card td-card"><div class="td-head"><h2>Today</h2><span class="muted small">${t0.toLocaleString("en-US", {weekday: "long"})} · ${esc(shortDate(isoOf(t0)))}</span></div><div class="td-list">${it.slice(0, 3).join("")}</div>${cta}</section>`; };
+const hapTop = list => list.map(t => { const n = tripDays(t), day = Math.min(n, Math.round((todayMid() - isoDate(t.start)) / DAY) + 1), spent = tripTotal(t), b = +t.budget || 0, left = r2(b - spent), per = b > 0 ? r2(Math.max(0, left) / Math.max(1, n - day + 1)) : 0, pct = b > 0 ? Math.min(100, spent / b * 100) : 0;
     const tiles = isEvent(t) ? [["🎟️", "Tickets"], ["🍽️", "Food"], ["🎁", "Gifts"], ["🚕", "Rides"]] : [["🏨", "Stay"], ["🍽️", "Food"], ["🚕", "Rides"], ["🎟️", "Fun"]];
-    return `<section class="card hap-card" data-hap="${t.id}"><div class="hap-top"><div class="hap-row"><span class="hap-pill">● Happening now</span><span class="hap-day">Day ${day} of ${n}</span></div>
+    return `<div class="hap-one" data-hap="${t.id}"><div class="hap-top"><div class="hap-row"><span class="hap-pill">● Happening now</span><span class="hap-day">Day ${day} of ${n}</span></div>
       <div class="hap-row"><div><h2>${isEvent(t) ? "🎉" : "✈️"} ${esc(t.name)}</h2><span class="hap-dates">${esc(shortDate(t.start))} – ${esc(shortDate(t.end))}</span></div>${b > 0 ? `<div class="sv-ring hap-ring" style="--p:${pct.toFixed(1)}" aria-hidden="true"><i>${Math.round(pct)}%</i></div>` : ""}</div></div>
       <div class="hap-stats"><div><b class="tnum">${fmt(spent)}</b><span>spent</span></div>${b > 0 ? `<div><b class="tnum ${left < 0 ? "bad" : "good"}">${fmt(Math.abs(left))}</b><span>${left < 0 ? "over" : "left"}</span></div><div><b class="tnum">${fmt(per)}</b><span>a day</span></div>` : ""}</div>
-      <div class="hap-tiles">${tiles.map(([e, l]) => `<button type="button" class="hap-t" data-trip-goto="${t.id}" aria-label="Add ${l.toLowerCase()} to ${esc(t.name)}"><span aria-hidden="true">${e}</span>${l}</button>`).join("")}<button type="button" class="hap-t hap-plus" data-trip-goto="${t.id}" aria-label="Open ${esc(t.name)}"><span aria-hidden="true">+</span>Add</button></div></section>`; }).join(""); };
+      <div class="hap-tiles">${tiles.map(([e, l]) => `<button type="button" class="hap-t" data-trip-goto="${t.id}" aria-label="Add ${l.toLowerCase()} to ${esc(t.name)}"><span aria-hidden="true">${e}</span>${l}</button>`).join("")}<button type="button" class="hap-t hap-plus" data-trip-goto="${t.id}" aria-label="Open ${esc(t.name)}"><span aria-hidden="true">+</span>Add</button></div></div>`; }).join("");
 OUT.comingUp = () => {
   // One list in date order, money out and money in together, so the week reads top to bottom as it will happen.
   // What Split says is owed has no date, so it comes last.
@@ -6948,6 +6971,7 @@ function tripCard(t){
 const tripSoon = t => tripState(t) === "upcoming" && daysUntil(isoDate(t.start)) <= 7;
 OUT.tripsNow = () => { const all = S.trips || [], on = all.filter(t => tripState(t) === "active"), soon = all.filter(tripSoon).sort((a, b) => a.start.localeCompare(b.start)), list = [...on, ...soon]; if (!list.length) return "";
   const nm = t => t.kind === "event" ? "Event" : "Trip", label = on.length && !soon.length ? (on.length === 1 ? nm(on[0]) : `${on.length} on`) : !on.length ? (soon.length === 1 ? `${nm(soon[0])} this week` : `${soon.length} this week`) : `${list.length} trips and events`;
+  if (on.length) return `<section class="card hap-card" data-trips-now>${hapTop(on)}<div class="hap-more">${on.map(tripCard).join("")}${soon.map(tripMini).join("")}</div></section>`;
   return `<section class="card inc-card" data-trips-now><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>${on.length ? "Happening now" : "Coming soon"}</h2><span class="muted small">${label}</span></div>${on.map(tripCard).join("")}${soon.map(tripMini).join("")}</section>`; };
 // Before it starts, Overview keeps it to one line; the full card, to log spending, is a tap away on Budget.
 const tripMini = t => { const n = daysUntil(isoDate(t.start)), b = +t.budget || 0;
