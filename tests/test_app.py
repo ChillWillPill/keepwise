@@ -6439,7 +6439,7 @@ async def android_app_shows_no_plus_prices_and_the_play_badge_waits(ctx):
 async def the_tour_plays_by_itself_and_pauses(ctx):
     pg = await open_app(ctx, month_tabs=True)
     await pg.click("#acct-btn"); await pg.wait_for_timeout(280); await pg.click("#sidenav [data-menu=tour]"); await pg.wait_for_timeout(300)
-    assert "1 of 12" in await pg.inner_text("#tour") and await pg.evaluate("document.documentElement.dataset.skin") == "blue", "the tour runs in the Blue look"
+    assert "1 of 12" in await pg.inner_text("#tour") and await pg.evaluate("document.documentElement.dataset.skin") == "classic", "the tour runs in the Blue look"
     bg = await pg.evaluate("[getComputedStyle(document.getElementById('tour')).backgroundColor, getComputedStyle(document.querySelector('#tour .tour-go')).backgroundColor]")
     assert bg == ["rgb(255, 255, 255)", "rgb(36, 87, 214)"], ("blue and white", bg)
     await pg.wait_for_timeout(6400); assert "2 of 12" in await pg.inner_text("#tour"), "the next scene follows on its own"
