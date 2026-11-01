@@ -1,5 +1,5 @@
 <template id="site-tpl">
-<div class="kws" id="kws">
+<div class="kws" id="kws"><canvas class="kws-bgdots" aria-hidden="true"></canvas>
 <header class="kws-nav"><div class="kws-in">
   <a class="kws-brand" href="#" data-kws-top><img src="icons/icon-192.png" alt="" width="34" height="34"><span><b>Keep</b><i>Wise</i></span></a>
   <nav><a href="#kws-feat">Features</a><a href="#kws-how">How it works</a><a href="#kws-android">Android</a><a href="#kws-plus">Plus</a></nav>
@@ -215,4 +215,15 @@
 .kws-xr-bar{height:10px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden;margin-top:10px}.kws-xr-bar i{display:block;height:100%;width:0;background:#e0bb5e;border-radius:9px;transition:width .5s}
 .kws-xr p{margin:8px 0 0;color:rgba(243,250,246,.9);min-height:1.4em}
 .kws-win-top img{border-radius:50%}.kws-wdots{margin-left:auto;display:flex;gap:5px}.kws-wdots i{width:22px;height:5px;border-radius:5px;background:var(--line)!important}.kws-wdots i.on{background:var(--green)!important}
+
+/* cream look: light hero, text left and phone right; one dot field behind the whole page that follows the cursor */
+.kws{isolation:isolate}.kws-bgdots{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.kws>section,.kws>header,.kws>footer,.kws>div:not(.kws-marq){position:relative;z-index:1}.kws-marq{position:relative;z-index:1}
+.kws-sec{background-image:none!important;background-color:transparent}.kws-how{background-color:color-mix(in srgb,var(--card) 55%,transparent)!important}
+.kws-hero{background:linear-gradient(180deg,color-mix(in srgb,#f6f1e6 80%,transparent),color-mix(in srgb,#efe6d3 70%,transparent))!important;color:#1c2420!important}
+.kws-hero .kws-dots{display:none}.kws-hero h1{color:#14231b}.kws-u{background:none!important;color:#0e8571;font-style:italic;padding:0!important}
+.kws-rot{color:#4d564e!important}.kws-rot b{color:#a57d2c!important;border-color:#a57d2c!important}.kws-lead{color:#4d564e!important}.kws-pill{background:#e4f2ea!important;color:#1b6843!important;border-color:#cfe5d8!important}
+.kws-calc{background:#fffdf8!important;border-color:#e0d5c5!important;color:#1c2420;box-shadow:0 18px 40px -28px rgba(28,36,32,.5)}.kws-calc label{color:#4d564e!important}.kws-calc output{color:#1c2420!important}.kws-calc-r b{color:#1b6843!important}.kws-calc-r small{color:#4d564e!important}.kws-calc-r{border-color:#e0d5c5!important}.kws-calc-h span{color:#a57d2c!important}
+.kws-calc input{accent-color:#1b6843!important}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kws-hero{background:linear-gradient(180deg,rgba(20,22,19,.85),rgba(29,32,28,.75))!important;color:var(--ink)!important}:root:not([data-theme="light"]) .kws-hero h1{color:var(--ink)}:root:not([data-theme="light"]) .kws-calc{background:var(--card)!important;border-color:var(--line)!important;color:var(--ink)}:root:not([data-theme="light"]) .kws-calc output{color:var(--ink)!important}}
 </style>
