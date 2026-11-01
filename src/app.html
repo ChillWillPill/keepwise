@@ -833,7 +833,20 @@ button.card.banks-row{display:flex;flex-direction:row;align-items:center;justify
 .w-lg{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;flex:none}
 .w-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .w-tile{display:grid;justify-items:center;gap:4px;padding:11px 4px;border-radius:16px;background:var(--card);border:1px solid var(--line);color:var(--green);font-size:.78rem;font-weight:700}.w-tile span{color:var(--ink)}
-.w-more{display:flex;justify-content:center;align-items:center;gap:6px;color:var(--muted);margin:2px 0 0}.w-first .w-signin b{color:var(--green)}
+.w-more{display:flex;justify-content:center;align-items:center;gap:6px;color:var(--muted);margin:2px 0 0}
+/* the first screen fits without scrolling: everything scales with the screen height */
+.w-first{gap:clamp(8px,1.6vh,14px)}
+.w-first .w-hero{padding:clamp(14px,2.6vh,26px) 18px clamp(64px,10vh,88px)}
+.w-first .w-mark{width:clamp(52px,8.5vh,80px);height:clamp(52px,8.5vh,80px)}
+.w-first .w-title{font-size:clamp(1.55rem,4.4vh,2.3rem);margin-top:clamp(6px,1.2vh,12px)}
+.w-first .w-sub{font-size:clamp(.88rem,1.9vh,1rem)}
+.w-first .w-float{height:clamp(150px,22vh,190px);margin-top:calc(-1 * clamp(58px,9.5vh,84px))}
+.w-first .w-f1{padding:clamp(9px,1.4vh,14px) 16px}.w-first .w-f1 b{font-size:clamp(1.5rem,3.8vh,2rem)}
+.w-first .w-f2{top:calc(clamp(150px,22vh,190px) * .42)}.w-first .w-f3{top:calc(clamp(150px,22vh,190px) * .5)}.w-first .w-f4{top:auto;bottom:-4px;transform:translateX(-50%)}
+.w-first .w-tile{padding:clamp(6px,1.1vh,11px) 4px}
+@media (max-height:780px){.w-first .w-tiles{grid-template-columns:repeat(6,1fr);gap:6px}.w-first .w-tile{font-size:.64rem;padding:7px 2px}.w-first .w-tile svg{width:20px;height:20px}}
+@media (max-height:660px){.w-first .w-f2,.w-first .w-f3{display:none}.w-first .w-float{height:96px}}
+.w-first .w-cta{padding:clamp(11px,1.8vh,15px)}.w-first .w-cta2{margin-top:0;padding:clamp(10px,1.6vh,14px)}.w-first .w-signin b{color:var(--green)}
 .tr-card{gap:12px}.tr-kind{flex:none}.tr-kind button{padding:6px 10px}
 .tr-by{position:static!important}
 .tr-svg{width:100%;height:auto;display:block}.tr-axis{stroke:var(--line);stroke-width:1}.tr-lab{font-size:8.5px;fill:var(--muted);font-family:var(--body)}
