@@ -249,6 +249,8 @@ async function square(origin, b){
 export default {
   async fetch(req, env = {}){
     const origin = req.headers.get("Origin"), url = new URL(req.url);
+    const sub = url.hostname.match(/^([a-z0-9][a-z0-9-]{2,29})\.mykeepwise\.com$/);
+    if (sub && req.method === "GET" && !/^(www|api)$/.test(sub[1])) return await sitePage(sub[1]);
     if (req.method === "OPTIONS") return new Response(null, {status: 204, headers: cors(origin)});
     if (req.method === "GET" && url.pathname === "/") return new Response("KeepWise API", {headers: {"Content-Type": "text/plain", ...cors(origin)}});
     if (req.method !== "POST") return fail(origin, 405, "Not allowed.");
@@ -267,3 +269,19 @@ export default {
     return fail(origin, 404, "Not found.");
   },
 };
+
+// ---- business pages: name.mykeepwise.com, read from the public sites/{name} document ----
+const FS = "https://firestore.googleapis.com/v1/projects/keepwise-c28c3/databases/(default)/documents/sites/";
+const h = s => String(s || "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+async function sitePage(name){
+  let d = null; try { const r = await fetch(FS + name); if (r.ok){ const f = (await r.json()).fields || {}; d = Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v.stringValue ?? v.integerValue ?? ""])); } } catch(e){}
+  const page = (title, body) => new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${h(title)}</title>
+<style>:root{--g:#1b6843;--c:#fbf8f2;--b:#f3efe6;--i:#1c2420;--m:#4d564e}body{margin:0;background:var(--b);color:var(--i);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;display:grid;place-items:center;min-height:100vh;padding:20px;box-sizing:border-box}
+.c{background:var(--c);border:1px solid #e0d5c5;border-radius:28px;padding:32px 24px;max-width:420px;width:100%;text-align:center;box-shadow:0 30px 60px -36px rgba(28,36,32,.45)}img{width:96px;height:96px;border-radius:24px;object-fit:cover;background:#fff}
+h1{font:700 1.9rem Georgia,serif;margin:14px 0 4px}p{color:var(--m);margin:4px 0}a.b{display:block;margin-top:12px;padding:14px;border-radius:14px;text-decoration:none;font-weight:700;background:#fff;color:var(--i);border:1px solid #e0d5c5}a.p{background:var(--g);color:#fff;border:0}
+.f{margin-top:22px;font-size:.8rem;color:var(--m)}.f a{color:var(--g)}</style></head><body><main class="c">${body}<p class="f">Made with <a href="https://mykeepwise.com">KeepWise</a></p></main></body></html>`, {headers: {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=300"}});
+  if (!d || !d.name) return page("Not found", `<h1>No page here yet</h1><p>${h(name)}.mykeepwise.com isn't set up.</p>`);
+  const safe = u => /^https:\/\//.test(u) ? u : "";
+  return page(d.name, `${/^data:image\//.test(d.logo) ? `<img src="${h(d.logo)}" alt="">` : ""}<h1>${h(d.name)}</h1>${d.address ? `<p>${h(d.address)}</p>` : ""}
+    ${safe(d.pay) ? `<a class="b p" href="${h(d.pay)}" rel="noopener">Pay ${h(d.name)}</a>` : ""}${d.email ? `<a class="b" href="mailto:${h(d.email)}">Email ${h(d.email)}</a>` : ""}${d.phone ? `<a class="b" href="tel:${h(d.phone.replace(/[^+\d]/g, ""))}">Call ${h(d.phone)}</a>` : ""}${d.website ? `<a class="b" href="https://${h(d.website.replace(/^https?:\/\//, ""))}" rel="noopener">${h(d.website.replace(/^https?:\/\//, ""))}</a>` : ""}`);
+}

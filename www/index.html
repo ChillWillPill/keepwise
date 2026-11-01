@@ -117,9 +117,9 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .pw-rules li{display:flex;gap:6px;align-items:center}
 .pw-rules svg{width:13px;height:13px;flex:none;opacity:.3}
 .pw-rules li.ok{color:var(--green)} .pw-rules li.ok svg{opacity:1}
-.tour{--tb:#2457d6;--tb-soft:#e8efff;--tink:#0f1c2b;--tmut:#5b6676;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:40;width:min(92vw,420px);background:#fff;color:var(--tink);border:0;border-radius:24px;padding:14px 18px 16px;box-shadow:0 24px 60px -16px rgba(15,28,43,.45),0 0 0 1px rgba(36,87,214,.12);display:flex;flex-direction:column;gap:8px;font-family:var(--body)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tour{--tb:#7aa2ff;--tb-soft:#1b2a4f;--tink:#f3f6ff;--tmut:#aab6cc;background:#101a33;box-shadow:0 24px 60px -16px rgba(0,0,0,.7),0 0 0 1px rgba(122,162,255,.25)}}
-:root[data-theme="dark"] .tour{--tb:#7aa2ff;--tb-soft:#1b2a4f;--tink:#f3f6ff;--tmut:#aab6cc;background:#101a33;box-shadow:0 24px 60px -16px rgba(0,0,0,.7),0 0 0 1px rgba(122,162,255,.25)}
+.tour{--tb:var(--green);--tb-soft:var(--green-soft);--tink:var(--ink);--tmut:var(--muted);background:var(--card)!important;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:40;width:min(92vw,420px);background:#fff;color:var(--tink);border:0;border-radius:24px;padding:14px 18px 16px;box-shadow:0 24px 60px -16px rgba(15,28,43,.45),0 0 0 1px rgba(36,87,214,.12);display:flex;flex-direction:column;gap:8px;font-family:var(--body)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tour{--tb:var(--green);--tb-soft:var(--green-soft);--tink:var(--ink);--tmut:var(--muted);background:var(--card);box-shadow:0 24px 60px -16px rgba(0,0,0,.7),0 0 0 1px var(--line)}}
+:root[data-theme="dark"] .tour{--tb:var(--green);--tb-soft:var(--green-soft);--tink:var(--ink);--tmut:var(--muted);background:var(--card);box-shadow:0 24px 60px -16px rgba(0,0,0,.7),0 0 0 1px var(--line)}
 @media (prefers-reduced-motion:no-preference){.tour{animation:tourin .28s cubic-bezier(.2,.9,.3,1.2) both}@keyframes tourin{from{opacity:0;transform:translateX(-50%) translateY(14px) scale(.97)}to{opacity:1;transform:translateX(-50%)}}}
 .tour[hidden]{display:none}
 .tour h3{font:700 1.25rem/1.2 var(--body);letter-spacing:-.01em;margin:2px 0 0;color:var(--tink)}
@@ -143,7 +143,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .app.touring .app-main,.app.touring .tabbar,.app.touring .app-header{pointer-events:none}
 .app.touring .view{padding-bottom:70vh}
 .app.touring .view>.seg.sub-seg{position:relative;top:0;z-index:auto;box-shadow:none}  /* room to bring anything, even the last card, up above the tour card */
-.tour-focus{outline:2.5px solid #2457d6;outline-offset:4px;border-radius:18px;transition:outline-color .2s;position:relative;z-index:5;box-shadow:0 0 0 200vmax rgba(20,26,22,.42)}  /* the rest of the page dims so the part being explained stands out */
+.tour-focus{outline:2.5px solid var(--green);outline-offset:4px;border-radius:18px;transition:outline-color .2s;position:relative;z-index:5;box-shadow:0 0 0 200vmax rgba(20,26,22,.42)}  /* the rest of the page dims so the part being explained stands out */
 .lockscreen{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));text-align:center;overflow:auto}
 .lockscreen[hidden]{display:none}
 .app.locked{visibility:hidden}
@@ -1279,6 +1279,21 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .bz-pr{display:flex;justify-content:space-between;align-items:center;gap:10px}.bz-pr .big{text-align:left}.sv-ring.bz-ring{width:70px;height:70px;margin:0;flex:none}.sv-ring.bz-ring i{width:56px;height:56px;background:var(--green-soft);font-size:.9rem;display:grid;line-height:1}.bz-ring small{font:600 .56rem var(--body);color:var(--muted)}
 .bz-hstats button:nth-child(1){background:var(--green-soft)!important}.bz-hstats button:nth-child(2){background:color-mix(in srgb,var(--card) 70%,transparent)!important}.bz-hstats button:nth-child(3){background:var(--rust-soft)!important}.bz-hstats button:nth-child(4){background:var(--gold-soft)!important}
 .bz-hstats button:nth-child(3) b{color:var(--rust)}.bz-hstats button:nth-child(4) b{color:var(--gold)}
+.biz-site{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}.biz-site h3{margin:0}
+.biz-site-url{display:flex;align-items:center;gap:6px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--bg);font:600 .9rem ui-monospace,Menlo,monospace;color:var(--muted)}
+.biz-site-url input{flex:1;min-width:0;border:0;background:none;font:700 .95rem ui-monospace,Menlo,monospace;color:var(--green);padding:0;outline:none}
+
+/* Glass: frosted, see-through cards over soft color; the Glass bar sets how clear and how blurred */
+:root[data-skin="glass"]{--bg:#eef3f0;--card:rgba(255,255,255,var(--glass-a,.55));--ink:#14201a;--muted:#4f5d56;--line:rgba(255,255,255,.7);--chip:rgba(255,255,255,.5);--green:#127a57;--green-soft:rgba(18,122,87,.12);--gold:#9a7417;--gold-soft:rgba(224,187,94,.18);--rust:#b04a32;--rust-soft:rgba(176,74,50,.12)}
+:root[data-skin="glass"]{background:radial-gradient(70vmax 55vmax at 0% 10%,#6fd6ae 0,transparent 62%),radial-gradient(60vmax 50vmax at 100% 45%,#f2c45e 0,transparent 60%),radial-gradient(70vmax 60vmax at 30% 100%,#86b4f4 0,transparent 62%),#e7efe9 fixed}
+:root[data-skin="glass"] body,:root[data-skin="glass"] #app,:root[data-skin="glass"] main,:root[data-skin="glass"] .view{background:transparent!important}
+:root[data-skin="glass"] .card,:root[data-skin="glass"] .hero,:root[data-skin="glass"] .tabbar,:root[data-skin="glass"] .ask-panel,:root[data-skin="glass"] header{background:var(--card)!important;-webkit-backdrop-filter:blur(var(--glass-b,12px)) saturate(1.6);backdrop-filter:blur(var(--glass-b,12px)) saturate(1.6);border-color:rgba(255,255,255,.65)!important;box-shadow:0 8px 30px -14px rgba(20,32,26,.25),inset 0 1px 0 rgba(255,255,255,.7)}
+:root[data-skin="glass"][data-theme="dark"]{--bg:#0d1714;--card:rgba(20,30,27,var(--glass-a,.55));--ink:#eaf2ee;--muted:#a6b5ae;--line:rgba(255,255,255,.12);--chip:rgba(255,255,255,.08);--green:#6fd3a8;--green-soft:rgba(111,211,168,.14)}
+:root[data-skin="glass"][data-theme="dark"]{background:radial-gradient(600px 420px at 10% 0%,#1f5f4a 0,transparent 60%),radial-gradient(520px 420px at 100% 30%,#5a4a1a 0,transparent 60%),radial-gradient(600px 500px at 40% 100%,#1d3557 0,transparent 60%),#0d1714;background-attachment:fixed}
+@media (prefers-color-scheme: dark){:root[data-skin="glass"]:not([data-theme="light"]){--bg:#0d1714;--card:rgba(20,30,27,var(--glass-a,.55));--ink:#eaf2ee;--muted:#a6b5ae;--line:rgba(255,255,255,.12);--chip:rgba(255,255,255,.08);--green:#6fd3a8;--green-soft:rgba(111,211,168,.14)}:root[data-skin="glass"]:not([data-theme="light"]){background:radial-gradient(600px 420px at 10% 0%,#1f5f4a 0,transparent 60%),radial-gradient(520px 420px at 100% 30%,#5a4a1a 0,transparent 60%),radial-gradient(600px 500px at 40% 100%,#1d3557 0,transparent 60%),#0d1714;background-attachment:fixed}}
+:root[data-skin="terminal"] .card{box-shadow:0 0 0 1px rgba(57,255,136,calc(.08 + var(--glow,.5) * .25)),0 0 calc(var(--glow,.5) * 40px) rgba(57,255,136,calc(var(--glow,.5) * .14))!important}
+.skin-glass i:nth-child(1){background:linear-gradient(135deg,#a8e6cf,#b9d7ff)}.skin-glass i:nth-child(2){background:rgba(255,255,255,.7);box-shadow:inset 0 0 0 1px #dfe7e3}.skin-glass i:nth-child(3){background:#127a57}
+.lvl-pick{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 12px 10px}.lvl-pick input{accent-color:var(--green);width:100%}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -1624,13 +1639,16 @@ const THEME_ICON = {
   system:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
   light:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>',
   dark:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>'};
-const SKINS = [["classic", "KeepWise", "Cream and green, the default"], ["midnight", "Midnight", "Deep dark with gold"], ["ocean", "Ocean", "Blues and teal"], ["mocha", "Mocha", "Warm browns and cream"], ["rose", "Blossom", "Soft rose and plum"], ["contrast", "Mono", "Black and white, easiest to read"], ["terminal", "Terminal", "A trading screen, always dark"]];
+const SKINS = [["classic", "KeepWise", "Cream and green, the default"], ["midnight", "Midnight", "Deep dark with gold"], ["ocean", "Ocean", "Blues and teal"], ["mocha", "Mocha", "Warm browns and cream"], ["rose", "Blossom", "Soft rose and plum"], ["contrast", "Mono", "Black and white, easiest to read"], ["glass", "Glass", "Frosted, see-through cards"], ["terminal", "Terminal", "A trading screen, always dark"]];
 const SKIN_MAP = {simple: "classic", ledger: "mocha", blue: "ocean", plum: "rose", sand: "mocha", slate: "midnight", forest: "classic"};   // themes that were folded into the seven
 const skinNow = () => { const k = SKIN_MAP[S.skin] || S.skin; return SKINS.some(x => x[0] === k) ? k : "classic"; };
 function applyTheme(){
   let setting = false; try { setting = UI.welcome != null; } catch(e){}   // every new person sets up their month in the light look
   const t = setting ? "light" : THEMES.includes(S.theme) ? S.theme : "system", root = document.documentElement;
   root.setAttribute("data-skin", setting ? "classic" : skinNow()); root.setAttribute("data-glow", ["off", "on", "max"].includes(S.glow) ? S.glow : "on");
+  { const gl = Math.max(0, Math.min(100, +(S.glassLvl ?? 60))), gw = Math.max(0, Math.min(100, +(S.glowLvl ?? 50)));
+    root.style.setProperty("--glass-a", (0.86 - gl * 0.0055).toFixed(3)); root.style.setProperty("--glass-b", (4 + gl * 0.2).toFixed(1) + "px");
+    root.style.setProperty("--glow", (gw / 100).toFixed(2)); if (skinNow() === "terminal") root.setAttribute("data-glow", gw < 8 ? "off" : gw > 70 ? "max" : "on"); }
   if (t === "system") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
   const dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   let m = document.querySelector('meta[name="theme-color"]'); if (!m){ m = document.createElement("meta"); m.name = "theme-color"; document.head.appendChild(m); }
@@ -3268,7 +3286,11 @@ function bizProfileCard(b){
     <label class="field"><span>Address <small class="muted">optional</small></span><textarea data-biz-prof="address" rows="2" maxlength="160" placeholder="Street, city, state">${esc(b.address || "")}</textarea></label>
     <div class="grid2"><label class="field"><span>Get paid with</span><select data-biz-prof="payKind"><option value="">Choose</option>${Object.entries(PAY_KINDS).map(([k, n]) => `<option value="${k}" ${b.payKind === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>${field("payHandle", "Your username", b.payKind === "cashapp" ? "$cashtag" : "username", "text", 40)}</div>
     ${b.payKind && payLink(1) ? `<p class="muted small" data-biz-paylink>Invoices get a Pay now link, like ${esc(payLink(25).replace(/^https:\/\//, ""))}</p>` : ""}
-    <label class="field"><span>Other ways to pay <small class="muted">optional, printed on invoices</small></span><textarea data-biz-prof="payNote" rows="2" maxlength="200" placeholder="e.g. Zelle to you@business.com, or bank transfer">${esc(b.payNote || "")}</textarea></label></section>`;
+    <label class="field"><span>Other ways to pay <small class="muted">optional, printed on invoices</small></span><textarea data-biz-prof="payNote" rows="2" maxlength="200" placeholder="e.g. Zelle to you@business.com, or bank transfer">${esc(b.payNote || "")}</textarea></label></section>
+    <div class="biz-site" data-biz-site><h3>Your KeepWise page</h3><p class="muted small">A simple page for your customers with your logo, contact and a Pay now link. Free with Plus.</p>
+      <div class="biz-site-url"><span aria-hidden="true">🔒</span><input data-biz-site-h maxlength="30" value="${esc(b.site || "")}" placeholder="yourbusiness" aria-label="Your page name" autocapitalize="off" spellcheck="false"><span>.mykeepwise.com</span></div>
+      ${b.site ? `<p class="small good" data-biz-site-live>Live at <a href="https://${esc(b.site)}.mykeepwise.com" target="_blank" rel="noopener">${esc(b.site)}.mykeepwise.com</a></p>` : ""}
+      <div class="inline" style="gap:8px"><button class="btn small primary" type="button" data-biz-site-pub>${b.site ? "Update my page" : "Publish my page"}</button>${b.site ? `<button class="btn small" type="button" data-biz-site-off>Take it down</button>` : ""}</div></div>`;
 }
 // ---- emailing invoices (Plus, signed in): the invoice picture goes to the client, replies come to you ----
 const mailOk = () => plusOn() && typeof ACC !== "undefined" && !!ACC.user;
@@ -8354,7 +8376,7 @@ const askLinkTip = () => "This link opens KeepWise with Ask KeepWise ready. "
 const themesCard = bare => `<section class="card" data-set-look>${bare ? "" : "<h2>Look</h2>"}
     <div class="seg theme-seg" role="group" aria-label="Light or dark">${[["light", "Light"], ["dark", "Dark"], ["system", "Auto"]].map(([t, n]) => `<button type="button" data-theme-set="${t}" aria-pressed="${(S.theme || "system") === t}">${n}</button>`).join("")}</div>
     <p class="muted small" style="margin:0">Auto follows your phone.</p>
-    <div class="skin-list" role="radiogroup" aria-label="Optional themes">${SKINS.map(([k, n, d]) => `<button type="button" class="skin-opt" role="radio" aria-checked="${skinNow() === k}" data-skin-set="${k}"><span class="skin-sw skin-${k}" aria-hidden="true"><i></i><i></i><i></i></span><span><b>${n}</b><small class="muted">${d}</small>${k === "terminal" ? `<small class="skin-extra">✦ Has Glow</small>` : ""}</span></button>${k === "terminal" ? `${skinNow() === "terminal" ? `<div class="glow-pick" data-glow-pick><span class="small muted">Glow</span><div class="seg theme-seg" role="group" aria-label="Glow">${[["off", "Off"], ["on", "On"], ["max", "Max"]].map(([g, n]) => `<button type="button" data-glow-set="${g}" aria-pressed="${(["off", "on", "max"].includes(S.glow) ? S.glow : "on") === g}">${n}</button>`).join("")}</div></div>` : ""}` : ""}`).join("")}</div>
+    <div class="skin-list" role="radiogroup" aria-label="Optional themes">${SKINS.map(([k, n, d]) => `<button type="button" class="skin-opt" role="radio" aria-checked="${skinNow() === k}" data-skin-set="${k}"><span class="skin-sw skin-${k}" aria-hidden="true"><i></i><i></i><i></i></span><span><b>${n}</b><small class="muted">${d}</small>${k === "terminal" ? `<small class="skin-extra">✦ Has Glow</small>` : k === "glass" ? `<small class="skin-extra">✦ Glass level</small>` : ""}</span></button>${(k === "terminal" || k === "glass") && skinNow() === k ? `<label class="lvl-pick" data-lvl-pick><span class="small muted">${k === "glass" ? "Glass" : "Glow"}</span><input type="range" min="0" max="100" step="5" value="${k === "glass" ? (S.glassLvl ?? 60) : (S.glowLvl ?? 50)}" data-lvl="${k}" aria-label="${k === "glass" ? "Glass level" : "Glow level"}"><b class="tnum" data-lvl-out>${k === "glass" ? (S.glassLvl ?? 60) : (S.glowLvl ?? 50)}%</b></label>` : ""}`).join("")}</div>
     </section>`;
 const setHead = t => `<div class="inline" style="justify-content:space-between"><h1>${t}</h1><button class="btn small" type="button" data-settings-close>Done</button></div>`;
 // Four screens, each with one job and nothing repeated: Settings (how the app looks and behaves), Security & privacy
@@ -8603,6 +8625,7 @@ function menuGo(k){
   if (k === "banks"){ UI.biz = false; openBanks(); return; }
   UI.settings = k === "security" || k === "support" || k === "data" || k === "backup" ? k : "settings"; render(false); $("main").scrollTop = 0;
 }
+document.addEventListener("input", e => { const l = e.target.closest && e.target.closest("[data-lvl]"); if (!l) return; const v = +l.value; if (l.dataset.lvl === "glass") S.glassLvl = v; else S.glowLvl = v; const o = l.parentElement.querySelector("[data-lvl-out]"); if (o) o.textContent = v + "%"; applyTheme(); clearTimeout(window.__lvlT); window.__lvlT = setTimeout(save, 300); });
 document.addEventListener("input", e => { const q = e.target.closest && e.target.closest("[data-place-q]"); if (!q) return; clearTimeout(PLACE.t); PLACE.t = setTimeout(() => placeSearch(q), 450); });
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-place-pick], [data-place-manual]"); if (!b) return; e.preventDefault(); e.stopPropagation();
   const fld = b.closest(".place-field"), f = fld.closest("form"), inp = fld.querySelector("[data-place-q]"), box = fld.querySelector("[data-place-res]");
@@ -9397,6 +9420,19 @@ view.addEventListener("click", async e => {
     toast(`${SALES_SRC[src]} disconnected. Sales already brought in stay. To end it fully, also delete the key in ${SALES_SRC[src]}.`); return; }
   if (b.dataset.invRemind){ bizData().remindOff = b.dataset.invRemind === "off"; save(); render(true); if (!bizData().remindOff) invReminders(); return; }
   if (b.hasAttribute("data-goto-prof")){ UI.bseg = "money"; render(false); const c = view.querySelector("[data-biz-settings]"); if (c) c.scrollIntoView({block: "start"}); return; }
+  if (b.hasAttribute("data-biz-site-pub") || b.hasAttribute("data-biz-site-off")){ const bz = bizData(), off = b.hasAttribute("data-biz-site-off");
+    if (!plusOn()){ toast("Your KeepWise page comes with Plus."); return; }
+    if (!(typeof ACC !== "undefined" && ACC.user && ACC.db)){ toast("Sign in first, so the page stays yours."); return; }
+    const h = off ? bz.site : String((view.querySelector("[data-biz-site-h]") || {}).value || "").toLowerCase().trim().replace(/[^a-z0-9-]/g, "");
+    if (!/^[a-z0-9][a-z0-9-]{2,29}$/.test(h || "") || /^(www|api|app|mail|admin|help|support|keepwise|blog|shop|pay)$/.test(h)){ toast("Use 3 to 30 letters, numbers or dashes."); return; }
+    const ref = ACC.db.collection("sites").doc(h);
+    (async () => { try {
+      if (off){ await ref.delete(); bz.site = ""; save(); render(true); toast("Your page is down."); return; }
+      const cur = await ref.get(); if (cur.exists && cur.data().uid !== ACC.user.uid){ toast(`${h}.mykeepwise.com is taken. Try another name.`); return; }
+      if (bz.site && bz.site !== h){ try { await ACC.db.collection("sites").doc(bz.site).delete(); } catch(e){} }
+      await ref.set({uid: ACC.user.uid, name: bz.name || "", logo: (bz.logo || "").length < 700000 ? bz.logo || "" : "", email: bz.email || "", phone: bz.phone || "", website: bz.website || "", address: bz.address || "", pay: payLink(1) ? payLink(1).replace(/\/1(\.00)?$/, "") : "", at: Date.now()});
+      bz.site = h; save(); render(true); toast(`Live at ${h}.mykeepwise.com`);
+    } catch(e){ toast("Couldn’t publish right now. Try again in a minute."); } })(); return; }
   if (b.hasAttribute("data-biz-logo-up")){ const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.hidden = true;
     inp.addEventListener("change", async () => { const file = inp.files && inp.files[0]; inp.remove(); if (!file) return; try { bizData().logo = await logoFrom(file); save(); render(true); toast("Logo added. It shows on your invoices."); } catch(err){ toast(err.message); } });
     document.body.appendChild(inp); inp.click(); return; }

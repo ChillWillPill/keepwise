@@ -28,6 +28,16 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['uid','at']) && request.resource.data.uid == request.auth.uid;
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
+    // A business page at name.mykeepwise.com: anyone can read one by name, nobody can list them, only its owner writes.
+    match /sites/{h} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.auth != null && h.matches('^[a-z0-9][a-z0-9-]{2,29}$') && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid','name','logo','email','phone','website','address','pay','at']);
+      allow update: if request.auth != null && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid','name','logo','email','phone','website','address','pay','at']);
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
     // A split a friend sent you: they write it as themselves, only you read and remove it.
     match /inbox/{uid}/items/{id} {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
