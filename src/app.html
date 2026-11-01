@@ -1236,6 +1236,9 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .subs-sum .summary3{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px}.subs-sum .summary3>div{background:var(--bg);border-radius:14px;padding:8px 10px;border:0!important;display:flex!important;flex-direction:column;align-items:flex-start!important;justify-content:flex-start!important}.subs-sum .summary3 .label{font-size:.6rem}.subs-sum .summary3 b{font-size:1.02rem!important;margin-top:2px}
 .rv-top{display:flex;gap:12px;align-items:center}.rv-t{min-width:0}.rv-t .label{margin:0}.rv-t h3{margin:2px 0;font-size:1.05rem}.rv-t p{margin:0}
 .rv-btns .btn{display:grid;justify-items:center;gap:2px;padding:10px 4px;border:0;font-size:.8rem}.rv-btns .btn span{font-size:1.25rem;line-height:1}.rv-a{background:var(--green-soft)!important;color:var(--green)!important}.rv-b{background:var(--gold-soft)!important;color:var(--gold)!important}.rv-c{background:var(--rust-soft)!important;color:var(--rust)!important}
+.ih-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.ih-big{display:block;font:700 2rem var(--display)}.ih-cd{display:flex;gap:6px}.ih-cd span{display:grid;justify-items:center;background:var(--green-soft);border-radius:12px;padding:6px 10px}.ih-cd b{font:700 1.5rem var(--display);color:var(--green)}.ih-cd small{font-size:.66rem;color:var(--muted)}
+.ih-row{display:flex;gap:14px;align-items:center;padding-top:10px;border-top:1px solid var(--line)}.ih-row b{display:block}.sv-ring.ih-ring,.sv-ring.pc-ring{width:64px;height:64px;margin:0;flex:none}.sv-ring.ih-ring i,.sv-ring.pc-ring i{width:50px;height:50px;font-size:.86rem;background:var(--card)}
+.pc-top{display:flex;gap:14px;align-items:center}.pc-big{display:block;font:700 1.8rem var(--display)}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -3932,7 +3935,7 @@ V.month = () => {
   const donut = `  <div data-out="donut"${tabs ? ' class="dn-compact"' : ""}>${OUT.donut()}</div>`;
   const progress = `  <div data-out="billsCard">${OUT.billsCard()}</div>
   <div data-out="saveCard">${OUT.saveCard()}</div>`;
-  const fields = `  <div class="grid2">
+  const fields = `  <div data-out="incomeHero">${OUT.incomeHero()}</div><div class="grid2">
     <div class="field"><span class="h-info"><label for="m-cur">Currency</label>${infoBtn("cur", "About changing currency")}</span><select data-bind="cur" id="m-cur">${curOptions(S.cur)}</select></div>
     <div class="field"><span class="h-info"><label for="m-income" data-out="incomeLabel">${OUT.incomeLabel()}</label>${payOn() ? infoBtn("pay", "About your pay schedule") : ""}</span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month">${payOn() && !UI.payEdit ? `<button class="link small" type="button" data-payday-edit style="flex:none">Change</button>` : ""}</span></div>
   </div>
@@ -4050,7 +4053,8 @@ OUT.stack = () => {
   const C = compute(), tot = Math.max(C.income, C.needs + C.misc, 1);
   const s = Math.max(0, C.savings);
   const ex = r2(C.needs - C.loans), parts = [["Expenditures", ex, "var(--ink)"], ...(C.loans > 0 ? [["Loans", C.loans, "var(--gold)"]] : []), ["Misc", C.misc, "var(--rust)"], ["Savings", s, "var(--green)"]];
-  return `<section class="card plan-card" data-plan-card><div class="inline" style="justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 10px"><h2>${esc(C.planMonth)} plan</h2><span class="muted small tnum">from ${fmt(C.income)} coming in</span></div>
+  const op = C.income > 0 ? Math.min(100, (C.needs + C.misc) / C.income * 100) : 0;
+  return `<section class="card plan-card" data-plan-card><div class="pc-top"><div class="sv-ring pc-ring" style="--p:${op.toFixed(1)};--c:var(--rust)" aria-hidden="true"><i>${Math.round(op)}%</i></div><div><span class="label">${esc(C.planMonth)} plan</span><b class="pc-big tnum">${fmt(r2(C.needs + C.misc))}</b><small class="muted">going out of ${fmt(C.income)} · <b style="color:var(--green)">${fmt(Math.max(0, C.savings))} kept</b></small></div></div><h2 class="sr-only">${esc(C.planMonth)} plan</h2>
   <div class="stack" role="img" aria-label="${parts.map(([n, v]) => `${n} ${fmt(v)}`).join(", ")}">${parts.map(([, v, c]) => `<i style="width:${v/tot*100}%;background:${c}"></i>`).join("")}</div>
   <div class="legend plan-legend tnum" style="--n:${parts.length > 3 ? 2 : parts.length}">${parts.map(([n, v, c]) => `<span style="--c:${c}">${n} <b>${fmt(v)}</b></span>`).join("")}</div></section>`;
 };
@@ -6468,6 +6472,13 @@ function incomeForm(x){
     <div class="grid2">${x ? `<button class="btn danger" type="button" data-inc-del>Remove</button>` : `<button class="btn" type="button" data-inc-cancel>Cancel</button>`}<button class="btn primary" type="submit" style="padding:10px">${x ? "Save" : "Add income"}</button></div>
     ${x ? `<button class="link plain small" type="button" data-inc-cancel style="align-self:center">Cancel</button>` : ""}</form>`;
 }
+// Income at a glance: the next payday counting down, and what this month brings in, as a ring.
+OUT.incomeHero = () => { const C = compute(), n = payOn() ? nextPayday() : null, k = todayKey();
+  const got = r2((S.extras || []).reduce((a, x) => a + gotIn(x, k), 0) + (payOn() && S.payGot && inMonth(S.payGot, k) ? +S.pay.amount || 0 : 0)), exp = C.income || 0, pct = exp > 0 ? Math.min(100, got / exp * 100) : 0;
+  const d = n ? daysUntil(n) : null, hrs = n ? Math.max(0, Math.floor((n - new Date()) / 36e5) % 24) : 0;
+  return `<section class="card ih-card">${n ? `<div class="ih-top"><div><span class="label">Next payday</span><b class="ih-big">${esc(dayMonth(n))}</b><small class="muted">${d === 0 ? "Today" : d === 1 ? "Tomorrow" : `In ${d} days`} · ${fmt(+S.pay.amount || 0)}</small></div>
+      <div class="ih-cd"><span><b class="tnum">${d}</b><small>days</small></span><span><b class="tnum">${String(hrs).padStart(2, "0")}</b><small>hrs</small></span></div></div>` : `<div class="ih-top"><div><span class="label">Payday</span><b class="ih-big">Not set</b><small class="muted">Add your pay schedule below to see the countdown.</small></div></div>`}
+    <div class="ih-row"><div class="sv-ring ih-ring" style="--p:${pct.toFixed(1)}" aria-hidden="true"><i>${Math.round(pct)}%</i></div><div><b>${esc(C.planMonth)}</b><small class="muted"><b class="tnum" style="color:var(--ink)">${fmt(got)}</b> of ${fmt(exp)} received</small></div></div></section>`; };
 OUT.extraIncome = () => {
   const list = S.extras || [], k = todayKey(), mName = periodOf(new Date()).name;
   if (!list.length && !UI.incAdd) return `<button class="link small inc-add" type="button" data-inc-add>${I.plus}Add other income <span class="muted inc-hint">Side job, creator, trading, rental</span></button>`;
