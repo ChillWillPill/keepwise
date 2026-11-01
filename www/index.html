@@ -7855,7 +7855,9 @@ const PLUS_TIERS = {1: {mo: 9.99, yr: 79}, 2: {mo: 6.99, yr: 59}, 3: {mo: 3.99, 
 const ULTRA_TIERS = {1: {mo: 19.99, yr: 159}, 2: {mo: 13.99, yr: 119}, 3: {mo: 7.99, yr: 69}, 4: {mo: 3.99, yr: 39}};
 const BANK_LIMIT = {plus: 2, ultra: 5};
 const plusPlan = () => (devBuild() && S.plusTester) ? "ultra" : S.plusPlan === "ultra" ? "ultra" : "plus";
-const bankLimit = () => BANK_LIMIT[plusPlan()];
+// During the free week no bank connects: Plaid bills each connection for the whole month, even if the trial is cancelled.
+// Banks unlock with the first payment, and "Start my plan now" ends the free week early for anyone who wants them today.
+const bankLimit = () => trialOn() && !(devBuild() && S.plusTester) ? 0 : BANK_LIMIT[plusPlan()];
 const TIER2 = "CA GB IE FR DE ES IT PT NL BE LU AT CH DK SE NO FI IS AU NZ AE SA QA KW BH OM SG JP KR HK IL", TIER3 = "MX BR TR MY ZA PL CZ HU RO BG HR SK SI LT LV EE RS AR CL CO PE TH CN GR CY MT", TIER4 = "PK IN BD EG NG PH ID LK NP KE GH VN MA DZ TN ET UG TZ";
 const plusTier = () => { const c = regionCode(); return !c || c === "US" ? 1 : TIER2.includes(c) ? 2 : TIER3.includes(c) ? 3 : TIER4.includes(c) ? 4 : 2; };
 const PLUS_PRICE = (() => { const t = PLUS_TIERS[1]; return {monthly: t.mo, yearly: t.yr}; })();
@@ -7909,6 +7911,10 @@ async function plusCheck(force){ const u = typeof ACC !== "undefined" && ACC.use
     if (was !== plusOn() || wasPlan !== S.plusPlan) render(true); } catch(e){} }
 // When Plus ends, each bank link is closed at Plaid so it stops syncing (and stops costing). What came in stays on the phone.
 async function plaidCloseAll(msg){ const s = plaidStore(); if (!s.items.length) return; for (const it of s.items){ try { await salesCall("/plaid/remove", {item: it.item}); } catch(e){} } s.items = []; plaidKeep(s); toast(msg); render(true); }
+// Ending the free week early: Paddle charges the plan now, and banks unlock right away.
+async function plusActivate(){ const u = typeof ACC !== "undefined" && ACC.user; if (!u) return;
+  busy("Starting your plan"); try { const r = await fetch(API_BASE + "/plus/activate", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({idToken: await u.getIdToken()})}); const j = await r.json(); busy(false);
+    if (!r.ok){ toast(j.error || "That didn’t work. Try again in a minute."); return; } await plusCheck(true); UI.plusLimit = false; toast("Your plan has started. Connect your bank now."); render(true); } catch(e){ busy(false); toast("KeepWise can’t reach the server right now. Try again in a minute."); } }
 // Moving from Plus to Plus Ultra changes the same subscription (Paddle charges only the difference); it never starts a second one.
 async function plusUpgrade(){ const u = typeof ACC !== "undefined" && ACC.user; if (!u) return;
   busy("Moving you to Plus Ultra"); try { const r = await fetch(API_BASE + "/plus/upgrade", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({idToken: await u.getIdToken(), cycle: UI.plusCycle === "mo" ? "mo" : "yr"})}); const j = await r.json(); busy(false);
@@ -7933,6 +7939,9 @@ function plusCta(){
 const bankShort = n => { const w = String(n || "Bank").split(/\s+/).filter(Boolean); return w.length > 1 && /^(bank|first|the|citizens)$/i.test(w[0]) ? w.filter(x => !/^(of|the)$/i.test(x)).map(x => x[0].toUpperCase()).join("") : w[0]; };
 // Shown when someone tries to connect one more bank than their plan covers.
 const plusLimitCard = () => { const s = plaidStore(), lim = bankLimit();
+  if (trialOn()) return `<section class="card plus-limit" data-plus-limit><h2>Banks connect after your free week</h2><p class="muted">Everything else in Plus is yours now. Bank connections start with your first payment on ${dateWithYear(trialEnds())}, or today if you start your plan now.</p>
+    <div class="pl-meter">${Array.from({length: BANK_LIMIT[plusPlan()]}, () => `<span class="lock">🔒</span>`).join("")}</div>
+    <button class="btn primary" type="button" data-plus-activate>Start my plan now</button><button class="link" type="button" data-plus-limit-banks style="align-self:center">Import a statement instead</button></section>`;
   return `<section class="card plus-limit" data-plus-limit><h2>You’ve connected ${s.items.length} of ${lim} banks</h2><p class="muted">${plusPlan() === "plus" ? "Plus covers 2 banks. Move up to Plus Ultra for up to 5, or disconnect one first." : "Plus Ultra covers 5 banks. Disconnect one to add another."}</p>
     <div class="pl-meter">${Array.from({length: plusPlan() === "plus" ? 5 : lim}, (_, i) => s.items[i] ? `<span class="on">${esc(bankShort(s.items[i].inst))}</span>` : `<span class="${i < lim ? "free" : "lock"}">${i < lim ? "+" : "🔒"}</span>`).join("")}</div>
     ${plusPlan() === "plus" && ultraReady() ? `<button class="btn primary" type="button" data-plus-upgrade>Move to Plus Ultra · ${esc(fmtUsdLocal(ultraPrice().mo))} a month</button>` : ""}<button class="link" type="button" data-plus-limit-banks style="align-self:center">Disconnect a bank instead</button></section>`; };
@@ -7944,9 +7953,9 @@ V.plus = () => { const P = plusPrice(), perMonth = Math.round(P.yr / 12 * 100) /
       <div class="pt-top"><div class="pt-ring" style="--pt:${Math.max(0, Math.min(7, left)) / 7}"><b>${left}</b><span>${left === 1 ? "day" : "days"}</span></div>
         <div><span class="pill ok">Free week on</span><h3>${left <= 1 ? "Your free week ends tomorrow" : "Enjoy every part of Plus"}</h3><p class="muted small">Ends ${dateWithYear(end)}</p></div></div>
       <div class="pt-days" aria-hidden="true">${Array.from({length: 7}, (_, i) => `<i class="${i < 7 - left ? "used" : ""}"></i>`).join("")}</div>
-      <p class="muted small" data-keep>After ${dateWithYear(end)} your plan renews at its price. To stop, cancel from the Paddle receipt email before then and you pay nothing.</p></section>`
+      <p class="muted small" data-keep>Bank connections unlock when your plan starts. After ${dateWithYear(end)} your plan renews at its price. To stop, cancel from the Paddle receipt email before then and you pay nothing.</p></section>`
     : plusOn() ? `<section class="card plus-trial on" data-plus-trial><span class="pill ok">Plus is on</span><h3>Thank you for supporting KeepWise</h3><p class="muted small" data-keep>Manage or cancel any time from your Paddle receipt email.</p></section>`
-    : PADDLE() ? `<section class="card plus-trial" data-plus-trial><span class="pill gold">7 days free</span><h3>Try everything in Plus for a week</h3><p class="muted small" data-keep>Pick a plan below. Nothing is charged until <b>${dateWithYear(dayPlus(todayMid(), 7))}</b>. Cancel before then and you pay nothing. We’ll remind you 2 days before.</p></section>` : "";
+    : PADDLE() ? `<section class="card plus-trial" data-plus-trial><span class="pill gold">7 days free</span><h3>Try everything in Plus for a week</h3><p class="muted small" data-keep>Pick a plan below. Nothing is charged until <b>${dateWithYear(dayPlus(todayMid(), 7))}</b>. Bank connections start with your first payment. Cancel before then and you pay nothing. We’ll remind you 2 days before.</p></section>` : "";
   return `<div class="inline" style="justify-content:space-between"><span class="pill gold">KeepWise Plus</span><button class="btn small" type="button" data-plus-close>Done</button></div>
   <h1 class="plus-h">Everything free stays free.</h1>
   <p class="plus-sub">Plus adds what one phone cannot do alone.</p>
@@ -9144,6 +9153,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.plusPick){ UI.plusPick = b.dataset.plusPick; render(true); return; }
   if (b.dataset.plusCycle){ UI.plusCycle = b.dataset.plusCycle; render(true); return; }
   if (b.hasAttribute("data-plus-upgrade")){ plusUpgrade(); return; }
+  if (b.hasAttribute("data-plus-activate")){ plusActivate(); return; }
   if (b.hasAttribute("data-plus-limit-banks")){ UI.plus = false; UI.plusLimit = false; S.tab = "banks"; UI.bankSeg = "accounts"; render(false); return; }
   if (b.dataset.plusBuy){ plusBuy(b.dataset.plusBuy); return; }
   if (b.dataset.subKind != null){ UI.subKind = b.dataset.subKind || null; refreshOuts(); return; }

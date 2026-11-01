@@ -73,7 +73,7 @@ async function plaid(origin, env, path, b){
   if (!env.PLAID_CLIENT_ID || !env.PLAID_SECRET) return fail(origin, 503, "Bank connection isn't switched on yet.");
   if (path === "/plaid/link"){
     const uid = String(b.uid || ""); if (!/^[a-z0-9]{8,40}$/.test(uid)) return fail(origin, 400, "Bad request.");
-    if (env.PADDLE_API_KEY){ let user; try { user = await firebaseUser(b.idToken); } catch(e){ return fail(origin, 401, "Sign in again to connect a bank."); } if (!(await needPlus(env, user))) return fail(origin, 402, "Connecting a bank needs KeepWise Plus."); }
+    if (env.PADDLE_API_KEY){ let user; try { user = await firebaseUser(b.idToken); } catch(e){ return fail(origin, 401, "Sign in again to connect a bank."); } if (!(await needPlus(env, user))) return fail(origin, 402, "Connecting a bank needs KeepWise Plus."); const st = await paddleSub(env, String(user.email || "").toLowerCase()); if (st && st.trialEnds) return fail(origin, 402, "Banks connect once your plan starts. Tap Start my plan now, or wait for your free week to end."); }
     const {ok, data} = await plaidCall(env, "/link/token/create", {client_name: "KeepWise", language: "en", country_codes: ["US"], user: {client_user_id: uid}, products: ["transactions"], transactions: {days_requested: 90}, ...(env.PLAID_REDIRECT ? {redirect_uri: env.PLAID_REDIRECT} : {})});
     return ok ? reply(origin, 200, {link_token: data.link_token, env: env.PLAID_ENV || "sandbox"}) : fail(origin, 502, plaidErr(data));
   }
@@ -270,6 +270,7 @@ export default {
       if (url.pathname === "/invoice/email") return await invoiceEmail(origin, env, b);
       if (url.pathname === "/plus/status") return await plusStatus(origin, env, b);
       if (url.pathname === "/plus/upgrade") return await plusUpgrade(origin, env, b);
+      if (url.pathname === "/plus/activate") return await plusActivate(origin, env, b);
     } catch(e){ return fail(origin, 502, "That service didn't answer. Try again in a minute."); }
     return fail(origin, 404, "Not found.");
   },
@@ -325,4 +326,16 @@ async function plusUpgrade(origin, env, b){
   const base = env.PADDLE_ENV === "production" ? "https://api.paddle.com" : "https://sandbox-api.paddle.com";
   const res = await fetch(`${base}/subscriptions/${r.subId}`, {method: "PATCH", headers: {Authorization: "Bearer " + env.PADDLE_API_KEY, "Content-Type": "application/json"}, body: JSON.stringify({items: [{price_id: price, quantity: 1}], proration_billing_mode: "prorated_immediately"})});
   return res.ok ? reply(origin, 200, {ok: true}) : fail(origin, 502, "Paddle didn’t accept the change. Try again in a minute.");
+}
+
+// Ends a free trial early so bank connections can start: Paddle bills the plan now (POST /subscriptions/{id}/activate).
+async function plusActivate(origin, env, b){
+  if (!env.PADDLE_API_KEY) return fail(origin, 503, "Plus isn’t switched on yet.");
+  let user; try { user = await firebaseUser(b && b.idToken); } catch(e){ return fail(origin, 401, "Sign in again, then try once more."); }
+  if (!user.email || !user.email_verified) return fail(origin, 403, "Verify your account email first.");
+  const r = await paddleSub(env, String(user.email).toLowerCase()); if (!r || !r.plus || !r.subId) return fail(origin, 404, "No Plus subscription found for this account.");
+  if (!r.trialEnds) return reply(origin, 200, {ok: true});
+  const base = env.PADDLE_ENV === "production" ? "https://api.paddle.com" : "https://sandbox-api.paddle.com";
+  const res = await fetch(`${base}/subscriptions/${r.subId}/activate`, {method: "POST", headers: {Authorization: "Bearer " + env.PADDLE_API_KEY}});
+  return res.ok ? reply(origin, 200, {ok: true}) : fail(origin, 502, "Paddle didn’t start the plan. Try again in a minute.");
 }
