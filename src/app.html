@@ -1211,6 +1211,14 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .acc-hero img{border-radius:50%;background:#fff;box-shadow:0 10px 24px -10px rgba(0,0,0,.5)}.acc-hero h2{margin:6px 0 0;color:#fff;font:700 1.7rem var(--display)}.acc-hero p{margin:0;color:rgba(243,250,246,.85);font-size:.9rem;max-width:36ch}
 .acc-perks{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}.acc-perks span{font-size:.74rem;font-weight:700;padding:5px 10px;border-radius:99px;background:rgba(255,255,255,.14)}
 .acc-card .g-btn{background:#fff;color:#1f1f1f;border:1px solid var(--line);box-shadow:var(--lift)}
+.wk-head{display:flex;justify-content:space-between;align-items:baseline}.wk-head h2{margin:0}
+.wk-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.wk-day{appearance:none;border:0;cursor:pointer;display:grid;justify-items:center;gap:3px;padding:8px 0 6px;border-radius:14px;background:var(--bg);color:var(--muted);font:700 .66rem var(--body)}
+.wk-day b{font:700 1.05rem var(--display);color:var(--ink)}.wk-day>div{display:grid;gap:3px;justify-items:center;min-height:24px}.wk-day em{font-style:normal;font-size:.62rem}
+.wk-day.today span{color:var(--rust)}.wk-day.on{background:var(--green);color:var(--on-green)}.wk-day.on b{color:var(--on-green)}.wk-day.on.today span{color:var(--on-green)}
+.wk-day .btile{box-shadow:none}
+.wk-list{display:grid;gap:6px}.wk-it{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:14px;background:var(--bg)}.wk-it>div{flex:1;min-width:0}.wk-it b{display:block;font-size:.92rem}.wk-it small{color:var(--muted);font-size:.76rem}
+.wk-it .tnum{font-weight:800}.wk-none{margin:2px 4px}
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
@@ -3896,7 +3904,7 @@ V.month = () => {
   if (UI.biz) return spaceSwitch() + (plusOn() || bizDemoOn() ? bizSpace() : bizPreview());
   const C = compute(), tabs = monthTabs(), on = k => !tabs || (UI.mseg || "now") === k;
   const top = `${spaceSwitch()}${S.hideNote || TOUR.on || coachOn("month") ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on Budget, or import a bank statement. Everything stays on this device." : "Add your other bills on Budget and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
-  <div data-out="today">${OUT.today()}</div>
+  <div data-out="week">${OUT.week()}</div>
   <section class="hero hero-keep"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>`;
   const now = `${coach("month", "Your month at a glance")}  <div data-out="autoCard">${OUT.autoCard()}</div>
@@ -5587,6 +5595,23 @@ function setRenewalFrom(s, iso){  // iso date of a charge
 }
 // A trip or event going on today gets its own card on Month: how far in, what is spent and left, and a tap to log more.
 // Today: the two or three things that matter on this day, from the person's own month, with one button for the most useful one.
+// This week, at the top of Month: seven days with what is due on each. Today is picked first; tap a day to see its list.
+function weekItems(){ const t0 = todayMid(), out = [], add = (d, name, sub, amt, kind) => out.push({d: isoOf(d), name, sub, amt, kind});
+  S.subs.filter(x => x.keep !== "drop").forEach(x => { const d = nextRenewal(x); if (d && daysUntil(d) >= 0 && daysUntil(d) <= 6) add(d, x.name, x.last && Math.round((t0 - isoDate(x.last)) / DAY) > 30 ? "Renews · barely used" : "Renews", -x.price, "sub"); });
+  billsSoon(6).forEach(({e, d}) => add(d, e.name, "Bill due", -(+e.amount || 0), "bill"));
+  if (payOn()) paydaysBetween(t0, dayPlus(t0, 6)).forEach(d => add(d, "Payday", "Money in", +S.pay.amount || 0, "in"));
+  (S.extras || []).forEach(x => { const d = nextIncome(x); if (d && daysUntil(d) >= 0 && daysUntil(d) <= 6 && extraFixed(x)) add(d, x.name, "Money in", +x.amount || 0, "in"); });
+  (S.trips || []).forEach(t => { if (tripState(t) === "active") for (let i = 0; i < 7; i++){ const d = dayPlus(t0, i); if (isoOf(d) <= t.end) add(d, t.name, isEvent(t) ? "Event day" : "Trip day", 0, "trip"); }
+    else if (tripState(t) === "upcoming" && daysUntil(isoDate(t.start)) <= 6) add(isoDate(t.start), t.name, isEvent(t) ? "Event starts" : "Trip starts", 0, "trip"); });
+  return out; }
+OUT.week = () => { const t0 = todayMid(), it = weekItems(), sel = Math.min(6, Math.max(0, +UI.weekDay || 0)), days = [...Array(7)].map((_, i) => dayPlus(t0, i));
+  const out = r2(it.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0)), sd = isoOf(days[sel]), list = it.filter(x => x.d === sd);
+  const tile = x => x.kind === "trip" ? `<span class="btile" style="--z:24px;background:#e0f2fe;color:#0369a1">✈️</span>` : brandTile(x.name, 24);
+  return `<section class="card wk-card"><div class="wk-head"><h2>This week</h2><span class="muted small">${out ? `<b class="tnum" style="color:var(--ink)">${fmt(out)}</b> going out` : "Nothing due"}</span></div>
+    <div class="wk-days" role="tablist" aria-label="Days this week">${days.map((d, i) => { const on = it.filter(x => x.d === isoOf(d)); return `<button type="button" role="tab" class="wk-day${i === sel ? " on" : ""}${i === 0 ? " today" : ""}" data-week-day="${i}" aria-selected="${i === sel}" aria-label="${d.toLocaleString("en-US", {weekday: "long", month: "short", day: "numeric"})}, ${on.length} item${on.length === 1 ? "" : "s"}">
+      <span>${i === 0 ? "Today" : d.toLocaleString("en-US", {weekday: "short"})}</span><b>${d.getDate()}</b><div>${on.slice(0, 2).map(tile).join("")}${on.length > 2 ? `<em>+${on.length - 2}</em>` : ""}</div></button>`; }).join("")}</div>
+    <div class="wk-list">${list.length ? list.map(x => `<div class="wk-it">${x.kind === "trip" ? `<span class="btile" style="--z:36px;background:#e0f2fe;color:#0369a1">✈️</span>` : brandTile(x.name, 36)}<div><b>${esc(x.name)}</b><small>${esc(x.sub)}</small></div>${x.amt ? `<span class="tnum ${x.amt > 0 ? "good" : ""}">${x.amt > 0 ? "+" : ""}${fmt(Math.abs(x.amt))}</span>` : ""}</div>`).join("")
+      : `<div class="muted small wk-none">${sel === 0 ? "Nothing due today. A good day to keep." : "Nothing due this day."}</div>`}</div></section>`; };
 OUT.today = () => { const t0 = todayMid(), it = []; let cta = "";
   const chip = (txt, k) => `<span class="td-chip ${k || ""}">${txt}</span>`;
   if (payOn()) paydaysBetween(t0, dayPlus(t0, 1)).filter(d => !((S.payGot || "") >= isoOf(d))).slice(0, 1).forEach(d => { const n = daysUntil(d);
@@ -5656,7 +5681,6 @@ OUT.comingUp = () => {
   const days = [...Array(7)].map((_, i) => dayPlus(t0, i)), strip = `<div class="up-week" aria-hidden="true">${days.map((d, i) => { const on = items.filter(x => isoOf(x.d) === isoOf(d)).slice(0, 2);
       return `<div class="up-day${i === 0 ? " today" : ""}"><span>${d.toLocaleString("en-US", {weekday: "short"})}</span><div>${on.map(x => brandTile(x.name, 24)).join("")}</div></div>`; }).join("")}</div>`;
   return `<section class="card up-card"><div class="inline" style="justify-content:space-between;align-items:baseline"><h2>Coming up</h2><span class="muted small">Next 7 days${total ? ` · <b class="tnum" style="color:var(--ink)">${fmt(total)}</b>` : ""}</span></div>
-    ${items.length ? strip : ""}
     <div class="up-list">${upShort ? upRows.slice(0, 2).join("") : items.map((x, i) => i === 0 ? x.html.replace('class="up-row', 'class="up-row up-next') : x.html).join("")}</div>${splitRows ? `<div class="up-owe">${splitRows}</div>` : ""}
     ${total ? `<p class="small muted">${fmt(total)} will be charged this week.</p>` : ""}
     ${soon.length || splitRows ? `<div class="linkrow inline" style="justify-content:space-between;gap:16px">${soon.length ? `<button class="link" type="button" data-go="subs">All subscriptions</button>` : "<span></span>"}${splitRows ? `<button class="link" type="button" data-go="split"${bal.length > 2 ? " data-up-split-more" : ""}>${bal.length > 2 ? `All ${bal.length} in Split` : "Open Split"}</button>` : ""}</div>` : ""}</section>`;
@@ -8803,6 +8827,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-need-open")){ UI.needOpen = true; refreshOuts(); return; }
   if (b.hasAttribute("data-coming-all")){ UI.comingAll = !UI.comingAll; refreshOuts(); return; }
   if (b.hasAttribute("data-need-next")){ const g = needGroups(), i = Math.max(0, g.findIndex(x => x[0] === UI.needKind)); UI.needKind = g.length ? g[(i + 1) % g.length][0] : null; refreshOuts(); return; }
+  if (b.dataset.weekDay != null){ UI.weekDay = +b.dataset.weekDay; const w = view.querySelector("[data-out=week]"); if (w) w.innerHTML = OUT.week(); return; }
   if (b.hasAttribute("data-addx")){ const k = b.getAttribute("data-addx"); if (VOICE.rec) voiceFinish(false); UI.askOpen = false;
     const fire = at => { const t = document.createElement("button"); t.type = "button"; t.hidden = true; t.setAttribute(at, ""); view.appendChild(t); t.click(); t.remove(); };
     if (k === "receipt"){ render(true); fire("data-rcpt-snap"); return; }
