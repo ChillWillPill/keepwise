@@ -4911,7 +4911,7 @@ OUT.envTotal = () => { const C = compute(); if (!(C.income > 0)) return "Add you
   return `<span class="env-tot"><b class="tnum">${fmt(C.income)}</b> a month</span><span class="env-bar" aria-label="Expenditures ${fmt(n)}, Misc ${fmt(m)}, Savings ${fmt(v)}"><i style="width:${(n / t * 100).toFixed(1)}%;background:#3e7bc4"></i><i style="width:${(m / t * 100).toFixed(1)}%;background:var(--gold,#c9a24a)"></i><i style="width:${(v / t * 100).toFixed(1)}%;background:var(--green)"></i></span>`; };
 const envSplitCard = () => UI.envEdit ? envSplitEdit() : (() => { const C = compute(), t = Math.max(1, C.envNeeds + C.envMisc + Math.max(0, C.envSave)), pc = v => C.income > 0 ? Math.round(v / C.income * 100) : 0;
   const parts = [["Expenditures", C.envNeeds, "#3e7bc4"], ["Misc", C.envMisc, "var(--gold,#c9a24a)"], ["Savings", Math.max(0, C.envSave), "var(--green)"]];
-  return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:center"><h2 class="h-info">How your pay splits${infoBtn("envelopes", "About Envelopes")}</h2><button class="link small" type="button" data-env-edit>Change</button></div>${infoTip("envelopes", "Expenditures and Misc get a share of your income. Savings is what is left. Subscriptions count toward Misc.")}
+  return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:center"><h2 class="h-info">How your pay splits${infoBtn("envelopes", "About Envelopes")}</h2><button class="link small" type="button" data-env-edit>Change</button></div>${infoTip("envelopes", "Expenditures and Misc get a share of your income. Savings is what is left. Subscriptions are on the Subs tab and count toward Miscellaneous.")}
     <span class="env-bar" style="height:14px">${parts.map(([, v, c]) => `<i style="width:${(v / t * 100).toFixed(1)}%;background:${c}"></i>`).join("")}</span>
     <div class="env-sum">${parts.map(([n, v, c]) => `<div><small><i style="background:${c}"></i>${n}</small><b class="tnum">${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>
     <div data-out="envCheck">${OUT.envCheck()}</div></section>`; })();
@@ -5438,8 +5438,8 @@ function renderBell(){
 const FIND_IC = {month: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4", plan: "M5 5h14v14H5zM9 9h6M9 13h6", pay: "M3 7h18v10H3zM12 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z", env: "M4 7h16v11H4zM4 8l8 6 8-6", bill: "M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6", loan: "M4 10h16M6 10v8M10 10v8M14 10v8M18 10v8M3 20h18M12 3l9 5H3z", save: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zM12 12h.01", give: "M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.500-7 10-7 10z", subs: "M4 6h16v12H4zM4 10h16", cheap: "M4 12l8-8h8v8l-8 8zM15.5 8.500h.01", code: "M4 8h16v3a1.500 1.500 0 0 0 0 3v3H4v-3a1.500 1.500 0 0 0 0-3zM10 8v9", split: "M9 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM2 19c0-3 2-4.500 4-4.500s4 1.500 4 4.500M14 19c0-3 2-4.500 4-4.500s4 1.500 4 4.500", hist: "M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h6", imp: "M12 15V4M8 8l4-4 4 4M5 19h14", data: "M5 7c0-1.700 3.100-3 7-3s7 1.300 7 3-3.100 3-7 3-7-1.300-7-3zM5 7v10c0 1.700 3.100 3 7 3s7-1.300 7-3V7M5 12c0 1.700 3.100 3 7 3s7-1.300 7-3", backup: "M12 4v11M8 11l4 4 4-4M5 19h14", lock: "M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z", look: "M12 4v2M12 18v2M4 12h2M18 12h2M6.500 6.500l1.400 1.400M16.100 16.100l1.400 1.400M6.500 17.500l1.400-1.400M16.100 7.900l1.400-1.400M15.500 12a3.500 3.500 0 1 1-7 0 3.500 3.500 0 0 1 7 0z", help: "M5 5h14v10H10l-5 4zM9 10h6", tour: "M4 12a8 8 0 1 0 3-6.200M4 4v4h4", who: "M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM4 21c0-4 3.600-6 8-6s8 2 8 6", owl: "M5 9a7 7 0 0 1 14 0v6a7 7 0 0 1-14 0zM9.500 10.500h.01M14.500 10.500h.01M11 14l1 1.500 1-1.500", bell: "M6 16V11a6 6 0 0 1 12 0v5l1.500 2h-15zM10 20.500a2 2 0 0 0 4 0"};
 // [name, where it lives, icon, other words people might type, where to go, shown before typing]
 const FIND_PLACES = [
-  ["Income", "Month · Pay, envelopes and savings", "plan", "plan budget setup pay salary", {tab: "month", sel: "[data-env-grid]"}, 1],
-  ["Savings", "Month", "save", "emergency fund goal saving for leftover", {tab: "plan", sel: "[data-bind=efSaved]"}, 1],
+  ["Income", "Month · Pay, envelopes and savings", "plan", "plan budget setup pay salary", {tab: "month", sel: "[data-env-edit]"}, 1],
+  ["Savings", "Month", "save", "emergency fund goal saving for leftover", {tab: "plan", sel: ".save-goals"}, 1],
   ["Loans and debt", "Month", "loan", "credit card mortgage installments owe borrowed repayments car insurance", {tab: "plan", sel: "[data-out=loans]"}, 1],
   ["Backups", "Menu · Your data & backups", "backup", "download export restore save file", {menu: "data", sel: "[data-set-backup]"}, 1],
   ["Monthly statements", "Month · Budget", "hist", "history past months last month report", {act: "history"}, 1],
@@ -5453,7 +5453,7 @@ const FIND_PLACES = [
   ["Trips and events", "Month · Budget", "split", "travel holiday vacation wedding party event plan a trip plan an event place location map address venue city where", {tab: "month", sel: "[data-out=trips]"}],
   ["Regular pay", "Month · Income", "pay", "salary income wage paycheck payday how am i paid", {tab: "month", sel: "[data-out=incomeHero]"}],
   ["Other income", "Month · Income", "pay", "extra money in bonus side", {tab: "month", sel: "[data-out=extraIncome]"}],
-  ["Envelope shares", "Month", "env", "percent amount flat 50 30 20 envelopes", {tab: "plan", sel: "[data-env-grid]"}],
+  ["Envelope shares", "Month", "env", "percent amount flat 50 30 20 envelopes", {tab: "plan", sel: "[data-env-edit]"}],
   ["Your bills", "Month · Budget · Expenditures", "bill", "what goes out each month bills rent utilities expenses add a line", {tab: "month", sel: "[data-out=envelopes]"}],
   ["Car insurance", "Month", "loan", "auto policy premium renewal geico progressive state farm", {tab: "plan", sel: "[data-out=loans]"}],
   ["Giving", "Month", "give", "charity donations zakat tithe", {tab: "plan", sel: "[data-out=giving]"}],
@@ -7949,7 +7949,7 @@ const PADDLE_CONFIG = {
   ultraMonthly: "pri_01m6cf50e7a1vcvdtfvb6cmpza", // Plus Ultra, $19.99 a month, 7-day free trial
   ultraYearly: "pri_01m6cf5t9t0b05zcnd7zdazz2d",     // Plus Ultra, $159 a year, 7-day free trial
 };
-const PADDLE = () => { const p = window.KEEPWISE_PADDLE || PADDLE_CONFIG; return p && p.token && p.monthly && p.yearly && !/REPLACE/.test(p.token + p.monthly + p.yearly) && !window.Capacitor ? p : null; };
+const PADDLE = () => { if (window.KEEPWISE_PADDLE === false) return null; const p = window.KEEPWISE_PADDLE || PADDLE_CONFIG; return p && p.token && p.monthly && p.yearly && !/REPLACE/.test(p.token + p.monthly + p.yearly) && !window.Capacitor ? p : null; };
 let paddleReady = null;
 function paddleLoad(){ if (paddleReady) return paddleReady; const p = PADDLE(); if (!p) return Promise.reject(new Error("off"));
   paddleReady = new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdn.paddle.com/paddle/v2/paddle.js"; sc.onload = () => { try { if (p.env === "sandbox") window.Paddle.Environment.set("sandbox"); window.Paddle.Initialize({token: p.token, eventCallback: e => { if (e && e.name === "checkout.completed"){ toast("Welcome to KeepWise Plus. Thank you!"); setTimeout(() => plusCheck(true), 4000); setTimeout(() => plusCheck(true), 15000); } }}); ok(window.Paddle); } catch(e){ no(e); } }; sc.onerror = no; document.head.appendChild(sc); });
@@ -9208,7 +9208,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-w-finish")){ finishWelcome(); render(false); toast("Your month is ready."); return; }
   if (b.hasAttribute("data-w-import")){ finishWelcome(); render(false); $("stmt").click(); return; }
   // ---- how you are paid
-  if (b.hasAttribute("data-payday-edit")){ const p = S.pay || {}; UI.payEdit = true; UI.payDraft = {when: p.when || "monthly", day: p.day || 1, day2: p.day2 || 15, wd: p.wd != null ? p.wd : 5, next: nextBiweekly(p.next), amount: p.amount ? String(p.amount) : (+S.income ? String(S.income) : ""), monthStart: monthStartDay()}; refreshOuts(); const pf = view.querySelector("[data-out=payBox]"); if (pf) pf.scrollIntoView({behavior: "smooth", block: "center"}); return; }
+  if (b.hasAttribute("data-payday-edit")){ const p = S.pay || {}; UI.payEdit = true; UI.payDraft = {when: p.when || "monthly", day: p.day || 1, day2: p.day2 || 15, wd: p.wd != null ? p.wd : 5, next: nextBiweekly(p.next), amount: p.amount ? String(p.amount) : (+S.income ? String(S.income) : ""), monthStart: monthStartDay()}; render(true); const pf = view.querySelector("[data-out=payBox]"); if (pf) pf.scrollIntoView({behavior: "smooth", block: "center"}); return; }
   if (b.hasAttribute("data-payday-cancel")){ UI.payEdit = false; refreshOuts(); return; }
   if (b.hasAttribute("data-payday-clear")){ S.pay = null; S.monthStart = 1; UI.payEdit = false; save(); render(true); toast("Pay schedule removed. Your month runs from the 1st again."); return; }
   // ---- other income
@@ -9241,7 +9241,7 @@ view.addEventListener("click", async e => {
   if (b.dataset.recapShare){ recapShare(b.dataset.recapShare); return; }
   if (b.hasAttribute("data-bills-paid")){ UI.billsPaidOpen = !UI.billsPaidOpen; refreshOuts(); return; }
   if (b.hasAttribute("data-bills-open")){ UI.mseg = "budget"; UI.openEnv = "needs"; if (!goTo("month", "[data-env-open=needs]")) render(false); return; }
-  if (b.hasAttribute("data-save-go")){ goTo("plan", "[data-bind=efSaved]"); return; }
+  if (b.hasAttribute("data-save-go")){ goTo("plan", ".save-goals"); return; }
   if (b.dataset.dnKind){ S.dnKind = b.dataset.dnKind === "ring" ? undefined : b.dataset.dnKind; save(); refreshOuts(); return; }
   if (b.hasAttribute("data-dn-open")){ UI.dnOpen = !UI.dnOpen; refreshOuts(); cardInView(view.querySelector("[data-donut]")); return; }
   if (b.dataset.themeSet){ S.theme = b.dataset.themeSet; save(); applyTheme(); render(true); return; }
@@ -9287,6 +9287,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-ef-done")){ UI.efEdit = false; save(); render(true); return; }
   if (b.dataset.prio){ S.priority = b.dataset.prio; save(); render(true); return; }
   if (b.hasAttribute("data-env-edit")){ UI.envEdit = !UI.envEdit; render(true); return; }
+  if (b.hasAttribute("data-edit-split") || b.hasAttribute("data-del-split")) UI.actMenu = null;   // the menu closes once a choice is made
   if (b.hasAttribute("data-act-more")){ const id = b.closest("[data-split]").dataset.split; UI.actMenu = UI.actMenu === id ? null : id; render(true); return; }
   if (b.hasAttribute("data-goal-set")){ UI.goalSet = true; render(true); const i = view.querySelector('[data-bind="goalName"]'); if (i) i.focus(); return; }
   if (b.dataset.subPick != null){ UI.subAdd = true; UI.subAddName = b.dataset.subPick || ""; render(true); const f = document.querySelector('form[data-form="addSub"]'); if (f) f.querySelector(UI.subAddName ? "[name=price]" : "[name=name]").focus({preventScroll: true}); return; }
