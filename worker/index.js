@@ -259,6 +259,8 @@ export default {
     const sub = url.hostname.match(/^([a-z0-9][a-z0-9-]{2,29})\.mykeepwise\.com$/);
     if (sub && req.method === "GET" && !/^(www|api)$/.test(sub[1])) return await sitePage(sub[1]);
     if (req.method === "OPTIONS") return new Response(null, {status: 204, headers: cors(origin)});
+    // The visitor's country from Cloudflare (by IP), so the app shows the right plans and prices. Nothing is stored.
+    if (req.method === "GET" && url.pathname === "/geo") return new Response(JSON.stringify({country: (req.cf && req.cf.country) || ""}), {headers: {"Content-Type": "application/json", "Cache-Control": "private, max-age=3600", ...cors(origin)}});
     if (req.method === "GET" && url.pathname === "/") return new Response("KeepWise API", {headers: {"Content-Type": "text/plain", ...cors(origin)}});
     if (req.method !== "POST") return fail(origin, 405, "Not allowed.");
     if (url.pathname === "/paddle/webhook") return await paddleWebhook(req, env);

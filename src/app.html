@@ -2050,7 +2050,7 @@ async function plaidRefresh(){
   PLAID.busy = ""; render(true);
 }
 async function plaidConnect(forBiz){
-  if (PLAID.busy) return;
+  if (PLAID.busy) return; if (!bankRegion()){ toast("Bank connections are available in the US. Import a bank statement instead."); return; }
   if (plaidStore().items.length >= bankLimit()){ UI.plusLimit = true; UI.plus = true; render(false); return; }
   // Swapping banks is fine; a few new connections a month keeps it fair (each new connection is billed for the whole month).
   { const a = plaidStore().adds; if (a && a.m === todayKey() && a.n >= bankLimit() + 2){ toast(`You’ve connected ${a.n} banks this month. You can connect another on the 1st.`); return; } } PLAID.busy = "link"; PLAID.err = ""; render(true);
@@ -2090,7 +2090,7 @@ function plaidSection(){
       : `<p class="muted small">Connect in a few taps with your bank login. Included with KeepWise Plus, no extra fee.</p><button class="btn" type="button" data-plaid-add ${PLAID.busy ? "disabled" : ""}>${PLAID.busy === "link" ? "Opening…" : "Connect with Plaid"}</button>`}</div>`;
 }
 function bankCard(){
-  if (UI.biz) return "";
+  if (UI.biz || !bankRegion()) return "";
   if (!plusOn() && !bankOn()) return `<section class="card bank-card bk-hero" data-bank-plus><div class="bk-cards" aria-hidden="true"><div class="bk-c c1"><small>Checking</small><b>$3,402</b></div><div class="bk-c c2"><small>Savings</small><b>$4,812</b></div><div class="bk-c c3"><small>Card</small><b>−$620</b></div></div>
     <h3 class="inline" style="gap:8px">Connect your bank <span class="pill gold">Plus</span></h3>
     <p class="muted small" style="margin:0">Balances, transactions and store logos come in by themselves through Plaid, and KeepWise shows what changed. Included with KeepWise Plus.</p>
@@ -6338,6 +6338,12 @@ async function doShare(){
 
 /* ================= first-run setup ================= */
 const WELCOME_KEY = "keepwise-welcome-done";
+// Outside the US the website shows one Plus at the country's price and no bank connections.
+function siteLocalize(root){
+  if (root && !bankRegion()){ const t = PLUS_TIERS[plusTier()], pro = root.querySelector(".kws-pro"), u = root.querySelector(".kws-ultra");   // outside the US: one Plus, the country's price, no banks
+    if (u) u.remove(); if (pro){ const y = pro.querySelector(".kws-amt .y"), m = pro.querySelector(".kws-amt .m"), oy = pro.querySelector(".kws-or .y"); if (y) y.textContent = `$${t.yr} a year`; if (m) m.textContent = `$${t.mo} a month`; if (oy) oy.textContent = `That’s $${(t.yr / 12).toFixed(2)} a month · first week free · cancel anytime`; pro.querySelectorAll("li").forEach(li => { if (/bank|balance/i.test(li.textContent)) li.remove(); }); }
+    const sv = root.querySelector("[data-kws-cyc=yr] span"); if (sv) sv.textContent = `Save ${Math.round((1 - t.yr / (t.mo * 12)) * 100)}%`; root.querySelector(".kws-price")?.classList.add("kws-one"); }
+}
 function siteOpen(){
   if (document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", siteOpen, {once: true}); return; }
   const t = document.getElementById("site-tpl"); if (!t || document.getElementById("kws")) return;
@@ -6349,6 +6355,7 @@ function siteOpen(){
     if (b.hasAttribute("data-kws-top")){ e.preventDefault(); root.scrollTo({top: 0, behavior: "smooth"}); return; }
     if (b.hasAttribute("data-kws-start")) close(() => render(true));
     else close(() => { render(true); const x = document.createElement("button"); x.type = "button"; x.hidden = true; x.setAttribute("data-open-account", ""); x.setAttribute("data-acc-start", "signin"); view.appendChild(x); x.click(); x.remove(); }); });
+  siteLocalize(root);
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   // rotating word
   const rot = root.querySelector("[data-kws-rot]"), words = ["paychecks", "families", "side hustles", "roommates", "small business", "students"]; let wi = 0;
@@ -7899,9 +7906,14 @@ const BANK_LIMIT = {plus: 2, ultra: 5};
 const plusPlan = () => (devBuild() && S.plusTester) ? "ultra" : S.plusPlan === "ultra" ? "ultra" : "plus";
 // During the free week no bank connects: Plaid bills each connection for the whole month, even if the trial is cancelled.
 // Banks unlock with the first payment, and "Start my plan now" ends the free week early for anyone who wants them today.
-const bankLimit = () => trialOn() && !(devBuild() && S.plusTester) ? 0 : BANK_LIMIT[plusPlan()];
+const bankLimit = () => !bankRegion() ? 0 : trialOn() && !(devBuild() && S.plusTester) ? 0 : BANK_LIMIT[plusPlan()];
 const TIER2 = "CA GB IE FR DE ES IT PT NL BE LU AT CH DK SE NO FI IS AU NZ AE SA QA KW BH OM SG JP KR HK IL", TIER3 = "MX BR TR MY ZA PL CZ HU RO BG HR SK SI LT LV EE RS AR CL CO PE TH CN GR CY MT", TIER4 = "PK IN BD EG NG PH ID LK NP KE GH VN MA DZ TN ET UG TZ";
-const plusTier = () => { const c = regionCode(); return !c || c === "US" ? 1 : TIER2.includes(c) ? 2 : TIER3.includes(c) ? 3 : TIER4.includes(c) ? 4 : 2; };
+const plusTier = () => { const c = (S.geo && S.geo.c) || regionCode(); return !c || c === "US" ? 1 : TIER2.includes(c) ? 2 : TIER3.includes(c) ? 3 : TIER4.includes(c) ? 4 : 2; };
+// Bank connections (Plaid) are US only, so Plus Ultra and the bank parts of Plus exist only there. Everywhere else: one Plus, priced by country.
+const bankRegion = () => plusTier() === 1;
+// Where the person actually is (Cloudflare's IP country), checked at most once a day. Paddle charges by the same rule, so the price shown is the price paid.
+async function geoCheck(){ if (S.geo && Date.now() - (S.geo.at || 0) < 864e5) return; try { const r = await fetch(API_BASE + "/geo"); const j = await r.json(); if (j && /^[A-Z]{2}$/.test(j.country || "")){ const was = plusTier(); S.geo = {c: j.country, at: Date.now()}; save(); if (plusTier() !== was){ render(true); siteLocalize(document.getElementById("kws")); } } } catch(e){} }
+setTimeout(geoCheck, 1500);
 const PLUS_PRICE = (() => { const t = PLUS_TIERS[1]; return {monthly: t.mo, yearly: t.yr}; })();
 const plusPrice = () => PLUS_TIERS[plusTier()];
 const ultraPrice = () => ULTRA_TIERS[plusTier()];
@@ -7913,7 +7925,8 @@ const usd = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
 const HOME_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>';
 const PIN_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.500-5.700-6.500-10.500a6.500 6.500 0 0 1 13 0C18.500 15.300 12 21 12 21z"/><circle cx="12" cy="10.500" r="2.300"/></svg>';
 // What Plus gives, kept honest: what is built first, then what is still being made, marked so.
-const PLUS_REASONS = () => [
+const PLUS_REASONS = () => PLUS_REASONS_ALL().filter(r => bankRegion() || !/^(Connect your banks|Since last time)$/.test(r[1]));
+const PLUS_REASONS_ALL = () => [
   [I.work, "Your business page", "A page at yourname.mykeepwise.com with your logo, contact and a Pay button for customers."],
   [I.bank, "Connect your banks", "Connect up to 2 US banks through Plaid (5 with Plus Ultra), with no extra fee. Balances stay hidden until you tap the eye, and you choose which accounts KeepWise uses."],
   [I.redo, "Since last time", "KeepWise reads the accounts you connected and shows only what changed: a new subscription, a price that went up, a new bill, pay that arrived. Add it or ignore it in one tap."],
@@ -7962,14 +7975,14 @@ async function plusUpgrade(){ const u = typeof ACC !== "undefined" && ACC.user; 
   busy("Moving you to Plus Ultra"); try { const r = await fetch(API_BASE + "/plus/upgrade", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({idToken: await u.getIdToken(), cycle: UI.plusCycle === "mo" ? "mo" : "yr"})}); const j = await r.json(); busy(false);
     if (!r.ok) { toast(j.error || "That didn’t work. Try again in a minute."); return; } await plusCheck(true); UI.plusLimit = false; toast("You’re on Plus Ultra. Connect up to 5 banks."); render(true); } catch(e){ busy(false); toast("KeepWise can’t reach the server right now. Try again in a minute."); } }
 const fmtUsdLocal = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
-const ultraReady = () => { const p = PADDLE(); return !!(p && p.ultraMonthly && p.ultraYearly && !/REPLACE/.test(p.ultraMonthly + p.ultraYearly)); };
+const ultraReady = () => { const p = PADDLE(); return bankRegion() && !!(p && p.ultraMonthly && p.ultraYearly && !/REPLACE/.test(p.ultraMonthly + p.ultraYearly)); };
 function plusCta(){
   const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
   if (PADDLE()){
     if (plusOn()) return plusPlan() === "plus" && ultraReady() ? `<div class="plus-buy"><button class="btn primary" type="button" data-plus-upgrade>Move to Plus Ultra · ${esc(fmtUsdLocal(ultraPrice().mo))} a month</button><p class="muted small">Up to 5 banks. Paddle charges only the difference for the rest of this period.</p></div>` : "";
     const ultra = UI.plusPick === "ultra" && ultraReady(), cyc = UI.plusCycle === "mo" ? "mo" : "yr", P = ultra ? ultraPrice() : plusPrice(), Pp = plusPrice(), Pu = ultraPrice(), per = q => cyc === "yr" ? `${fmtUsdLocal(q.yr)}<small>a year</small>` : `${fmtUsdLocal(q.mo)}<small>a month</small>`;
     return `<div class="plus-buy"><div class="pl-pick" role="radiogroup" aria-label="Choose a plan">
-      <button type="button" class="pl-opt" role="radio" aria-checked="${!ultra}" data-plus-pick="plus"><i></i><span><b>Plus</b><small>Up to 2 banks · every device</small></span><em>${per(Pp)}</em></button>
+      <button type="button" class="pl-opt" role="radio" aria-checked="${!ultra}" data-plus-pick="plus"><i></i><span><b>Plus</b><small>${bankRegion() ? "Up to 2 banks · every device" : "Every device · business space"}</small></span><em>${per(Pp)}</em></button>
       ${ultraReady() ? `<button type="button" class="pl-opt" role="radio" aria-checked="${ultra}" data-plus-pick="ultra"><i></i><span><b>Plus Ultra</b><small>Up to 5 banks · everything in Plus</small></span><em>${per(Pu)}</em></button>` : ""}</div>
       <div class="seg pl-cyc" role="group" aria-label="Billed"><button type="button" data-plus-cycle="yr" aria-pressed="${cyc === "yr"}">Yearly</button><button type="button" data-plus-cycle="mo" aria-pressed="${cyc === "mo"}">Monthly</button></div>
       <button class="btn primary" type="button" data-plus-buy="${cyc}">Start free week · then ${esc(fmtUsdLocal(cyc === "yr" ? P.yr : P.mo))} a ${cyc === "yr" ? "year" : "month"}</button><p class="muted small">Secure checkout by Paddle. Cancel any time before the week ends and you pay nothing.</p></div>`;
@@ -8011,7 +8024,7 @@ V.plus = () => { const P = plusPrice(), perMonth = Math.round(P.yr / 12 * 100) /
       <div class="plus-amt"><b>${plusMoney(P.mo)}</b><span>a month</span></div>
       <p class="muted small">Cancel any time.</p>${kwCodeChip(KW_CODES[1])}</div>
   </section>
-  <div class="card plus-ultra" data-plus-ultra><div><span class="pill gold">More banks</span><b>Plus Ultra</b><p class="muted small">Everything in Plus, with up to 5 banks connected instead of 2.</p></div><div class="plus-amt"><b>${plusMoney(ultraPrice().mo)}</b><span>a month</span><small class="muted">or ${plusMoney(ultraPrice().yr)} a year</small></div></div>
+  ${bankRegion() ? `<div class="card plus-ultra" data-plus-ultra><div><span class="pill gold">More banks</span><b>Plus Ultra</b><p class="muted small">Everything in Plus, with up to 5 banks connected instead of 2.</p></div><div class="plus-amt"><b>${plusMoney(ultraPrice().mo)}</b><span>a month</span><small class="muted">or ${plusMoney(ultraPrice().yr)} a year</small></div></div>` : ""}
   <p class="muted small" style="text-align:center">Prices for ${esc(regionCode() ? countryName(regionCode()) : "your country")}${S.cur && S.cur !== "USD" ? `, shown in ${esc(S.cur)}` : ""}.${PADDLE() ? " Your first week is free. Cancel before it ends and you pay nothing." : " Plus is not on sale yet. Join the waitlist and we will email you when it opens."} <a class="link" href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund policy</a></p>
 `}
   ${plusCta()}
@@ -10567,7 +10580,7 @@ initShared();
 @keyframes kwBar{from{transform:scaleY(0)}}
 .kw-see{font-size:.8rem;font-weight:700;color:var(--green);flex:none}
 .kw-tiles{justify-content:space-between}.kw-tl{display:grid;justify-items:center;gap:4px}.kw-tl small{font-size:.66rem;font-weight:700;color:var(--muted)}
-.kws-ultra{border:2px solid #c9a24d!important;position:relative}.kws-ubadge{position:absolute;top:-12px;left:22px;background:#e0bb5e;color:#1a1205;font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:99px}.kws-or2{margin:2px 0 0;font-size:.84rem;color:var(--muted)}.kws-btn-dark{background:var(--ink)!important;color:var(--bg)!important}
+.kws-price.kws-one{grid-template-columns:repeat(2,minmax(0,1fr))}@media (max-width:700px){.kws-price.kws-one{grid-template-columns:1fr}}.kws-ultra{border:2px solid #c9a24d!important;position:relative}.kws-ubadge{position:absolute;top:-12px;left:22px;background:#e0bb5e;color:#1a1205;font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:99px}.kws-or2{margin:2px 0 0;font-size:.84rem;color:var(--muted)}.kws-btn-dark{background:var(--ink)!important;color:var(--bg)!important}
 @media (max-width:880px){.kws-price{grid-template-columns:1fr!important}}
 /* the steps on the left: no tall empty boxes, one slim progress line on the step you're on */
 .kws-list li{min-height:0!important;padding:22px 24px 24px 66px!important}
