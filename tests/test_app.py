@@ -76,6 +76,12 @@ async def open_app(ctx, mock=False, w=390, h=844, scheme="light", fb=False, prev
     return pg
 
 async def state(pg): return await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1') || 'null')")
+async def showpay(pg):
+    # Once pay is set up, currency and pay hide behind Edit on the Month tab; open them when a test needs them.
+    if await pg.locator("#m-cur").count() == 0 and await pg.locator("[data-payday-edit]").count():
+        await pg.locator("[data-payday-edit]").first.click(); await pg.wait_for_timeout(120)
+    return None
+
 async def tab(pg, name):
     # like tapping away to close the keyboard first (the tab bar hides while typing)
     await pg.evaluate("document.activeElement && document.activeElement.blur()"); await pg.wait_for_timeout(120)
@@ -203,7 +209,7 @@ async def long_currency_amounts_never_collide(ctx):
     for w in [320, 390, 768]:
         pg = await open_app(ctx, w=w, h=844)
         for cur in ["CAD", "PKR", "AED"]:
-            await tab(pg, "month"); await pg.select_option("#m-cur", cur); await pg.fill("#m-income", "125000"); await pg.wait_for_timeout(100)
+            await tab(pg, "month"); await showpay(pg) or await pg.select_option("#m-cur", cur); await showpay(pg) or await pg.fill("#m-income", "125000"); await pg.wait_for_timeout(100)
             for name in ["month", "subs", "cheaper", "split"]:
                 await tab(pg, name); bad = await pg.evaluate(COLLIDE)
                 assert not bad, f"{w}px {cur} {name}: {bad}"
@@ -230,7 +236,7 @@ async def theme_switch_light_dark_auto(ctx):
 @test
 async def layout_after_reload_and_resize(ctx):
     pg = await open_app(ctx)
-    await pg.fill("#m-income", "5000"); await pg.locator("#m-income").blur()
+    await showpay(pg) or await pg.fill("#m-income", "5000"); await pg.locator("#m-income").blur()
     await pg.reload(); await pg.wait_for_timeout(500)
     await pg.set_viewport_size({"width": 390, "height": 600}); await pg.wait_for_timeout(200)
     g = await pg.evaluate("[tabbar.getBoundingClientRect().bottom, innerHeight, scrollY]")
@@ -239,7 +245,7 @@ async def layout_after_reload_and_resize(ctx):
 @test
 async def layout_tabbar_hides_while_typing(ctx):
     pg = await open_app(ctx)
-    await pg.focus("#m-income"); await pg.wait_for_timeout(100)
+    await showpay(pg) or await pg.focus("#m-income"); await pg.wait_for_timeout(100)
     assert await pg.evaluate("getComputedStyle(tabbar).display") == "none"
     await pg.locator("#m-income").blur(); await pg.wait_for_timeout(150)
     assert await pg.evaluate("getComputedStyle(tabbar).display") != "none"
@@ -271,13 +277,13 @@ async def month_math_is_consistent(ctx):
     needs, misc, sav = [money(x) for x in re.findall(r"\$[\d,.]+", leg)]
     assert abs(5200 - needs - misc - sav) < 0.02, (needs, misc, sav)
     assert abs(money(await text(pg, ".big")) - sav) < 0.01
-    await pg.fill("#m-income", "6000"); await pg.wait_for_timeout(100)
+    await showpay(pg) or await pg.fill("#m-income", "6000"); await pg.wait_for_timeout(100)
     assert abs(money(await text(pg, ".big")) - (sav + 800)) < 0.02
 
 @test
 async def month_currency_switch(ctx):
     pg = await open_app(ctx)
-    await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150)
+    await showpay(pg) or await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150)
     assert "£" in await text(pg, ".big")
     assert (await state(pg))["cur"] == "GBP"
 
@@ -287,7 +293,7 @@ CHECK_MONEY = """(()=>{const bad=[];document.querySelectorAll('.money-in').forEa
 async def currency_label_never_overlaps_amount_anywhere(ctx):
     pg = await open_app(ctx)
     for cur in ["USD", "GBP", "PKR", "AED", "INR"]:
-        await tab(pg, "month"); await pg.select_option("#m-cur", cur); await pg.wait_for_timeout(120)
+        await tab(pg, "month"); await showpay(pg) or await pg.select_option("#m-cur", cur); await pg.wait_for_timeout(120)
         r = await pg.evaluate(CHECK_MONEY); assert r["n"] >= 1 and not r["bad"], f"{cur} month: {r}"
         await tab(pg, "plan"); r = await pg.evaluate(CHECK_MONEY); assert r["n"] >= 5 and not r["bad"], f"{cur} plan: {r}"
         await tab(pg, "split"); await pg.click("[data-new-split]"); await pg.wait_for_timeout(80)
@@ -302,13 +308,13 @@ async def currency_label_never_overlaps_amount_anywhere(ctx):
 @test
 async def every_currency_can_be_chosen(ctx):
     pg = await open_app(ctx)
-    codes = await pg.locator("#m-cur option").evaluate_all("els => els.map(e => e.value)")
+    codes = await showpay(pg) or await pg.locator("#m-cur option").evaluate_all("els => els.map(e => e.value)")
     assert len(codes) == len(set(codes)) == 154 and codes[:8] == ["USD", "GBP", "EUR", "CAD", "AUD", "INR", "PKR", "AED"], len(codes)
     for c in ("JPY", "MXN", "NGN", "SAR", "BDT", "TRY", "ZAR", "CNY", "BRL", "CHF", "KRW", "EGP", "ZWG"):
         assert c in codes, c
     assert await pg.locator("#m-cur optgroup").evaluate_all("els => els.map(e => e.label)") == ["Most used", "All currencies"]
     for c, mark in (("NGN", "NGN"), ("JPY", "¥"), ("SAR", "SAR"), ("ZWG", "ZWG")):   # the amounts carry the chosen currency, even one the phone may not know
-        await pg.select_option("#m-cur", c); await pg.wait_for_timeout(150)
+        await showpay(pg) or await pg.select_option("#m-cur", c); await pg.wait_for_timeout(150)
         v = await pg.inner_text("#view"); assert mark in v and "$" not in v.replace("MX$", ""), f"{c}: {v[:200]}"
         assert (await state(pg))["cur"] == c
     r = await pg.evaluate(CHECK_MONEY); assert not r["bad"], r
@@ -436,7 +442,7 @@ async def subs_rule_days_add_remove(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
     await pg.fill("#rule-days", "100"); await pg.wait_for_timeout(100)
     assert "Unused for" not in await text(pg, "[data-out=subsList]")
-    await pg.click("details summary >> text=Add a subscription")
+    await pg.click("text=Add a subscription")
     f = pg.locator("form[data-form=addSub]")
     await f.locator("[name=name]").fill("YouTube Premium"); await f.locator("[name=price]").fill("13.99")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(120)
@@ -499,7 +505,7 @@ async def codes_search_vote_add(ctx):
 # ---------------- plan ----------------
 @test
 async def plan_envelopes_lines_priority(ctx):
-    pg = await open_app(ctx); await tab(pg, "plan")
+    pg = await open_app(ctx); await tab(pg, "plan"); await pg.locator("[data-env-edit]").first.click(); await pg.wait_for_timeout(120)
     # the three shares always total 100: you choose Expenditures and Misc, Savings is what is left and cannot be typed
     env = lambda: pg.evaluate("[...document.querySelectorAll('[data-env],[data-env-save]')].map(e => +(e.value !== undefined ? e.value : e.textContent))")
     tot = lambda: pg.evaluate("(() => { const e = JSON.parse(localStorage.getItem('keepwise-app-v1')).env; return [e.needs, e.misc, e.save]; })()")
@@ -531,7 +537,7 @@ async def plan_envelopes_lines_priority(ctx):
     await park.locator("[data-exp-edit]").click(); await pg.wait_for_timeout(100)
     await pg.click("form[data-form=exp] [data-del-exp]"); await pg.wait_for_timeout(100)
     assert not any(e["name"] == "Parking" for e in (await state(pg))["expenses"])
-    await pg.select_option("select[data-bind=priority]", "goal"); await pg.wait_for_timeout(80)
+    await pg.click("[data-prio=goal]"); await pg.wait_for_timeout(80)
     t = await text(pg, "[data-out=saveSplit]"); assert "to New laptop" in t
     assert abs(money(t.split("emergency fund, ")[1]) - 900) < 0.01, t   # goal first gets what the goal still needs: $1,200 less the $300 already set aside
 
@@ -601,7 +607,7 @@ async def split_new_equal_percent_exact_borrow(ctx):
 async def split_edit_delete_filter(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
     card = pg.locator("[data-split]", has_text="Dominos")
-    await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(100)
+    await card.locator("[data-act-more]").click(); await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(100)
     assert await pg.inner_text("form[data-form=split] h2") == "Edit split"
     await pg.fill("[data-d=amount]", "160"); await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(120)
     assert "Alex owes you $40" in await text(pg, "[data-split]:has-text('Dominos')")
@@ -609,7 +615,7 @@ async def split_edit_delete_filter(ctx):
     await pg.click("[data-filter=Borrow]"); await pg.wait_for_timeout(80)
     assert await pg.locator("[data-split]").count() == 1
     await pg.click("[data-filter=All]")
-    await pg.locator("[data-split]", has_text="Movie tickets").locator("[data-del-split]").click(); await pg.wait_for_timeout(100)
+    await pg.locator("[data-split]", has_text="Movie tickets").locator("[data-act-more]").click(); await pg.locator("[data-split]", has_text="Movie tickets").locator("[data-del-split]").click(); await pg.wait_for_timeout(100)
     assert await pg.locator("[data-split]", has_text="Movie tickets").count() == 0
 
 @test
@@ -637,7 +643,7 @@ async def split_settle_history_undo_edit(ctx):
 async def saving_an_edit_that_changes_nothing_says_so(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
     n0 = json.dumps((await state(pg))["splits"])
-    await pg.locator("[data-split]", has_text="Dominos").locator("[data-edit-split]").click(); await pg.wait_for_timeout(100)
+    await pg.locator("[data-split]", has_text="Dominos").locator("[data-act-more]").click(); await pg.locator("[data-split]", has_text="Dominos").locator("[data-edit-split]").click(); await pg.wait_for_timeout(100)
     await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(200)
     assert await pg.inner_text("#toast") == "No changes to save." and await pg.locator("[data-tell]").count() == 0, "no update and nothing to tell anyone"
     assert json.dumps((await state(pg))["splits"]) == n0
@@ -742,7 +748,7 @@ async def shared_my_writes_go_to_db(ctx):
     assert len(pays) == 1 and pays[0]["from"] == "u_sam" and pays[0]["to"] == "u_me", pays
     await pg.click("#history [data-pay-del]"); await pg.wait_for_timeout(250)
     assert "Sam owes you $10" in await text(pg, "[data-out=splitSum]")
-    await pg.locator("[data-split]", has_text="Cab").locator("[data-del-split]").click(); await pg.wait_for_timeout(250)
+    await pg.locator("[data-split]", has_text="Cab").locator("[data-act-more]").click(); await pg.locator("[data-split]", has_text="Cab").locator("[data-del-split]").click(); await pg.wait_for_timeout(250)
     assert (await pg.evaluate("[...__mock.store.entries()].find(([k])=>k.startsWith('splits/'))[1].deleted")) is True
     assert await pg.locator("[data-split]", has_text="Cab").count() == 0
     assert (await state(pg))["splits"][0]["title"] == "Dominos", "local splits untouched"
@@ -992,11 +998,13 @@ async def account_google_signout_and_delete(ctx):
     await pg.click(f + " [type=submit]"); await pg.wait_for_timeout(400)
     assert (await fs_docs(pg))["users/g1"]["provider"] == "google.com"
     assert await pg.locator("#view .plus-card, #view [data-acc-plus]").count() == 0 and await pg.locator("#view [data-acc-delete].quiet-del").count() == 1, "Plus lives on its own screen; deleting is one quiet link at the foot of the profile"
-    await menu_to(pg, "plus"); await pg.click("[data-acc-plus]"); await pg.wait_for_timeout(300)
-    d = (await fs_docs(pg))["users/g1"]; assert d["plusInterest"] is True and d["plusInterestAt"]
-    assert "on the waitlist" in await text(pg, "#view")
-    await pg.click("[data-acc-plus-off]"); await pg.wait_for_timeout(300)
-    assert (await fs_docs(pg))["users/g1"]["plusInterest"] is False and await pg.locator("[data-acc-plus]").count() == 1
+    await menu_to(pg, "plus")
+    if await pg.locator("[data-acc-plus]").count():   # the waitlist only shows while Plus is not on sale
+        await pg.click("[data-acc-plus]"); await pg.wait_for_timeout(300)
+        d = (await fs_docs(pg))["users/g1"]; assert d["plusInterest"] is True and d["plusInterestAt"]
+        assert "on the waitlist" in await text(pg, "#view")
+        await pg.click("[data-acc-plus-off]"); await pg.wait_for_timeout(300)
+        assert (await fs_docs(pg))["users/g1"]["plusInterest"] is False and await pg.locator("[data-acc-plus]").count() == 1
     await open_account(pg)
     await pg.click("[data-acc-signout]"); await pg.wait_for_timeout(300)
     assert "Continue with Google" in await text(pg, "#view")
@@ -1039,7 +1047,7 @@ async def logo_goes_back_to_month(ctx):
     pg = await open_app(ctx)
     await tab(pg, "codes"); await open_account(pg); await pg.wait_for_timeout(200)
     await pg.click("#home-link"); await pg.wait_for_timeout(200)
-    assert await pg.locator("[data-tab=month][aria-current=page]").count() == 1 and await pg.locator("#m-income").count() == 1
+    assert await pg.locator("[data-tab=month][aria-current=page]").count() == 1 and await pg.locator("[data-out=incomeHero]").count() == 1
     assert (await state(pg))["tab"] == "month"
 
 @test
@@ -1071,9 +1079,9 @@ async def business_space_is_a_plus_preview(ctx):
     sw = await pg.evaluate("[document.querySelector('#main').scrollWidth, document.querySelector('#main').clientWidth]")
     assert sw[0] <= sw[1]
     await pg.click(".biz-panel [data-space=personal]"); await pg.wait_for_timeout(150)
-    assert await pg.locator("#m-income").count() == 1
+    assert await pg.locator("[data-out=incomeHero]").count() == 1
     await space(pg, "business"); await tab(pg, "subs"); await tab(pg, "month")
-    assert await pg.locator("#m-income").count() == 1, "leaving the tab returns to Personal"
+    assert await pg.locator("[data-out=incomeHero]").count() == 1, "leaving the tab returns to Personal"
 
 @test
 async def moments_is_a_plus_preview(ctx):
@@ -1122,7 +1130,7 @@ async def split_edit_in_place_and_icon(ctx):
     card = pg.locator("[data-split]").nth(2); sid = await card.get_attribute("data-split")
     await card.scroll_into_view_if_needed(); await pg.wait_for_timeout(100)
     top_before = await pg.evaluate("document.getElementById('main').scrollTop")
-    await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(300)
+    await card.locator("[data-act-more]").click(); await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(300)
     assert await pg.locator(f"[data-split='{sid}']").count() == 0, "the card became the form"
     assert await pg.locator("form[data-form=split]").count() == 1 and await pg.locator("[data-new-split]").count() == 1, "form is in place; New split stays at the top"
     top_after = await pg.evaluate("document.getElementById('main').scrollTop")
@@ -1147,7 +1155,7 @@ async def removals_can_be_undone(ctx):
     assert await pg.locator("[data-sub=s1]").count() == 1 and st["tab"] == "subs"
     # split
     await tab(pg, "split"); m = len((await state(pg))["splits"])
-    await pg.locator("[data-split]").first.locator("[data-del-split]").click(); await pg.wait_for_timeout(120)
+    await pg.locator("[data-split]").first.locator("[data-act-more]").click(); await pg.locator("[data-split]").first.locator("[data-del-split]").click(); await pg.wait_for_timeout(120)
     assert len((await state(pg))["splits"]) == m - 1
     await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(150)
     assert len((await state(pg))["splits"]) == m
@@ -1173,7 +1181,7 @@ async def removals_can_be_undone(ctx):
 @test
 async def amounts_are_never_negative(ctx):
     pg = await open_app(ctx)
-    await pg.fill("#m-income", "-4000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(200)
+    await showpay(pg) or await pg.fill("#m-income", "-4000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(200)
     assert (await state(pg))["income"] == 4000
     await tab(pg, "plan")
     await pg.locator("[data-exp-edit]").first.click(); await pg.wait_for_timeout(100)
@@ -1263,12 +1271,12 @@ async def offline_copy_is_always_the_app(ctx):
 async def edit_cancel_keeps_the_card_in_view(ctx):
     pg = await open_app(ctx, w=390, h=700); await tab(pg, "split")
     card = pg.locator("[data-split]").nth(3); sid = await card.get_attribute("data-split")
-    await card.scroll_into_view_if_needed(); await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(300)
+    await card.scroll_into_view_if_needed(); await card.locator("[data-act-more]").click(); await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(300)
     await pg.locator("form[data-form=split]").evaluate("f => f.scrollIntoView({block:'end'})"); await pg.wait_for_timeout(150)
     await pg.click("[data-cancel-split]"); await pg.wait_for_timeout(250)
     r = await pg.evaluate(f"(()=>{{const c=document.querySelector('[data-split=\"{sid}\"]').getBoundingClientRect(),m=document.getElementById('main').getBoundingClientRect();return [c.top,c.bottom,m.top,m.bottom]}})()")
     assert r[0] >= r[2] - 1 and r[1] <= r[3] + 1, f"card is visible after Cancel: {r}"
-    await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(300)
+    await card.locator("[data-act-more]").click(); await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(300)
     await pg.locator("form[data-form=split]").evaluate("f => f.scrollIntoView({block:'end'})"); await pg.wait_for_timeout(150)
     await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(250)
     r = await pg.evaluate(f"(()=>{{const c=document.querySelector('[data-split=\"{sid}\"]').getBoundingClientRect(),m=document.getElementById('main').getBoundingClientRect();return [c.top,c.bottom,m.top,m.bottom]}})()")
@@ -1329,7 +1337,7 @@ async def monthly_statements(ctx):
     cur = st["statements"][keys[-1]]
     assert abs(cur["kept"] - money(await text(pg, "[data-out=headline] .big"))) < 0.01
     assert await pg.locator("[data-out=historyCard] .hist-col").count() == 3
-    await pg.fill("#m-income", "6000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(250)
+    await showpay(pg) or await pg.fill("#m-income", "6000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(250)
     assert (await state(pg))["statements"][keys[-1]]["income"] == 6000, "this month's statement follows the plan"
     assert (await state(pg))["statements"][keys[0]]["income"] == 5200, "closed months do not change"
     await pg.click("[data-history]"); await pg.wait_for_timeout(150)
@@ -1452,7 +1460,7 @@ async def tell_them_after_split_changes(ctx):
     await pg.click("[data-tell-close]"); await pg.wait_for_timeout(100)
     assert await pg.locator("[data-tell]").count() == 0
     # updated: says what the share was before, right under the card that changed
-    await pg.click(f"[data-split='{sp['id']}'] [data-edit-split]"); await pg.wait_for_timeout(120)
+    await pg.click(f"[data-split='{sp['id']}'] [data-act-more]"); await pg.click(f"[data-split='{sp['id']}'] [data-edit-split]"); await pg.wait_for_timeout(120)
     f = pg.locator("form[data-form=split]"); await f.locator("[data-d=amount]").fill("120"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(200)
     await pg.click("[data-tell-each]"); await pg.wait_for_timeout(100)
     row = await text(pg, f"[data-tell-id='{a}']")
@@ -1460,7 +1468,7 @@ async def tell_them_after_split_changes(ctx):
     assert await pg.evaluate(f"document.querySelector(\"[data-split='{sp['id']}']\").nextElementSibling.hasAttribute('data-tell')"), "shown under the edited split"
     box = await pg.locator("[data-tell]").bounding_box(); assert box["width"] <= 390 and box["x"] >= 0
     # deleted, and Undo takes the prompt away again
-    await pg.click(f"[data-split='{sp['id']}'] [data-del-split]"); await pg.wait_for_timeout(150)
+    await pg.click(f"[data-split='{sp['id']}'] [data-act-more]"); await pg.click(f"[data-split='{sp['id']}'] [data-del-split]"); await pg.wait_for_timeout(150)
     card = await text(pg, "[data-tell]"); assert "Movie night was deleted" in card and "It no longer counts for anyone" in card, card
     await pg.click(".toast-undo"); await pg.wait_for_timeout(150)
     assert await pg.locator("[data-tell]").count() == 0 and any(x["title"] == "Movie night" for x in (await state(pg))["splits"])
@@ -2058,7 +2066,7 @@ async def a_currency_word_means_your_own_currency_first(ctx):
         await ask_type(pg, q); await pg.wait_for_timeout(350); return await said(pg)
     last = lambda st: st["spends"][-1]
     # New Zealand dollars: "$50" and "50 dollars" are your dollars, with no conversion
-    await pg.select_option("#m-cur", "NZD"); await pg.wait_for_timeout(150)
+    await showpay(pg) or await pg.select_option("#m-cur", "NZD"); await pg.wait_for_timeout(150)
     for q in ("add $50 in uber expense", "uber 50 dollars", "uber 50 bucks"):
         await say(q); sp = last(await state(pg)); assert sp["amount"] == 50 and sp.get("ocur") is None, (q, sp)
     # on a trip to the USA paid in US dollars, "50 dollars" is USD, converted into New Zealand dollars
@@ -2070,14 +2078,14 @@ async def a_currency_word_means_your_own_currency_first(ctx):
     await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 12, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
     await say("uber 50 dollars"); sp = last(await state(pg)); assert sp["amount"] == 50 and sp.get("ocur") is None, sp
     # Indian rupees: "rupees" and "rs" are INR, never PKR
-    await pg.select_option("#m-cur", "INR"); await pg.wait_for_timeout(150)
+    await showpay(pg) or await pg.select_option("#m-cur", "INR"); await pg.wait_for_timeout(150)
     for q in ("add 5,000 rupees for dinner", "dinner rs 5000", "dinner 5000 rupee"):
         await say(q); sp = last(await state(pg)); assert sp["amount"] == 5000 and sp.get("ocur") is None and sp["name"] == "Dinner", (q, sp)
     # and the other way round
-    await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(150)
+    await showpay(pg) or await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(150)
     await say("add 5,000 rupees for dinner"); sp = last(await state(pg)); assert sp["amount"] == 5000 and sp.get("ocur") is None, sp
     # a plan in pounds sterling that hears "rupees" cannot know which: it asks, and adds nothing
-    await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150); n = len((await state(pg))["spends"])
+    await showpay(pg) or await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150); n = len((await state(pg))["spends"])
     r = await say("dinner 5,000 rupees"); assert "Which rupees?" in r and "Nothing was added" in r and len((await state(pg))["spends"]) == n, r
     await say("lunch 12 pounds"); sp = last(await state(pg)); assert sp["amount"] == 12 and sp.get("ocur") is None
     # a word with one usual meaning is converted: euros into pounds
@@ -2945,7 +2953,7 @@ async def coming_up_reads_in_date_order_and_a_trip_is_never_logged_as_spending(c
     # "plan a trip": the trip card opens with the name and budget filled in, and nothing goes into the month
     k = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
     k0 = await k(); n0 = len((await state(pg)).get("spends") or [])
-    await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150); k0 = await k()
+    await showpay(pg) or await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150); k0 = await k()
     await tab(pg, "plan"); await owl(pg); await pg.wait_for_timeout(200)
     await ask_type(pg, "Plan a trip for Australia budget 6,000 euros"); await pg.wait_for_timeout(500)
     st = await state(pg); assert st["tab"] == "month" and len(st.get("spends") or []) == n0 and len(st.get("trips") or []) == 0, "nothing is saved until the dates are checked"
@@ -3390,7 +3398,7 @@ async def history_help_sits_behind_an_info_button(ctx):
 async def statement_dates_follow_the_file_not_the_currency(ctx):
     # A US statement (month first) imported while the currency is AED must not read 04/14 as month 14.
     pg = await open_app(ctx)
-    await pg.select_option("#m-cur", "AED"); await pg.wait_for_timeout(150)
+    await showpay(pg) or await pg.select_option("#m-cur", "AED"); await pg.wait_for_timeout(150)
     us = os.path.join(TMP, "us.csv")
     open(us, "w").write("Date,Description,Amount\n04/01/2026,PAYROLL ACME,3000\n04/14/2026,ADOBE CREATIVE CLOUD,-59.99\n05/01/2026,PAYROLL ACME,3000\n05/14/2026,ADOBE CREATIVE CLOUD,-59.99\n06/14/2026,ADOBE CREATIVE CLOUD,-59.99\n")
     await pg.set_input_files("#stmt", us); await pg.wait_for_timeout(500)
@@ -3398,7 +3406,7 @@ async def statement_dates_follow_the_file_not_the_currency(ctx):
     a = [x for x in (await state(pg))["subs"] if x["name"].lower().startswith("adobe")][0]
     assert a["since"] == "2026-04-14" and a["lastCharge"] == "2026-06-14" and a["renewDay"] == 14, a
     # a day-first file under USD: 14/04 can only be 14 April
-    await pg.select_option("#m-cur", "USD"); await pg.wait_for_timeout(150)
+    await showpay(pg) or await pg.select_option("#m-cur", "USD"); await pg.wait_for_timeout(150)
     uk = os.path.join(TMP, "dayfirst.csv")
     open(uk, "w").write("Date,Description,Amount\n01/04/2026,PAYROLL ACME,3000\n14/04/2026,HULU,-9.99\n01/05/2026,PAYROLL ACME,3000\n14/05/2026,HULU,-9.99\n14/06/2026,HULU,-9.99\n")
     await pg.set_input_files("#stmt", uk); await pg.wait_for_timeout(500)
@@ -3589,7 +3597,7 @@ async def plus_screen_gives_reasons_and_prices(ctx):
 async def statement_separates_transfers_from_spending(ctx):
     # Transfers are not spending by default. What you sent and what you received are shown apart, money moved between
     # your own accounts is shown apart from both with every transaction listed, and only ticked lines reach the plan.
-    pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
+    pg = await open_app(ctx); await showpay(pg) or await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
     csv = os.path.join(TMP, "pk.csv"); open(csv, "w").write("\n".join(PK_ROWS()) + "\n")
     await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(600)
     v = await stx(pg, "#view")
@@ -3718,7 +3726,7 @@ async def every_statement_line_is_shown_exactly_as_the_bank_wrote_it(ctx):
 
 @test
 async def you_can_say_which_names_on_a_statement_are_you(ctx):
-    pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
+    pg = await open_app(ctx); await showpay(pg) or await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
     rows = [r for r in PK_ROWS() if not r.startswith("Account")]           # this bank does not print the account holder's name
     csv = os.path.join(TMP, "pk-noname.csv"); open(csv, "w").write("\n".join(rows) + "\n")
     await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(600)
@@ -3746,7 +3754,7 @@ async def you_can_say_which_names_on_a_statement_are_you(ctx):
     await use_as_plan(pg); await pg.wait_for_timeout(300)
     st = await state(pg); names = [e["name"] for e in st["expenses"]]; assert not any("Ali" in n for n in names) and "Sent to Bilal Traders" in names, names
     # a bank that only says "savings" or "own account" is understood without a name
-    pg2 = await open_app(ctx); await pg2.select_option("#m-cur", "USD"); await pg2.wait_for_timeout(120); us = os.path.join(TMP, "own.csv")
+    pg2 = await open_app(ctx); await showpay(pg2) or await pg2.select_option("#m-cur", "USD"); await pg2.wait_for_timeout(120); us = os.path.join(TMP, "own.csv")
     open(us, "w").write("Date,Description,Amount\n07/01/2026,PAYROLL ACME,3000\n07/03/2026,ONLINE TRANSFER TO SAVINGS 4471,-400\n08/01/2026,PAYROLL ACME,3000\n08/03/2026,ONLINE TRANSFER TO SAVINGS 4471,-400\n08/20/2026,ONLINE TRANSFER FROM SAVINGS 4471,150\n08/22/2026,ZELLE TO DANA REED,-60\n")
     await pg2.set_input_files("#stmt", us); await pg2.wait_for_timeout(500)
     oo = await stx(pg2, "[data-moves=own-out]"); assert oo.count("ONLINE TRANSFER TO SAVINGS 4471") == 2 and "$800" in oo, oo
@@ -3755,7 +3763,7 @@ async def you_can_say_which_names_on_a_statement_are_you(ctx):
 
 async def read_csv(ctx, name, body, cur="USD"):
     pg = await open_app(ctx)
-    await pg.select_option("#m-cur", cur); await pg.wait_for_timeout(120)
+    await showpay(pg) or await pg.select_option("#m-cur", cur); await pg.wait_for_timeout(120)
     f = os.path.join(TMP, name); open(f, "w", encoding="utf-8").write(body)
     await pg.set_input_files("#stmt", f); await pg.wait_for_timeout(600)
     await pg.click("[data-st-open=all]"); await pg.wait_for_timeout(200)
@@ -3791,7 +3799,7 @@ async def statement_columns_are_matched_by_what_they_hold(ctx):
 
 @test
 async def a_pdf_statement_with_wrapped_lines_and_columns_is_read_whole(ctx):
-    pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
+    pg = await open_app(ctx); await showpay(pg) or await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
     await pg.set_input_files("#stmt", os.path.join(FIX, "wrapped-statement.pdf")); await pg.wait_for_timeout(3000)
     v = await stx(pg, "#view"); assert "Your statement" in v and "22 transactions" in v, v[:300]
     # totals match the statement: 100,000 opening, 429,700 closing
@@ -3899,7 +3907,7 @@ async def loans_and_giving_from_a_statement_go_to_their_own_places(ctx):
 async def a_statement_laid_out_in_columns_is_read_line_for_line(ctx):
     # A real bank layout: newest first, descriptions over two to four lines with numbers inside them, amounts set on the
     # left of their column, two lines listed out of posting order and an overdrawn balance printed without its minus.
-    pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
+    pg = await open_app(ctx); await showpay(pg) or await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
     await pg.set_input_files("#stmt", os.path.join(FIX, "columns-statement.pdf")); await pg.wait_for_timeout(3500)
     v = await stx(pg, "#view"); assert "23 transactions" in v and "Sep 2026 to Sep 2026 (1 month)" in v, v[:300]
     chk = await stx(pg, ".st-check"); assert "Money in PKR 190,183.78" in chk and "money out PKR 194,950.71" in chk, chk
@@ -4245,7 +4253,7 @@ async def changing_a_line_low_in_the_list_opens_it_right_there(ctx):
 
 @test
 async def with_no_name_on_the_statement_the_names_are_offered(ctx):
-    pg = await open_app(ctx); await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
+    pg = await open_app(ctx); await showpay(pg) or await pg.select_option("#m-cur", "PKR"); await pg.wait_for_timeout(120)
     rows = [r for r in PK_ROWS() if not r.startswith("Account")]
     csv = os.path.join(TMP, "pk-noname2.csv"); open(csv, "w").write("\n".join(rows) + "\n")
     await pg.set_input_files("#stmt", csv); await pg.wait_for_timeout(600)
@@ -4379,7 +4387,7 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200); assert await has("[data-env-open=needs] + .env-body .tick") >= 3
     # Income: pay first, other income, and one quiet row to banks and statements
     await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(250)
-    assert await has(".import-card") == 0 and await has("[data-bank]") == 0 and await has("#m-income") == 1 and await has("[data-out=trips]") == 0 and await has(".space-switch") == 1 and await has("[data-env-grid]") == 1 and await has("[data-banks-open]") == 0
+    assert await has(".import-card") == 0 and await has("[data-bank]") == 0 and await has("[data-out=incomeHero]") == 1 and await has("[data-out=trips]") == 0 and await has(".space-switch") == 1 and await has("[data-env-edit]") == 1 and await has("[data-banks-open]") == 0
     first = await pg.evaluate("(() => { const k = [...document.querySelectorAll('#view > *')].filter(e => !e.matches('[data-mseg-switch], .space-switch') && e.offsetHeight); return k[0] && k[0].matches('.pay-card') && !!k[0].querySelector('#m-income'); })()"); assert first, "pay leads the Income part, in its own card"
     await menu_to(pg, "banks"); await pg.wait_for_timeout(200); assert await pg.inner_text("#view h1") == "Banks & statements"
     tip = pg.locator(".import-card [data-info-tip=import]"); assert await tip.count() == 0 and "clear photo" not in await pg.inner_text(".import-card"), "the how-to waits behind the (i)"
@@ -4439,9 +4447,9 @@ async def plan_lives_in_month_and_banks_has_its_own_tab(ctx):
     assert [x.strip() for x in await pg.locator("#tabbar .tab").all_inner_texts()] == ["Month", "Subs", "Banks", "Split"]
     has = lambda sel: pg.locator("#view " + sel).count()
     await pg.click("[data-tab=month]"); await pg.click("[data-mseg=more]"); await pg.wait_for_timeout(200)
-    assert await has("#m-income") == 1 and await has("[data-env-grid]") == 1 and await has("[data-bind=efSaved]") == 1 and await has("[data-out=envelopes]") == 0
+    assert await has("[data-out=incomeHero]") == 1 and await has("[data-env-edit]") == 1 and await has("[data-ef-edit]") == 1 and await has("[data-out=envelopes]") == 0
     order = await pg.evaluate("""(() => { const at = s => { const e = document.querySelector('#view ' + s); return e ? e.getBoundingClientRect().top : -1; };
-      return [at('#m-income'), at('[data-env-grid]'), at('[data-out=extraIncome]'), at('[data-bind=efSaved]')]; })()""")
+      return [at('[data-out=incomeHero]'), at('[data-env-edit]'), at('[data-out=extraIncome]'), at('[data-ef-edit]')]; })()""")
     assert order == sorted(order) and min(order) > 0, ("pay, then how it splits, then other income, then savings", order)
     assert "a month" in await pg.inner_text("[data-out=envTotal]") and await pg.locator("[data-out=envTotal] .env-bar i").count() == 3
     await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(200)
@@ -4464,7 +4472,7 @@ async def plan_lives_in_month_and_banks_has_its_own_tab(ctx):
     await pg.evaluate("(() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.tab = 'plan'; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); })()")
     await pg.reload(); await pg.wait_for_timeout(500); assert await pg.locator("[data-tab=month][aria-current=page]").count() == 1
     wide = await open_app(ctx, month_tabs=True, w=1280, h=800); await wide.click("[data-tab=month]"); await wide.wait_for_timeout(200)
-    assert await wide.locator("[data-mseg-switch]").count() == 0 and await wide.locator("#view [data-env-grid]").count() == 1 and await wide.locator("#view [data-out=loans]").count() == 1, "a computer keeps one page"
+    assert await wide.locator("[data-mseg-switch]").count() == 0 and await wide.locator("#view [data-env-edit]").count() == 1 and await wide.locator("#view [data-out=loans]").count() == 1, "a computer keeps one page"
     assert not wide.errors, wide.errors
 
 @test
@@ -4482,7 +4490,7 @@ async def search_opens_from_the_header_and_goes_to_the_exact_place(ctx):
     assert await pg.inner_text(".find-row >> nth=0 >> b") == "Sa", "the typed letters are marked"
     assert await pg.evaluate("document.activeElement.id") == "find-in", "typing is never interrupted"
     await pg.locator(".find-row").first.click(); await pg.wait_for_timeout(250)
-    assert await pg.locator("[data-mseg=more]").get_attribute("aria-pressed") == "true" and await pg.locator("#view [data-bind=efSaved]").is_visible(), "Savings opens Income"
+    assert await pg.locator("[data-mseg=more]").get_attribute("aria-pressed") == "true" and await pg.locator("#view [data-ef-edit]").is_visible(), "Savings opens Income"
     # their own bills are found by name
     await pg.click("#find-btn"); nm = await pg.evaluate("JSON.parse(localStorage.getItem('keepwise-app-v1')).expenses.slice(-1)[0].name")
     await pg.fill("#find-in", nm[:4]); await pg.wait_for_timeout(350); got = await names(); assert nm in got, (nm, got)
@@ -4518,7 +4526,7 @@ async def overview_always_has_bills_and_savings_progress(ctx):
     await pg.click("[data-bills-open]"); await pg.wait_for_timeout(250)
     assert await pg.locator("[data-mseg=budget]").get_attribute("aria-pressed") == "true", "the bills card opens the list to tick"
     await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(200); await pg.click("[data-save-go]"); await pg.wait_for_timeout(250)
-    assert await pg.locator("#view [data-bind=efSaved]").is_visible(), "Change goes to the savings in Plan"
+    assert await pg.locator("#view [data-ef-edit]").is_visible(), "Change goes to the savings in Plan"
     # a quiet week still names what comes next
     await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.splits = []; s.extras = [];
       const d = new Date(); const far = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 20); s.subs = [{id: 'z1', name: 'Gym', price: 30, cycle: 'mo', renewDay: far.getDate(), keep: 'keep'}]; s.expenses.forEach(e => delete e.due); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
@@ -4757,7 +4765,7 @@ async def every_icon_tile_is_centred(ctx):
 async def envelopes_can_be_set_as_amounts(ctx):
     pg = await open_app(ctx, month_tabs=True, w=375, h=812)
     await tab(pg, "income")
-    assert await pg.get_attribute("[data-envmode=pct]", "aria-pressed") == "true", "shares of income by default"
+    await pg.locator("[data-env-edit]").first.click(); await pg.wait_for_timeout(120); assert await pg.get_attribute("[data-envmode=pct]", "aria-pressed") == "true", "shares of income by default"
     inc = await pg.evaluate("(() => { const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); return +s.income; })()")
     await pg.click("[data-envmode=flat]"); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-envflat=needs]").count() == 1 and await pg.locator("[data-env=needs]").count() == 0
@@ -4768,7 +4776,7 @@ async def envelopes_can_be_set_as_amounts(ctx):
     await tab(pg, "month"); await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(200)
     b = await pg.inner_text("[data-out=envelopes]"); assert "of $2,000" in b and "of $500" in b, b
     # back to shares: the amounts become the nearest whole percentages
-    await tab(pg, "income"); await pg.click("[data-envmode=pct]"); await pg.wait_for_timeout(200)
+    await tab(pg, "income"); (await pg.locator("[data-envmode=pct]").count()) or await pg.locator("[data-env-edit]").first.click(); await pg.click("[data-envmode=pct]"); await pg.wait_for_timeout(200)
     v = int(await pg.input_value("[data-env=needs]")); assert v == round(2000 / inc * 100), (v, inc)
     # amounts that add up to more than comes in are called out
     await pg.click("[data-envmode=flat]"); await pg.wait_for_timeout(200); await pg.fill("[data-envflat=needs]", str(int(inc) + 100)); await pg.press("[data-envflat=needs]", "Tab"); await pg.wait_for_timeout(250)
@@ -5502,7 +5510,7 @@ async def keepwise_never_flags_itself(ctx):
 @test
 async def chosen_currency_shows_everywhere(ctx):
     pg = await open_app(ctx)
-    await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(200)
+    await showpay(pg) or await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(200)
     async def clean(where):
         v = await pg.inner_text("#view")
         kw = pg.locator("[data-kw-codes]")   # KeepWise Plus is priced in US dollars for everyone, and says so on the Plus screen
@@ -5575,7 +5583,7 @@ async def pay_schedule_and_extra_paycheck(ctx):
     await pg.click("#view [data-info=ask]"); await pg.wait_for_timeout(150)   # the steps live inside Ask KeepWise now
     how = await text(pg, "[data-out=howto]"); assert "Your next payday is Friday, Oct 16" in how and "each of October’s 3 paychecks" in how
     # the monthly number and the paycheck stay in step
-    await pg.fill("#m-income", "6000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(200)
+    await showpay(pg) or await pg.fill("#m-income", "6000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(200)
     assert (await state(pg))["pay"]["amount"] == 3000
     await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(120)
     assert "Extra paycheck" in await text(pg, ".stmt")
@@ -5667,10 +5675,10 @@ async def admin_fits_phone_width(ctx):
 @test
 async def data_persists_across_reload(ctx):
     pg = await open_app(ctx)
-    await pg.fill("#m-income", "4321"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(300)
+    await showpay(pg) or await pg.fill("#m-income", "4321"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(300)
     await tab(pg, "codes"); await pg.reload(); await pg.wait_for_timeout(400)
     assert await pg.locator("#tabbar [data-tab=subs][aria-current=page]").count() == 1 and await pg.locator("#view .sub-seg [data-go=codes][aria-pressed=true]").count() == 1, "it reopens on Codes, inside Subs"
-    await tab(pg, "month"); assert await pg.input_value("#m-income") == "4321"
+    await tab(pg, "month"); await showpay(pg); assert await pg.input_value("#m-income") == "4321"
 
 # ---------------- four tabs, the side menu, quiet text, and money coming in ----------------
 async def _keep(pg):
