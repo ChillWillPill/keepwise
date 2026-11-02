@@ -3849,7 +3849,7 @@ function bizSplitCard(M){
 // Pay yourself: what's safe to take this month is the profit after the tax set-aside and what you've already paid yourself.
 // KeepWise records it on both sides; the money itself moves in your bank app.
 function bizPayInfo(b, M){ const [y, m] = bizNow(), key = `${y}-${String(m + 1).padStart(2, "0")}`, drawn = r2((b.draws || []).filter(d => (d.date || "").startsWith(key)).reduce((a, d) => a + (+d.amount || 0), 0));
-  const tax = splitOf(Math.max(0, M.inc)).tax, avail = Math.max(0, r2(M.profit - tax - drawn)), sug = Math.min(avail, splitOf(Math.max(0, M.inc)).profit) || avail;
+  const tax = splitOf(Math.max(0, M.inc)).tax, avail = Math.max(0, r2(M.profit - tax - drawn)), share = splitOf(Math.max(0, M.inc)).profit, sug = share > 0 ? Math.min(avail, Math.max(0, r2(share - drawn))) : avail;   // the suggestion shrinks by what you have already taken this month
   return {drawn, avail, sug: r2(sug), left: r2(M.profit - drawn)}; }
 // Every payment to yourself, on its own screen: change the amount or date, or remove it. Both sides follow.
 function drawsWiz(b){
