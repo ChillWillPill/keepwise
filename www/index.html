@@ -7942,7 +7942,7 @@ const plusTier = () => { const c = (S.geo && S.geo.c) || regionCode(); return !c
 // Bank connections (Plaid) are US only, so Plus Ultra and the bank parts of Plus exist only there. Everywhere else: one Plus, priced by country.
 const bankRegion = () => plusTier() === 1;
 // Where the person actually is (Cloudflare's IP country), checked at most once a day. Paddle charges by the same rule, so the price shown is the price paid.
-async function geoCheck(){ if (S.geo && Date.now() - (S.geo.at || 0) < 864e5) return; try { const r = await fetch(API_BASE + "/geo"); const j = await r.json(); if (j && /^[A-Z]{2}$/.test(j.country || "")){ const was = plusTier(); S.geo = {c: j.country, at: Date.now()}; save(); if (plusTier() !== was){ render(true); siteLocalize(document.getElementById("kws")); } } } catch(e){} }
+async function geoCheck(){ if (navigator.webdriver) return; if (S.geo && Date.now() - (S.geo.at || 0) < 864e5) return; try { const r = await fetch(API_BASE + "/geo"); const j = await r.json(); if (j && /^[A-Z]{2}$/.test(j.country || "")){ const was = plusTier(); S.geo = {c: j.country, at: Date.now()}; save(); if (plusTier() !== was){ render(true); siteLocalize(document.getElementById("kws")); } } } catch(e){} }
 setTimeout(geoCheck, 1500);
 const PLUS_PRICE = (() => { const t = PLUS_TIERS[1]; return {monthly: t.mo, yearly: t.yr}; })();
 const plusPrice = () => PLUS_TIERS[plusTier()];
@@ -8539,6 +8539,16 @@ const FB_CONFIG = "KEEPWISE_FIREBASE" in window ? window.KEEPWISE_FIREBASE : FB_
 const FB_BASE = "https://cdn.jsdelivr.net/npm/firebase@10.14.1/";
 const TERMS_VERSION = "2026-10-01";
 const IN_APP = !!window.Capacitor; // Google blocks its sign-in page inside app web views
+// In the Android app Google's sign-in page is blocked, so the phone's own Google account picker is used and its token signs in to Firebase.
+const GOOGLE_WEB_CLIENT = "514732112999-7gue8ojd0oo2nlp6kbbedf3om6haesuf.apps.googleusercontent.com";
+const socialLogin = () => { const C = window.Capacitor; return C && C.isNativePlatform && C.isNativePlatform() ? ((C.Plugins && C.Plugins.SocialLogin) || (C.registerPlugin ? C.registerPlugin("SocialLogin") : null)) : null; };
+const nativeGoogle = () => !!(window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === "android");
+let socialReady = null;
+async function googleNative(){ const SL = socialLogin(); if (!SL) throw new Error("Google sign-in isn’t available here.");
+  if (!socialReady) socialReady = SL.initialize({google: {webClientId: GOOGLE_WEB_CLIENT}});
+  await socialReady; const r = await SL.login({provider: "google", options: {}}); const tok = r && r.result && r.result.idToken;
+  if (!tok) throw new Error("Google didn’t return a sign-in. Try again.");
+  return ACC.auth.signInWithCredential(firebase.auth.GoogleAuthProvider.credential(tok)); }
 // Inside the Claude preview the page runs in a locked frame where sign-in windows cannot open.
 const PREVIEW = !!window.claude && !("KEEPWISE_FIREBASE" in window);
 const SITE_URL = "https://mykeepwise.com/";
@@ -8773,7 +8783,7 @@ function accSignIn(){
   return `${accHeader()}
   ${accHero(m === "create" ? "Create your free account" : m === "reset" ? "Reset your password" : "Welcome back", "Your budget, statements and subscriptions still stay on this phone. An account adds your profile, so friends can find you.")}
   <section class="card acc-card">
-    ${IN_APP ? `<p class="note small">Google sign-in is coming to the Android app. Use email here, or sign in with Google on the website.</p>`
+    ${IN_APP && !nativeGoogle() ? `<p class="note small">Google sign-in is coming to this app. Use email here, or sign in with Google on the website.</p>`
              : `<button class="btn g-btn" type="button" data-acc-google>${I.google}Continue with Google</button><div class="or" role="separator"><span>or use email</span></div>`}
     ${m === "reset" ? `<h2>Reset your password</h2><p class="muted small">We’ll email you a link to choose a new password.</p>`
       : `<div class="seg acc-seg" role="group" aria-label="Sign in or create an account"><button type="button" data-acc-mode="signin" aria-pressed="${m === "signin"}">Sign in</button><button type="button" data-acc-mode="create" aria-pressed="${m === "create"}">Create account</button></div>`}
@@ -8950,8 +8960,8 @@ $("view").addEventListener("click", async e => {
   if (b.dataset.accMode){ ACC.mode = b.dataset.accMode; ACC.err = ""; render(true); return; }
   if (has("data-acc-google")){
     ACC.err = ""; refreshOuts();
-    try { await ACC.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-    catch(err){ setAccErr(accErrText(err)); }
+    try { if (IN_APP) await googleNative(); else await ACC.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    catch(err){ if (!/cancel/i.test(String(err && (err.message || err.code) || ""))) setAccErr(accErrText(err)); }
     return;
   }
   if (has("data-acc-signout")){ S.acct = null; save(); await ACC.auth.signOut(); toast("Signed out."); return; }
