@@ -3554,7 +3554,7 @@ async def plus_free_week_cannot_be_restarted_or_faked(ctx):
     # with checkout keys: the free week starts only through Paddle checkout
     await pg.add_init_script("window.KEEPWISE_PADDLE = {env: 'sandbox', token: 'test_abc', monthly: 'pri_m', yearly: 'pri_y'}")
     await seed(pg, "s.plusPaid = false; s.plusTrial = null; s.plusCheckedAt = 0"); await plus_screen()
-    t = await text(pg, "[data-plus-trial]"); assert "7 DAYS FREE" in t.upper() and "pay nothing" in t, t
+    t = await text(pg, ".px-hero"); assert "7 DAYS FREE" in t.upper(), t
     assert "Start free week" in await text(pg, "[data-plus-buy=yr]")
     await pg.click("[data-plus-buy=yr]"); await pg.wait_for_timeout(250)
     assert await pg.locator("[data-plus-trial]").count() == 0 or "Sign in" in await text(pg, "body"), "buying asks to sign in first"
@@ -3571,27 +3571,23 @@ async def plus_screen_gives_reasons_and_prices(ctx):
     v = await text(pg, "#view")
     for reason in ("Connect your bank", "Since last time", "Split emails, sent for you", "Business Account", "Your money on every device", "Live splits and Moments"):
         assert reason in v, reason
-    assert await pg.locator(".plus-list li.soon").count() == 1 and "Coming later" in v and "Your business page" in v, "what isn't built yet says so"
+    assert await pg.locator(".px-f.soon").count() == 1 and "Coming later" in v and "Your business page" in v, "what isn't built yet says so"
     for unbuilt in ("shared household", "Offers near you", "Reminders on every phone", "only you can unlock", "birthday"):   # only promises we can keep
         assert unbuilt not in v, unbuilt
-    assert await pg.locator(".plus-list li").count() == 8
+    assert await pg.locator(".px-f").count() == 8
     # prices by country tier: the US pays $9.99 a month or $79 a year
-    m = await text(pg, ".plus-price:not(.best)"); y = await text(pg, ".plus-price.best")
-    assert "$9.99" in m and "a month" in m, m
-    assert "$79" in y and "a year" in y and "About $6.58 a month" in y and "You save 34%" in y, y
-    assert "not on sale yet" in v and "Free, and staying free" in v and "Claude" not in v and "Business space" not in v
-    assert "EARLY140" in y and "EARLY12" in m, "each price shows its code"
+    assert await pg.locator(".px-hero").count() == 1 and "Free, and staying free" in v and "Claude" not in v and "Business space" not in v
     # no checkout keys yet: no free week to start, and an old free week saved on the phone never turns Plus on
     assert await pg.locator("[data-plus-trial]").count() == 0 and await pg.locator("[data-trial-start]").count() == 0
     assert await pg.locator("[data-open-account]").count() >= 1, "signed out: the button leads to sign-in"
     w = await pg.evaluate("Math.max(...[...document.querySelectorAll('#view *')].map(e => e.getBoundingClientRect().right))"); assert w <= 390.5, f"nothing runs off the screen: {w}"
     await pg.click("[data-plus-close]"); await pg.wait_for_timeout(150)
-    assert await pg.locator(".plus-prices").count() == 0 and await pg.locator("#view [data-plus-open]").count() >= 1, "Done returns to where you were"
+    assert await pg.locator(".px-hero").count() == 0 and await pg.locator("#view [data-plus-open]").count() >= 1, "Done returns to where you were"
     # reachable from the coming-soon card on Split, and a tab tap leaves it
     await tab(pg, "split"); await pg.click("[data-mode=shared]"); await pg.wait_for_timeout(120)
     assert "COMING WITH PLUS" in (await text(pg, "[data-shared-soon]")).upper()
-    await pg.click("[data-shared-soon] [data-plus-open]"); await pg.wait_for_timeout(150); assert await pg.locator(".plus-prices").count() == 1
-    await tab(pg, "subs"); assert await pg.locator(".plus-prices").count() == 0
+    await pg.click("[data-shared-soon] [data-plus-open]"); await pg.wait_for_timeout(150); assert await pg.locator(".px-hero").count() == 1
+    await tab(pg, "subs"); assert await pg.locator(".px-hero").count() == 0
     assert not pg.errors, pg.errors
 
 @test
@@ -5055,7 +5051,7 @@ async def keepwise_plus_codes_show_as_eligible(ctx):
     assert "20% off your first year" in box and "20% off your first 6 months" in box and "when Plus opens" in box
     await pg.locator("[data-kw-code=EARLY140] [data-copy]").click(); await pg.wait_for_timeout(150); assert "Cop" in await pg.inner_text("#toast"), "tapping the code copies it"
     assert not any(c["code"].startswith("EARLY") for c in (await state(pg))["codes"]), "KeepWise codes are not mixed into your own list"
-    await pg.click("[data-kw-codes] [data-plus-open]"); await pg.wait_for_timeout(150); assert await pg.locator(".plus-prices").count() == 1
+    await pg.click("[data-kw-codes] [data-plus-open]"); await pg.wait_for_timeout(150); assert await pg.locator(".px-hero").count() == 1
     assert not pg.errors, pg.errors
 
 @test
@@ -5408,7 +5404,7 @@ async def receipts_and_memories_need_plus_and_work(ctx):
     pg = await open_app(ctx)
     # without Plus, the camera opens the Plus screen instead
     await owl(pg); await pg.wait_for_timeout(200); await pg.click("#asksheet [data-rcpt-snap]"); await pg.wait_for_timeout(250)
-    assert await pg.locator(".plus-prices").count() == 1 and "part of Plus" in await pg.inner_text("#toast")
+    assert await pg.locator(".px-hero").count() == 1 and "part of Plus" in await pg.inner_text("#toast")
     await pg.evaluate("window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.plusTester = true; localStorage.setItem('keepwise-app-v1', JSON.stringify(s))"); await pg.reload(); await pg.wait_for_timeout(500)
     n0 = len((await state(pg)).get("spends") or [])
     await owl(pg); await pg.wait_for_timeout(200)

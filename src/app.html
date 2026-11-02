@@ -1364,6 +1364,12 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .kpick-list{overflow:auto;display:grid;gap:6px}.kpick-o{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 .98rem var(--body);text-align:left;padding:14px 16px;border-radius:14px;cursor:pointer}
 .kpick-o.on{background:var(--green);color:var(--on-green);border-color:transparent}.kpick-o:disabled{opacity:.4}
 .subs-add{width:100%}.sub-pop{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}.sub-pop-o{appearance:none;flex:none;width:74px;display:flex;flex-direction:column;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:16px;padding:10px 4px;cursor:pointer;color:var(--ink)}.sub-pop-o small{font:600 .7rem var(--body);text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sub-pop-o.on{border-color:var(--green);background:var(--green-soft)}
+.px-hero{background:linear-gradient(150deg,#0f5a43,#0b3a2b);color:#f3faf6;border-radius:24px;padding:22px 20px;display:flex;flex-direction:column;gap:8px}
+.px-hero h1{font:600 clamp(1.6rem,7.5vw,2rem)/1.1 var(--display);margin:0;letter-spacing:-.02em}.px-hero p{margin:0;color:#cfe5da}
+.px-chip{align-self:flex-start;font:800 .74rem var(--body);padding:5px 11px;border-radius:99px;background:#e0bb5e;color:#1a1205}
+.px-feats h2{font-size:1.1rem;margin:0 0 12px}.px-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.px-f{display:flex;flex-direction:row;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:var(--bg);min-width:0}.px-f b{font-size:.92rem;line-height:1.2}.px-f small{color:var(--muted);font-size:.76rem;line-height:1.35}.px-f.soon{opacity:.6}
+.px-free summary{font-weight:700;cursor:pointer}.px-free[open] summary{margin-bottom:12px}
 .kd-nav{display:flex;justify-content:space-between;align-items:center;padding:4px 2px 10px}.kd-nav b{font:700 1.15rem var(--display)}
 .kd-m{appearance:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:700 1.3rem var(--body);cursor:pointer}.kd-m:disabled{opacity:.3}
 .kd-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;justify-items:center}.kd-wk span{font:700 .72rem var(--body);color:var(--muted);padding:2px 0 4px}
@@ -4004,12 +4010,10 @@ function bizPreview(){
         <li><b>Tax set-aside and quarterly estimates</b>, so tax time is never a surprise.</li>
         <li><b>One-tap export</b> of the year for your accountant.</li>
       </ul>
-      ${joined ? `<p><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p>`
+      ${PADDLE() ? `<button class="btn primary" type="button" data-plus-open>Try Plus free for 7 days</button>` : joined ? `<p><span class="pill ok">You’re on the waitlist</span> We’ll email you when KeepWise Plus launches.</p>`
         : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the Plus waitlist</button>`
         : `<button class="btn primary" type="button" data-open-account>Sign in to join the waitlist</button>`}
-      ${PADDLE() ? `<button class="btn" type="button" data-plus-open>Try Plus free for 7 days</button>` : ""}
-      <button class="btn" type="button" data-bz-demo-on>👀 Explore a demo business</button>
-      ${plusLink()}
+      <button class="btn" type="button" data-bz-demo-on>Explore a demo business</button>
       <button class="link small" type="button" data-space="personal" style="align-self:center">Back to Personal</button>
     </section>
   </div>`;
@@ -8012,14 +8016,13 @@ V.plus = () => { const P = plusPrice(), perMonth = Math.round(P.yr / 12 * 100) /
     : plusOn() ? `<section class="card plus-trial on" data-plus-trial><span class="pill ok">Plus is on</span><h3>Thank you for supporting KeepWise</h3><p class="muted small" data-keep>Manage or cancel any time from your Paddle receipt email.</p></section>`
     : PADDLE() ? `<section class="card plus-trial" data-plus-trial><span class="pill gold">7 days free</span><h3>Try everything in Plus for a week</h3><p class="muted small" data-keep>Pick a plan below. Nothing is charged until <b>${dateWithYear(dayPlus(todayMid(), 7))}</b>. Bank connections start with your first payment. Cancel before then and you pay nothing. We’ll remind you 2 days before.</p></section>` : "";
   return `<div class="inline" style="justify-content:space-between"><span class="pill gold">KeepWise Plus</span><button class="btn small" type="button" data-plus-close>Done</button></div>
-  <h1 class="plus-h">Everything free stays free.</h1>
-  <p class="plus-sub">Plus adds what one phone cannot do alone.</p>
-  ${UI.plusLimit ? plusLimitCard() : ""}${trialCard}
-  <section class="card"><ul class="plus-list">${PLUS_REASONS().map(([ic, t, d, soon]) => `<li${soon ? ' class="soon"' : ""}><span class="plus-ic">${ic}</span><div><b>${t}${soon ? ` <span class="pill grey" style="font-size:.68rem">${soon}</span>` : ""}</b><span class="muted small">${d}</span></div></li>`).join("")}</ul></section>
-  ${window.Capacitor ? `<p class="muted small" style="text-align:center" data-plus-app-note>Plus is coming to the Android app later. Join the waitlist and we’ll email you when it’s here.</p>` : `  <p class="muted small" style="text-align:center">Prices for ${esc(regionCode() ? countryName(regionCode()) : "your country")}${S.cur && S.cur !== "USD" ? `, shown in ${esc(S.cur)}` : ""}.${PADDLE() ? " Your first week is free. Cancel before it ends and you pay nothing." : " Plus is not on sale yet. Join the waitlist and we will email you when it opens."} <a class="link" href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund policy</a></p>
-`}
-  ${plusCta()}
-  <section class="card"><h2 style="font-size:1.2rem">Free, and staying free</h2><ul class="plus-free">${PLUS_FREE.map(t => `<li>${I.check}<span>${t}</span></li>`).join("")}</ul></section>`; };
+  <section class="px-hero"><span class="px-chip">${on ? `Free week · ${left} ${left === 1 ? "day" : "days"} left` : plusOn() ? "Plus is on" : PADDLE() ? "7 days free" : "Coming soon"}</span>
+    <h1>More from your money, on every device.</h1><p>Everything free stays free. Plus adds sync, your banks and your business.</p></section>
+  ${UI.plusLimit ? plusLimitCard() : ""}${on || plusOn() ? trialCard : ""}
+  ${window.Capacitor ? `<p class="muted small" style="text-align:center" data-plus-app-note>Plus is coming to the Android app later. Join the waitlist and we’ll email you when it’s here.</p>` : `${plusCta()}
+  <p class="muted small" style="text-align:center;margin:0">Prices for ${esc(regionCode() ? countryName(regionCode()) : "your country")}${S.cur && S.cur !== "USD" ? `, shown in ${esc(S.cur)}` : ""}.${PADDLE() ? "" : " Plus is not on sale yet. Join the waitlist and we will email you when it opens."} <a class="link" href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund policy</a></p>`}
+  <section class="card px-feats"><h2>What Plus adds</h2><div class="px-grid">${PLUS_REASONS().map(([ic, t, d, soon]) => `<div class="px-f${soon ? " soon" : ""}"><span class="plus-ic">${ic}</span><b>${t}</b>${soon ? `<small>${soon}</small>` : ""}</div>`).join("")}</div></section>
+  <details class="card px-free"><summary>Free, and staying free</summary><ul class="plus-free">${PLUS_FREE.map(t => `<li>${I.check}<span>${t}</span></li>`).join("")}</ul></details>`; };
 // KeepWise's own codes for Plus. They carry the early user prices, so the Codes tab and the Plus screen always agree.
 const KW_CODES = [
   {code: "EARLY140", plan: "Yearly", offer: "20% off your first year, for early users"},
