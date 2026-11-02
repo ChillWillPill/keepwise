@@ -6,6 +6,8 @@ const ORIGINS = [/^https:\/\/mykeepwise\.com$/, /^https:\/\/www\.mykeepwise\.com
 const STRIPE_PATHS = new Set(["balance", "balance_transactions"]);
 const MAX_BODY = 16384;
 
+const BLOCKED_CC = ["AF","BY","BI","CF","TD","CG","CD","CU","ER","IR","IQ","KP","LY","MM","SO","SS","SD","SY","RU","VE","YE"];
+const BLOCKED_UA = ["43","40","14","09","23","65"];   // Crimea, Sevastopol, Donetsk, Luhansk, Zaporizhzhia, Kherson
 const cors = origin => ({
   "Access-Control-Allow-Origin": origin && ORIGINS.some(r => r.test(origin)) ? origin : "https://mykeepwise.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -259,10 +261,14 @@ export default {
     const sub = url.hostname.match(/^([a-z0-9][a-z0-9-]{2,29})\.mykeepwise\.com$/);
     if (sub && req.method === "GET" && !/^(www|api)$/.test(sub[1])) return await sitePage(sub[1]);
     if (req.method === "OPTIONS") return new Response(null, {status: 204, headers: cors(origin)});
+    // Places KeepWise does not serve (sanctions, and the countries its bank partner Wise cannot work with). Checked on every request.
+    const cc = (req.cf && req.cf.country) || "", rc = String((req.cf && req.cf.regionCode) || "");
+    const blocked = BLOCKED_CC.includes(cc) || (cc === "UA" && BLOCKED_UA.includes(rc));
     // The visitor's country from Cloudflare (by IP), so the app shows the right plans and prices. Nothing is stored.
-    if (req.method === "GET" && url.pathname === "/geo") return new Response(JSON.stringify({country: (req.cf && req.cf.country) || ""}), {headers: {"Content-Type": "application/json", "Cache-Control": "private, max-age=3600", ...cors(origin)}});
+    if (req.method === "GET" && url.pathname === "/geo") return new Response(JSON.stringify({country: cc, blocked}), {headers: {"Content-Type": "application/json", "Cache-Control": "private, max-age=3600", ...cors(origin)}});
     if (req.method === "GET" && url.pathname === "/") return new Response("KeepWise API", {headers: {"Content-Type": "text/plain", ...cors(origin)}});
     if (req.method !== "POST") return fail(origin, 405, "Not allowed.");
+    if (blocked && url.pathname !== "/paddle/webhook") return fail(origin, 451, "KeepWise isn’t available in your region.");
     if (url.pathname === "/paddle/webhook") return await paddleWebhook(req, env);
     if (origin && !ORIGINS.some(r => r.test(origin))) return fail(origin, 403, "Not allowed.");
     let b; try { b = await readJson(req, url.pathname === "/invoice/email" ? 900000 : MAX_BODY); } catch(e){ return fail(origin, 400, "Bad request."); }

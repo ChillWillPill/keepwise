@@ -7912,7 +7912,7 @@ const plusTier = () => { const c = (S.geo && S.geo.c) || regionCode(); return !c
 // Bank connections (Plaid) are US only, so Plus Ultra and the bank parts of Plus exist only there. Everywhere else: one Plus, priced by country.
 const bankRegion = () => plusTier() === 1;
 // Where the person actually is (Cloudflare's IP country), checked at most once a day. Paddle charges by the same rule, so the price shown is the price paid.
-async function geoCheck(){ if (navigator.webdriver) return; if (S.geo && Date.now() - (S.geo.at || 0) < 864e5) return; try { const r = await fetch(API_BASE + "/geo"); const j = await r.json(); if (j && /^[A-Z]{2}$/.test(j.country || "")){ const was = plusTier(); S.geo = {c: j.country, at: Date.now()}; save(); if (plusTier() !== was){ render(true); siteLocalize(document.getElementById("kws")); } } } catch(e){} }
+async function geoCheck(){ if (navigator.webdriver) return; if (S.geo && !S.geo.x && Date.now() - (S.geo.at || 0) < 864e5) return; try { const r = await fetch(API_BASE + "/geo"); const j = await r.json(); if (j && /^[A-Z]{2}$/.test(j.country || "")){ const was = plusTier(); S.geo = {c: j.country, at: Date.now(), x: !!j.blocked}; save(); if (j.blocked) render(true); if (plusTier() !== was){ render(true); siteLocalize(document.getElementById("kws")); } } } catch(e){} }
 setTimeout(geoCheck, 1500);
 const PLUS_PRICE = (() => { const t = PLUS_TIERS[1]; return {monthly: t.mo, yearly: t.yr}; })();
 const plusPrice = () => PLUS_TIERS[plusTier()];
@@ -8456,6 +8456,7 @@ function formKeepPut(list){ FORMKEEP.skip = false; if (!list.length) return; con
   list.forEach(k => { const [form, id, name] = k.key.split("|"), f = v.querySelector(`form[data-form="${form}"]${id ? `[data-id="${id}"],form[data-form="${form}"][data-pid="${id}"]` : ""}`); const el = f && f.elements[name]; if (!el || el === document.activeElement) return;
     const def = el.tagName === "SELECT" ? ([...el.options].find(o => o.defaultSelected) || el.options[0] || {}).value : el.defaultValue; if (def === k.def && el.value === def) el.value = k.val; }); }
 function render(keepScroll){
+  if (S.geo && S.geo.x){ view.innerHTML = `<section class="card" style="margin-top:24px;text-align:center"><h2>KeepWise isn’t available in your region</h2><p class="muted">Because of international sanctions and our payment partners’ rules, KeepWise can’t offer its service where you are. Your data on this phone stays here and is not sent anywhere.</p></section>`; return; }   // places KeepWise does not serve
   const main = $("main"), top = main.scrollTop, back = keepScroll ? innerScrollKeep(document.getElementById("app") || document.body) : () => {};
   // Banks & statements is the Banks tab now: anything that opens it (the menu, search, a bank just connected) lands on Accounts.
   if (UI.banks){ UI.banks = false; S.tab = "banks"; UI.bankSeg = "accounts"; UI.settings = false; UI.account = false; save(); }
