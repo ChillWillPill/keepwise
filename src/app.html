@@ -5841,7 +5841,7 @@ function weekItems(){ const t0 = todayMid(), out = [], add = (d, name, sub, amt,
   S.subs.filter(x => x.keep !== "drop").forEach(x => { const d = nextRenewal(x); if (d && daysUntil(d) >= 0 && daysUntil(d) <= 6) add(d, x.name, x.last && Math.round((t0 - isoDate(x.last)) / DAY) > 30 ? "Renews · barely used" : "Renews", -x.price, "sub"); });
   billsSoon(6).forEach(({e, d}) => add(d, e.name, "Bill due", -(+e.amount || 0), "bill"));
   if (payOn()) paydaysBetween(t0, dayPlus(t0, 6)).forEach(d => add(d, "Payday", "Money in", +S.pay.amount || 0, "in"));
-  (S.extras || []).forEach(x => { const d = nextIncome(x); if (d && daysUntil(d) >= 0 && daysUntil(d) <= 6 && extraFixed(x)) add(d, x.name, "Money in", +x.amount || 0, "in"); });
+  (S.extras || []).forEach(x => { const d = nextIncome(x); if (d && daysUntil(d) >= 0 && daysUntil(d) <= 6 && !incomeLogged(x, isoOf(d))) add(d, x.name, extraFixed(x) ? "Money in" : "Money in · amount varies", extraFixed(x) ? +x.amount || 0 : 0, "in"); });
   (S.trips || []).forEach(t => { if (tripState(t) === "active") for (let i = 0; i < 7; i++){ const d = dayPlus(t0, i); if (isoOf(d) <= t.end) add(d, t.name, isEvent(t) ? "Event day" : "Trip day", 0, isEvent(t) ? "event" : "trip"); }
     else if (tripState(t) === "upcoming" && daysUntil(isoDate(t.start)) <= 6) add(isoDate(t.start), t.name, isEvent(t) ? "Event starts" : "Trip starts", 0, isEvent(t) ? "event" : "trip"); });
   return out; }
@@ -5850,7 +5850,7 @@ OUT.week = () => { const t0 = todayMid(), it = weekItems(), sel = Math.min(6, Ma
   const tile = x => x.kind === "trip" ? `<span class="btile" style="--z:24px;background:#e0f2fe;color:#0369a1">✈️</span>` : x.kind === "event" ? `<span class="btile" style="--z:24px;background:#fef3c7;color:#92400e">🎉</span>` : brandTile(x.name, 24);
   return `<section class="card wk-card"><div class="wk-head"><h2>This week</h2><span class="wk-sum">${inn ? `<span class="wk-in"><b class="tnum">+${fmt(inn)}</b> in</span>` : ""}${out ? `<span class="wk-out"><b class="tnum">−${fmt(out)}</b> out</span>` : ""}${!inn && !out ? `<span class="muted small">Nothing due</span>` : ""}</span></div>
     <div class="wk-days">${days.map((d, i) => { const on = it.filter(x => x.d === isoOf(d)), o = r2(on.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0)), n = r2(on.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0));
-      const k = n && o ? "both" : n ? "in" : o ? "out" : on.length ? "trip" : "";
+      const k = n && o ? "both" : n ? "in" : o ? "out" : on.some(x => x.kind === "trip" || x.kind === "event") ? "trip" : on.length ? "in" : "";
       return `<button type="button" class="wk-day ${k ? "d-" + k : ""}${i === 0 ? " today" : ""}" data-week-day="${i}" aria-label="${d.toLocaleString("en-US", {weekday: "long", month: "short", day: "numeric"})}${n ? `, ${fmt(n)} coming in` : ""}${o ? `, ${fmt(o)} going out` : ""}${!on.length ? ", nothing due" : ""}">
       <span>${d.toLocaleString("en-US", {weekday: "short"})}</span><b>${d.getDate()}</b>${n ? `<em class="wk-p">+${fmtKs(n)}</em>` : ""}${o ? `<em class="wk-m">−${fmtKs(o)}</em>` : ""}${k === "trip" ? `<em>${on.some(x => x.kind === "trip") ? "✈️" : "🎉"}</em>` : ""}</button>`; }).join("")}</div></section>`; };
 // Day cells are tiny: a currency written as letters (PKR, CHF) is left off there; the total above names it.
@@ -6716,6 +6716,7 @@ function nextIncome(x){
   if (x.when === "twice"){ const c = []; for (let m = 0; m < 2; m++){ const y = t.getFullYear(), mo = t.getMonth() + m, dim = daysInMonth(new Date(y, mo, 1).getFullYear(), new Date(y, mo, 1).getMonth()); twiceDays(x).forEach(d => c.push(new Date(y, mo, Math.min(d, dim)))); }
     return c.filter(d => d >= t).sort((a, b) => a - b)[0] || null; }
   if (x.when === "weekly" && x.wd != null){ const r = new Date(t); r.setDate(r.getDate() + ((+x.wd - r.getDay() + 7) % 7)); return r; }
+  if (x.when === "biweekly" && !x.next){ const last = (x.got || []).map(p => p.date).filter(Boolean).sort().pop(); if (last){ const r = isoDate(last); do r.setDate(r.getDate() + 14); while (r < t); return r; } }   // no start date: two weeks after the last payment
   if (x.when === "biweekly" && x.next){ const [y, m, d] = x.next.split("-").map(Number); const r = new Date(y, m - 1, d); while (r < t) r.setDate(r.getDate() + 14); return r; }
   return null;
 }
