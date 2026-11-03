@@ -8857,7 +8857,7 @@ function accFields(first){
   const mk = "marketing" in d ? d.marketing : !!p.marketing;
   return `
     <label class="field"><span>Full name</span><input name="name" data-acc-field="name" type="text" autocomplete="name" enterkeyhint="next" value="${esc(name)}"></label>
-    <label class="field"><span>Date of birth</span><input name="dob" data-acc-field="dob" type="date" autocomplete="bday" max="${isoDaysAgo(0)}" value="${v("dob")}"><small class="muted small">You must be 18 or older to have an account.</small></label>
+    <label class="field"><span>Date of birth</span><input name="dob" data-acc-field="dob" type="date" autocomplete="bday" max="${(() => { const t = new Date(); return isoOf(new Date(t.getFullYear() - 18, t.getMonth(), t.getDate())); })()}" value="${v("dob")}"><small class="muted small">You must be 18 or older to have an account.</small></label>
     <label class="field"><span>Phone number <span class="pill grey">Not yet verified</span></span><input name="phone" data-acc-field="phone" type="tel" autocomplete="tel" inputmode="tel" enterkeyhint="next" placeholder="Optional, e.g. +1 555 010 0123" value="${v("phone")}"><small class="muted small">Optional. Lets friends who have your number find you for splits.</small></label>
     <label class="field"><span>City</span><input name="city" data-acc-field="city" type="text" autocomplete="address-level2" enterkeyhint="done" placeholder="Optional" value="${v("city")}"></label>
     <div class="field"><span>Location for local offers</span>
