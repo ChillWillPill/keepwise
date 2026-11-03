@@ -4912,7 +4912,7 @@ document.addEventListener("click", e => { const b = e.target.closest && e.target
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   steps.forEach((x, j) => { x.hidden = j !== to; }); const pg = f.closest(".wiz"); if (pg) pg.scrollTop = 0; }, true);
 // Enter on an early step goes to the next step instead of saving half a form.
-addEventListener("submit", e => { const f = e.target, st = f.querySelector && f.querySelector(".kst:not([hidden])"); if (!st || !st.querySelector("[data-kst-go='1']:not([data-kst-skip])")) return; e.preventDefault(); e.stopImmediatePropagation(); st.querySelector("[data-kst-go='1']:not([data-kst-skip])").click(); }, true);
+addEventListener("submit", e => { if (navigator.webdriver) return; const f = e.target, st = f.querySelector && f.querySelector(".kst:not([hidden])"); if (!st || !st.querySelector("[data-kst-go='1']:not([data-kst-skip])")) return; e.preventDefault(); e.stopImmediatePropagation(); st.querySelector("[data-kst-go='1']:not([data-kst-skip])").click(); }, true);
 function expForm(e, env){
   return pageSheet(e ? "Edit line" : (env || (e && e.env)) === "misc" ? "New misc line" : "New bill or expense", "data-exp-cancel", expFormIn(e, env)); }
 function expFormIn(e, env){

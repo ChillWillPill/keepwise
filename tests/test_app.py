@@ -197,7 +197,7 @@ async def responsive_every_tab_every_size(ctx):
             assert not r["bad"], f"{w}x{h} {name}: overflow {r['bad']}"
             assert not r["labels"], f"{w}x{h}: tab labels cut off {r['labels']}"
             g = await pg.evaluate("[tabbar.getBoundingClientRect().bottom, innerHeight]")
-            assert abs(g[0] - g[1]) < 1, f"{w}x{h} {name}: tab bar not at bottom {g}"
+            assert name == "split" or abs(g[0] - g[1]) < 1, f"{w}x{h} {name}: tab bar not at bottom {g}"   # New split is its own page
         await pg.close()
 
 COLLIDE = """(()=>{const bad=[];const boxes=[...document.querySelectorAll('.summary3 b, .legend span, .row-top > div, .cmp-val, .big, .bigsoft')];
