@@ -86,6 +86,8 @@ async def showpay(pg):
 async def tab(pg, name):
     # like tapping away to close the keyboard first (the tab bar hides while typing)
     await pg.evaluate("document.activeElement && document.activeElement.blur()"); await pg.wait_for_timeout(120)
+    if await pg.locator(".kw-page .sf-top button").count(): await pg.locator(".kw-page .sf-top button").first.click(); await pg.wait_for_timeout(120)   # a page left open closes first
+    if await pg.locator(".kw-modal [data-payday-cancel]").count(): await pg.click(".kw-modal [data-payday-cancel]"); await pg.wait_for_timeout(120)
     try: await pg.wait_for_function("(() => { const a = document.activeElement; if (a && a !== document.body && a.blur) a.blur(); return getComputedStyle(document.getElementById('tabbar')).display !== 'none'; })()", timeout=4000)
     except Exception: pass
     if name in ("cheaper", "codes"):  # these live inside Subs now, behind the switch at the top
@@ -609,7 +611,7 @@ async def split_edit_delete_filter(ctx):
     pg = await open_app(ctx); await tab(pg, "split")
     card = pg.locator("[data-split]", has_text="Dominos")
     await card.locator("[data-act-more]").click(); await card.locator("[data-edit-split]").click(); await pg.wait_for_timeout(100)
-    assert await pg.inner_text("form[data-form=split] h2") == "Edit split"
+    assert await pg.inner_text(".kw-page .sf-top b") == "Edit split"
     await pg.fill("[data-d=amount]", "160"); await pg.click("form[data-form=split] button[type=submit]"); await pg.wait_for_timeout(120)
     assert "Alex owes you $40" in await text(pg, "[data-split]:has-text('Dominos')")
     assert len((await state(pg))["splits"]) == 5
@@ -1121,7 +1123,7 @@ async def split_people_picker_search(ctx):
     assert await pg.input_value("[data-d=title]") == "Brunch", "typed split kept"
     await pg.click("[data-part-search]"); await pg.wait_for_timeout(80)
     assert await pg.locator("[data-part-add]").count() >= 5, "tapping search shows people to pick"
-    await pg.click("form[data-form=split] h2"); await pg.wait_for_timeout(100)
+    await pg.click(".kw-page .sf-top b"); await pg.wait_for_timeout(100)
     assert await pg.locator("[data-part-add]").count() == 0, "tapping elsewhere closes the list"
 
 @test
@@ -2950,6 +2952,7 @@ async def coming_up_reads_in_date_order_and_a_trip_is_never_logged_as_spending(c
     assert "does not convert" not in await text(pg, "#view")
     hero = await text(pg, "[data-out=incomeHero]"); assert "on the 5th" in hero and "next payday" in hero.lower(), hero
     await showpay(pg); await pg.click("[data-info=cur]"); await pg.wait_for_timeout(120); assert "does not convert the numbers" in await text(pg, "[data-info-tip=cur]")
+    await pg.click("[data-payday-cancel]"); await pg.wait_for_timeout(120)   # the pay sheet closes with ✕, then opens again from Edit
     await pg.locator("[data-payday-edit]").first.click(); await pg.wait_for_timeout(150); assert await pg.locator("form[data-form=pay]").count() == 1; await pg.click("[data-payday-cancel]"); await pg.wait_for_timeout(120)
     # "plan a trip": the trip card opens with the name and budget filled in, and nothing goes into the month
     k = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
@@ -3325,6 +3328,7 @@ async def field_stays_above_the_keyboard(ctx):
     r = await pg.evaluate(inside); assert r[1], f"field is still visible once the keyboard is up: {r}"
     await pg.set_viewport_size({"width": 390, "height": 844}); await pg.wait_for_timeout(300)
     # every tab: focusing the last field brings it into view
+    await pg.click("[data-exp-cancel]"); await pg.wait_for_timeout(150)   # the new line is its own page; close it to use the tabs
     for name in ("subs", "cheaper", "codes", "plan", "split"):
         await tab(pg, name)
         if name == "split": await pg.click("[data-new-split]"); await pg.wait_for_timeout(100)
@@ -5580,6 +5584,7 @@ async def pay_schedule_and_extra_paycheck(ctx):
     # the monthly number and the paycheck stay in step
     await showpay(pg) or await pg.fill("#m-income", "6000"); await pg.locator("#m-income").blur(); await pg.wait_for_timeout(200)
     assert (await state(pg))["pay"]["amount"] == 3000
+    if await pg.locator("[data-payday-cancel]").count(): await pg.click("[data-payday-cancel]"); await pg.wait_for_timeout(120)
     await pg.click("[data-history]"); await pg.locator(".stmt-row").first.click(); await pg.wait_for_timeout(120)
     assert "Extra paycheck" in await text(pg, ".stmt")
     await pg.click("[data-stmt-back]"); await pg.click("[data-history-close]")
