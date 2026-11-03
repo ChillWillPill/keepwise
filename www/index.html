@@ -10363,7 +10363,7 @@ $("vcf").addEventListener("change", e => {
     const el = document.createElement("div"); el.className = "kpick"; document.body.appendChild(el); open = el;
     const draw = () => { const start = new Date(y, m, 1).getDay(), n = new Date(y, m + 1, 0).getDate(), cells = [];
       const head = `<button class="kpick-back" type="button" aria-label="Close"></button><div class="kpick-sheet" role="dialog" aria-label="${esc(title)}"><div class="kpick-h"><b>${esc(title)}</b><button type="button" class="kpick-x" aria-label="Close">✕</button></div>`;
-      if (mode === "y"){ const ys = []; for (let v = yMax; v >= yMin; v--) ys.push(`<button type="button" class="kd-y${v === y ? " on" : ""}" data-ky="${v}">${v}</button>`);
+      if (mode === "y"){ const ys = []; for (let v = bday ? t0.getFullYear() : yMax; v >= yMin; v--) ys.push(`<button type="button" class="kd-y${v === y ? " on" : ""}" data-ky="${v}" ${inp.max && `${v}-01-01` > inp.max ? "disabled" : ""}>${v}</button>`);
         el.innerHTML = head + `<div class="kd-nav"><span></span><b>Pick the year</b><span></span></div><div class="kd-ys">${ys.join("")}</div></div>`; const on = el.querySelector(".kd-y.on"); if (on) on.scrollIntoView({block: "center"}); return; }
       if (mode === "m"){ el.innerHTML = head + `<div class="kd-nav"><button type="button" class="kd-m" data-kd-ym aria-label="Change the year">‹</button><b>${y}</b><span style="width:40px"></span></div><div class="kd-ms">${MN.map((n2, i) => { const okm = !(inp.min && `${y}-${pad(i + 1)}-31` < inp.min) && !(inp.max && `${y}-${pad(i + 1)}-01` > inp.max); return `<button type="button" class="kd-y${i === m ? " on" : ""}" data-kmo="${i}" ${okm ? "" : "disabled"}>${n2.slice(0, 3)}</button>`; }).join("")}</div></div>`; return; }
       for (let i = 0; i < start; i++) cells.push(`<span></span>`);
@@ -10377,7 +10377,7 @@ $("vcf").addEventListener("change", e => {
     const set = v => { inp.value = v; close(); inp.dispatchEvent(new Event("input", {bubbles: true})); inp.dispatchEvent(new Event("change", {bubbles: true})); };
     el.addEventListener("click", ev => { if (ev.target.closest(".kpick-back,.kpick-x")){ close(); return; }
       if (ev.target.closest("[data-kd-ym]")){ mode = "y"; draw(); el.classList.add("in"); return; }
-      const yb = ev.target.closest("[data-ky]"); if (yb){ y = +yb.dataset.ky; mode = "m"; draw(); el.classList.add("in"); return; }
+      const yb = ev.target.closest("[data-ky]"); if (yb && !yb.disabled){ y = +yb.dataset.ky; mode = "m"; draw(); el.classList.add("in"); return; }
       const mb = ev.target.closest("[data-kmo]"); if (mb){ m = +mb.dataset.kmo; mode = "d"; draw(); el.classList.add("in"); return; }
       const mv = ev.target.closest("[data-dm]"); if (mv){ m += +mv.dataset.dm; if (m < 0){ m = 11; y--; } if (m > 11){ m = 0; y++; } draw(); el.classList.add("in"); return; }
       if (ev.target.closest("[data-kd-clear]")){ set(""); return; }
