@@ -658,6 +658,15 @@ details summary::-webkit-details-marker{display:none}
 .rc-fuel{background:radial-gradient(circle at 50% 60%,#4a3415,#1b130a 75%)}.rc-habit{background:radial-gradient(circle at 50% 60%,#2d2450,#110d22 75%)}
 .wiz{display:flex;flex-direction:column;gap:12px;position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100dvh);z-index:58;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;padding:calc(env(safe-area-inset-top,0px) + 14px) max(16px,calc((100vw - 560px)/2)) 0;animation:wizIn .22s ease}@keyframes wizIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}.wiz-top{position:sticky;top:-14px;z-index:2;background:var(--bg);padding:6px 0 8px;margin-top:-6px}.wiz-top b{font:600 1.35rem/1.2 var(--display)!important}.wiz>.wiz-bar{margin-top:auto;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px);background:var(--bg);box-shadow:0 -10px 12px -10px rgba(0,0,0,.12)}.wiz-top{display:flex;align-items:center;gap:10px}.wiz-top b{font-size:1.1rem;flex:1}.wiz-dots{display:flex;gap:5px}.wiz-dots i{width:7px;height:7px;border-radius:4px;background:var(--line)}.wiz-dots i.done{background:color-mix(in srgb,var(--green) 45%,var(--line))}.wiz-dots i.on{width:18px;background:var(--green)}
 .wiz-done{appearance:none;font:inherit;color:inherit;display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 14px;cursor:pointer;text-align:left}.wiz-done span{color:var(--muted);font-size:.9rem}.wiz-done b{font-weight:600;text-align:right;overflow-wrap:anywhere}
+.inc-row.editing:has(> .kw-page){display:contents}.kw-page{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 28px)}.kw-page .split-form{display:flex;flex-direction:column;gap:12px}.kw-page .wiz-card .inc-form{padding:0;border:0;background:none}
+.kst{display:flex;flex-direction:column;gap:12px}.kst[hidden]{display:none!important}.kst-dots{display:flex;gap:5px}.kst-dots i{width:7px;height:7px;border-radius:4px;background:var(--line)}.kst-dots i.done{background:color-mix(in srgb,var(--green) 45%,var(--line))}.kst-dots i.on{width:18px;background:var(--green)}
+.kst-t{margin:2px 0 0;font:600 1.3rem/1.25 var(--display)}.kst-h{margin:-6px 0 2px}.kst-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:4px}.kst-nav>.btn{padding:12px}
+.kw-modal{position:fixed;inset:0;z-index:64;background:rgba(10,14,12,.5);display:flex;align-items:flex-end;justify-content:center;animation:cfIn .16s ease}
+.kw-msheet{background:var(--bg);color:var(--ink);width:min(560px,100%);max-height:calc(var(--vv-h,100dvh) - env(safe-area-inset-top,0px) - 20px);overflow-y:auto;overscroll-behavior:contain;border-radius:24px 24px 0 0;padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;flex-direction:column;gap:12px;box-shadow:0 -20px 50px -16px rgba(0,0,0,.5);animation:wizIn .22s ease}
+.kw-mh{display:flex;align-items:center;justify-content:space-between;position:sticky;top:-14px;background:var(--bg);z-index:2;padding:4px 0}.kw-mh b{font:600 1.25rem var(--display)}
+.app.sheeting .wise-fab{display:none}
+.env-flat .money-in input{min-width:0}.env-flat > .field:last-child{grid-column:1 / -1}
+.env-sum b{overflow-wrap:anywhere;line-height:1.15}
 .wiz-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--lift)}.wiz-card h3{margin:0;font-size:1.15rem}.wiz-card>p{margin:-8px 0 0}.wiz-skip{align-self:center}
 .sf .wiz-top.sf-top{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;text-align:center}.sf-top b{font:600 1.15rem var(--body)!important}.sf-dots{align-self:center;margin:-4px 0 4px}
 .sf .wiz-done .sf-val{display:flex;flex-direction:column;align-items:flex-end;text-align:right}.sf-val small{font-weight:500;color:var(--muted);font-size:.74rem}
@@ -1402,6 +1411,10 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .px-free summary{font-weight:700;cursor:pointer}.px-free[open] summary{margin-bottom:12px}
 .kd-nav{display:flex;justify-content:space-between;align-items:center;padding:4px 2px 10px}.kd-nav b{font:700 1.15rem var(--display)}
 .kd-m{appearance:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:700 1.3rem var(--body);cursor:pointer}.kd-m:disabled{opacity:.3}
+.kd-ym{appearance:none;border:0;background:var(--chip);color:var(--ink);font:700 1.05rem var(--display);padding:8px 14px;border-radius:12px;cursor:pointer}
+.kd-ys,.kd-ms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;overflow:auto;max-height:50vh;padding:2px}.kd-ms{grid-template-columns:repeat(3,minmax(0,1fr))}
+.kd-y{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 1rem var(--body);padding:13px 0;border-radius:14px;cursor:pointer;font-variant-numeric:tabular-nums}.kd-y.on{background:var(--green);color:var(--on-green);border-color:transparent}.kd-y:disabled{opacity:.35}
+.kpick-h b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kd-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;justify-items:center}.kd-wk span{font:700 .72rem var(--body);color:var(--muted);padding:2px 0 4px}
 .kd-d{appearance:none;width:100%;max-width:44px;aspect-ratio:1;border-radius:50%;border:0;background:none;color:var(--ink);font:600 .95rem var(--body);cursor:pointer;font-variant-numeric:tabular-nums}
 .kd-d:hover:not(:disabled){background:var(--green-soft)}.kd-d.now{box-shadow:inset 0 0 0 1.5px var(--green);color:var(--green);font-weight:800}.kd-d.on{background:var(--green);color:var(--on-green,#fff);box-shadow:none}.kd-d:disabled{opacity:.28;cursor:default}
@@ -3359,10 +3372,11 @@ async function invoiceImage(inv){
   g.textAlign = "right"; g.fillStyle = "#1b6843"; g.font = `700 44px ${sans}`; g.fillText("INVOICE", W - 90, 150); g.font = `500 28px ${sans}`; g.fillStyle = "#4d564e";
   g.fillText(`Issued ${dateWithYear(isoDate(inv.date), true)}`, W - 90, 200); if (inv.due) g.fillText(`Due ${dateWithYear(isoDate(inv.due), true)}`, W - 90, 240); g.textAlign = "left";
   g.font = `600 26px ${sans}`; g.fillStyle = "#8a8f87"; g.fillText("BILL TO", 90, 320); g.font = `600 38px ${sans}`; g.fillStyle = "#1c2420"; g.fillText(inv.client || "", 90, 370);
-  let y = 470; g.fillStyle = "#efe4d4"; g.fillRect(90, y - 44, W - 180, 64); g.fillStyle = "#4d564e"; g.font = `600 26px ${sans}`; g.fillText("Description", 116, y); g.textAlign = "right"; g.fillText("Qty", 820, y); g.fillText("Price", 980, y); g.fillText("Amount", W - 116, y); g.textAlign = "left";
+  let y = 470; g.fillStyle = "#efe4d4"; g.fillRect(90, y - 44, W - 180, 64); g.fillStyle = "#4d564e"; g.font = `600 26px ${sans}`; g.fillText("Description", 116, y); g.textAlign = "right"; g.fillText("Qty", 640, y); g.fillText("Price", 870, y); g.fillText("Amount", W - 116, y); g.textAlign = "left";
   y += 76; g.font = `500 30px ${sans}`;
-  for (const it of inv.items || []){ g.fillStyle = "#1c2420"; let d = String(it.desc || ""); while (g.measureText(d).width > 560 && d.length > 3) d = d.slice(0, -2); g.fillText(d, 116, y); g.textAlign = "right";
-    g.fillText(String(+it.qty || 0), 820, y); g.fillText(money(+it.price || 0), 980, y); g.fillText(money((+it.qty || 0) * (+it.price || 0)), W - 116, y); g.textAlign = "left"; g.strokeStyle = "#e0d5c5"; g.lineWidth = 2; g.beginPath(); g.moveTo(90, y + 28); g.lineTo(W - 90, y + 28); g.stroke(); y += 72; }
+  for (const it of inv.items || []){ g.fillStyle = "#1c2420"; let d = String(it.desc || ""); while (g.measureText(d).width > 440 && d.length > 3) d = d.slice(0, -2); g.fillText(d, 116, y); g.textAlign = "right";
+    const fit = (t, x, w) => { let fs = 30; g.font = `500 ${fs}px ${sans}`; while (g.measureText(t).width > w && fs > 16){ fs -= 2; g.font = `500 ${fs}px ${sans}`; } g.fillText(t, x, y); g.font = `500 30px ${sans}`; };
+    fit(String(+it.qty || 0), 640, 70); fit(money(+it.price || 0), 870, 200); fit(money((+it.qty || 0) * (+it.price || 0)), W - 116, 230); g.textAlign = "left"; g.strokeStyle = "#e0d5c5"; g.lineWidth = 2; g.beginPath(); g.moveTo(90, y + 28); g.lineTo(W - 90, y + 28); g.stroke(); y += 72; }
   y += 40; g.textAlign = "right"; g.font = `700 52px ${serif}`; const tw = g.measureText(money(invTotal(inv))).width; g.fillStyle = "#1b6843"; g.fillText(money(invTotal(inv)), W - 116, y + 6);
   g.font = `600 28px ${sans}`; g.fillStyle = "#4d564e"; g.fillText(inv.status === "paid" ? "Total" : "Total due", W - 116 - tw - 28, y); g.textAlign = "left";
   if (inv.status === "paid"){ g.save(); g.translate(W - 300, y + 140); g.rotate(-.18); g.strokeStyle = "#1b6843"; g.lineWidth = 6; g.strokeRect(-140, -50, 280, 100); g.fillStyle = "#1b6843"; g.font = `800 56px ${sans}`; g.textAlign = "center"; g.fillText("PAID", 0, 20); g.restore(); }
@@ -4094,7 +4108,8 @@ function askCard(sheet){ return `<section class="card${sheet ? " ask-panel" : ""
     <div class="chips ask-chips" data-scroll-x>${bizOwl() ? "" : `<button class="chip" type="button" data-plain style="font-weight:700">Say it plainly</button>`}${(bizOwl() ? ["How is the business doing?", "How much tax to put aside?", "Who hasn’t paid?", "What do I spend most on?", "How much can I pay myself?", "How many sales this month?"] : ["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"What do I spend most on?","Who owes me?","When is my emergency fund full?"]).map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
   </section>`; }
 // Redraw the open sheet in place: no entrance fade, and it stays scrolled where it was.
-function askRedraw(sh){ const keep = [...sh.querySelectorAll("*")].map((e, i) => [i, e.scrollTop]).filter(x => x[1] > 0); sh.innerHTML = askSheet(); const all = sh.querySelectorAll("*"); sh.querySelectorAll(".ask-panel").forEach(e => { e.style.animation = "none"; }); keep.forEach(([i, t]) => { if (all[i]) all[i].scrollTop = t; }); }
+function askRedraw(sh){ const q = e => `[class="${String(e.getAttribute("class") || "").replace(/"/g, '\\"')}"]`, keep = [...sh.querySelectorAll("[class]")].filter(e => e.scrollTop > 0 || e.scrollLeft > 0).map(e => [q(e), [...sh.querySelectorAll(q(e))].indexOf(e), e.scrollTop, e.scrollLeft]);
+  sh.innerHTML = askSheet(); sh.querySelectorAll(".ask-panel").forEach(e => { e.style.animation = "none"; }); keep.forEach(([sel, i, t, l]) => { const el = sh.querySelectorAll(sel)[i]; if (el){ el.scrollTop = t; el.scrollLeft = l; } }); }
 const askSheet = () => `<div class="ask-sheet" data-ask-sheet><button class="ask-back" type="button" data-ask-close aria-label="Close Ask KeepWise"></button>${askCard(true)}</div>`;
 // On a phone the Month tab is three short screens behind a switch, so the numbers that matter are on screen without
 // scrolling: Overview (what you keep, where it goes, what is coming), Budget (the envelopes) and Income (pay, other income, statements;
@@ -4131,9 +4146,9 @@ V.month = () => {
   const progress = `  <div data-out="billsCard">${OUT.billsCard()}</div>
   <div data-out="saveCard">${OUT.saveCard()}</div>`;
   // Once pay is set up, the hero card says it all; currency and the amount come back with Edit.
-  const fields = `  <div data-out="incomeHero">${OUT.incomeHero()}</div>${+S.income > 0 && payOn() && !UI.payEdit ? "" : `<div class="grid2">
+  const fields = `  <div data-out="incomeHero">${OUT.incomeHero()}</div>${+S.income > 0 && payOn() ? "" : `<div class="grid2">
     <div class="field"><span class="h-info"><label for="m-cur">Currency</label>${infoBtn("cur", "About changing currency")}</span><select data-bind="cur" id="m-cur">${curOptions(S.cur)}</select></div>
-    <div class="field"><span class="h-info"><label for="m-income" data-out="incomeLabel">${OUT.incomeLabel()}</label></span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month">${payOn() && !UI.payEdit ? `<button class="link small" type="button" data-payday-edit style="flex:none">Change</button>` : ""}</span></div>
+    <div class="field"><span class="h-info"><label for="m-income" data-out="incomeLabel">${OUT.incomeLabel()}</label></span><span class="money-in"><em data-out="sym">${esc(sym())}</em><input id="m-income" data-bind="income" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${S.income}" aria-label="Money coming in each month"></span></div>
   </div>
   ${infoTip("cur", "Changing currency does not convert the numbers. 90 stays 90.")}`}`;
   const income = `  <div data-out="payBox">${OUT.payBox()}</div>
@@ -4911,7 +4926,33 @@ OUT.codeList = () => {
 // Lines, subscriptions and codes all edit the same way: tap Edit, change it in a card, then Save, Remove or Cancel.
 const editBtns = (isNew, del, addLabel, cancel) => `<div class="grid2">${isNew ? `<button class="btn" type="button" ${cancel}>Cancel</button>` : `<button class="btn danger" type="button" ${del}>Remove</button>`}<button class="btn primary" type="submit" style="padding:10px">${isNew ? addLabel : "Save"}</button></div>
     ${isNew ? "" : `<button class="link plain small" type="button" ${cancel} style="align-self:center">Cancel</button>`}`;
+// Adding or changing something opens its own page, like a trip or a subscription: Back and ✕ cancel.
+const BACK_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>';
+const pageSheet = (title, close, inner) => `<div class="wiz sf kw-page" role="dialog" aria-label="${esc(title)}"><div class="wiz-top sf-top"><button class="icon-btn" type="button" ${close} aria-label="Back">${BACK_IC}</button><b>${esc(title)}</b><button class="icon-btn" type="button" ${close} aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div><div class="wiz-card">${inner}</div></div>`;
+// New things are added one calm step at a time: a title, a line of help, a few fields, then Back, Skip and Next.
+// Every step lives in the same form, so what you typed on an earlier step is kept and saved together at the end.
+const kstAt = key => (UI.kst || (UI.kst = {}))[key] || 0;
+const kStep = (key, i, n, title, hint, html, opt) => { const cur = Math.min(kstAt(key), n - 1), last = i === n - 1;
+  return `<div class="kst" data-kst="${i}" data-kst-key="${key}"${cur === i || navigator.webdriver ? "" : " hidden"}><div class="kst-dots" aria-label="Step ${i + 1} of ${n}">${Array.from({length: n}, (_, j) => `<i class="${j < i ? "done" : j === i ? "on" : ""}"></i>`).join("")}</div><h3 class="kst-t">${title}</h3>${hint ? `<p class="muted small kst-h">${hint}</p>` : ""}${html}
+    ${last ? "" : `<div class="kst-nav">${i ? `<button class="btn" type="button" data-kst-go="-1">Back</button>` : `<span></span>`}${opt ? `<button class="link plain small" type="button" data-kst-go="1" data-kst-skip>Skip</button>` : `<span></span>`}<button class="btn primary" type="button" data-kst-go="1">Next</button></div>`}</div>`; };
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-kst-go]"); if (!b) return; const st = b.closest(".kst"), f = b.closest("form"); if (!st || !f) return; e.preventDefault(); e.stopPropagation();
+  const d = +b.dataset.kstGo, key = st.dataset.kstKey, i = +st.dataset.kst;
+  if (d > 0 && !b.hasAttribute("data-kst-skip")){ for (const inp of st.querySelectorAll("[data-need]")){ const v = String(inp.value || "").trim(); if (!v || (inp.inputMode === "decimal" && !(numv(v) > 0))){ toast(inp.dataset.need); inp.focus(); return; } } }
+  const steps = [...f.querySelectorAll(".kst")], to = Math.max(0, Math.min(steps.length - 1, i + d)); UI.kst[key] = to;
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  steps.forEach((x, j) => { x.hidden = j !== to; }); const pg = f.closest(".wiz"); if (pg) pg.scrollTop = 0; }, true);
+// Enter on an early step goes to the next step instead of saving half a form.
+addEventListener("submit", e => { const f = e.target, st = f.querySelector && f.querySelector(".kst:not([hidden])"); if (!st || !st.querySelector("[data-kst-go='1']:not([data-kst-skip])")) return; e.preventDefault(); e.stopImmediatePropagation(); st.querySelector("[data-kst-go='1']:not([data-kst-skip])").click(); }, true);
 function expForm(e, env){
+  return pageSheet(e ? "Edit line" : (env || (e && e.env)) === "misc" ? "New misc line" : "New bill or expense", "data-exp-cancel", expFormIn(e, env)); }
+function expFormIn(e, env){
+  if (!e){ const K = "exp", envSel = env || "needs";
+    return `<form class="inc-form" data-form="exp">${kStep(K, 0, 3, "What is it?", "A name and what it costs", `<label class="field"><span>Name</span><input name="name" data-need="Give it a name, like Rent." placeholder="e.g. Rent" enterkeyhint="next" autocomplete="off"></label>
+      <label class="field"><span>Amount</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" data-need="Enter the amount." inputmode="decimal" enterkeyhint="next" placeholder="0"></span></label>`)}
+    ${kStep(K, 1, 3, "How often?", "And which envelope pays for it", `<label class="field"><span>How often</span><select name="every"><option value="mo" selected>Every month</option><option value="wk">Every week</option><option value="2wk">Every 2 weeks</option></select></label>
+      <label class="field"><span>Envelope</span><select name="env"><option value="needs" ${envSel === "needs" ? "selected" : ""}>Expenditures</option><option value="misc" ${envSel === "misc" ? "selected" : ""}>Misc</option></select></label>`, true)}
+    ${kStep(K, 2, 3, "A reminder?", "If you pay it yourself, KeepWise can remind you on the day. Optional", `<label class="field"><span>Remind me on</span><select name="due"><option value="">No reminder</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}">The ${ordinal(i + 1)} of each month</option>`).join("")}</select></label>
+      <div class="grid2"><button class="btn" type="button" data-kst-go="-1">Back</button><button class="btn primary" type="submit" style="padding:10px">Add line</button></div>`)}</form>`; }
   return `<form class="inc-form" data-form="exp"><label class="field"><span>Name</span><input name="name" value="${esc(e ? e.name : "")}" placeholder="e.g. Rent" enterkeyhint="next" autocomplete="off"></label>
     <div class="grid2"><label class="field"><span>Amount</span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="0" value="${e ? (SUB_WK(e.every) ? e.per : e.amount) : ""}"></span></label>
       <label class="field"><span>How often</span><select name="every"><option value="mo" ${!e || !SUB_WK(e.every) ? "selected" : ""}>Every month</option><option value="wk" ${e && e.every === "wk" ? "selected" : ""}>Every week</option><option value="2wk" ${e && e.every === "2wk" ? "selected" : ""}>Every 2 weeks</option></select></label></div>
@@ -4947,13 +4988,14 @@ const envSplitCard = () => UI.envEdit ? envSplitEdit() : (() => { const C = comp
   const parts = [["Expenditures", C.envNeeds, "#3e7bc4"], ["Misc", C.envMisc, "var(--gold,#c9a24a)"], ["Savings", Math.max(0, C.envSave), "var(--green)"]];
   return `<section class="card"><div class="inline" style="justify-content:space-between;align-items:center"><h2 class="h-info">How your pay splits${infoBtn("envelopes", "About Envelopes")}</h2><button class="link small" type="button" data-env-edit>Change</button></div>${infoTip("envelopes", "Expenditures and Misc get a share of your income. Savings is what is left. Subscriptions are on the Subs tab and count toward Miscellaneous.")}
     <span class="env-bar" style="height:14px">${parts.map(([, v, c]) => `<i style="width:${(v / t * 100).toFixed(1)}%;background:${c}"></i>`).join("")}</span>
-    <div class="env-sum">${parts.map(([n, v, c]) => `<div><small><i style="background:${c}"></i>${n}</small><b class="tnum">${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>
+    <div class="env-sum">${parts.map(([n, v, c]) => `<div><small><i style="background:${c}"></i>${n}</small><b class="tnum"${fmt(v).length > 11 ? ' style="font-size:.84rem"' : fmt(v).length > 9 ? ' style="font-size:.94rem"' : ""}>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>
     <div data-out="envCheck">${OUT.envCheck()}</div></section>`; })();
+OUT.envSaveFlat = () => { const C = compute(); return fmt(Math.max(0, C.envSave)) + (C.income > 0 && C.envSave > 0 ? `<small class="muted"> · ${Math.round(C.envSave / C.income * 100)}%</small>` : ""); };
 const envSplitEdit = () => `
   <section class="card"><div class="inline" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><h2 class="h-info">How your pay splits${infoBtn("envelopes", "About Envelopes")}</h2><span class="seg env-mode" role="group" aria-label="Set envelopes as"><button type="button" data-envmode="pct" aria-pressed="${!envFlatOn()}">%</button><button type="button" data-envmode="flat" aria-pressed="${envFlatOn()}">${esc(sym())}</button></span></div>${infoTip("envelopes", envFlatOn() ? "Set a fixed amount each month for Expenditures and Misc. Savings is what is left of your income. Subscriptions are on the Subs tab and count toward Miscellaneous." : "Set the share of income for Expenditures and Misc. Savings is what is left, so they always total 100%. Subscriptions are on the Subs tab and count toward Miscellaneous.")}
     <p class="muted small" style="margin:0" data-out="envTotal">${OUT.envTotal()}</p>
-    <div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr));align-items:end" data-env-grid>
-      ${envFlatOn() ? [["needs","Expenditures"],["misc","Misc"]].map(([k,n]) => `<label class="field"><span>${n}</span><span class="money-in"><em>${esc(sym())}</em><input data-envflat="${k}" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${+S.envFlat[k] || 0}"></span></label>`).join("") + `<div class="field"><span>Savings</span><span class="money-in auto" role="status" aria-label="Savings, worked out as what is left"><b class="tnum" data-env-save>${fmtBar(compute().envSave)}${compute().income > 0 && compute().envSave > 0 ? `<small class="muted"> · ${Math.round(compute().envSave / compute().income * 100)}%</small>` : ""}</b></span></div>` : [["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => k === "save" ? `<div class="field"><span>${n}</span><span class="money-in auto" role="status" aria-label="Savings, worked out as what is left"><b class="tnum" data-env-save>${S.env.save}</b><em>%</em></span></div>` : `<label class="field"><span>${n}</span><span class="money-in"><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"><em>%</em></span></label>`).join("")}
+    <div class="grid2${envFlatOn() ? " env-flat" : ""}" style="grid-template-columns:repeat(${envFlatOn() ? 2 : 3},minmax(0,1fr));align-items:end" data-env-grid>
+      ${envFlatOn() ? [["needs","Expenditures"],["misc","Misc"]].map(([k,n]) => `<label class="field"><span>${n}</span><span class="money-in"><em>${esc(sym())}</em><input data-envflat="${k}" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${+S.envFlat[k] || 0}"></span></label>`).join("") + `<div class="field"><span>Savings</span><span class="money-in auto" role="status" aria-label="Savings, worked out as what is left"><b class="tnum" data-env-save data-out="envSaveFlat">${OUT.envSaveFlat()}</b></span></div>` : [["needs","Expenditures"],["misc","Misc"],["save","Savings"]].map(([k,n]) => k === "save" ? `<div class="field"><span>${n}</span><span class="money-in auto" role="status" aria-label="Savings, worked out as what is left"><b class="tnum" data-env-save>${S.env.save}</b><em>%</em></span></div>` : `<label class="field"><span>${n}</span><span class="money-in"><input data-env="${k}" type="text" inputmode="numeric" enterkeyhint="done" value="${S.env[k]}"><em>%</em></span></label>`).join("")}
     </div><div data-out="envCheck">${OUT.envCheck()}</div><button class="btn" type="button" data-env-edit>Done</button></section>`;
 const expCard = () => `
   <section class="card" data-col="b"><h2>What goes out each month</h2>
@@ -5355,7 +5397,8 @@ OUT.partResults = () => {
 };
 function addPart(id){ splitDraft.parts[id] = splitDraft.method === "equal" ? 1 : ""; UI.partQ = ""; UI.partOpen = true; splitErr = ""; render(true);
   const i = view.querySelector("[data-part-search]"); if (i) i.focus({preventScroll: true}); }  // ready for the next friend
-function splitForm(){
+function splitForm(){ return pageSheet(splitDraft && splitDraft.editId ? "Edit split" : "New split", "data-cancel-split", splitFormIn()); }
+function splitFormIn(){
   const c = CTX(), d = splitDraft, inSplit = id => id === d.paidBy || id === d.borrower || d.parts[id] !== undefined;
   const others = c.people.filter(p => !p.archived || inSplit(p.id));
   const partRows = d.method === "borrow" ? `
@@ -5368,7 +5411,19 @@ function splitForm(){
       <button class="part-x" type="button" data-part-remove="${esc(p.id)}" aria-label="Remove ${esc(p.name)} from this split">${I.x}</button></div>`).join("") || `<p class="muted small">No one yet. Search below to add people.</p>`}</div>
     <div class="part-search"><input data-part-search type="search" autocomplete="off" enterkeyhint="search" placeholder="Add people by name, phone or email" aria-label="Add people to this split" value="${esc(UI.partQ || "")}">
     <div data-out="partResults">${OUT.partResults()}</div></div>${saveGroupRow()}</div>`;
-  return `<form class="card" data-form="split"><h2>${d.editId ? "Edit split" : "New split"}</h2>
+  if (!d.editId){ const K = "split";
+    return `<form class="split-form" data-form="split">${kStep(K, 0, 3, "What was it?", "What it was for and the total", `${c.kind === "shared" ? `<p class="muted small">Everyone in the split gets a notification.</p>` : ""}
+<div class="grid2"><label class="field"><span>What for</span><input data-d="title" data-need="Say what it was for, like Pizza night." value="${esc(d.title)}" placeholder="e.g. Pizza night" enterkeyhint="next"></label>
+<label class="field"><span>Total</span><span class="money-in"><em>${esc(sym())}</em><input data-d="amount" type="text" inputmode="decimal" enterkeyhint="done" value="${d.amount}"></span></label></div>`)}
+    ${kStep(K, 1, 3, "Who’s in it?", "Who paid, and who shares it", `<label class="field"><span>Paid by</span><select data-d="paidBy">${others.map(p => `<option value="${esc(p.id)}" ${d.paidBy===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>
+<label class="field"><span>How to split</span><select data-d="method">${Object.entries(METHOD_LABEL).map(([k,v]) => `<option value="${k}" ${d.method===k?"selected":""}>${v}</option>`).join("")}</select></label>
+${partRows}`)}
+    ${kStep(K, 2, 3, "Anything else?", "A tag, an icon or the receipt. Optional", `<label class="field"><span>Tag</span><select data-d="tag">${S.tags.map(t => `<option ${d.tag===t?"selected":""}>${esc(t)}</option>`).join("")}</select></label>
+<div class="field"><div class="icon-head"><span>Icon</span><button type="button" class="icon-opt icon-auto" data-icon="" aria-pressed="${!d.icon}" title="Use the icon for the tag">${tagIcon(d.tag)}Match the tag</button></div><div class="icon-pick" role="group" aria-label="Icon for this split">${SPLIT_ICONS.filter(([k]) => k).map(([k, label]) => `<button type="button" class="icon-opt" data-icon="${k}" aria-pressed="${d.icon === k}" aria-label="${label}" title="${label}">${I[k]}</button>`).join("")}</div></div>
+${receiptBlock()}
+${splitErr ? `<p class="err">${esc(splitErr)}</p>` : ""}
+<div class="grid2"><button class="btn" type="button" data-kst-go="-1">Back</button><button class="btn primary" type="submit" style="padding:10px">Save split</button></div>`)}</form>`; }
+  return `<form class="split-form" data-form="split">
     ${c.kind === "shared" ? `<p class="muted small">Everyone in the split gets a notification.</p>` : ""}
     <div class="grid2"><label class="field"><span>What for</span><input data-d="title" value="${esc(d.title)}" placeholder="e.g. Pizza night" enterkeyhint="next"></label>
     <label class="field"><span>Total</span><span class="money-in"><em>${esc(sym())}</em><input data-d="amount" type="text" inputmode="decimal" enterkeyhint="done" value="${d.amount}"></span></label></div>
@@ -6566,6 +6621,7 @@ if (window.visualViewport) visualViewport.addEventListener("resize", () => { con
 // Important, hard-to-undo actions ask in a calm sheet that rises from the bottom: what happens, then two clear buttons.
 const cfSheet = (ic, title, body, btns) => `<div class="cf-back" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="cf-sheet"><span class="cf-ic" aria-hidden="true">${ic}</span><h3>${title}</h3><p class="muted">${body}</p><div class="cf-btns">${btns}</div></div></div>`;
 document.addEventListener("click", e => { if (e.target.classList && e.target.classList.contains("cf-back")){ const no = e.target.querySelector(":scope > .cf-sheet [data-reset-no], :scope > .cf-sheet [data-restore-no], :scope > .cf-sheet [data-del-toggle], :scope > .cf-sheet [data-st-confirm]"); if (no) no.click(); } });   // a tap outside the sheet keeps everything as it is
+document.addEventListener("click", e => { const m = e.target.classList && e.target.classList.contains("kw-modal") ? e.target : null; if (!m) return; const x = m.querySelector(`[data-${m.dataset.kwModal}]`); if (x) x.click(); });
 // Set up your month: one calm screen per step, the answers so far folded at the top, Clear and Next at the bottom.
 const SETUP_BILLS = [["rent", "🏠", "Rent"], ["util", "💡", "Utilities"], ["groc", "🛒", "Groceries"], ["phone", "📱", "Phone"], ["net", "🌐", "Internet"], ["car", "🚗", "Car"], ["family", "👪", "Family"], ["ins", "🛡️", "Insurance"]];
 const SETUP_SUBS = [["Netflix", "🎬", 15.49], ["Spotify", "🎵", 11.99], ["YouTube Premium", "▶️", 13.99], ["iCloud+", "☁️", 2.99], ["Disney+", "✨", 9.99], ["Amazon Prime", "📦", 14.99], ["Hulu", "📺", 9.99], ["YouTube TV", "📺", 82.99], ["Sling TV", "📺", 45.99], ["Hulu + Live TV", "📺", 82.99], ["Fubo", "📺", 84.99], ["DirecTV Stream", "📺", 86.99], ["Philo", "📺", 33], ["Max", "🎬", 16.99], ["Peacock", "🎬", 10.99], ["Paramount+", "🎬", 12.99], ["Apple TV+", "🎬", 12.99], ["Gym", "💪", 30]];   // TV prices are typical; each one can be edited
@@ -6758,20 +6814,26 @@ function extraAverage(x){  // the last three finished months that have payments
   const keys = Object.keys(by).sort().slice(-3); if (keys.length < 2) return null;
   return {avg: r2(keys.reduce((a, k) => a + by[k], 0) / keys.length), n: keys.length};
 }
-function incomeForm(x){
+function incomeForm(x){ return pageSheet(x ? "Edit income" : "Add other income", "data-inc-cancel", incomeFormIn(x)); }
+function incomeFormIn(x){
   const d = UI.incDraft;
-  return `<form class="inc-form" data-form="income"><div class="grid2"><label class="field"><span>Where it comes from</span><input name="name" value="${esc(d.name)}" placeholder="e.g. YouTube, weekend shifts" enterkeyhint="next" autocomplete="off"></label>
-    <label class="field"><span>Kind</span><select name="kind" data-inc-kind>${INCOME_KINDS.map(([k, n]) => `<option value="${k}" ${d.kind === k ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
-    <div class="grid2"><label class="field"><span>When it arrives</span><select name="when" data-inc-when>${INCOME_WHEN.map(([k, n]) => `<option value="${k}" ${d.when === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
-    ${d.when === "monthly" || d.when === "twice" ? `<label class="field"><span>${d.when === "twice" ? "First day" : "Day of the month"}</span><select name="day">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+d.day === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label>`
-      : d.when === "weekly" ? `<label class="field"><span>Day of the week</span><select name="wd">${WEEKDAYS.map((n, i) => `<option value="${i}" ${+d.wd === i ? "selected" : ""}>${n}</option>`).join("")}</select></label>`
-      : d.when === "biweekly" ? `<label class="field"><span>Next payment</span><input name="next" type="date"${dFrom(d.next)} value="${esc(nextBiweekly(d.next))}"></label>` : `<div></div>`}</div>
-    ${d.when === "twice" ? `<div class="grid2"><label class="field"><span>Second day</span><select name="day2">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+(d.day2 || 15) === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label><div></div></div>` : ""}
-    <label class="field"><span>${d.when === "any" ? "Expected in a typical month" : "Each payment"} <span class="muted small">(optional)</span></span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="No fixed amount" value="${esc(+d.amount ? d.amount : "")}"></span><small class="muted small">${d.when === "any" ? "Payments can land on any day. Log each one when it arrives." : "Use a careful number."} Leave it empty if it varies: your plan then counts only what you log.</small></label>
-    ${d.kind === "trading" ? `<p class="note small">Count only money you have actually taken out, not gains on paper. Trading income can fall to zero, so keep this number low.</p>` : ""}
+  if (!x){ const all = incomeFormAll(x, d), K = "inc";
+    return `<form class="inc-form" data-form="income">${kStep(K, 0, 3, "Where does it come from?", "A side job, a shop, rent from a room", all.who)}${kStep(K, 1, 3, "When does it arrive?", "So it shows on the right days in your calendar", all.when, true)}${kStep(K, 2, 3, "How much each time?", "Leave it empty if it changes. You can log each payment as it lands", all.amt + `<div class="grid2"><button class="btn" type="button" data-kst-go="-1">Back</button><button class="btn primary" type="submit" style="padding:10px">Add income</button></div>`)}</form>`; }
+  const all = incomeFormAll(x, d);
+  return `<form class="inc-form" data-form="income">${all.who}${all.when}${all.amt}
     <div class="grid2">${x ? `<button class="btn danger" type="button" data-inc-del>Remove</button>` : `<button class="btn" type="button" data-inc-cancel>Cancel</button>`}<button class="btn primary" type="submit" style="padding:10px">${x ? "Save" : "Add income"}</button></div>
     ${x ? `<button class="link plain small" type="button" data-inc-cancel style="align-self:center">Cancel</button>` : ""}</form>`;
 }
+function incomeFormAll(x, d){
+  return {who: `<div class="grid2"><label class="field"><span>Where it comes from</span><input name="name" data-need="Say where the money comes from." value="${esc(d.name)}" placeholder="e.g. YouTube, weekend shifts" enterkeyhint="next" autocomplete="off"></label>
+    <label class="field"><span>Kind</span><select name="kind" data-inc-kind>${INCOME_KINDS.map(([k, n]) => `<option value="${k}" ${d.kind === k ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>`,
+    when: `<div class="grid2"><label class="field"><span>When it arrives</span><select name="when" data-inc-when>${INCOME_WHEN.map(([k, n]) => `<option value="${k}" ${d.when === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+    ${d.when === "monthly" || d.when === "twice" ? `<label class="field"><span>${d.when === "twice" ? "First day" : "Day of the month"}</span><select name="day">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+d.day === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label>`
+      : d.when === "weekly" ? `<label class="field"><span>Day of the week</span><select name="wd">${WEEKDAYS.map((n, i) => `<option value="${i}" ${+d.wd === i ? "selected" : ""}>${n}</option>`).join("")}</select></label>`
+      : d.when === "biweekly" ? `<label class="field"><span>Next payment</span><input name="next" type="date"${dFrom(d.next)} value="${esc(nextBiweekly(d.next))}"></label>` : `<div></div>`}</div>
+    ${d.when === "twice" ? `<div class="grid2"><label class="field"><span>Second day</span><select name="day2">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+(d.day2 || 15) === i + 1 ? "selected" : ""}>${ordinal(i + 1)}</option>`).join("")}</select></label><div></div></div>` : ""}`,
+    amt: `<label class="field"><span>${d.when === "any" ? "Expected in a typical month" : "Each payment"} <span class="muted small">(optional)</span></span><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="No fixed amount" value="${esc(+d.amount ? d.amount : "")}"></span><small class="muted small">${d.when === "any" ? "Payments can land on any day. Log each one when it arrives." : "Use a careful number."} Leave it empty if it varies: your plan then counts only what you log.</small></label>
+    ${d.kind === "trading" ? `<p class="note small">Count only money you have actually taken out, not gains on paper. Trading income can fall to zero, so keep this number low.</p>` : ""}`}; }
 // Income at a glance: the next payday counting down, and what this month brings in, as a ring.
 OUT.incomeHero = () => { const C = compute(), n = payOn() ? nextPayday() : null, k = todayKey();
   const got = r2((S.extras || []).reduce((a, x) => a + gotIn(x, k), 0) + (payOn() && S.payGot && inMonth(S.payGot, k) ? +S.pay.amount || 0 : 0)), exp = C.income || 0, pct = exp > 0 ? Math.min(100, got / exp * 100) : 0;
@@ -6897,7 +6959,8 @@ const payWhenText = () => { const p = S.pay || {};
     : p.when === "biweekly" ? "every 2 weeks" : p.when === "weekly" ? (p.wd != null ? `every ${WEEKDAYS[p.wd]}` : "every week") : ""; };
 OUT.payBox = () => {
   if (UI.payEdit){ const d = UI.payDraft, dayOpts = (sel, last) => Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+sel === i + 1 ? "selected" : ""}>${i === 30 && last ? "Last day" : ordinal(i + 1)}</option>`).join("");
-    return `<form class="card pay-form" data-form="pay"><h3>How you’re paid</h3>
+    return `<div class="kw-modal" data-kw-modal="payday-cancel"><form class="kw-msheet pay-form" data-form="pay" role="dialog" aria-modal="true" aria-label="Your pay"><div class="kw-mh"><b>Your pay</b><button class="icon-btn" type="button" data-payday-cancel aria-label="Close">${SN_IC("M6 6l12 12M18 6L6 18")}</button></div>
+      ${payOn() ? `<label class="field"><span>Currency</span><select data-bind="cur">${curOptions(S.cur)}</select><small class="muted small">Changing currency does not convert the numbers. 90 stays 90.</small></label>` : ""}
       <div class="grid2"><label class="field"><span>How often</span><select name="when" data-pay-when>${PAY_WHEN.map(([k, n]) => `<option value="${k}" ${d.when === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>
       ${d.when === "monthly" ? `<label class="field"><span>Payday</span><select name="day">${dayOpts(d.day, true)}</select></label>`
         : d.when === "weekly" ? `<label class="field"><span>Payday</span><select name="wd">${WEEKDAYS.map((n, i) => `<option value="${i}" ${+d.wd === i ? "selected" : ""}>${n}</option>`).join("")}</select></label>`
@@ -6908,7 +6971,7 @@ OUT.payBox = () => {
       <label class="field"><span>My month starts on</span><select name="monthStart">${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${+d.monthStart === i + 1 ? "selected" : ""}>${i === 0 ? "The 1st (calendar month)" : i === 30 ? "The last day of the month" : "The " + ordinal(i + 1) + (i > 27 ? " (or the last day)" : "")}</option>`).join("")}</select>
         <small class="muted small">Paid near the end of the month? Start your month on payday so each statement covers one paycheck.</small></label>
       <div class="grid2"><button class="btn" type="button" data-payday-cancel>Cancel</button><button class="btn primary" type="submit" style="padding:10px">Save</button></div>
-      ${payOn() ? `<button class="link plain small" type="button" data-payday-clear style="align-self:center">Remove my pay schedule</button>` : ""}</form>`; }
+      ${payOn() ? `<button class="link plain small" type="button" data-payday-clear style="align-self:center">Remove my pay schedule</button>` : ""}</form></div>`; }
   if (!payOn()) return "";   // the pay card above asks "How are you paid?" itself
   if (false) return `<button class="link small inc-add" type="button" data-payday-edit>${I.month.replace("<svg ", '<svg width="16" height="16" style="vertical-align:-3px;margin-right:6px" ')}How are you paid? <span class="muted">optional</span></button>`;
   const n = nextPayday(), ms = monthStartDay(), P = periodOf(new Date());
@@ -8493,7 +8556,7 @@ function render(keepScroll){
   const sheet = $("asksheet"); if (sheet){ sheet.innerHTML = UI.askOpen ? askSheet() : ""; sheet.hidden = !UI.askOpen; }
   const fab = $("wise"); if (fab) fab.hidden = !askOk || !!UI.askOpen;
   appEl.classList.toggle("welcoming", UI.welcome != null && !UI.account && !STMT.result);
-  appEl.classList.toggle("flowing", !!$("view").querySelector(".wiz"));   // a step-by-step screen has the whole phone: no header, tabs or owl behind it
+  flowSync();
   if (!keepScroll){ v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   renderTabs(); renderBell(); renderSpace(); { const pb = $("plus-badge"), tg = $("brand-tag"); if (pb){ pb.hidden = !plusOn(); pb.style.visibility = spaceChipOn() && UI.welcome == null ? "hidden" : ""; } if (tg) tg.hidden = plusOn(); placeSpaceChip(); }
   if (S.tab === "month" && !UI.biz && autoOn() && Date.now() - AUTO.at > 30 * 6e4) setTimeout(() => autoRun(false), 0);   // Plus: look at the banks at most every half hour
@@ -8503,7 +8566,11 @@ function render(keepScroll){
   if (VOICE.rec) voicePaint();  // a redraw while listening keeps the Stop button and the words heard so far
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
 }
-const OPEN_FORMS = 'form[data-form="settle"],form[data-form="trip"],form[data-form="lockSet"],form[data-form="lockOff"],form[data-form="loan"],form[data-form="exp"],form[data-form="give"],form[data-form="subEdit"],form[data-form="codeEdit"]';
+const OPEN_FORMS = 'form[data-form="pay"],form[data-form="settle"],form[data-form="trip"],form[data-form="lockSet"],form[data-form="lockOff"],form[data-form="loan"],form[data-form="exp"],form[data-form="give"],form[data-form="subEdit"],form[data-form="codeEdit"]';
+// A step-by-step screen has the whole phone: no header, tabs or owl behind it. A page or sheet opens with the keyboard down.
+function flowSync(){ const v = $("view"), page = !!(v && v.querySelector(".wiz")); if (!page) UI.kst = {}; const sheet = !!(v && v.querySelector(".kw-modal")), was = appEl.classList.contains("flowing") || appEl.classList.contains("sheeting");
+  if ((page || sheet) && !was){ const a = document.activeElement; if (a && a.blur && a.matches && a.matches("input,textarea") && !a.closest(".wiz,.kw-modal")) a.blur(); }
+  appEl.classList.toggle("flowing", page); appEl.classList.toggle("sheeting", sheet); }
 function refreshOuts(){
   const active = document.activeElement;
   document.querySelectorAll("#view [data-out]").forEach(el => {
@@ -8516,7 +8583,7 @@ function refreshOuts(){
   if (STMT.act != null){ const a = document.querySelector(`#view [data-st-acts="${STMT.act}"]`), box = a && a.closest(".st-tx");
     if (box){ const r = a.getBoundingClientRect(), b = box.getBoundingClientRect(); if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8; else if (r.top < b.top) box.scrollTop -= b.top - r.top + 8; } }
   if (!isField(document.activeElement)) appEl.classList.remove("typing");
-  flashKeep(); renderBell(); tidyHints();
+  flowSync(); flashKeep(); renderBell(); tidyHints();
 }
 const numv = v => { const n = parseFloat(String(v).replace(/[^0-9.]/g,"")); return isNaN(n) || !isFinite(n) ? 0 : n; };  // amounts are never negative
 
@@ -9127,7 +9194,7 @@ view.addEventListener("input", e => {
   if (t.dataset && t.dataset.stPick && STMT.result){ STMT.pick[t.dataset.stPick] = t.checked; stPicks(STMT.result); STMT.confirm = false; refreshOuts(); return; }
   if (t.hasAttribute && t.hasAttribute("data-stmt-holder") && STMT.result){ STMT.holder = upperWords(t.value).filter(w => !MOVE_STOP.has(w)).slice(0, 4); reanalyze(); refreshOuts(); return; }
   const payForm = t.closest && t.closest('form[data-form="pay"]');
-  if (payForm && t.name && UI.payDraft){ UI.payDraft[t.name] = t.value; if (t.name === "when"){ const box = view.querySelector('[data-out="payBox"]'); if (box) box.innerHTML = OUT.payBox(); } return; }
+  if (payForm && t.name && UI.payDraft){ UI.payDraft[t.name] = t.value; if (t.name === "when"){ const box = view.querySelector('[data-out="payBox"]'); if (box){ const st = (box.querySelector(".kw-msheet") || {}).scrollTop || 0; box.innerHTML = OUT.payBox(); box.querySelectorAll(".kw-modal,.kw-msheet").forEach(e => { e.style.animation = "none"; }); const ns = box.querySelector(".kw-msheet"); if (ns) ns.scrollTop = st; } } return; }
   const loanF = t.closest && t.closest('form[data-form="loan"]');
   if (t.hasAttribute && t.hasAttribute("data-pw-new")){ const r = view.querySelector("[data-pw-rules]"); if (r) r.innerHTML = pwRulesHtml(t.value); }
   if (loanF){ if (t.name && UI.loanDraft && t.name !== "rate") UI.loanDraft[t.name] = t.value; loanCalc(loanF); return; }
@@ -9152,7 +9219,7 @@ view.addEventListener("input", e => {
     if (k === "ruleDays") S.ruleDays = Math.max(1, Math.round(S.ruleDays));
     save(); refreshOuts(); return;
   }
-  if (t.dataset.envflat){ S.envFlat[t.dataset.envflat] = Math.max(0, numv(t.value)); const sv = view.querySelector("[data-env-save]"), C = compute(); if (sv) sv.innerHTML = fmtBar(C.envSave) + (C.income > 0 && C.envSave > 0 ? `<small class="muted"> · ${Math.round(C.envSave / C.income * 100)}%</small>` : ""); save(); refreshOuts(); return; }
+  if (t.dataset.envflat){ S.envFlat[t.dataset.envflat] = Math.max(0, numv(t.value)); const sv = view.querySelector("[data-env-save]"), C = compute(); if (sv) sv.innerHTML = OUT.envSaveFlat(); save(); refreshOuts(); return; }
   if (t.dataset.env){ const k = t.dataset.env; S.env[k] = numv(t.value); envFix(k); if (numv(t.value) > 100) t.value = 100;
     view.querySelectorAll("[data-env]").forEach(el => { if (el !== t) el.value = S.env[el.dataset.env]; }); const sv = view.querySelector("[data-env-save]"); if (sv) sv.textContent = S.env.save;
     save(); refreshOuts(); return; }
@@ -9235,7 +9302,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-w-import")){ finishWelcome(); render(false); $("stmt").click(); return; }
   // ---- how you are paid
   if (b.hasAttribute("data-payday-edit")){ const p = S.pay || {}; UI.payEdit = true; UI.payDraft = {when: p.when || "monthly", day: p.day || 1, day2: p.day2 || 15, wd: p.wd != null ? p.wd : 5, next: nextBiweekly(p.next), amount: p.amount ? String(p.amount) : (+S.income ? String(S.income) : ""), monthStart: monthStartDay()}; render(true); const pf = view.querySelector("[data-out=payBox]"); if (pf) pf.scrollIntoView({behavior: "smooth", block: "center"}); return; }
-  if (b.hasAttribute("data-payday-cancel")){ UI.payEdit = false; refreshOuts(); return; }
+  if (b.hasAttribute("data-payday-cancel")){ UI.payEdit = false; render(true); return; }
   if (b.hasAttribute("data-payday-clear")){ S.pay = null; S.monthStart = 1; UI.payEdit = false; save(); render(true); toast("Pay schedule removed. Your month runs from the 1st again."); return; }
   // ---- other income
   const blankInc = () => ({name: "", kind: "side", when: "any", day: 1, day2: 15, wd: 5, next: isoDaysAgo(0), amount: ""});
@@ -9317,12 +9384,12 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-act-more")){ const id = b.closest("[data-split]").dataset.split; UI.actMenu = UI.actMenu === id ? null : id; render(true); return; }
   if (b.hasAttribute("data-goal-set")){ UI.goalSet = true; render(true); const i = view.querySelector('[data-bind="goalName"]'); if (i) i.focus(); return; }
   if (b.dataset.subPick != null){ UI.subAdd = true; UI.subAddName = b.dataset.subPick || ""; render(true); const f = document.querySelector('form[data-form="addSub"]'); if (f) f.querySelector(UI.subAddName ? "[name=price]" : "[name=name]").focus({preventScroll: true}); return; }
-  if (b.hasAttribute("data-sub-new")){ UI.subAdd = true; UI.subAddName = ""; render(true); const f = document.querySelector('form[data-form="addSub"] [name=name]'); if (f) f.focus({preventScroll: true}); return; }
+  if (b.hasAttribute("data-sub-new")){ UI.subAdd = true; UI.subAddName = ""; render(true); return; }
   if (b.hasAttribute("data-sub-new-close")){ UI.subAdd = false; UI.subAddName = ""; render(true); return; }
   if (b.dataset.subFill){ const f = b.closest("form"); f.querySelector("[name=name]").value = b.dataset.subFill; f.querySelectorAll(".sub-pop-o").forEach(x => x.classList.toggle("on", x === b)); const pr = f.querySelector("[name=price]"); if (pr) pr.focus({preventScroll: true}); return; }
   if (b.hasAttribute("data-drop-flag")){ UI.subKind = "flag"; render(true); const l = view.querySelector('[data-out="subsList"]'); if (l) l.scrollIntoView({behavior: "smooth", block: "start"}); return; }
   if (b.dataset.quickMore !== undefined){ UI.quickAll = !UI.quickAll; const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
-  if (b.dataset.quickIc){ UI.quick = UI.quick === b.dataset.quickIc ? null : b.dataset.quickIc; const sh = $("asksheet"); if (sh){ askRedraw(sh); const i = sh.querySelector("[data-form=quick] [name=amount]"); if (i) i.focus(); } return; }
+  if (b.dataset.quickIc){ UI.quick = UI.quick === b.dataset.quickIc ? null : b.dataset.quickIc; const sh = $("asksheet"); if (sh){ askRedraw(sh); const i = sh.querySelector("[data-form=quick] [name=amount]"); if (i) i.focus({preventScroll: true}); } return; }
   if (b.dataset.glowSet){ S.glow = ["off", "on", "max"].includes(b.dataset.glowSet) ? b.dataset.glowSet : "on"; save(); applyTheme(); render(true); return; }
   if (b.dataset.skinSet){ S.skin = SKINS.some(x => x[0] === b.dataset.skinSet) ? b.dataset.skinSet : "classic"; save(); applyTheme(); render(true); toast(`${(SKINS.find(x => x[0] === S.skin) || [, "Simple"])[1]} theme on.`); return; }
   if (b.hasAttribute("data-push-set")){ if (S.push && S.push.on) await pushTurnOff(); else await pushTurnOn(); return; }
@@ -10055,6 +10122,7 @@ view.addEventListener("submit", async e => {
     const client = String(fd.get("client") || "").trim().slice(0, 60), date = String(fd.get("date") || ""), due = String(fd.get("due") || ""), note = String(fd.get("note") || "").trim().slice(0, 160), ok = v => /^\d{4}-\d{2}-\d{2}$/.test(v), email = String(fd.get("email") || "").trim().slice(0, 120);
     if (email && !/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(email)){ toast("Check the client’s email address."); f.elements.email.focus(); return; }
     if (!client){ toast("Say who the invoice is for."); f.elements.client.focus(); return; }
+    if (ok(due) && ok(date) && due < date){ toast("The due date can’t be before the invoice date."); return; }
     if (!items.length || !(items.reduce((a, x) => a + x.qty * x.price, 0) > 0)){ toast("Add what you did and the price."); const p = f.querySelector("[data-inv-item] [name=desc]"); if (p) p.focus(); return; }
     const u = undoable(), ed = UI.invEdit && bd.invoices.find(i => i.id === UI.invEdit), base = {client, email, items, date: ok(date) ? date : isoDaysAgo(0), due: ok(due) ? due : "", note};
     let inv; if (ed){ Object.assign(ed, base); inv = ed; } else { inv = {id: uid(), no: bd.invNext++, status: "open", ...base}; bd.invoices.push(inv); }
@@ -10268,9 +10336,8 @@ $("vcf").addEventListener("change", e => {
 // instead of the phone's plain list. The real <select> stays underneath, so forms and saving work as before.
 (() => { let open = null;
   const close = () => { if (open){ open.remove(); open = null; } };
-  document.addEventListener("pointerdown", e => { const sel = e.target.closest && e.target.closest("select"); if (!sel || sel.disabled || sel.multiple || sel.hasAttribute("data-native") || window.__kwTour) return;
-    e.preventDefault(); close();   // no focus(): on iPhone, focusing a <select> opens the phone's own list on top of ours
-    const lab = (sel.closest("label") && sel.closest("label").querySelector("span")) || (sel.id && document.querySelector(`label[for="${sel.id}"]`)), title = lab ? lab.textContent.trim() : (sel.getAttribute("aria-label") || "Choose");
+  const openSel = sel => { close();   // no focus(): on iPhone, focusing a <select> opens the phone's own list on top of ours
+    const lab = (sel.closest("label") && sel.closest("label").querySelector("span")) || (sel.id && document.querySelector(`label[for="${sel.id}"]`)), title = sel.getAttribute("aria-label") || (lab && !lab.contains(sel) ? lab.textContent.trim() : "Choose");
     const opts = [...sel.options].filter(o => !o.hidden), days = opts.length >= 28 && opts.every(o => /^the\s|^\d|1st|2nd|3rd|\dth|last day/i.test(o.text.trim()));
     const el = document.createElement("div"); el.className = "kpick"; el.innerHTML = `<button class="kpick-back" type="button" aria-label="Close"></button><div class="kpick-sheet" role="dialog" aria-label="${esc(title)}"><div class="kpick-h"><b>${esc(title)}</b><button type="button" class="kpick-x" aria-label="Close">✕</button></div>
       <div class="kpick-list${days ? " kpick-days" : ""}">${opts.map((o, i) => `<button type="button" class="kpick-o${o.selected ? " on" : ""}" data-i="${i}" ${o.disabled ? "disabled" : ""}>${days ? (/last day of the month/i.test(o.text) ? `<b>Last</b><small>day of month</small>` : `<b>${esc(o.text.replace(/^the\s*/i, "").replace(/\s*\(.*\)$/, "").replace(/(st|nd|rd|th)$/, "") || o.text)}</b>${/calendar/i.test(o.text) ? `<small>Calendar</small>` : ""}`) : esc(o.text)}</button>`).join("")}</div></div>`;
@@ -10278,34 +10345,41 @@ $("vcf").addEventListener("change", e => {
     const cur = el.querySelector(".kpick-o.on"); if (cur && !days) cur.scrollIntoView({block: "center"});
     el.addEventListener("click", ev => { if (ev.target.closest(".kpick-back,.kpick-x")){ close(); return; } const b = ev.target.closest(".kpick-o"); if (!b) return;
       const o = opts[+b.dataset.i]; sel.value = o.value; close(); sel.dispatchEvent(new Event("input", {bubbles: true})); sel.dispatchEvent(new Event("change", {bubbles: true})); });
-  }, true);
+  };
   // Dates open KeepWise's own calendar too: a month grid with big days, the input's min and max respected.
   const pad = n => String(n).padStart(2, "0"), MN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  document.addEventListener("pointerdown", e => { const inp = e.target.closest && e.target.closest('input[type="date"]'); if (!inp || inp.disabled || inp.readOnly || inp.hasAttribute("data-native") || window.__kwTour) return;
-    e.preventDefault(); close();
+  const openDate = inp => { close();
     const lab = (inp.closest("label") && inp.closest("label").querySelector("span")) || (inp.id && document.querySelector(`label[for="${inp.id}"]`)), title = lab ? lab.textContent.trim() : (inp.getAttribute("aria-label") || "Pick a date");
-    const t0 = new Date(), today = `${t0.getFullYear()}-${pad(t0.getMonth() + 1)}-${pad(t0.getDate())}`, base = inp.value ? new Date(inp.value + "T12:00") : (inp.max && inp.max < today ? new Date(inp.max + "T12:00") : inp.min && inp.min > today ? new Date(inp.min + "T12:00") : t0);
-    let y = base.getFullYear(), m = base.getMonth();
+    const bday = inp.autocomplete === "bday" || inp.name === "dob";
+    const t0 = new Date(), today = `${t0.getFullYear()}-${pad(t0.getMonth() + 1)}-${pad(t0.getDate())}`, base = inp.value ? new Date(inp.value + "T12:00") : bday ? new Date(t0.getFullYear() - 25, 0, 1, 12) : (inp.max && inp.max < today ? new Date(inp.max + "T12:00") : inp.min && inp.min > today ? new Date(inp.min + "T12:00") : t0);
+    let y = base.getFullYear(), m = base.getMonth(), mode = bday && !inp.value ? "y" : "d";   // a birthday starts on the years
+    const yMin = inp.min ? +inp.min.slice(0, 4) : t0.getFullYear() - 100, yMax = inp.max ? +inp.max.slice(0, 4) : t0.getFullYear() + 20;
     const ok = iso => !(inp.min && iso < inp.min) && !(inp.max && iso > inp.max);
     const el = document.createElement("div"); el.className = "kpick"; document.body.appendChild(el); open = el;
     const draw = () => { const start = new Date(y, m, 1).getDay(), n = new Date(y, m + 1, 0).getDate(), cells = [];
+      const head = `<button class="kpick-back" type="button" aria-label="Close"></button><div class="kpick-sheet" role="dialog" aria-label="${esc(title)}"><div class="kpick-h"><b>${esc(title)}</b><button type="button" class="kpick-x" aria-label="Close">✕</button></div>`;
+      if (mode === "y"){ const ys = []; for (let v = yMax; v >= yMin; v--) ys.push(`<button type="button" class="kd-y${v === y ? " on" : ""}" data-ky="${v}">${v}</button>`);
+        el.innerHTML = head + `<div class="kd-nav"><span></span><b>Pick the year</b><span></span></div><div class="kd-ys">${ys.join("")}</div></div>`; const on = el.querySelector(".kd-y.on"); if (on) on.scrollIntoView({block: "center"}); return; }
+      if (mode === "m"){ el.innerHTML = head + `<div class="kd-nav"><button type="button" class="kd-m" data-kd-ym aria-label="Change the year">‹</button><b>${y}</b><span style="width:40px"></span></div><div class="kd-ms">${MN.map((n2, i) => { const okm = !(inp.min && `${y}-${pad(i + 1)}-31` < inp.min) && !(inp.max && `${y}-${pad(i + 1)}-01` > inp.max); return `<button type="button" class="kd-y${i === m ? " on" : ""}" data-kmo="${i}" ${okm ? "" : "disabled"}>${n2.slice(0, 3)}</button>`; }).join("")}</div></div>`; return; }
       for (let i = 0; i < start; i++) cells.push(`<span></span>`);
       for (let d = 1; d <= n; d++){ const iso = `${y}-${pad(m + 1)}-${pad(d)}`; cells.push(`<button type="button" class="kd-d${iso === inp.value ? " on" : ""}${iso === today ? " now" : ""}" data-iso="${iso}" ${ok(iso) ? "" : "disabled"}>${d}</button>`); }
       const prevOk = !inp.min || `${y}-${pad(m + 1)}-01` > inp.min, nextOk = !inp.max || `${y}-${pad(m + 1)}-${pad(n)}` < inp.max;
       el.innerHTML = `<button class="kpick-back" type="button" aria-label="Close"></button><div class="kpick-sheet" role="dialog" aria-label="${esc(title)}"><div class="kpick-h"><b>${esc(title)}</b><button type="button" class="kpick-x" aria-label="Close">✕</button></div>
-        <div class="kd-nav"><button type="button" class="kd-m" data-dm="-1" aria-label="Previous month" ${prevOk ? "" : "disabled"}>‹</button><b>${MN[m]} ${y}</b><button type="button" class="kd-m" data-dm="1" aria-label="Next month" ${nextOk ? "" : "disabled"}>›</button></div>
+        <div class="kd-nav"><button type="button" class="kd-m" data-dm="-1" aria-label="Previous month" ${prevOk ? "" : "disabled"}>‹</button><button type="button" class="kd-ym" data-kd-ym aria-label="Pick the month and year">${MN[m]} ${y} ▾</button><button type="button" class="kd-m" data-dm="1" aria-label="Next month" ${nextOk ? "" : "disabled"}>›</button></div>
         <div class="kd-grid kd-wk">${["Su","Mo","Tu","We","Th","Fr","Sa"].map(w => `<span>${w}</span>`).join("")}</div><div class="kd-grid">${cells.join("")}</div>
         <div class="kd-foot">${inp.required ? "<span></span>" : `<button type="button" class="link small" data-kd-clear>Clear</button>`}${ok(today) ? `<button type="button" class="btn small" data-iso="${today}">Today</button>` : ""}</div></div>`; };
     draw(); requestAnimationFrame(() => el.classList.add("in"));
     const set = v => { inp.value = v; close(); inp.dispatchEvent(new Event("input", {bubbles: true})); inp.dispatchEvent(new Event("change", {bubbles: true})); };
     el.addEventListener("click", ev => { if (ev.target.closest(".kpick-back,.kpick-x")){ close(); return; }
+      if (ev.target.closest("[data-kd-ym]")){ mode = "y"; draw(); el.classList.add("in"); return; }
+      const yb = ev.target.closest("[data-ky]"); if (yb){ y = +yb.dataset.ky; mode = "m"; draw(); el.classList.add("in"); return; }
+      const mb = ev.target.closest("[data-kmo]"); if (mb){ m = +mb.dataset.kmo; mode = "d"; draw(); el.classList.add("in"); return; }
       const mv = ev.target.closest("[data-dm]"); if (mv){ m += +mv.dataset.dm; if (m < 0){ m = 11; y--; } if (m > 11){ m = 0; y++; } draw(); el.classList.add("in"); return; }
       if (ev.target.closest("[data-kd-clear]")){ set(""); return; }
       const d = ev.target.closest("[data-iso]"); if (d && !d.disabled) set(d.dataset.iso); });
-  }, true);
+  };
   // Times too: pick the hour, then the minutes, then AM or PM.
-  document.addEventListener("pointerdown", e => { const inp = e.target.closest && e.target.closest('input[type="time"]'); if (!inp || inp.disabled || inp.readOnly || inp.hasAttribute("data-native") || window.__kwTour) return;
-    e.preventDefault(); close();
+  const openTime = inp => { close();
     const lab = (inp.closest("label") && inp.closest("label").querySelector("span")), title = lab ? lab.textContent.trim() : "Pick a time";
     let [hh, mm] = (inp.value || "09:00").split(":").map(Number); let pm = hh >= 12, h12 = hh % 12 || 12;
     const el = document.createElement("div"); el.className = "kpick"; document.body.appendChild(el); open = el;
@@ -10319,12 +10393,20 @@ $("vcf").addEventListener("change", e => {
       if (b.dataset.ktH) h12 = +b.dataset.ktH; else if (b.dataset.ktM != null) mm = +b.dataset.ktM; else if (b.dataset.ktAp) pm = b.dataset.ktAp === "pm";
       else if (b.hasAttribute("data-kt-done")){ inp.value = `${pad((h12 % 12) + (pm ? 12 : 0))}:${pad(mm)}`; close(); inp.dispatchEvent(new Event("input", {bubbles: true})); inp.dispatchEvent(new Event("change", {bubbles: true})); return; }
       draw(); });
-  }, true);
+  };
   document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
   // Safari still opens its own list from the touch or the click that follows; stop those so only one list ever shows.
   const ours = e => { const sel = e.target.closest && e.target.closest("select"); if (sel) return !sel.disabled && !sel.multiple && !sel.hasAttribute("data-native") && !window.__kwTour;
     const d = e.target.closest && e.target.closest('input[type="date"],input[type="time"]'); return !!d && !d.disabled && !d.readOnly && !d.hasAttribute("data-native") && !window.__kwTour; };
-  for (const t of ["touchstart", "touchend", "mousedown", "click"]) document.addEventListener(t, e => { if (ours(e)) e.preventDefault(); }, {capture: true, passive: false});
+  // A list opens on a tap only: a finger that moves (scrolling the page) never opens one.
+  for (const t of ["touchend", "mousedown", "click"]) document.addEventListener(t, e => { if (ours(e)) e.preventDefault(); }, {capture: true, passive: false});
+  const PK = 'select,input[type="date"],input[type="time"]'; let tap = null;
+  document.addEventListener("pointerdown", e => { tap = null; if (!ours(e)) return; tap = {el: e.target.closest(PK), x: e.clientX, y: e.clientY}; if (e.pointerType === "mouse") e.preventDefault(); }, true);
+  document.addEventListener("pointermove", e => { if (tap && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10) tap = null; }, true);
+  document.addEventListener("pointercancel", () => { tap = null; }, true);
+  addEventListener("scroll", () => { tap = null; }, true);
+  document.addEventListener("pointerup", e => { const t = tap; tap = null; if (!t || !ours(e)) return; const el = e.target.closest(PK); if (el !== t.el || Math.hypot(e.clientX - t.x, e.clientY - t.y) > 10) return;
+    e.preventDefault(); if (el.tagName === "SELECT") openSel(el); else if (el.type === "date") openDate(el); else openTime(el); }, true);
 })();
 
 // A first visit gets the short setup instead of someone else's numbers. People who already use KeepWise never see it.
