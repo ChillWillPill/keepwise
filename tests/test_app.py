@@ -1531,15 +1531,10 @@ async def asks_if_money_arrived_from_the_day_after(ctx):
     f = pg.locator("form[data-form=income]"); await f.locator("[name=day]").select_option("9"); await f.locator("[name=amount]").fill("250")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
     assert await pg.locator("[data-arrived]").count() == 0, "never on the day itself"
-    # 6 October: the day after payday it asks about the pay, and only the pay
+    # 6 October: regular pay is never asked about; it counts by itself on payday
     await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 6, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
-    card = await text(pg, "[data-arrived]"); assert "Did it arrive?" in card and "Your pay" in card and "Expected Oct 5" in card and "$1,420" in card and "Tutoring" not in card, card
-    await pg.click("[data-arrive=pay] [data-arrive-no]"); await pg.wait_for_timeout(150)
-    assert await pg.locator("[data-arrived]").count() == 0 and "ask again tomorrow" in await pg.inner_text("#toast")
-    # 7 October: it asks again; Yes settles it for good
-    await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 7, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
-    await pg.click("[data-arrive=pay] [data-arrive-yes]"); await pg.wait_for_timeout(150)
-    assert await pg.locator("[data-arrived]").count() == 0 and (await state(pg))["payGot"] == "2026-10-05"
+    assert await pg.locator("[data-arrived]").count() == 0, "no question about the pay"
+    assert "$1,420 in" in await text(pg, "[data-hero-tiles]")
     # 10 October: the side income was due yesterday and is not logged
     await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 10, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
     card = await text(pg, "[data-arrived]"); assert "Tutoring" in card and "Expected Oct 9" in card and "$250" in card and "Your pay" not in card, card
@@ -6759,14 +6754,17 @@ async def subs_switch_between_all_monthly_and_yearly(ctx):
 @test
 async def left_this_month_counts_every_paycheck_and_bill(ctx):
     pg = await open_app(ctx, at=(2026, 11, 20, 10, 0))
-    await seed(pg, "s.monthStart = 1; s.pay = {when: 'biweekly', next: '2026-11-06', amount: 1000}; s.payGot = '2026-11-20'; s.extras = []; s.ins = []; s.loans = []; s.cards = []; s.trips = []; s.spends = [];"
+    await seed(pg, "s.monthStart = 1; s.pay = {when: 'biweekly', next: '2026-11-06', amount: 1000}; s.payMiss = {}; s.extras = []; s.ins = []; s.loans = []; s.cards = []; s.trips = []; s.spends = [];"
       " s.subs.forEach(x => delete x.paidOn); s.expenses = [{id: 'r', name: 'Rent', amount: 800, env: 'needs'}, {id: 'g', name: 'Groceries', amount: 300, env: 'needs'}];"
       " s.billSpends = [{e: 'g', k: '2026-11', amount: 350}]; s.paid = {key: '2026-11', on: {'e:r': '2026-11-02'}}")
     t = await text(pg, "[data-hero-tiles]")
     # two paychecks (Nov 6 and 20) 2000, rent ticked 800, groceries not ticked but 350 logged against it
     assert "Left this month" in t and "$850" in t and "$2,000 in" in t and "$1,150 out" in t, t
-    await seed(pg, "s.payGot = '2026-10-23'")
-    t = await text(pg, "[data-hero-tiles]"); assert "Paid out so far" in t and "$1,150" in t and "-" not in t.split("Safe")[0], t
+    # regular pay counts by itself; a paycheck that didn't come is marked in the breakdown
+    await pg.click("[data-io-open]"); await pg.wait_for_timeout(150); sh = await text(pg, "#io-sheet")
+    assert "Money in" in sh and "Rent" in sh and "Groceries" in sh and sh.count("Didn’t come") == 2, sh
+    await pg.locator("[data-io-miss]").nth(0).click(); await pg.locator("[data-io-miss]").nth(1).click(); await pg.click("[data-io-close]"); await pg.wait_for_timeout(150)
+    t = await text(pg, "[data-hero-tiles]"); assert "Paid out so far" in t and "$1,150" in t and "Next pay" in t, t
     assert not pg.errors, pg.errors
 
 @test
