@@ -47,6 +47,8 @@ def js(_ws, code):
     for attempt in range(3):
         try:
             r = cdp(ws, "Runtime.evaluate", expression=code, awaitPromise=True, returnByValue=True)
+            ex = r.get("result", {}).get("exceptionDetails") or r.get("error")
+            if ex: print("JS error:", json.dumps(ex)[:400])
             return r.get("result", {}).get("result", {}).get("value")
         except Exception as e:   # the debugging link can drop on a slow emulator: connect again and retry
             print("reconnecting:", e); time.sleep(3)
@@ -80,7 +82,8 @@ print(LABEL, "mic button shown:", js(ws, "(document.getElementById('wise').click
 # the home screen icon follows the theme: pick Night Owl, leave the app, and see which launcher entry is on
 js(ws, "(() => { const b = document.createElement('button'); b.setAttribute('data-skin-set', 'owl'); b.hidden = true; document.getElementById('view').appendChild(b); b.click(); b.remove(); })()")
 time.sleep(2); print(LABEL, "theme now:", js(ws, "document.documentElement.dataset.skin"))
-print(LABEL, "icon call:", js(ws, "Capacitor.registerPlugin('IconBridge').set({name: 'owl'}).then(() => 'ok', e => 'error: ' + (e && e.message))"))
+print(LABEL, "icon call:", js(ws, "(async () => { try { const P = Capacitor.registerPlugin('IconBridge'); const r = await Promise.race([P.set({name: 'owl'}).then(() => 'ok', e => 'error: ' + (e && e.message)), new Promise(r => setTimeout(() => r('no answer in 5s'), 5000))]); return r + ' | plugins: ' + Object.keys(Capacitor.Plugins || {}).join(','); } catch(e){ return 'threw: ' + e.message; } })()"))
+print(LABEL, "widget take:", js(ws, "(async () => { try { return JSON.stringify(await Promise.race([Capacitor.registerPlugin('WidgetBridge').take(), new Promise(r => setTimeout(() => r('no answer'), 5000))])); } catch(e){ return 'threw: ' + e.message; } })()"))
 print(LABEL, "prefs files:", adb("shell", "run-as", PKG, "ls", "shared_prefs", check=False))
 adb("shell", "input", "keyevent", "KEYCODE_HOME"); time.sleep(6)
 print(LABEL, "icon prefs:", adb("shell", "run-as", PKG, "cat", "shared_prefs/keepwise_icon.xml", check=False))
