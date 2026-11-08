@@ -144,6 +144,24 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 :root[data-skin="classic"] .split-hero .label{color:color-mix(in srgb,#fff 82%,var(--hero2))}:root[data-skin="classic"] .split-hero .big.good{color:var(--hero2-good)}:root[data-skin="classic"] .split-hero .big.bad{color:var(--hero2-bad)}:root[data-skin="classic"] .split-hero .split-square{color:#fff}
 :root[data-skin="classic"] .split-hero .sm-in{background:var(--hero2-in);color:#fff}:root[data-skin="classic"] .split-hero .sm-out{background:var(--hero2-out);color:#fff}
 :root[data-skin="classic"] .split-hero .sm-in .good{color:var(--hero2-good)!important}:root[data-skin="classic"] .split-hero .sm-out .bad{color:var(--hero2-bad)!important}:root[data-skin="classic"] .split-hero .muted,:root[data-skin="classic"] .split-hero .small{color:color-mix(in srgb,#fff 78%,var(--hero2))}
+/* The owl button in Mint Pop and Night Owl: a mint (or lime) disc, the owl on white, a sunny + badge,
+   a soft glow, a gentle halo now and then, and a little head tilt so it feels alive */
+:root:is([data-skin="classic"],[data-skin="owl"]) .wise-fab{border:0;background:radial-gradient(circle at 35% 30%,#7ff0c0,#1fb985 60%,#0e9f6e);box-shadow:0 0 0 4px color-mix(in srgb,var(--mint) 22%,transparent),0 12px 26px -8px color-mix(in srgb,var(--mint) 80%,#000)}
+:root:is([data-skin="classic"],[data-skin="owl"]) .wise-fab .owl-ic{width:58px;height:58px;animation:owlHop 8s ease-in-out infinite;transform-origin:50% 90%}
+:root:is([data-skin="classic"],[data-skin="owl"]) .wise-fab::after{background:#ffd25e;color:#10231c;border:2px solid var(--bg);width:24px;height:24px;font:800 16px/20px var(--body);right:-4px;bottom:-4px}
+:root:is([data-skin="classic"],[data-skin="owl"]) .wise-fab::before{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--mint);opacity:0;animation:fabHalo 7s ease-out infinite;pointer-events:none}
+:root:is([data-skin="classic"],[data-skin="owl"]) .wise-fab:active{transform:scale(.93)}
+@keyframes fabHalo{0%,78%{transform:scale(.92);opacity:0}84%{opacity:.75}100%{transform:scale(1.28);opacity:0}}
+@keyframes owlTilt{0%,86%,100%{transform:rotate(0)}89%{transform:rotate(-9deg)}93%{transform:rotate(7deg)}96%{transform:rotate(-3deg)}}
+.wise-fab .owl-ic{border-radius:0!important;overflow:visible}
+.owl-eye{transform-box:fill-box;transform-origin:50% 50%;animation:owlBlink 4.5s infinite}
+.owl-wr{transform-box:fill-box;transform-origin:50% 10%;animation:owlWave 8s ease-in-out infinite}
+.owl-glint{opacity:0;animation:owlGlint 8s ease-in-out infinite}
+@keyframes owlBlink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes owlWave{0%,70%,90%,100%{transform:rotate(-12deg)}74%,82%{transform:rotate(-55deg)}78%,86%{transform:rotate(-35deg)}}
+@keyframes owlGlint{0%,40%,52%,100%{opacity:0}46%{opacity:.9}}
+@keyframes owlHop{0%,68%,100%{transform:translateY(0) rotate(0)}72%{transform:translateY(-5px) rotate(-6deg)}76%{transform:translateY(0) rotate(0)}80%{transform:translateY(-3px) rotate(5deg)}84%{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.wise-fab .owl-ic,.wise-fab::before,.owl-eye,.owl-wr,.owl-glint{animation:none!important}}
 /* Calmer screens in Mint Pop and Night Owl: more room between cards and inside them, softer edges, easier line spacing */
 :root:is([data-skin="classic"],[data-skin="owl"]) .card{border-color:color-mix(in srgb,var(--line) 70%,transparent)}
 /* The example month's call to action: one clear, friendly button */
@@ -223,9 +241,9 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .tabbar{flex:none;display:grid;grid-template-columns:repeat(6,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .app.typing .tabbar{display:none}
 .wise-fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:30;width:56px;height:56px;border-radius:50%;border:1px solid var(--line);background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.18);padding:0;display:grid;place-items:center;cursor:pointer;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;transition:transform .15s ease,box-shadow .15s ease}
-.wise-fab[hidden]{display:none}.wise-fab img{width:44px;height:44px;border-radius:50%;pointer-events:none}
+.wise-fab[hidden]{display:none}.wise-fab .owl-ic{width:44px;height:44px;border-radius:50%;pointer-events:none}
 .wise-fab{width:64px;height:64px;border:2.5px solid var(--green);box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 18%,transparent),0 10px 24px rgba(0,0,0,.28)}
-.wise-fab img{width:52px;height:52px}
+.wise-fab .owl-ic{width:52px;height:52px}
 .app:not(.touring) .view{padding-bottom:max(24px,var(--view-pb,0px))}
 #view form{scroll-margin-top:12px}
 .wise-fab::after{content:"+";position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:var(--green);color:var(--bg);font:700 16px/22px var(--body);text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
@@ -9261,7 +9279,7 @@ $("theme-btn").addEventListener("click", () => { const dark = S.theme === "dark"
 // The owl button: tap to ask or log from any tab. Hold it for a moment and it lifts, then it can be dragged anywhere on
 // the screen; where it is left is remembered on this device.
 (() => { const fab = $("wise"), KEY = "keepwise-ask-pos"; if (!fab) return;
-  const logo = document.querySelector(".logo"); fab.innerHTML = `<img alt="" draggable="false" src="${logo ? logo.src : ""}">`;
+  fab.innerHTML = `<svg class="owl-ic" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M16 13l8 9-5 3zM48 13l-8 9 5 3z" fill="#05432f"/><ellipse cx="32" cy="37" rx="19" ry="21" fill="#075a3f"/><ellipse class="owl-wl" cx="14.5" cy="42" rx="5" ry="10" fill="#05432f" transform="rotate(12 14.5 42)"/><ellipse class="owl-wr" cx="49.5" cy="42" rx="5" ry="10" fill="#05432f" transform="rotate(-12 49.5 42)"/><ellipse cx="32" cy="47" rx="11" ry="10.5" fill="#d7f5e8"/><path d="M27 45l2 2 2-2M33 45l2 2 2-2M30 50l2 2 2-2" fill="none" stroke="#8fd9b8" stroke-width="1.3" stroke-linecap="round"/><circle cx="24" cy="30" r="9.2" fill="#ffffff"/><circle cx="40" cy="30" r="9.2" fill="#ffffff"/><g class="owl-eye"><circle cx="24" cy="30" r="4.6" fill="#f5b52e"/><circle cx="40" cy="30" r="4.6" fill="#f5b52e"/><circle cx="24" cy="30" r="2.7" fill="#10231c"/><circle cx="40" cy="30" r="2.7" fill="#10231c"/><circle cx="25.3" cy="28.6" r="1.2" fill="#fff"/><circle cx="41.3" cy="28.6" r="1.2" fill="#fff"/></g><circle cx="24" cy="30" r="8.4" fill="none" stroke="#10231c" stroke-width="2.2"/><circle cx="40" cy="30" r="8.4" fill="none" stroke="#10231c" stroke-width="2.2"/><path d="M30.6 29.4q1.4-1.5 2.8 0" fill="none" stroke="#10231c" stroke-width="2" stroke-linecap="round"/><path class="owl-glint" d="M19 27l4-4M35 27l4-4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><path d="M32 36l-2.6 2.6L32 42l2.6-3.4z" fill="#f5b52e"/><ellipse cx="17.5" cy="38" rx="2.6" ry="1.5" fill="#ff9e8f" opacity=".8"/><ellipse cx="46.5" cy="38" rx="2.6" ry="1.5" fill="#ff9e8f" opacity=".8"/><path d="M26 57.5l1.6-2 1.6 2M34.8 57.5l1.6-2 1.6 2" fill="none" stroke="#f5b52e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const place = p => { const w = innerWidth, h = innerHeight, x = Math.min(w - 64, Math.max(8, p.x)), y = Math.min(h - 150, Math.max(76, p.y)); fab.style.left = x + "px"; fab.style.top = y + "px"; fab.style.right = "auto"; fab.style.bottom = "auto"; return {x, y}; };
   try { const p = JSON.parse(localStorage.getItem(KEY) || "null"); if (p && isFinite(p.x) && isFinite(p.y)) place(p); } catch(e){}
   addEventListener("resize", () => { if (fab.style.left) place({x: parseFloat(fab.style.left), y: parseFloat(fab.style.top)}); });
