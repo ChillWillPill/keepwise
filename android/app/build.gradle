@@ -32,8 +32,9 @@ android {
     buildTypes {
         release {
             if (System.getenv("KW_UPLOAD_KEYSTORE_FILE")) signingConfig signingConfigs.release
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true   // smaller app; the crash map goes into the bundle so Play can read crash reports
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

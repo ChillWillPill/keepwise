@@ -1,7 +1,7 @@
 {
   "appId": "com.mykeepwise.app",
   "appName": "KeepWise",
-  "webDir": "www",
+  "webDir": "www-app",
   "backgroundColor": "#f2faf6",
   "android": {
     "backgroundColor": "#f2faf6"

@@ -6,3 +6,4 @@ __pycache__/
 *.jks
 *.keystore
 *-for-github.txt
+www-app/

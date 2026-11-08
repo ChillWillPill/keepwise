@@ -185,6 +185,8 @@
     <uses-permission android:name="android.permission.ACCESS_ADSERVICES_TOPICS" tools:node="remove" />
     <!-- Lets KeepWise search your contacts when you add people to a split. Contacts stay on the phone. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- The mic is only for talking to the owl: phones, tablets and TVs without one still get the app. -->
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <queries>
         <intent><action android:name="android.speech.RecognitionService" /></intent>

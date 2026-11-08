@@ -122,3 +122,10 @@ _based = _page.replace("<head>", '<head>\n<base href="/">', 1)
 for _p in ("features", "how-it-works", "android", "plus", "signin", "start", "app"):
     os.makedirs(os.path.join(ROOT, "www", _p), exist_ok=True)
     open(os.path.join(ROOT, "www", _p, "index.html"), "w", encoding="utf-8").write(_based)
+# The Android app gets only what it uses: the app page, its icons and the legal pages. Not the website's extra
+# addresses (each a full copy of the page), its pictures or the admin page, which kept the download 4 MB bigger.
+_app = os.path.join(ROOT, "www-app"); shutil.rmtree(_app, ignore_errors=True); os.makedirs(os.path.join(_app, "icons"))
+for f in ("index.html", "manifest.webmanifest", "privacy.html", "terms.html", "refund.html", "delete.html", "legal.css"):
+    if os.path.exists(os.path.join(ROOT, "www", f)): shutil.copy(os.path.join(ROOT, "www", f), os.path.join(_app, f))
+for f in ("icon-192.png", "favicon-64.png", "apple-touch-icon.png"):
+    shutil.copy(os.path.join(ROOT, "www", "icons", f), os.path.join(_app, "icons", f))
