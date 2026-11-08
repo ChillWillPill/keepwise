@@ -20,6 +20,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: gradle   # keeps Gradle itself between runs, so a slow GitHub download can't stop a build
       - run: npm ci --ignore-scripts   # sharp (only for making icons) downloads libvips on install, which times out sometimes
       - run: python3 scripts/build.py && npx cap sync android
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
