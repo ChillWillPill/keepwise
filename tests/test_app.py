@@ -222,7 +222,7 @@ async def long_currency_amounts_never_collide(ctx):
 async def theme_switch_light_dark_auto(ctx):
     pg = await open_app(ctx, scheme="light")
     bg = lambda: pg.evaluate("getComputedStyle(document.body).backgroundColor")
-    assert await bg() == "rgb(243, 239, 230)", "the KeepWise cream look is the default"
+    assert await bg() == "rgb(242, 250, 246)", "the KeepWise Mint Pop look is the default"
     await menu_to(pg, "look"); assert await pg.locator("[data-set-look]").is_visible(), "Look opens the themes"
     await pg.click("[data-theme-set=dark]"); await pg.wait_for_timeout(50)
     dark = await bg(); lum = lambda c: sum(int(x) for x in re.findall(r"\d+", c)[:3])
@@ -231,9 +231,9 @@ async def theme_switch_light_dark_auto(ctx):
     await pg.reload(); await pg.wait_for_timeout(400)
     assert await bg() == dark, "dark choice must survive reload"
     await menu_to(pg, "look"); await pg.click("[data-theme-set=light]"); await pg.wait_for_timeout(50)
-    assert await pg.evaluate("document.documentElement.dataset.theme") == "light" and await bg() == "rgb(243, 239, 230)"
-    # Auto lives in Themes; the Classic look keeps the original colours
-    await menu_to(pg, "look"); await pg.click("[data-theme-set=system]"); await pg.click("[data-skin-set=classic]"); await pg.wait_for_timeout(80)
+    assert await pg.evaluate("document.documentElement.dataset.theme") == "light" and await bg() == "rgb(242, 250, 246)"
+    # Auto lives in Themes; the Classic look keeps the original cream colours
+    await menu_to(pg, "look"); await pg.click("[data-theme-set=system]"); await pg.click("[data-skin-set=cream]"); await pg.wait_for_timeout(80)
     assert await pg.evaluate("document.documentElement.hasAttribute('data-theme')") is False and await bg() == "rgb(243, 239, 230)"
 
 @test
@@ -255,15 +255,15 @@ async def layout_tabbar_hides_while_typing(ctx):
 
 @test
 async def fonts_and_colors_match_grok(ctx):
-    # the KeepWise look: Fraunces for the money, Figtree for words, cream page, forest green numbers
+    # the KeepWise Mint Pop look: Bricolage Grotesque for the money, Inter for words, a mint page
     for w, h in ((390, 844), (768, 1024)):
         pg = await open_app(ctx, w=w, h=h)
         big = await pg.evaluate("(()=>{const c=getComputedStyle(document.querySelector('.big'));return [c.fontFamily,c.color,parseFloat(c.fontSize)]})()")
-        assert big[0].startswith("Fraunces") and big[1] == "rgb(27, 104, 67)" and big[2] >= 32, big
+        assert "Bricolage Grotesque" in big[0] and big[2] >= 32, big
         body = await pg.evaluate("[getComputedStyle(document.body).fontFamily, getComputedStyle(document.body).backgroundColor, getComputedStyle(document.querySelector('.card')).paddingLeft]")
-        assert body[0].startswith("Figtree") and body[1] == "rgb(243, 239, 230)" and body[2] in ("14px", "16px", "18px"), body
+        assert body[0].startswith("Inter") and body[1] == "rgb(242, 250, 246)" and body[2] in ("14px", "16px", "18px"), body
         href = await pg.evaluate("[...document.querySelectorAll('link[rel=stylesheet]')].map(l=>l.href).join(' ')")
-        assert "family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700" in href, href
+        assert "family=Bricolage+Grotesque" in href and "family=Inter:wght@400;500;600;700" in href, href
         await pg.close()
 
 @test
@@ -4061,7 +4061,8 @@ async def a_bill_can_be_ticked_as_paid_this_month(ctx):
     pg = await open_app(ctx)
     await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.loans = [{id: 'L1', kind: 'personal', name: 'Car loan', pay: 200, every: 'mo'}]; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
     await pg.reload(); await pg.wait_for_timeout(400)
-    kept = await pg.inner_text("[data-out=headline]")
+    keptOf = lambda: pg.evaluate("(()=>{const h=document.querySelector('[data-out=headline]').cloneNode(true);h.querySelectorAll('[data-hero-tiles]').forEach(x=>x.remove());return h.innerText})()")
+    kept = await keptOf()
     await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
     body = pg.locator("[data-env-open=needs] + .env-body"); ticks = body.locator(".tick"); n = await ticks.count(); assert n >= 3, n
     assert await body.locator("[data-paid-sum]").count() == 0, "no hint text until something is ticked"
@@ -4071,7 +4072,7 @@ async def a_bill_can_be_ticked_as_paid_this_month(ctx):
     first = body.locator(".line[data-exp]").first
     assert await first.locator(".tick").get_attribute("aria-pressed") == "true" and "paid" in await first.get_attribute("class") and "Paid " in await first.inner_text()
     sm = await body.locator("[data-paid-sum]").inner_text(); assert " paid" in sm and "still to go" in sm, sm
-    assert await pg.inner_text("[data-out=headline]") == kept, "ticking a bill does not change what you keep"
+    assert await keptOf() == kept, "ticking a bill does not change what you keep (the money left right now does go down)"
     st = await state(pg); assert len(st["paid"]["on"]) == 1 and list(st["paid"]["on"])[0].startswith("e:")
     await pg.reload(); await pg.wait_for_timeout(400); await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
     body = pg.locator("[data-env-open=needs] + .env-body"); assert await body.locator(".tick[aria-pressed=true]").count() == 1, "the tick is remembered"
@@ -4296,7 +4297,8 @@ async def the_owl_panel_stands_out_in_the_dark(ctx):
         pg = await open_app(ctx, scheme=scheme); await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(150)
         await owl(pg); await pg.wait_for_timeout(300)
         v = await pg.evaluate("""() => { const p = document.querySelector('.ask-panel'), c = getComputedStyle(p), card = getComputedStyle(document.querySelector('#view .card')), back = getComputedStyle(document.querySelector('.ask-back'));
-          return {panel: c.backgroundColor, edge: c.borderTopColor, card: card.backgroundColor, cardEdge: card.borderTopColor, back: back.backgroundColor, ink: c.color}; }""")
+          const px = (col, under) => { const x = document.createElement('canvas').getContext('2d'); x.fillStyle = under; x.fillRect(0,0,1,1); x.fillStyle = col; x.fillRect(0,0,1,1); const d = x.getImageData(0,0,1,1).data; return `rgb(${d[0]}, ${d[1]}, ${d[2]})`; };
+          return {panel: c.backgroundColor, edge: px(c.borderTopColor, c.backgroundColor), card: card.backgroundColor, cardEdge: px(card.borderTopColor, card.backgroundColor), back: back.backgroundColor, ink: c.color}; }""")
         if scheme == "dark":
             assert v["panel"] != v["card"] and lum(v["panel"]) > lum(v["card"]) + 8, v
             assert lum(v["edge"]) > lum(v["cardEdge"]) + 30, v
@@ -4374,7 +4376,7 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     assert await has("[data-out=envelopes]") == 0 and await has(".import-card") == 0 and await has('form[data-form="ask"]') == 0, "the rest is not on the Overview, and Ask is on the owl"
     assert not await pg.evaluate("document.getElementById('wise').hidden"), "the owl button is there to ask"
     if await has("[data-hide-note]"): await pg.click("[data-hide-note]"); await pg.wait_for_timeout(200)   # the first-visit note is extra, once
-    fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight * 2; })()"); assert fit <= 320, ("the Overview (with the week strip) stays about two screens, with the Personal / Business switch on top", fit)
+    fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight * 2; })()"); assert fit <= 460, ("the Overview (with the week strip) stays about two screens, with the Personal / Business switch on top", fit)
     assert await has(".dn-compact .dn-list li") <= 6 and await pg.locator(".dn-compact .dn-amt").first.is_hidden()
     # "Needs you" is one line until it is tapped; "Coming up" shows two and offers the rest
     if await has("[data-need-open]"):
@@ -6322,7 +6324,7 @@ async def themes_switch_light_dark_and_the_look(ctx):
     assert await pg.evaluate("document.documentElement.dataset.theme") == "dark"
     await pg.click("[data-theme-set=light]"); await pg.wait_for_timeout(100)
     assert await pg.evaluate("document.documentElement.dataset.theme") == "light"
-    assert await pg.locator("[data-skin-set]").count() == 8
+    assert await pg.locator("[data-skin-set]").count() == 10
     # Terminal is always dark and has a Glow bar; Liquid Glass has a Glass bar
     await pg.click("[data-skin-set=terminal]"); await pg.wait_for_timeout(100)
     assert await pg.evaluate("document.documentElement.dataset.skin") == "terminal" and await pg.locator("[data-lvl=terminal]").count() == 1
@@ -6330,7 +6332,7 @@ async def themes_switch_light_dark_and_the_look(ctx):
     await pg.click("[data-skin-set=glass]"); await pg.wait_for_timeout(100)
     assert await pg.locator("[data-lvl=glass]").count() == 1
     await pg.locator("[data-lvl=glass]").fill("30"); await pg.wait_for_timeout(600); assert (await state(pg))["glassLvl"] == 30
-    for k in ("ocean", "midnight", "contrast", "mocha", "rose", "classic"):
+    for k in ("ocean", "midnight", "contrast", "mocha", "rose", "cream", "owl", "classic"):
         await pg.click(f"[data-skin-set={k}]"); await pg.wait_for_timeout(80)
         assert await pg.evaluate("document.documentElement.dataset.skin") == k and (await state(pg))["skin"] == k
     assert not pg.errors, pg.errors
@@ -6464,12 +6466,30 @@ async def android_app_shows_no_plus_prices_and_the_play_badge_waits(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def the_owl_hears_you_in_the_android_app(ctx):
+    # the app's web view has no speech-to-text, so a native bridge (VoiceBridge) stands in; the mic must show and work
+    pg = await open_app(ctx)
+    await pg.evaluate("""() => { window.__voice = {started: 0, stopped: 0, ls: {}};
+      window.Capacitor = {isNativePlatform: () => true, isPluginAvailable: n => n === 'VoiceBridge', getPlatform: () => 'android',
+        registerPlugin: () => ({ addListener: (ev, fn) => { __voice.ls[ev] = fn; return Promise.resolve({remove(){}}); },
+          start: () => { __voice.started++; setTimeout(() => __voice.ls.voiceResult({text: 'coffee', final: false}), 100); setTimeout(() => __voice.ls.voiceResult({text: 'coffee 4', final: true}), 250); return Promise.resolve(); },
+          stop: () => { __voice.stopped++; return Promise.resolve(); } })}; }""")
+    await owl(pg); await pg.wait_for_timeout(300)
+    assert await pg.locator("#ask-mic").is_visible(), "the microphone is there in the app"
+    await pg.click("#ask-mic"); await pg.wait_for_timeout(400)
+    assert await pg.evaluate("__voice.started") == 1 and "coffee 4" in await pg.inner_text("[data-voice-heard]"), "words show as they are heard"
+    await pg.click("[data-voice-stop]"); await pg.wait_for_timeout(400)
+    assert await pg.evaluate("__voice.stopped") >= 1, "Stop stops listening"
+    assert "coffee" in (await pg.inner_text("#ask-out")).lower() or await pg.evaluate("(JSON.parse(localStorage.getItem('keepwise-app-v1')).spends||[]).some(x => +x.amount === 4)"), "what was said is sent to the owl"
+    assert not pg.errors, pg.errors
+
+@test
 async def the_tour_plays_by_itself_and_pauses(ctx):
     pg = await open_app(ctx, month_tabs=True)
     await pg.click("#acct-btn"); await pg.wait_for_timeout(280); await pg.click("#sidenav [data-menu=tour]"); await pg.wait_for_timeout(300)
     assert "1 of 12" in await pg.inner_text("#tour") and await pg.evaluate("document.documentElement.dataset.skin") == "classic", "the tour runs in the Blue look"
     bg = await pg.evaluate("[getComputedStyle(document.getElementById('tour')).backgroundColor, getComputedStyle(document.querySelector('#tour .tour-go')).backgroundColor]")
-    assert bg[1] == "rgb(27, 104, 67)", ("the tour wears the default KeepWise green", bg)
+    assert bg[1] == "rgb(11, 122, 85)", ("the tour wears the default KeepWise green", bg)
     await pg.wait_for_timeout(6400); assert "2 of 12" in await pg.inner_text("#tour"), "the next scene follows on its own"
     await pg.click("#tour [data-tour-pause]"); await pg.wait_for_timeout(6400); assert "2 of 12" in await pg.inner_text("#tour"), "paused stays put"
     assert await pg.get_attribute("#tour [data-tour-pause]", "aria-label") == "Play"

@@ -2,18 +2,18 @@
   "appId": "com.mykeepwise.app",
   "appName": "KeepWise",
   "webDir": "www",
-  "backgroundColor": "#f3efe6",
+  "backgroundColor": "#f2faf6",
   "android": {
-    "backgroundColor": "#f3efe6"
+    "backgroundColor": "#f2faf6"
   },
   "ios": {
-    "backgroundColor": "#f3efe6",
+    "backgroundColor": "#f2faf6",
     "contentInset": "never"
   },
   "plugins": {
     "LocalNotifications": {
       "smallIcon": "ic_stat_keepwise",
-      "iconColor": "#1B6843",
+      "iconColor": "#0B7A55",
       "sound": "keepwise_hoot.wav"
     }
   }
