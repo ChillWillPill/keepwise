@@ -110,7 +110,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .app{position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100%);display:flex;flex-direction:column;background:var(--bg);isolation:isolate}
 /* The owl lives behind every screen: cards cover it, so it shows only in empty space. Its eyes wander, blink and follow a finger. */
 .app-main{display:flex;flex-direction:column}.app-main>.view{flex:none;width:100%;box-sizing:border-box}
-.owl-bg{flex:none;margin:auto auto 0;width:min(56vw,220px);aspect-ratio:1;padding-bottom:18px;pointer-events:none;color:var(--mint,var(--green));transition:opacity .4s}
+.owl-bg{flex:none;margin:auto auto 0;width:var(--owl-w,200px);aspect-ratio:1;padding-bottom:14px;pointer-events:none;color:var(--mint,var(--green));transition:opacity .4s}.owl-bg[hidden]{display:none!important}
 .owl-bg .ol{opacity:.4}.owl-bg .od{opacity:.85}.owl-bg .oe{fill:var(--green-soft)}.owl-bg .op{fill:var(--ink)}.owl-bg .ok{fill:var(--bg)}.owl-bg .ob{fill:var(--gold)}
 .owl-bg .opp{transition:transform .18s ease-out}.owl-bg .olid{transform-box:fill-box;transform-origin:50% 0;transform:scaleY(0);transition:transform .09s}
 .app.flowing .owl-bg,.app.sheeting .owl-bg,.app.typing .owl-bg{opacity:0}
@@ -10472,6 +10472,10 @@ try { if (/[?&]site\b/.test(location.search)) window.KEEPWISE_SITE = true; if ((
   const pp = w.querySelector(".opp"), lids = w.querySelectorAll(".olid"), calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const fit = () => { const t = document.getElementById("tabbar"); app.style.setProperty("--tabbar-h", (t && t.offsetHeight ? t.offsetHeight : 0) + "px"); };
   fit(); addEventListener("resize", fit);
+  // Only where a short screen leaves real empty space: the owl never adds scrolling of its own.
+  const view = document.getElementById("view"), room = () => { const free = main.clientHeight - view.offsetHeight - 14, size = Math.min(220, free);
+    w.hidden = size < 150; if (!w.hidden) w.style.setProperty("--owl-w", Math.round(size) + "px"); };
+  room(); if (window.ResizeObserver){ const ro = new ResizeObserver(room); ro.observe(view); ro.observe(main); } else addEventListener("resize", room);
   let tx = 0, ty = 0, x = 0, y = 0, until = 0, next = 0;
   const look = e => { const p = e.touches ? e.touches[0] : e; if (!p) return; const r = w.getBoundingClientRect(); if (!r.width) return;
     const dx = p.clientX - (r.left + r.width * .5), dy = p.clientY - (r.top + r.height * .37), d = Math.hypot(dx, dy) || 1, m = Math.min(7, d / 25);
