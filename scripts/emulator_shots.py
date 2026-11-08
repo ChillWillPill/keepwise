@@ -80,8 +80,11 @@ print(LABEL, "mic button shown:", js(ws, "(document.getElementById('wise').click
 # the home screen icon follows the theme: pick Night Owl, leave the app, and see which launcher entry is on
 js(ws, "(() => { const b = document.createElement('button'); b.setAttribute('data-skin-set', 'owl'); b.hidden = true; document.getElementById('view').appendChild(b); b.click(); b.remove(); })()")
 time.sleep(2); print(LABEL, "theme now:", js(ws, "document.documentElement.dataset.skin"))
+print(LABEL, "icon call:", js(ws, "Capacitor.registerPlugin('IconBridge').set({name: 'owl'}).then(() => 'ok', e => 'error: ' + (e && e.message))"))
+print(LABEL, "prefs files:", adb("shell", "run-as", PKG, "ls", "shared_prefs", check=False))
 adb("shell", "input", "keyevent", "KEYCODE_HOME"); time.sleep(6)
 print(LABEL, "icon prefs:", adb("shell", "run-as", PKG, "cat", "shared_prefs/keepwise_icon.xml", check=False))
+print(LABEL, "log:", "\n".join(l for l in adb("logcat", "-d", "-t", "400", check=False).splitlines() if "Icon" in l or "IconBridge" in l)[-1500:])
 on = adb("shell", "cmd", "package", "query-activities", "--brief", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.LAUNCHER", check=False)
 icon = [l.strip() for l in on.splitlines() if PKG in l]
 print(LABEL, "launcher entry after picking Night Owl:", icon)
