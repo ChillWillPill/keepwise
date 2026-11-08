@@ -38,11 +38,13 @@ public class WidgetBridge extends Plugin {
             .putString("recent", call.getString("recent", "[]"))
             .putInt("pct", call.getInt("pct", -1))
             .putString("parts", call.getString("parts", "[]"))
+            .putString("said", call.getString("said", ""))
             .putString("safe", call.getString("safe", ""))
             .putBoolean("hide", Boolean.TRUE.equals(call.getBoolean("hide", false)))
             .apply();
         KeepWiseWidget.refresh(getContext());
         WeekWidget.refresh(getContext());
+        QuickAddWidget.refresh(getContext());
         call.resolve();
     }
 }

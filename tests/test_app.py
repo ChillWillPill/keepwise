@@ -6504,6 +6504,9 @@ async def the_widgets_get_the_week_and_open_the_owl(ctx):
     assert [r["n"] for r in rec] == [x["name"] for x in newest], ("the three latest spends, newest first", rec, newest)
     await pg.evaluate("window.kwWidgetTap()"); await pg.wait_for_timeout(900)
     assert await pg.locator(".ask-panel").count() == 1, "a tap on the quick add widget opens the owl"
+    await pg.fill("#ask-in", "how much will I save?"); await pg.evaluate("document.getElementById('ask-in').form.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}))"); await pg.wait_for_timeout(400)
+    await pg.evaluate("window.kwWidgetPush()"); said = (await pg.evaluate("__w.sent[__w.sent.length - 1]"))["said"]
+    assert said and said == (await pg.inner_text("#ask-out")).replace("\n", " ").strip()[:160], ("the quick add widget shows the owl's last answer", said)
     assert not pg.errors, pg.errors
 
 @test

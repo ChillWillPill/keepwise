@@ -4,11 +4,15 @@
     android:id="@+id/kq_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:gravity="center_vertical"
-    android:paddingStart="8dp"
-    android:paddingEnd="8dp"
+    android:padding="8dp"
     android:background="@drawable/widget_quick_bg">
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
     <ImageView
         android:layout_width="48dp"
         android:layout_height="48dp"
@@ -39,4 +43,21 @@
         android:background="@drawable/widget_mic_bg"
         android:src="@drawable/ic_kw_mic"
         android:contentDescription="@string/quick_mic" />
+    </LinearLayout>
+    <!-- the owl's last answer (or a tip until you've asked something) -->
+    <TextView
+        android:id="@+id/kq_said"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="7dp"
+        android:paddingBottom="7dp"
+        android:background="@drawable/widget_said_bg"
+        android:text="@string/quick_tip"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:textColor="#10231C"
+        android:textSize="13sp" />
 </LinearLayout>

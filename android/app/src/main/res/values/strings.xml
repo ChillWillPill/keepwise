@@ -5,6 +5,7 @@
     <string name="package_name">com.mykeepwise.app</string>
     <string name="custom_url_scheme">com.mykeepwise.app</string>
     <string name="widget_description">What you\'ll keep this month and what\'s due next</string>
+    <string name="quick_tip">Try: “how much will I save?”</string>
     <string name="quick_field">Add or ask: coffee 4</string>
     <string name="quick_mic">Say what you spent</string>
     <string name="quick_description">Log spending or ask KeepWise in one tap</string>

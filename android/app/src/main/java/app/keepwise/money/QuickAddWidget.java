@@ -15,7 +15,15 @@ public class QuickAddWidget extends AppWidgetProvider {
         v.setOnClickPendingIntent(R.id.kq_root, open(c, "ask", 11));
         v.setOnClickPendingIntent(R.id.kq_field, open(c, "type", 13));
         v.setOnClickPendingIntent(R.id.kq_mic, open(c, "voice", 12));
+        String said = c.getSharedPreferences(KeepWiseWidget.PREFS, Context.MODE_PRIVATE).getString("said", "");
+        if (!said.isEmpty()) v.setTextViewText(R.id.kq_said, said);
+        v.setOnClickPendingIntent(R.id.kq_said, open(c, "ask", 14));
         for (int id : ids) manager.updateAppWidget(id, v);
+    }
+
+    static void refresh(Context c) {
+        AppWidgetManager m = AppWidgetManager.getInstance(c);
+        new QuickAddWidget().onUpdate(c, m, m.getAppWidgetIds(new android.content.ComponentName(c, QuickAddWidget.class)));
     }
 
     static PendingIntent open(Context c, String action, int code) {
