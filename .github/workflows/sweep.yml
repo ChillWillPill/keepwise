@@ -1,0 +1,34 @@
+name: Layout sweep (Firefox and Safari's engine, phone to desktop)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test browser
+        run: pip install playwright && python -m playwright install --with-deps ${{ matrix.engine }}
+      - name: Build the web app
+        run: python3 scripts/build.py
+      - name: Sweep every screen at every size
+        run: mkdir -p shots && TZ=UTC python3 tests/sweep.py www/index.html ${{ matrix.engine }} shots | tee shots/summary.txt
+      - name: Keep the screenshots on the sweep-shots branch (easy to look at)
+        if: always()
+        run: |
+          for i in 1 2 3 4 5; do
+            rm -rf /tmp/es && git clone -q --depth 1 --branch sweep-shots "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" /tmp/es 2>/dev/null || { mkdir -p /tmp/es && cd /tmp/es && git init -q -b sweep-shots && git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" && cd -; }
+            rm -rf /tmp/es/${{ matrix.engine }} && mkdir -p /tmp/es/${{ matrix.engine }} && cp shots/*.png shots/*.json shots/*.txt /tmp/es/${{ matrix.engine }}/ 2>/dev/null || true
+            cd /tmp/es && git add -A && (git -c user.name=Keepwise -c user.email=keepwise@users.noreply.github.com commit -qm "Sweep: ${{ matrix.engine }}" || true) && git push -q origin sweep-shots && break; cd -; sleep 5
+          done
