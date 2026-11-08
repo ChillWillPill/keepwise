@@ -128,6 +128,13 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 :root[data-skin="classic"] .hero .hero-warn{background:#fff;color:#b3362f;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 :root[data-skin="classic"] .hero .muted{color:#d9f5e9}
 .app.flowing .owl-bg,.app.sheeting .owl-bg{display:none}
+/* The example month's call to action: one clear, friendly button */
+.ex-cta{display:flex;flex-direction:column;gap:12px;flex:1;min-width:0}
+.ex-t{display:flex;flex-direction:column;gap:2px}.ex-t b{font:700 1.05rem/1.25 var(--display);color:var(--ink)}.ex-t span{color:var(--muted);font-size:.92rem;line-height:1.4}
+.ex-go{appearance:none;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:50px;padding:0 20px;border-radius:999px;background:var(--green);color:var(--on-green);font:700 1rem var(--body);box-shadow:0 8px 20px -10px color-mix(in srgb,var(--green) 80%,transparent);transition:transform .15s ease,box-shadow .15s ease}
+.ex-go svg{transition:transform .2s ease}.ex-go:hover svg{transform:translateX(3px)}.ex-go:active{transform:scale(.98)}
+.note.inline:has(.ex-cta){position:relative}.note.inline:has(.ex-cta)>:last-child:not(.ex-cta){position:absolute;top:12px;right:14px}.ex-t{padding-right:52px}
+.ex-go:focus-visible{outline:3px solid color-mix(in srgb,var(--green) 45%,transparent);outline-offset:2px}
 .app-header{flex:none;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);position:relative;z-index:3}
 .brand{display:flex;align-items:center;gap:12px;max-width:688px;margin:0 auto}
 .logo{width:40px;height:40px;border-radius:50%;background:#fff;display:block;flex:none;box-shadow:0 0 0 1px var(--line)}
@@ -4160,7 +4167,7 @@ function monthFind(sel){
 V.month = () => {
   if (UI.biz) return spaceSwitch() + (plusOn() || bizDemoOn() ? bizSpace() : bizPreview());
   const C = compute(), tabs = monthTabs(), on = k => !tabs || (UI.mseg || "now") === k;
-  const top = `${spaceSwitch()}${S.hideNote || TOUR.on || coachOn("month") ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div><p>This is an example month. Look around, then set up your own in about a minute.</p><button class="btn small" type="button" data-w-start style="margin-top:10px">Set up my month</button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on Budget, or import a bank statement. Everything stays on this device." : "Add your other bills on Budget and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
+  const top = `${spaceSwitch()}${S.hideNote || TOUR.on || coachOn("month") ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div class="ex-cta"><div class="ex-t"><b>This is an example month</b><span>Look around, then make it yours in about a minute.</span></div><button class="ex-go" type="button" data-w-start><span>Set up my month</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on Budget, or import a bank statement. Everything stays on this device." : "Add your other bills on Budget and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
   <div data-out="week">${OUT.week()}</div>
   <section class="hero hero-keep"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
   <div data-out="headline">${OUT.headline()}</div></section>`;
