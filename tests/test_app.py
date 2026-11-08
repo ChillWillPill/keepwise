@@ -1271,6 +1271,34 @@ async def offline_copy_is_always_the_app(ctx):
 
 
 @test
+async def the_website_lives_at_home_and_the_app_at_app(ctx):
+    if not APP.endswith(os.path.join("www", "index.html")): return
+    import http.server, threading, functools, socket
+    root = os.path.dirname(APP); sock = socket.socket(); sock.bind(("127.0.0.1", 0)); port = sock.getsockname()[1]; sock.close()
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a): pass
+    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", port), functools.partial(Quiet, directory=root)); threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    try:
+        st = await state(await open_app(ctx)); c2 = await ctx.browser.new_context(); pg = await c2.new_page()
+        await pg.add_init_script("window.KEEPWISE_FIREBASE = null;"); base = f"http://127.0.0.1:{port}/"
+        await pg.goto(base + "?site"); await pg.wait_for_timeout(500)
+        assert "Start free" in await pg.inner_text("#kws .kws-act"), "a new visitor sees Start free"
+        await pg.evaluate("s => localStorage.setItem('keepwise-app-v1', s)", json.dumps(st))
+        await pg.goto(base + "?site"); await pg.wait_for_timeout(500)
+        assert "Open my app" in await pg.inner_text("#kws .kws-act"), "someone already set up still gets the website, with a way in"
+        await pg.click("#kws .kws-act [data-kws-start]"); await pg.wait_for_timeout(400)
+        assert await pg.evaluate("location.pathname") == "/app" and await pg.locator("#kws").count() == 0 and await pg.locator("#tabbar").count() == 1
+        await pg.goto(base + "app/?site"); await pg.wait_for_timeout(500)
+        assert await pg.locator("#kws").count() == 0, "/app opens the app, not the website"
+        await pg.goto(base + "start/"); await pg.wait_for_timeout(500)
+        assert await pg.evaluate("location.pathname") == "/app", "once set up, the address is /app"
+        await c2.close()
+    finally:
+        try: httpd.shutdown(); httpd.server_close()
+        except Exception: pass
+
+
+@test
 async def edit_cancel_keeps_the_card_in_view(ctx):
     pg = await open_app(ctx, w=390, h=700); await tab(pg, "split")
     card = pg.locator("[data-split]").nth(3); sid = await card.get_attribute("data-split")

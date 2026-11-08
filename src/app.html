@@ -6583,7 +6583,7 @@ const sitePath = () => (location.pathname.replace(/\/index\.html$/, "").replace(
 const siteSignin = () => { render(true); const x = document.createElement("button"); x.type = "button"; x.hidden = true; x.setAttribute("data-open-account", ""); x.setAttribute("data-acc-start", "signin"); view.appendChild(x); x.click(); x.remove(); };
 // Back and Forward between the site's addresses: a section scrolls; the home page comes back after leaving for the app.
 addEventListener("popstate", () => { if (window.Capacitor) return; const p = sitePath(), root = document.getElementById("kws");
-  if (p === "/signin" || p === "/start"){ if (root){ root.remove(); document.documentElement.style.overflow = ""; } if (p === "/signin") siteSignin(); else render(true); return; }
+  if (p === "/signin" || p === "/start" || p === "/app"){ if (root){ root.remove(); document.documentElement.style.overflow = ""; } if (p === "/signin") siteSignin(); else render(true); return; }
   if (p === "/" || SITE_PATHS[p]){ if (!root){ if (history.state && history.state.kws) siteOpen(); return; } if (SITE_PATHS[p]){ const el = root.querySelector("#" + SITE_PATHS[p]); if (el) el.scrollIntoView({behavior: "smooth"}); } else root.scrollTo({top: 0, behavior: "smooth"}); } });
 function siteOpen(){
   if (document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", siteOpen, {once: true}); return; }
@@ -6597,9 +6597,10 @@ function siteOpen(){
     if (b.matches("a[href^='#kws']")){ e.preventDefault(); const id = b.getAttribute("href").slice(1); const pth = Object.keys(SITE_PATHS).find(k => SITE_PATHS[k] === id); if (pth) go(pth); root.querySelector("#" + id).scrollIntoView({behavior: "smooth"}); return; }
     if (b.hasAttribute("data-kws-sec")){ e.preventDefault(); go(b.getAttribute("href")); const el = root.querySelector("#" + b.dataset.kwsSec); if (el) el.scrollIntoView({behavior: "smooth"}); return; }
     if (b.hasAttribute("data-kws-top")){ e.preventDefault(); go("/"); root.scrollTo({top: 0, behavior: "smooth"}); return; }
-    if (b.hasAttribute("data-kws-start")){ go("/start"); close(() => render(true)); }
+    if (b.hasAttribute("data-kws-start")){ go(firstRun ? "/start" : "/app"); close(() => render(true)); }
     else { go("/signin"); close(() => { render(true); const x = document.createElement("button"); x.type = "button"; x.hidden = true; x.setAttribute("data-open-account", ""); x.setAttribute("data-acc-start", "signin"); view.appendChild(x); x.click(); x.remove(); }); } });
   siteLocalize(root);
+  if (!firstRun){ const act = root.querySelector(".kws-act"); if (act) act.innerHTML = `<button type="button" class="kws-btn" data-kws-start>Open my app →</button>`; }
   if (SITE_PATHS[sitePath()]) setTimeout(() => { const el = root.querySelector("#" + SITE_PATHS[sitePath()]); if (el) el.scrollIntoView(); }, 60);   // opened at /features and friends
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   // rotating word
@@ -8715,6 +8716,7 @@ function formKeepPut(list){ FORMKEEP.skip = false; if (!list.length) return; con
   list.forEach(k => { const [form, id, name] = k.key.split("|"), f = v.querySelector(`form[data-form="${form}"]${id ? `[data-id="${id}"],form[data-form="${form}"][data-pid="${id}"]` : ""}`); const el = f && f.elements[name]; if (!el || el === document.activeElement) return;
     const def = el.tagName === "SELECT" ? ([...el.options].find(o => o.defaultSelected) || el.options[0] || {}).value : el.defaultValue; if (def === k.def && el.value === def) el.value = k.val; }); }
 function render(keepScroll){
+  try { if (!window.Capacitor && UI.welcome == null && !UI.account && ["/start", "/signin"].includes(sitePath()) && localStorage.getItem(KEY)) history.replaceState(null, "", "/app" + location.search); } catch(e){}
   if (S.geo && S.geo.x){ view.innerHTML = `<section class="card" style="margin-top:24px;text-align:center"><h2>KeepWise isn’t available in your region</h2><p class="muted">Because of international sanctions and our payment partners’ rules, KeepWise can’t offer its service where you are. Your data on this phone stays here and is not sent anywhere.</p></section>`; return; }   // places KeepWise does not serve
   const main = $("main"), top = main.scrollTop, back = keepScroll ? innerScrollKeep(document.getElementById("app") || document.body) : () => {};
   // Banks & statements is the Banks tab now: anything that opens it (the menu, search, a bank just connected) lands on Accounts.
@@ -10634,7 +10636,7 @@ if (firstRun) UI.welcome = 0;
 // mykeepwise.com in a browser, first visit: the website comes first. Start opens the app's welcome; the app itself, a home-screen
 // install, tests (navigator.webdriver) and anyone who already uses KeepWise go straight in.
 try { if (!window.Capacitor && SITE_PATHS[sitePath()]) window.KEEPWISE_SITE = true; if (!window.Capacitor && sitePath() === "/signin") setTimeout(siteSignin, 0); } catch(e){}
-try { if (/[?&]site\b/.test(location.search)) window.KEEPWISE_SITE = true; if ((firstRun || window.KEEPWISE_SITE) && !window.Capacitor && !STANDALONE && (!navigator.webdriver || window.KEEPWISE_SITE) && !/[?&#]app\b/.test(location.href)) siteOpen(); } catch(e){}
+try { if (/[?&]site\b/.test(location.search)) window.KEEPWISE_SITE = true; if ((firstRun || window.KEEPWISE_SITE || sitePath() === "/") && !["/app", "/start", "/signin"].includes(sitePath()) && !window.Capacitor && !STANDALONE && (!navigator.webdriver || window.KEEPWISE_SITE) && !/[?&#]app\b/.test(location.href)) siteOpen(); } catch(e){}
 
 // The owl behind every screen (see .owl-bg). Eyes wander and blink on their own, look toward a finger or the pointer,
 // and rest while the app is hidden or the person prefers less motion.
