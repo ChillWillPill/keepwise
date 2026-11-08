@@ -1823,6 +1823,14 @@ const skinNow = () => { const k = SKIN_MAP[S.skin] || S.skin; return SKINS.some(
 let iconSent = null;
 function iconFollow(k){ if (k === iconSent) return; iconSent = k;
   try { if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("IconBridge")) Capacitor.registerPlugin("IconBridge").set({name: k}).catch(() => {}); } catch(e){} }
+// The quick add widget on the Android home screen: tapping it opens the owl, ready to log or ask; its microphone starts listening.
+window.kwWidgetTap = () => { try {
+  if (!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("WidgetBridge"))) return;
+  Capacitor.registerPlugin("WidgetBridge").take().then(r => { const a = r && r.action; if (!a) return;
+    const go = () => { const w = $("wise"); if (!w || w.hidden){ if (!UI.askOpen && go.n++ < 20) return setTimeout(go, 250); }
+      if (!UI.askOpen && w) w.click();
+      if (a === "voice") setTimeout(() => { const m = $("ask-mic"); if (m && !VOICE.rec) m.click(); }, 450); };
+    go.n = 0; go(); }).catch(() => {}); } catch(e){} };
 function applyTheme(){
   let setting = false; try { setting = UI.welcome != null; } catch(e){}   // every new person sets up their month in the light look
   const t = setting ? "light" : THEMES.includes(S.theme) ? S.theme : "system", root = document.documentElement;
@@ -1851,8 +1859,15 @@ function widgetPush(){ try {
   const C = compute(), P = C.planPeriod, by = P && P.end ? dayMonth(P.end) : "month end";
   const soon = S.subs.filter(s => s.keep !== "drop").map(s => ({n: s.name, a: +s.price || 0, d: nextRenewal(s)})).filter(x => x.d).sort((a, b) => a.d - b.d)[0];
   const next = soon ? `Next: ${soon.n} ${fmt(soon.a)} · ${whenLabel(daysUntil(soon.d)).toLowerCase()}` : "";
-  W.update({label: C.savings >= 0 ? `You'll keep by ${by}` : `Short by ${by}`, amount: S.hideBal ? "••••" : fmt(Math.abs(C.savings)), next}).catch(() => {});
+  // This week widget: the same seven days as This week on Month
+  const it = weekItems(), t0 = todayMid(), short = n => sym() + (n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : Math.round(n));
+  const week = [...Array(7)].map((_, i) => { const d = dayPlus(t0, i), on = it.filter(x => x.d === isoOf(d)), o = on.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0), n = on.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0);
+    return {n: d.toLocaleDateString("en-US", {weekday: "short"}), t: String(d.getDate()), a: S.hideBal ? (o || n ? "•" : "") : o ? "−" + short(o) : n ? "+" + short(n) : "", k: o ? "out" : n ? "in" : ""}; });
+  const wo = r2(it.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0)), wi = r2(it.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0));
+  const weekSum = S.hideBal ? "" : wo ? `−${fmt(wo)} out` : wi ? `+${fmt(wi)} in` : "Nothing due";
+  W.update({label: C.savings >= 0 ? `You'll keep by ${by}` : `Short by ${by}`, amount: S.hideBal ? "••••" : fmt(Math.abs(C.savings)), next, week: JSON.stringify(week), weekSum, weekIn: !wo && !!wi}).catch(() => {});
 } catch(e){} }
+window.kwWidgetPush = widgetPush;
 window.addEventListener("pagehide", save);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
 // Back from the email app: if the email was just verified, the profile says so without a tap.
@@ -10564,6 +10579,7 @@ save();
 applyTheme();
 lockLoad();
 // Opened from the Ask KeepWise link or icon shortcut: start with the owl up, then tidy the address so a refresh is a normal open.
+setTimeout(() => window.kwWidgetTap(), 600);   // opened from a widget tap
 try { const q = new URLSearchParams(location.search); if (q.has("ask")){ UI.askOpen = !firstRun; q.delete("ask"); const rest = q.toString(); history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash); } } catch(e){}
 render(false);
 if (LOCK.cfg && !window.KEEPWISE_NO_LOCK){ if (lockFresh() || lockRecent()) LOCK.openedAt = lsNum(LOCK_FRESH); else lockNow(); }

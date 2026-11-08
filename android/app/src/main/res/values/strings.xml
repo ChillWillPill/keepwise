@@ -5,4 +5,10 @@
     <string name="package_name">com.mykeepwise.app</string>
     <string name="custom_url_scheme">com.mykeepwise.app</string>
     <string name="widget_description">What you\'ll keep this month and what\'s due next</string>
+    <string name="quick_title">Add spending</string>
+    <string name="quick_hint">or ask the owl</string>
+    <string name="quick_mic">Say what you spent</string>
+    <string name="quick_description">Log spending or ask KeepWise in one tap</string>
+    <string name="week_title">This week</string>
+    <string name="week_description">Your next seven days: bills, renewals and paydays</string>
 </resources>

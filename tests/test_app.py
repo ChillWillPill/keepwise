@@ -6484,6 +6484,25 @@ async def the_owl_hears_you_in_the_android_app(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def the_widgets_get_the_week_and_open_the_owl(ctx):
+    # the Android home screen widgets: This week gets the same seven days as Month, and the quick add widget opens the owl
+    pg = await open_app(ctx)
+    await pg.evaluate("""() => { window.__w = {sent: [], action: 'voice'};
+      window.Capacitor = {isNativePlatform: () => true, isPluginAvailable: n => n === 'WidgetBridge' || n === 'VoiceBridge', getPlatform: () => 'android',
+        registerPlugin: n => n === 'WidgetBridge' ? {update: a => { __w.sent.push(a); return Promise.resolve(); }, take: () => { const a = __w.action; __w.action = ''; return Promise.resolve({action: a}); }}
+          : {addListener: () => Promise.resolve({remove(){}}), start: () => Promise.resolve(), stop: () => Promise.resolve()}}; }""")
+    await pg.evaluate("window.kwWidgetPush()")
+    sent = await pg.evaluate("__w.sent[__w.sent.length - 1]")
+    week = json.loads(sent["week"]); assert len(week) == 7 and week[0]["t"] == str(datetime.date.today().day), week
+    strip = await pg.evaluate("[...document.querySelectorAll('.wk-days > *')].map(x => x.innerText.replace(/\\s+/g, ' ').trim())")
+    for d, s in zip(week, strip):
+        assert d["t"] in s and (not d["a"] or d["a"].replace("−", "").replace("+", "")[:2] in s.replace(",", "")), (d, s)
+    assert sent["weekSum"].endswith(("out", "in", "due")), sent["weekSum"]
+    await pg.evaluate("window.kwWidgetTap()"); await pg.wait_for_timeout(900)
+    assert await pg.locator(".ask-panel").count() == 1, "a tap on the quick add widget opens the owl"
+    assert not pg.errors, pg.errors
+
+@test
 async def the_tour_plays_by_itself_and_pauses(ctx):
     pg = await open_app(ctx, month_tabs=True)
     await pg.click("#acct-btn"); await pg.wait_for_timeout(280); await pg.click("#sidenav [data-menu=tour]"); await pg.wait_for_timeout(300)

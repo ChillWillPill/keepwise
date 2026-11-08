@@ -1,5 +1,6 @@
 package app.keepwise.money;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.webkit.WebSettings;
 import com.getcapacitor.BridgeActivity;
@@ -14,6 +15,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(WidgetBridge.class);   // the home screen widget's link to the app
         registerPlugin(VoiceBridge.class);    // speaking to the owl
         registerPlugin(IconBridge.class);     // the home screen icon follows the theme
+        WidgetBridge.note(getIntent());       // opened from a widget tap
         super.onCreate(savedInstanceState);
         capTextZoom();
     }
@@ -22,6 +24,13 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {
         super.onResume();
         capTextZoom();   // the phone's text size can change while the app is in the background
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        WidgetBridge.note(intent);
+        super.onNewIntent(intent);
+        if (getBridge() != null) getBridge().eval("window.kwWidgetTap && window.kwWidgetTap()", null);
     }
 
     @Override

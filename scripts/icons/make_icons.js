@@ -42,6 +42,7 @@ const sized = (svg, s) => svg.replace('<svg ', `<svg width="${s}" height="${s}" 
   await shot(`${WEB}/maskable-512.png`, 512, 512, `<div style="width:512px;height:512px;background:${mbg};display:grid;place-items:center">${sized(owl(mc), 330)}</div>`);
   await shot('android/play-store-icon-512.png', 512, 512, icon(mbg, mc, 512, '0'));
   // the small round logo inside the app and the website
+  await shot(`${RES}/drawable-nodpi/kw_owl.png`, 192, 192, `<div style="width:192px;height:192px;display:grid;place-items:center">${sized(owl(mc), 184)}</div>`, true);   // the quick add widget's owl
   await shot('scripts/icons/logo-96.png', 96, 96, icon(mbg, mc, 96, '50%'), true);
   await b.close();
 })();
