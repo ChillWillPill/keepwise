@@ -77,6 +77,14 @@ js(ws, "document.getElementById('wise').click()"); time.sleep(2); shot("2-owl")
 js(ws, "document.querySelector('.ask-back') && document.querySelector('.ask-back').click()"); time.sleep(1)
 print(LABEL, "native bridges:", js(ws, "JSON.stringify(['WidgetBridge','VoiceBridge','IconBridge'].map(n => [n, !!(window.Capacitor && Capacitor.isPluginAvailable(n))]))"))
 print(LABEL, "mic button shown:", js(ws, "(document.getElementById('wise').click(), new Promise(r => setTimeout(() => r(!!document.getElementById('ask-mic') && !document.getElementById('ask-mic').hidden), 1500)))"))
+# the home screen icon follows the theme: pick Night Owl, leave the app, and see which launcher entry is on
+js(ws, "(() => { const b = document.createElement('button'); b.setAttribute('data-skin-set', 'owl'); b.hidden = true; document.getElementById('view').appendChild(b); b.click(); b.remove(); })()")
+time.sleep(2); adb("shell", "input", "keyevent", "KEYCODE_HOME"); time.sleep(6)
+on = adb("shell", "cmd", "package", "query-activities", "--brief", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.LAUNCHER", check=False)
+icon = [l.strip() for l in on.splitlines() if PKG in l]
+print(LABEL, "launcher entry after picking Night Owl:", icon)
+if not any("Icon_owl" in l for l in icon): errs.append(f"icon did not follow the theme: {icon}")
+adb("shell", "input", "swipe", "500", "1500", "500", "300", "300", check=False); time.sleep(3); shot("3-app-drawer")
 if errs:
     print("LAYOUT PROBLEMS", *errs, sep="\n"); sys.exit(1)
 print(LABEL, "ok")
