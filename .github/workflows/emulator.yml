@@ -5,6 +5,9 @@ on:
     branches: [emulator-check]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -65,3 +68,12 @@ jobs:
         with:
           name: shots-${{ matrix.name }}
           path: shots
+      - name: Keep the screenshots on the emulator-shots branch too (easy to look at)
+        if: always()
+        run: |
+          git config user.name Keepwise; git config user.email keepwise@users.noreply.github.com
+          for i in 1 2 3 4 5; do
+            rm -rf /tmp/es && git clone -q --depth 1 --branch emulator-shots "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" /tmp/es 2>/dev/null || { mkdir -p /tmp/es && cd /tmp/es && git init -q -b emulator-shots && git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}"; cd -; }
+            rm -rf /tmp/es/${{ matrix.name }} && mkdir -p /tmp/es/${{ matrix.name }} && cp shots/*.png /tmp/es/${{ matrix.name }}/ 2>/dev/null || true
+            cd /tmp/es && git add -A && (git -c user.name=Keepwise -c user.email=keepwise@users.noreply.github.com commit -qm "Emulator shots: ${{ matrix.name }}" || true) && git push -q origin emulator-shots && break; cd -; sleep $((RANDOM % 10 + 3))
+          done

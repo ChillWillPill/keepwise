@@ -42,9 +42,17 @@ def cdp(ws, method, **params):
         m = json.loads(ws.recv())
         if m.get("id") == N[0]: return m
 
-def js(ws, code):
-    r = cdp(ws, "Runtime.evaluate", expression=code, awaitPromise=True, returnByValue=True)
-    return r.get("result", {}).get("result", {}).get("value")
+def js(_ws, code):
+    global ws
+    for attempt in range(3):
+        try:
+            r = cdp(ws, "Runtime.evaluate", expression=code, awaitPromise=True, returnByValue=True)
+            return r.get("result", {}).get("result", {}).get("value")
+        except Exception as e:   # the debugging link can drop on a slow emulator: connect again and retry
+            print("reconnecting:", e); time.sleep(3)
+            try: ws.close()
+            except Exception: pass
+            ws = devtools()
 
 start()
 shot("0-launch")                      # what a new person sees first
@@ -62,7 +70,7 @@ def tap_tab(k):
 errs = []
 for k in ("month", "subs", "banks", "split"):
     tap_tab(k); shot("1-" + k)
-    w = js(ws, "[document.documentElement.scrollWidth, innerWidth, [...document.querySelectorAll('#view *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.chip-row,.quick-grid,[data-scroll-x]'); }).length]")
+    w = js(ws, "[document.documentElement.scrollWidth, innerWidth, [...document.querySelectorAll('#view *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.chip-row,.quick-grid,[data-scroll-x]'); }).slice(0, 4).map(e => e.tagName + '.' + e.className + ' ' + Math.round(e.getBoundingClientRect().left) + '-' + Math.round(e.getBoundingClientRect().right) + ' in .' + e.parentElement.className + ' : ' + (e.innerText || '').slice(0, 30))]")
     if w and (w[0] > w[1] or w[2]): errs.append(f"{k}: wider than the screen {w}")
 tap_tab("month")
 js(ws, "document.getElementById('wise').click()"); time.sleep(2); shot("2-owl")
