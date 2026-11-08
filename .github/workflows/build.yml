@@ -27,7 +27,7 @@ jobs:
       - name: Build the web app
         run: python scripts/build.py
       - name: Run every test (source and built app)
-        run: python tests/test_app.py src/app.html && python tests/test_app.py www/index.html
+        run: python -u tests/test_app.py src/app.html && python -u tests/test_app.py www/index.html
 
   android:
     needs: test

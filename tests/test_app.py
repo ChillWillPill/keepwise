@@ -7219,7 +7219,8 @@ async def main():
             await ctx.add_init_script("if (window.KEEPWISE_BIZ_OPEN === undefined) window.KEEPWISE_BIZ_OPEN = true;")
             await ctx.add_init_script("if (window.KEEPWISE_BIZ_SEG === undefined) window.KEEPWISE_BIZ_SEG = 'money';")   # Business opens on Overview; older tests start in Money   # Business rows open, unless a test checks them folded   # Month as one page unless a test asks for the phone's three parts
             try:
-                await fn(ctx)
+                try: await asyncio.wait_for(fn(ctx), 240)   # a stuck test fails with its name instead of freezing the run
+                except asyncio.TimeoutError: raise AssertionError("took over 4 minutes (stuck)")
                 errs = [e for pg in ctx.pages for e in getattr(pg, "errors", [])]
                 assert not errs, "JS errors: " + "; ".join(errs)
                 return None
