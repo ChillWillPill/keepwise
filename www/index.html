@@ -1859,7 +1859,8 @@ window.kwWidgetTap = () => { try {
   Capacitor.registerPlugin("WidgetBridge").take().then(r => { const a = r && r.action; if (!a) return;
     const go = () => { const w = $("wise"); if (!w || w.hidden){ if (!UI.askOpen && go.n++ < 20) return setTimeout(go, 250); }
       if (!UI.askOpen && w) w.click();
-      if (a === "voice") setTimeout(() => { const m = $("ask-mic"); if (m && !VOICE.rec) m.click(); }, 450); };
+      if (a === "voice") setTimeout(() => { const m = $("ask-mic"); if (m && !VOICE.rec) m.click(); }, 450);
+      if (a === "type") setTimeout(() => { const i = $("ask-in"); if (i){ i.focus(); i.click(); } }, 350); };
     go.n = 0; go(); }).catch(() => {}); } catch(e){} };
 function applyTheme(){
   let setting = false; try { setting = UI.welcome != null; } catch(e){}   // every new person sets up their month in the light look

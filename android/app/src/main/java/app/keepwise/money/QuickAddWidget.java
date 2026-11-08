@@ -7,12 +7,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.widget.RemoteViews;
 
-// Quick add widget: tap the owl to open KeepWise ready to log or ask; tap the microphone to start speaking straight away.
+// Quick add widget: tap the box to type (the owl opens with the keyboard up), the mic to speak, or the owl to open it.
 public class QuickAddWidget extends AppWidgetProvider {
     @Override
     public void onUpdate(Context c, AppWidgetManager manager, int[] ids) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.keepwise_quick);
         v.setOnClickPendingIntent(R.id.kq_root, open(c, "ask", 11));
+        v.setOnClickPendingIntent(R.id.kq_field, open(c, "type", 13));
         v.setOnClickPendingIntent(R.id.kq_mic, open(c, "voice", 12));
         for (int id : ids) manager.updateAppWidget(id, v);
     }
