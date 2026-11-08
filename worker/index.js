@@ -284,6 +284,7 @@ export default {
       if (url.pathname === "/plus/status") return await plusStatus(origin, env, b);
       if (url.pathname === "/plus/upgrade") return await plusUpgrade(origin, env, b);
       if (url.pathname === "/plus/activate") return await plusActivate(origin, env, b);
+      if (url.pathname === "/admin/grant") return await adminGrant(origin, env, b);
     } catch(e){ return fail(origin, 502, "That service didn't answer. Try again in a minute."); }
     return fail(origin, 404, "Not found.");
   },
@@ -319,12 +320,30 @@ async function paddleSub(env, email){
   const trial = sub.status === "trialing" ? ((sub.items && sub.items[0] && sub.items[0].trial_dates && sub.items[0].trial_dates.ends_at) || sub.next_billed_at || null) : null;
   return {plus: true, tier, trialEnds: trial, subId: sub.id, cycle: sub.billing_cycle && sub.billing_cycle.interval === "year" ? "yr" : "mo"};
 }
-const needPlus = async (env, user) => { if (!env.PADDLE_API_KEY) return true; const r = await paddleSub(env, user && user.email_verified ? String(user.email).toLowerCase() : ""); return !!(r && r.plus); };
+// Early access the owner gave from the admin page: "g:<email>" in the same KV, {tier, until (ms or 0 for no end), at}.
+async function grantOf(env, email){ if (!env.PLAID_ITEMS || !email) return null; try { const g = JSON.parse(await env.PLAID_ITEMS.get("g:" + email) || "null"); return g && (!g.until || g.until > Date.now()) ? g : null; } catch(e){ return null; } }
+async function plusOf(env, email){ const g = await grantOf(env, email); if (g) return {plus: true, tier: g.tier === "ultra" ? "ultra" : "plus", grant: true, until: g.until || null}; return paddleSub(env, email); }
+const needPlus = async (env, user) => { const email = user && user.email_verified ? String(user.email).toLowerCase() : ""; if (await grantOf(env, email)) return true; if (!env.PADDLE_API_KEY) return true; const r = await paddleSub(env, email); return !!(r && r.plus); };
+const OWNER = "notartist04@gmail.com";
+const isOwner = u => u && u.email === OWNER && u.email_verified === true && u.firebase && u.firebase.sign_in_provider === "google.com";
+// The owner gives or takes back early access: {idToken, email, tier: "plus"|"ultra", days (0 = until launch), off}
+async function adminGrant(origin, env, b){
+  const json = o => new Response(JSON.stringify(o), {headers: {"Content-Type": "application/json", ...cors(origin)}});
+  let user; try { user = await firebaseUser(b && b.idToken); } catch(e){ return fail(origin, 401, "Sign in again."); }
+  if (!isOwner(user)) return fail(origin, 403, "Not allowed.");
+  if (!env.PLAID_ITEMS) return fail(origin, 500, "Storage isn't set up.");
+  if (b.list){ const out = []; let cursor; do { const page = await env.PLAID_ITEMS.list({prefix: "g:", cursor}); for (const k of page.keys){ try { out.push({email: k.name.slice(2), ...JSON.parse(await env.PLAID_ITEMS.get(k.name))}); } catch(e){} } cursor = page.list_complete ? null : page.cursor; } while (cursor); return json({grants: out}); }
+  const email = String(b.email || "").trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 200) return fail(origin, 400, "Check the email.");
+  if (b.off){ await env.PLAID_ITEMS.delete("g:" + email); return json({ok: true}); }
+  const days = Math.max(0, Math.min(3650, +b.days || 0)), g = {tier: b.tier === "ultra" ? "ultra" : "plus", until: days ? Date.now() + days * 864e5 : 0, at: Date.now()};
+  await env.PLAID_ITEMS.put("g:" + email, JSON.stringify(g)); return json({ok: true, grant: g});
+}
 async function plusStatus(origin, env, b){
   const json = o => new Response(JSON.stringify(o), {headers: {"Content-Type": "application/json", ...cors(origin)}});
   let user; try { user = await firebaseUser(b && b.idToken); } catch(e){ return json({plus: null}); }
-  if (!env.PADDLE_API_KEY) return json({plus: null});
   if (!user.email || !user.email_verified) return json({plus: false});
+  const g = await grantOf(env, String(user.email).toLowerCase()); if (g) return json({plus: true, tier: g.tier === "ultra" ? "ultra" : "plus", grant: true, until: g.until || null});
+  if (!env.PADDLE_API_KEY) return json({plus: null});
   const r = await paddleSub(env, String(user.email).toLowerCase()); if (r) delete r.subId;
   return json(r || {plus: null});
 }
@@ -376,10 +395,10 @@ async function paddleWebhook(req, env){
   if (/^subscription\./.test(ev.event_type || "") && ["canceled", "paused"].includes(st) && cust && env.PADDLE_API_KEY){
     const base = env.PADDLE_ENV === "production" ? "https://api.paddle.com" : "https://sandbox-api.paddle.com";
     const c = await (await fetch(`${base}/customers/${cust}`, {headers: {Authorization: "Bearer " + env.PADDLE_API_KEY}})).json(), email = c && c.data && String(c.data.email || "").toLowerCase();
-    if (email){ const still = await paddleSub(env, email); if (!(still && still.plus)) await linkCloseAll(env, email); }
+    if (email){ const still = await plusOf(env, email); if (!(still && still.plus)) await linkCloseAll(env, email); }
   }
   return new Response("ok");
 }
 // Once a day: anyone with bank links but no active Plus (a missed webhook, a failed payment) has their links closed.
 async function linkSweep(env){ if (!env.PLAID_ITEMS || !env.PADDLE_API_KEY) return; let cursor;
-  do { const page = await env.PLAID_ITEMS.list({prefix: "u:", cursor}); for (const k of page.keys){ const email = k.name.slice(2); try { const r = await paddleSub(env, email); if (r && r.plus === false) await linkCloseAll(env, email); } catch(e){} } cursor = page.list_complete ? null : page.cursor; } while (cursor); }
+  do { const page = await env.PLAID_ITEMS.list({prefix: "u:", cursor}); for (const k of page.keys){ const email = k.name.slice(2); try { const r = await plusOf(env, email); if (r && r.plus === false) await linkCloseAll(env, email); } catch(e){} } cursor = page.list_complete ? null : page.cursor; } while (cursor); }

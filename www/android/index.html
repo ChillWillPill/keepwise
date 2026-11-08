@@ -8271,9 +8271,9 @@ async function plusBuy(plan){ const p = PADDLE(); if (!p) return false; const u 
     P.Checkout.open({items: [{priceId: ultra ? (plan === "yr" ? p.ultraYearly : p.ultraMonthly) : (plan === "yr" ? p.yearly : p.monthly), quantity: 1}], customer: u && u.email ? {email: u.email} : undefined, customData: u ? {uid: u.uid} : undefined, settings: {displayMode: "overlay", theme: "light", successUrl: SITE_URL + "?plus=thanks"}}); return true; }
   catch(e){ payOops(); return true; } }
 // A signed-in person who paid on another device: ask the KeepWise server once a day whether their Plus is active.
-async function plusCheck(force){ const u = typeof ACC !== "undefined" && ACC.user; if (!PADDLE() || !u || !u.email) return; if (!force && S.plusCheckedAt && S.plusPaid != null && Date.now() - S.plusCheckedAt < 432e5) return;
+async function plusCheck(force){ const u = typeof ACC !== "undefined" && ACC.user; if (!u || !u.email) return;   // early access works on Android too, so this asks even without checkout if (!force && S.plusCheckedAt && S.plusPaid != null && Date.now() - S.plusCheckedAt < 432e5) return;
   try { const idToken = await u.getIdToken(); const r = await fetch(API_BASE + "/plus/status", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({idToken})}); const j = await r.json();
-    if (typeof j.plus !== "boolean") return; const was = plusOn(), wasPlan = S.plusPlan; S.plusPaid = j.plus; S.plusPlan = j.plus ? (j.tier === "ultra" ? "ultra" : "plus") : null; S.plusCheckedAt = Date.now(); S.plusTrial = j.plus && j.trialEnds ? {src: "paddle", end: String(j.trialEnds).slice(0, 10)} : null; save();
+    if (typeof j.plus !== "boolean") return; const was = plusOn(), wasPlan = S.plusPlan; S.plusPaid = j.plus; S.plusPlan = j.plus ? (j.tier === "ultra" ? "ultra" : "plus") : null; S.plusCheckedAt = Date.now(); S.plusTrial = j.plus && j.trialEnds ? {src: "paddle", end: String(j.trialEnds).slice(0, 10)} : null; S.plusGrant = j.plus && j.grant ? {until: j.until || 0} : null; save();
     if (!j.plus) plaidCloseAll("Your Plus has ended, so your bank connections were closed. Everything you brought in stays on this phone.");
     if (was !== plusOn() || wasPlan !== S.plusPlan) render(true); } catch(e){} }
 // When Plus ends, each bank link is closed at Plaid so it stops syncing (and stops costing). What came in stays on the phone.
@@ -8290,6 +8290,7 @@ const fmtUsdLocal = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
 const ultraReady = () => { const p = PADDLE(); return bankRegion() && !!(p && p.ultraMonthly && p.ultraYearly && !/REPLACE/.test(p.ultraMonthly + p.ultraYearly)); };
 function plusCta(){
   const signedIn = typeof ACC !== "undefined" && ACC.user && ACC.profile, joined = signedIn && ACC.profile.plusInterest;
+  if (plusOn() && S.plusGrant) return `<div class="soon in"><div class="soon-owl" aria-hidden="true">${(document.querySelector("#wise .owl-ic") || {outerHTML: ""}).outerHTML}</div><div class="soon-t"><span class="soon-tag">★ Early access</span><b>You have ${plusPlan() === "ultra" ? "Plus Ultra" : "Plus"}${S.plusGrant.until ? " until " + esc(dayMonth(new Date(S.plusGrant.until))) : ""}.</b><p>A thank-you from the KeepWise team. Nothing is charged.</p></div></div>`;
   if (PADDLE()){
     if (plusOn()) return plusPlan() === "plus" && ultraReady() ? `<div class="plus-buy"><button class="btn primary" type="button" data-plus-upgrade>Move to Plus Ultra · ${esc(fmtUsdLocal(ultraPrice().mo))} a month</button><p class="muted small">Up to 5 banks. Paddle charges only the difference for the rest of this period.</p></div>` : "";
     const ultra = UI.plusPick === "ultra" && ultraReady(), cyc = UI.plusCycle === "mo" ? "mo" : "yr", P = ultra ? ultraPrice() : plusPrice(), Pp = plusPrice(), Pu = ultraPrice(), per = q => cyc === "yr" ? `${fmtUsdLocal(q.yr)}<small>a year</small>` : `${fmtUsdLocal(q.mo)}<small>a month</small>`;

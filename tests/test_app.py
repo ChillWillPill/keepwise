@@ -3629,6 +3629,33 @@ async def admin_data_map_shows_every_table_and_its_links(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def admin_customer_profile_gives_early_access(ctx):
+    pg = await open_admin(ctx); G = {}
+    async def api(route):
+        b = json.loads(route.request.post_data or "{}")
+        if b.get("list"): body = {"grants": [{"email": k, **v} for k, v in G.items()]}
+        elif b.get("off"): G.pop(b["email"], None); body = {"ok": True}
+        else: G[b["email"]] = {"tier": b["tier"], "until": 0 if not b["days"] else 1893456000000, "at": 1762600000000}; body = {"ok": True}
+        await route.fulfill(json=body, headers={"access-control-allow-origin": "*"})
+    await pg.route("https://keepwise-api.keepwise.workers.dev/**", api)
+    await pg.click("[data-google]"); await pg.wait_for_timeout(500)
+    await pg.click("[data-view=customers]"); await pg.wait_for_timeout(200)
+    await pg.locator("[data-cust]").first.click(); await pg.wait_for_timeout(200)
+    v = await text(pg, "#app"); assert "KeepWise Plus" in v and "With us" in v and "Free" in v, v
+    await pg.select_option("#gtier", "ultra"); await pg.select_option("#gdays", "0"); await pg.click("[data-grant]"); await pg.wait_for_timeout(300)
+    v = await text(pg, "#app"); assert "★ Early access" in v and "Plus Ultra · until launch" in v and len(G) == 1, v
+    assert await pg.locator(".av-star").count() == 1, "the list marks who has it"
+    if os.environ.get("PF_SHOT"): await pg.screenshot(path=os.environ["PF_SHOT"], full_page=True)
+    await pg.click("#theme"); await pg.wait_for_timeout(150)
+    assert await pg.evaluate("document.documentElement.dataset.theme") in ("dark", "light") and await pg.evaluate("getComputedStyle(document.body).backgroundColor") != ""
+    if await pg.evaluate("document.documentElement.dataset.theme") == "dark":
+        assert await pg.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(12, 23, 19)"
+        if os.environ.get("PF_SHOT"): await pg.screenshot(path=os.environ["PF_SHOT"].replace(".png", "-dark.png"), full_page=True)
+    await pg.click("[data-grant-off]"); await pg.wait_for_timeout(300)
+    assert len(G) == 0 and "Give early access" in await text(pg, "#app")
+    assert not pg.errors, pg.errors
+
+@test
 async def plus_screen_gives_reasons_and_prices(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(150)
@@ -5743,7 +5770,7 @@ async def support_tickets_from_app_to_admin_and_back(ctx):
     await ad.click("[data-send]"); await ad.wait_for_timeout(400)
     assert "Answered" in await text(ad, "#app") and "looking into this" in await text(ad, "#thread")
     await ad.click("[data-view=customers]"); await ad.wait_for_timeout(150); await ad.click("[data-cust]"); await ad.wait_for_timeout(150)
-    assert "Connections" in await text(ad, "#app"), await text(ad, "#app")
+    assert "KeepWise Plus" in await text(ad, "#app") and "1 open ticket" in await text(ad, "#app"), await text(ad, "#app")
     await ad.click("[data-view=templates]"); await ad.wait_for_timeout(150); await ad.click("[data-tpl-new]"); await ad.fill("#tpltitle", "Refund"); await ad.click("[data-tpl-save]"); await ad.wait_for_timeout(300)
     assert "Refund" in await text(ad, "#app") and ad.errors == [], ad.errors
     await ad.click("[data-view=map]"); await ad.wait_for_timeout(300)
