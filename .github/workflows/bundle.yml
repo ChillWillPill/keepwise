@@ -1,0 +1,30 @@
+name: Put a Play bundle where it can be fetched
+
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: Run id of the build whose Google Play bundle to copy
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: keepwise-play-bundle
+          run-id: ${{ inputs.run }}
+          github-token: ${{ github.token }}
+          path: b
+      - name: Attach it to a short-lived release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          f=$(ls b/*.aab | head -1); cp "$f" keepwise-play.aab
+          gh release delete play-bundle -y --cleanup-tag -R "${{ github.repository }}" || true
+          gh release create play-bundle keepwise-play.aab -R "${{ github.repository }}" --prerelease --title "Play bundle (temporary)" --notes "Uploaded to Google Play, then removed."
