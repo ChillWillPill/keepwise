@@ -22,12 +22,14 @@ jobs:
           java-version: 21
           cache: gradle   # keeps Gradle itself between runs, so a slow GitHub download can't stop a build
       - run: npm ci --ignore-scripts   # sharp (only for making icons) downloads libvips on install, which times out sometimes
-      - run: python3 scripts/build.py && npx cap sync android
-      - run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      # The real release build (shrunk with R8), signed with the debug key and with page debugging on only here,
+      # so the checks below can look inside it. The Play build never has either.
+      - run: python3 scripts/build.py && node -e "const f='capacitor.config.json',c=JSON.parse(require('fs').readFileSync(f));c.android=Object.assign(c.android||{},{webContentsDebuggingEnabled:true});require('fs').writeFileSync(f,JSON.stringify(c,null,2))" && npx cap sync android
+      - run: cd android && chmod +x gradlew && KW_TEST_SIGN=1 ./gradlew assembleRelease --no-daemon && cp app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/release/app-debug.apk
 
   phones:
     needs: apk
