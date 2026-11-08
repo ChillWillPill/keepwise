@@ -36,7 +36,7 @@
 /* Layout: an app shell pinned to the visible screen (sized from visualViewport in JS): header, one scrolling column, tab bar flush to the bottom edge. */
 :root{
   --bg:#f2faf6; --card:#ffffff; --ink:#10231c; --muted:#4a5e56; --line:#dcede4; --chip:#e3f3eb;
-  --green:#0b7a55; --green-soft:#d7f5e8; --on-green:#ffffff; --rust:#c2403a; --rust-soft:#ffe2df; --gold:#8a6400; --gold-soft:#fff1cc; --mint:#0e9f6e;
+  --green:#0b7a55; --green-soft:#d7f5e8; --on-green:#ffffff; --rust:#c2403a; --rust-soft:#ffe2df; --gold:#8a6400; --gold-soft:#fff1cc; --mint:#0e9f6e; --hero2:#0b7a55; --hero2-good:#ffffff; --hero2-bad:#ffd6d1; --hero2-in:rgba(255,255,255,.14); --hero2-out:rgba(255,190,180,.2);
   --av-s:42%; --av-l:86%; --av-fg:28%; --brand-teal:#0e8571; --brand-gold:#a57d2c;
   --lift:0 1px 2px rgba(28,36,32,.04),0 6px 18px -12px rgba(28,36,32,.18);
   --display:"Bricolage Grotesque", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -44,11 +44,11 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0c1713; --card:#13221c; --ink:#e8f5ee; --muted:#9db8ac; --line:#22382f; --chip:#1a2c25;
-  --green:#5ee0a8; --green-soft:#143a2b; --on-green:#062018; --rust:#ff8a7e; --rust-soft:#3a1f1c; --gold:#ffd25e; --gold-soft:#332a12; --mint:#5ee0a8; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}}
+  --green:#5ee0a8; --green-soft:#143a2b; --on-green:#062018; --rust:#ff8a7e; --rust-soft:#3a1f1c; --gold:#ffd25e; --gold-soft:#332a12; --mint:#5ee0a8; --hero2:#10231c; --hero2-good:#5ee0a8; --hero2-bad:#ff9f96; --hero2-in:rgba(94,224,168,.14); --hero2-out:rgba(242,92,84,.16); --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}}
 :root[data-theme="light"]{color-scheme:light}
 :root[data-theme="dark"]{
   --bg:#0c1713; --card:#13221c; --ink:#e8f5ee; --muted:#9db8ac; --line:#22382f; --chip:#1a2c25;
-  --green:#5ee0a8; --green-soft:#143a2b; --on-green:#062018; --rust:#ff8a7e; --rust-soft:#3a1f1c; --gold:#ffd25e; --gold-soft:#332a12; --mint:#5ee0a8; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}
+  --green:#5ee0a8; --green-soft:#143a2b; --on-green:#062018; --rust:#ff8a7e; --rust-soft:#3a1f1c; --gold:#ffd25e; --gold-soft:#332a12; --mint:#5ee0a8; --hero2:#10231c; --hero2-good:#5ee0a8; --hero2-bad:#ff9f96; --hero2-in:rgba(94,224,168,.14); --hero2-out:rgba(242,92,84,.16); --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}
 
 /* Themes: each look has a light and a dark side; Classic is the original cream and forest look. */
 :root[data-skin="cream"]{--bg:#f3efe6; --card:#fbf8f2; --ink:#1c2420; --muted:#4d564e; --line:#e0d5c5; --chip:#efe4d4; --green:#1b6843; --green-soft:#e4f2ea; --on-green:#f3faf6; --rust:#a84b34; --rust-soft:#f6e2da; --gold:#9a7417; --gold-soft:#f3e9cc; --mint:#1b6843; --display:"Fraunces", ui-serif, Georgia, serif; --body:"Figtree", ui-sans-serif, system-ui, sans-serif}
@@ -140,10 +140,10 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 :root[data-skin="classic"] .hero .hero-tiles>div{background:rgba(255,255,255,.13)}:root[data-skin="classic"] .hero .hero-tiles small{color:#d9f5e9}:root[data-skin="classic"] .hero .hero-tiles b{color:#fff}
 /* Split in Mint Pop and Night Owl: one balance card; the people list below already shows each person */
 :root:is([data-skin="classic"],[data-skin="owl"]) .split-hero .sp-bub{display:none}
-:root[data-skin="classic"] .split-hero{background:#10231c;color:#fff;border:0}
-:root[data-skin="classic"] .split-hero .label{color:#b9cec5}:root[data-skin="classic"] .split-hero .big.good{color:#5ee0a8}:root[data-skin="classic"] .split-hero .big.bad{color:#ff9f96}:root[data-skin="classic"] .split-hero .split-square{color:#fff}
-:root[data-skin="classic"] .split-hero .sm-in{background:rgba(94,224,168,.14);color:#fff}:root[data-skin="classic"] .split-hero .sm-out{background:rgba(242,92,84,.16);color:#fff}
-:root[data-skin="classic"] .split-hero .sm-in .good{color:#5ee0a8!important}:root[data-skin="classic"] .split-hero .sm-out .bad{color:#ff9f96!important}:root[data-skin="classic"] .split-hero .muted,:root[data-skin="classic"] .split-hero .small{color:#b9cec5}
+:root[data-skin="classic"] .split-hero{background:var(--hero2);color:#fff;border:0}
+:root[data-skin="classic"] .split-hero .label{color:color-mix(in srgb,#fff 82%,var(--hero2))}:root[data-skin="classic"] .split-hero .big.good{color:var(--hero2-good)}:root[data-skin="classic"] .split-hero .big.bad{color:var(--hero2-bad)}:root[data-skin="classic"] .split-hero .split-square{color:#fff}
+:root[data-skin="classic"] .split-hero .sm-in{background:var(--hero2-in);color:#fff}:root[data-skin="classic"] .split-hero .sm-out{background:var(--hero2-out);color:#fff}
+:root[data-skin="classic"] .split-hero .sm-in .good{color:var(--hero2-good)!important}:root[data-skin="classic"] .split-hero .sm-out .bad{color:var(--hero2-bad)!important}:root[data-skin="classic"] .split-hero .muted,:root[data-skin="classic"] .split-hero .small{color:color-mix(in srgb,#fff 78%,var(--hero2))}
 /* Calmer screens in Mint Pop and Night Owl: more room between cards and inside them, softer edges, easier line spacing */
 :root:is([data-skin="classic"],[data-skin="owl"]) .card{border-color:color-mix(in srgb,var(--line) 70%,transparent)}
 /* The example month's call to action: one clear, friendly button */
