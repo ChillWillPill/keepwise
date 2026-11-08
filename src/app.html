@@ -478,7 +478,7 @@ a.btn{display:block;text-decoration:none}
 /* the three-part Month on a phone: tighter cards so a whole part fits one screen */
 .need-chip{appearance:none;display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--card);border:1px solid color-mix(in srgb,var(--gold) 55%,var(--line));border-radius:16px;padding:10px 14px;cursor:pointer;min-height:48px}
 .need-chip .need-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem}.need-chip b{margin-right:4px}.need-chip svg{flex:none;width:18px;height:18px;color:var(--muted)}
-.seg.sub-seg[data-pseg-switch]{grid-template-columns:1fr 1fr}
+.seg.sub-seg[data-pseg-switch]{grid-template-columns:repeat(2,minmax(0,1fr))}
 [data-pseg-switch]~.card .inc-row:not(.editing){padding:10px 14px;gap:4px}
 [data-pseg-switch]~.card .inc-row:not(.editing)>.row-top+[data-exp-edit]{margin-top:-24px}
 .view:has([data-pseg-switch]){gap:12px;padding-top:12px;padding-bottom:24px}
@@ -1078,7 +1078,7 @@ form[data-ctype="debit"] [data-only="credit"],form[data-ctype="credit"] [data-on
 .auto-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.auto-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px}.auto-row+.auto-row{border-top:1px solid var(--line)}.auto-row.up .name{color:var(--rust)}.auto-acts{gap:12px;flex:none;flex-wrap:nowrap;align-items:center}.auto-acts .btn{width:auto;min-height:36px;padding:0 14px}@media (max-width:360px){.auto-row{flex-direction:column;align-items:stretch;gap:6px}.auto-acts{justify-content:flex-end}}
 .plaid-part{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.plaid-or{margin:2px 0 -4px}.biz-banks{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .sales-form{display:flex;flex-direction:column;gap:10px}.sales-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}.sales-steps code{font-size:.85em;padding:1px 5px;border-radius:6px;background:var(--chip)}[data-sales-card] .rows .line{padding:10px 12px;gap:10px}
-.seg.sub-seg.biz-seg{grid-template-columns:repeat(4,1fr)}.seg.sub-seg.biz-seg button{font-size:.86rem;padding:0 4px}
+.seg.sub-seg.biz-seg{grid-template-columns:repeat(4,minmax(0,1fr))}.seg.sub-seg.biz-seg button{font-size:.86rem;padding:0 4px}
 .inv-item{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;align-items:center}.inv-item>input[name=desc]{grid-column:1/-1}.inv-item+.inv-item{padding-top:10px;border-top:1px dashed var(--line)}
 .q-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}.q-right .link{white-space:nowrap}
 [data-inv-form-card],[data-biz-import-card],[data-biz-add],[data-biz-settings]{scroll-margin-top:78px}
@@ -1547,8 +1547,8 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 
 /* ---- four tabs, side menu, hidden hints, compact phones ---- */
 .tabbar{grid-template-columns:repeat(4,1fr)}
-.seg.sub-seg{display:grid;grid-template-columns:repeat(3,1fr);width:100%;background:var(--chip);border:0;border-radius:14px;padding:4px;gap:4px;overflow:visible}
-.seg.sub-seg button{border-radius:11px;min-height:42px;font-size:.92rem}
+.seg.sub-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;background:var(--chip);border:0;border-radius:14px;padding:4px;gap:4px;overflow:visible}
+.seg.sub-seg button{border-radius:11px;min-height:42px;font-size:.92rem;min-width:0;padding:4px 6px;white-space:normal;line-height:1.15;overflow-wrap:anywhere}
 .seg.sub-seg button+button{border-left:0}
 .seg.sub-seg button[aria-pressed="true"]{background:var(--card);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.14)}
 /* The part switch at the top of Month, Subs and Plan stays in reach: it pins under the header while the page scrolls.
