@@ -3607,7 +3607,7 @@ async def plus_takes_a_waitlist_until_checkout_opens(ctx):
     await pg.locator("[data-plus-open]").first.scroll_into_view_if_needed(); await pg.locator("[data-plus-open]").first.click(); await pg.wait_for_timeout(300)
     v = await text(pg, "#view")
     if "Opening soon" not in v: return   # no live Paddle config in this build: the plain waitlist covers it
-    assert await pg.locator("[data-plus-buy]").count() == 0 and "Nothing is charged now" in v and "Sign in to join the early list" in v, v
+    assert await pg.locator("[data-plus-buy]").count() == 0 and "Nothing charged now" in v and "Sign in to join the early list" in v, v
     assert not pg.errors, pg.errors
 
 @test

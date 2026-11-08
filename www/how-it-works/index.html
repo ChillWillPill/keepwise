@@ -8248,9 +8248,8 @@ const plusWait = (signedIn, joined) => joined ? `<p class="plus-joined"><span cl
     : `<button class="btn primary" type="button" data-open-account>Sign in to join the waitlist</button>`;
 // The coming-soon card: the owl, what joining means, and one button. Once joined it turns into a calm "you're in".
 const plusSoon = (signedIn, joined) => `<div class="soon${joined ? " in" : ""}" data-plus-soon><div class="soon-owl" aria-hidden="true">${(document.querySelector("#wise .owl-ic") || {outerHTML: ""}).outerHTML}</div>
-  <div class="soon-t"><span class="soon-tag">${joined ? "✓ You’re on the early list" : "Opening soon"}</span><b>${joined ? "We’ll email you the day Plus opens." : "Be first in line for Plus."}</b>
-  <p>${joined ? `Your free week will be waiting${signedIn && ACC.user.email ? ` at <span class="soon-mail">${esc(ACC.user.email)}</span>` : ""}.` : "Join the early list and we’ll email you the day it opens, with your free week ready."}</p>
-  ${joined ? "" : `<ul class="soon-pts"><li>Nothing is charged now</li><li>Leave the list any time</li></ul>`}</div></div>
+  <div class="soon-t"><span class="soon-tag">${joined ? "✓ You’re on the early list" : "Opening soon"}</span><b>${joined ? "We’ll email you when it opens." : "Be first in line for Plus."}</b>
+  ${joined ? "" : `<ul class="soon-pts"><li>Free week ready</li><li>Nothing charged now</li></ul>`}</div></div>
   ${joined ? `<button class="link small" type="button" data-acc-plus-off style="align-self:center">Leave the list</button>` : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the early list</button>` : `<button class="btn primary" type="button" data-open-account>Sign in to join the early list</button>`}`;
 const PADDLE = () => { if (window.KEEPWISE_PADDLE === false) return null; const p = window.KEEPWISE_PADDLE || PADDLE_CONFIG; return p && p.token && p.monthly && p.yearly && !/REPLACE/.test(p.token + p.monthly + p.yearly) && !window.Capacitor ? p : null; };
 let paddleReady = null;
