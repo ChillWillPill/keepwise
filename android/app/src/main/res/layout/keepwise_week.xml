@@ -5,6 +5,8 @@
     android:orientation="vertical" android:padding="12dp" android:background="@drawable/widget_week_bg">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
         <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/week_title" android:textColor="#10231C" android:textSize="16sp" android:textStyle="bold" />
+        <TextView android:id="@+id/kw_win" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="6dp" android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="3dp" android:paddingBottom="3dp"
+            android:background="@drawable/wk_in" android:textColor="#0B7A55" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:visibility="gone" />
         <TextView android:id="@+id/kw_wsum" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="3dp" android:paddingBottom="3dp"
             android:background="@drawable/wk_out" android:textColor="#B3362F" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" />
     </LinearLayout>

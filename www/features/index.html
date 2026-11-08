@@ -1895,8 +1895,8 @@ function widgetPush(){ try {
   const week = [...Array(7)].map((_, i) => { const d = dayPlus(t0, i), on = it.filter(x => x.d === isoOf(d)), o = on.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0), n = on.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0);
     return {n: d.toLocaleDateString("en-US", {weekday: "short"}), t: String(d.getDate()), a: S.hideBal ? (o || n ? "•" : "") : o ? "−" + short(o) : n ? "+" + short(n) : "", k: o ? "out" : n ? "in" : ""}; });
   const wo = r2(it.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0)), wi = r2(it.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0));
-  const weekSum = S.hideBal ? "" : wo ? `−${fmt(wo)} out` : wi ? `+${fmt(wi)} in` : "Nothing due";
-  W.update({label: C.savings >= 0 ? `You'll keep by ${by}` : `Short by ${by}`, amount: S.hideBal ? "••••" : fmt(Math.abs(C.savings)), next, week: JSON.stringify(week), weekSum, weekIn: !wo && !!wi}).catch(() => {});
+  const weekSum = S.hideBal ? "" : wo ? `−${fmt(wo)} out` : wi ? "" : "Nothing due", weekInSum = S.hideBal || !wi ? "" : `+${short(wi)} in`;
+  W.update({label: C.savings >= 0 ? `You'll keep by ${by}` : `Short by ${by}`, amount: S.hideBal ? "••••" : fmt(Math.abs(C.savings)), next, week: JSON.stringify(week), weekSum, weekInSum}).catch(() => {});
 } catch(e){} }
 window.kwWidgetPush = widgetPush;
 window.addEventListener("pagehide", save);

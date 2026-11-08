@@ -25,11 +25,13 @@ public class WeekWidget extends AppWidgetProvider {
     static RemoteViews views(Context c) {
         SharedPreferences p = c.getSharedPreferences(KeepWiseWidget.PREFS, Context.MODE_PRIVATE);
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.keepwise_week);
-        String sum = p.getString("weekSum", "");
-        v.setTextViewText(R.id.kw_wsum, sum.isEmpty() ? "Open KeepWise" : sum);
-        boolean in = p.getBoolean("weekIn", false);
-        v.setInt(R.id.kw_wsum, "setBackgroundResource", in ? R.drawable.wk_in : R.drawable.wk_out);
-        v.setTextColor(R.id.kw_wsum, in ? 0xFF0B7A55 : 0xFFB3362F);
+        // what comes in and what goes out this week, each in its own pill, as in the app
+        String in = p.getString("weekInSum", ""), out = p.getString("weekSum", "");
+        v.setTextViewText(R.id.kw_win, in);
+        v.setViewVisibility(R.id.kw_win, in.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
+        boolean none = out.isEmpty() && in.isEmpty();
+        v.setTextViewText(R.id.kw_wsum, none ? "Open KeepWise" : out);
+        v.setViewVisibility(R.id.kw_wsum, !none && out.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
         try {
             JSONArray w = new JSONArray(p.getString("week", "[]"));
             for (int i = 0; i < 7; i++) {
