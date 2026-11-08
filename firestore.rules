@@ -55,7 +55,6 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.keys().hasOnly(['uid','from','at'])
         && request.resource.data.uid is string && request.resource.data.from is string && request.resource.data.from.size() <= 40;
     }
-    // Sync across devices: a sealed copy only the owner's devices can open (end-to-end encrypted on the phone).
     // Support: a signed-in person opens a ticket as themselves and reads only their own; the owner reads and answers all.
     // Messages live under the ticket; a person can only write as "user", only the owner as "team".
     match /tickets/{id} {
@@ -80,6 +79,7 @@ service cloud.firestore {
     match /templates/{t} {
       allow read, write: if isOwner();
     }
+    // Sync across devices: a sealed copy only the owner's devices can open (end-to-end encrypted on the phone).
     match /users/{uid}/sync/{doc} {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid && doc == 'state'
