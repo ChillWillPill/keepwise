@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       run:
-        description: Run id of the build whose Google Play bundle to copy
+        description: Run id of the build whose Google Play bundle to copy (or "remove" to take the temporary release down)
         required: true
 
 permissions:
@@ -15,13 +15,20 @@ jobs:
   copy:
     runs-on: ubuntu-latest
     steps:
+      - name: Take the temporary release down
+        if: inputs.run == 'remove'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete play-bundle -y --cleanup-tag -R "${{ github.repository }}" || true
       - uses: actions/download-artifact@v4
+        if: inputs.run != 'remove'
         with:
           name: keepwise-play-bundle
           run-id: ${{ inputs.run }}
           github-token: ${{ github.token }}
           path: b
       - name: Attach it to a short-lived release
+        if: inputs.run != 'remove'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

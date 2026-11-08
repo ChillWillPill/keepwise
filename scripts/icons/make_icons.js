@@ -1,6 +1,6 @@
 // Draws every KeepWise owl icon from one drawing (owlkit.js): the Android launcher icon for each theme, the splash
 // screens, the web icons and the Play Store icon. Run from the repo root: node scripts/icons/make_icons.js
-// (needs Playwright's Chromium). Output is committed; CI does not run this.
+// (needs Playwright's Chromium), then python3 scripts/icons/shrink.py. Output is committed; CI does not run this.
 const {chromium} = require('playwright'), fs = require('fs'), path = require('path');
 const {owl, T} = require('./owlkit');
 const RES = 'android/app/src/main/res', WEB = 'www/icons';
