@@ -104,9 +104,21 @@ self.addEventListener("fetch", e => {{
 import shutil
 for f in ("privacy.html", "terms.html", "refund.html", "delete.html", "legal.css"):
     shutil.copy(os.path.join(ROOT, "src/legal", f), os.path.join(ROOT, "www", f))
+# The pricing page answers at /pricing, /pricing.html and /pricing/ (it uses absolute links, so it works from any of them)
+shutil.copy(os.path.join(ROOT, "src/legal", "pricing.html"), os.path.join(ROOT, "www", "pricing.html"))
+os.makedirs(os.path.join(ROOT, "www", "pricing"), exist_ok=True)
+shutil.copy(os.path.join(ROOT, "src/legal", "pricing.html"), os.path.join(ROOT, "www", "pricing", "index.html"))
 shutil.copy(os.path.join(ROOT, "src/admin/admin.html"), os.path.join(ROOT, "www/admin.html"))
 for f in ("404.html", "robots.txt", "sitemap.xml"):   # a friendly page for old links, and a map so search engines find the real pages
     shutil.copy(os.path.join(ROOT, "src/site", f), os.path.join(ROOT, "www", f))
 os.makedirs(os.path.join(ROOT, "www/admin"), exist_ok=True)
 shutil.copy(os.path.join(ROOT, "src/admin/redirect.html"), os.path.join(ROOT, "www/admin/index.html"))
 print("built www/ (version", version + ")")
+
+# Each site address (/features, /signin, ...) gets its own copy of the page, so opening or refreshing it works on
+# GitHub Pages and answers 200. <base href="/"> keeps icons, styles and scripts loading from the root.
+_page = open(os.path.join(ROOT, "www", "index.html"), encoding="utf-8").read()
+_based = _page.replace("<head>", '<head>\n<base href="/">', 1)
+for _p in ("features", "how-it-works", "android", "plus", "signin", "start"):
+    os.makedirs(os.path.join(ROOT, "www", _p), exist_ok=True)
+    open(os.path.join(ROOT, "www", _p, "index.html"), "w", encoding="utf-8").write(_based)

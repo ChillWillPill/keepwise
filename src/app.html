@@ -6404,18 +6404,29 @@ function siteLocalize(root){
     if (u) u.remove(); if (pro){ const y = pro.querySelector(".kws-amt .y"), m = pro.querySelector(".kws-amt .m"), oy = pro.querySelector(".kws-or .y"); if (y) y.textContent = `$${t.yr} a year`; if (m) m.textContent = `$${t.mo} a month`; if (oy) oy.textContent = `That’s $${(t.yr / 12).toFixed(2)} a month · first week free · cancel anytime`; pro.querySelectorAll("li").forEach(li => { if (/bank|balance/i.test(li.textContent)) li.remove(); }); }
     const sv = root.querySelector("[data-kws-cyc=yr] span"); if (sv) sv.textContent = `Save ${Math.round((1 - t.yr / (t.mo * 12)) * 100)}%`; root.querySelector(".kws-price")?.classList.add("kws-one"); }
 }
+const SITE_PATHS = {"/features": "kws-feat", "/how-it-works": "kws-how", "/android": "kws-android", "/plus": "kws-plus"};
+const sitePath = () => (location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "") || "/");
+const siteSignin = () => { render(true); const x = document.createElement("button"); x.type = "button"; x.hidden = true; x.setAttribute("data-open-account", ""); x.setAttribute("data-acc-start", "signin"); view.appendChild(x); x.click(); x.remove(); };
+// Back and Forward between the site's addresses: a section scrolls; the home page comes back after leaving for the app.
+addEventListener("popstate", () => { if (window.Capacitor) return; const p = sitePath(), root = document.getElementById("kws");
+  if (p === "/signin" || p === "/start"){ if (root){ root.remove(); document.documentElement.style.overflow = ""; } if (p === "/signin") siteSignin(); else render(true); return; }
+  if (p === "/" || SITE_PATHS[p]){ if (!root){ if (history.state && history.state.kws) siteOpen(); return; } if (SITE_PATHS[p]){ const el = root.querySelector("#" + SITE_PATHS[p]); if (el) el.scrollIntoView({behavior: "smooth"}); } else root.scrollTo({top: 0, behavior: "smooth"}); } });
 function siteOpen(){
   if (document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", siteOpen, {once: true}); return; }
   const t = document.getElementById("site-tpl"); if (!t || document.getElementById("kws")) return;
   document.body.appendChild(t.content.cloneNode(true)); const root = document.getElementById("kws"); document.documentElement.style.overflow = "hidden";
   const close = then => { root.remove(); document.documentElement.style.overflow = ""; if (then) then(); };
   root.addEventListener("click", e => { const c = e.target.closest("[data-kws-cyc]"); if (c){ const v = c.dataset.kwsCyc; root.querySelector(".kws-price").dataset.cyc = v; root.querySelectorAll("[data-kws-cyc]").forEach(x => x.setAttribute("aria-pressed", String(x === c))); return; } });
-  root.addEventListener("click", e => { const b = e.target.closest("[data-kws-start],[data-kws-signin],[data-kws-top],a[href^='#kws']"); if (!b) return;
-    if (b.matches("a[href^='#kws']")){ e.preventDefault(); root.querySelector(b.getAttribute("href")).scrollIntoView({behavior: "smooth"}); return; }
-    if (b.hasAttribute("data-kws-top")){ e.preventDefault(); root.scrollTo({top: 0, behavior: "smooth"}); return; }
-    if (b.hasAttribute("data-kws-start")) close(() => render(true));
-    else close(() => { render(true); const x = document.createElement("button"); x.type = "button"; x.hidden = true; x.setAttribute("data-open-account", ""); x.setAttribute("data-acc-start", "signin"); view.appendChild(x); x.click(); x.remove(); }); });
+  // Every section and button has its own address (/features, /pricing, /signin, /start), so Back works and links can be shared.
+  const go = path => { try { if (!window.Capacitor && location.pathname !== path) history.pushState({kws: 1}, "", path + location.search); } catch(x){} };
+  root.addEventListener("click", e => { const b = e.target.closest("[data-kws-start],[data-kws-signin],[data-kws-top],[data-kws-sec],a[href^='#kws']"); if (!b) return;
+    if (b.matches("a[href^='#kws']")){ e.preventDefault(); const id = b.getAttribute("href").slice(1); const pth = Object.keys(SITE_PATHS).find(k => SITE_PATHS[k] === id); if (pth) go(pth); root.querySelector("#" + id).scrollIntoView({behavior: "smooth"}); return; }
+    if (b.hasAttribute("data-kws-sec")){ e.preventDefault(); go(b.getAttribute("href")); const el = root.querySelector("#" + b.dataset.kwsSec); if (el) el.scrollIntoView({behavior: "smooth"}); return; }
+    if (b.hasAttribute("data-kws-top")){ e.preventDefault(); go("/"); root.scrollTo({top: 0, behavior: "smooth"}); return; }
+    if (b.hasAttribute("data-kws-start")){ go("/start"); close(() => render(true)); }
+    else { go("/signin"); close(() => { render(true); const x = document.createElement("button"); x.type = "button"; x.hidden = true; x.setAttribute("data-open-account", ""); x.setAttribute("data-acc-start", "signin"); view.appendChild(x); x.click(); x.remove(); }); } });
   siteLocalize(root);
+  if (SITE_PATHS[sitePath()]) setTimeout(() => { const el = root.querySelector("#" + SITE_PATHS[sitePath()]); if (el) el.scrollIntoView(); }, 60);   // opened at /features and friends
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   // rotating word
   const rot = root.querySelector("[data-kws-rot]"), words = ["paychecks", "families", "side hustles", "roommates", "small business", "students"]; let wi = 0;
@@ -7980,7 +7991,9 @@ const plusPlan = () => (devBuild() && S.plusTester) ? "ultra" : S.plusPlan === "
 // Banks unlock with the first payment, and "Start my plan now" ends the free week early for anyone who wants them today.
 const bankLimit = () => !bankRegion() ? 0 : trialOn() && !(devBuild() && S.plusTester) ? 0 : BANK_LIMIT[plusPlan()];
 const TIER2 = "CA GB IE FR DE ES IT PT NL BE LU AT CH DK SE NO FI IS AU NZ AE SA QA KW BH OM SG JP KR HK IL", TIER3 = "MX BR TR MY ZA PL CZ HU RO BG HR SK SI LT LV EE RS AR CL CO PE TH CN GR CY MT", TIER4 = "PK IN BD EG NG PH ID LK NP KE GH VN MA DZ TN ET UG TZ";
-const plusTier = () => { const c = (S.geo && S.geo.c) || regionCode(); return !c || c === "US" ? 1 : TIER2.includes(c) ? 2 : TIER3.includes(c) ? 3 : TIER4.includes(c) ? 4 : 2; };
+// The country prices follow: where you are now (from your connection), else the country you picked.
+const priceCountry = () => (S.geo && S.geo.c) || regionCode();
+const plusTier = () => { const c = priceCountry(); return !c || c === "US" ? 1 : TIER2.includes(c) ? 2 : TIER3.includes(c) ? 3 : TIER4.includes(c) ? 4 : 2; };
 // Bank connections (Plaid) are US only, so Plus Ultra and the bank parts of Plus exist only there. Everywhere else: one Plus, priced by country.
 const bankRegion = () => plusTier() === 1;
 // Where the person actually is (Cloudflare's IP country), checked at most once a day. Paddle charges by the same rule, so the price shown is the price paid.
@@ -8088,7 +8101,7 @@ V.plus = () => { const P = plusPrice(), perMonth = Math.round(P.yr / 12 * 100) /
     <h1>More from your money, on every device.</h1><p>Everything free stays free. Plus adds sync, your banks and your business.</p></section>
   ${UI.plusLimit ? plusLimitCard() : ""}${on || plusOn() ? trialCard : ""}
   ${window.Capacitor ? `<p class="muted small" style="text-align:center" data-plus-app-note>Plus is coming to the Android app later. Join the waitlist and we’ll email you when it’s here.</p>` : `${plusCta()}
-  <p class="muted small" style="text-align:center;margin:0">Prices for ${esc(regionCode() ? countryName(regionCode()) : "your country")}${S.cur && S.cur !== "USD" ? `, shown in ${esc(S.cur)}` : ""}.${PADDLE() ? "" : " Plus is not on sale yet. Join the waitlist and we will email you when it opens."} <a class="link" href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund policy</a></p>`}
+  <p class="muted small" style="text-align:center;margin:0">Prices for ${esc(priceCountry() ? countryName(priceCountry()) : "your country")}${S.cur && S.cur !== "USD" ? `, shown in ${esc(S.cur)}` : ""}.${PADDLE() ? "" : " Plus is not on sale yet. Join the waitlist and we will email you when it opens."} <a class="link" href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund policy</a></p>`}
   <section class="card px-feats"><h2>What Plus adds</h2><div class="px-grid">${PLUS_REASONS().map(([ic, t, d, soon]) => `<div class="px-f${soon ? " soon" : ""}"><span class="plus-ic">${ic}</span><b>${t}</b>${soon ? `<small>${soon}</small>` : ""}</div>`).join("")}</div></section>
   <details class="card px-free"><summary>Free, and staying free</summary><ul class="plus-free">${PLUS_FREE.map(t => `<li>${I.check}<span>${t}</span></li>`).join("")}</ul></details>`; };
 // KeepWise's own codes for Plus. They carry the early user prices, so the Codes tab and the Plus screen always agree.
@@ -10389,6 +10402,7 @@ let firstRun = false; try { if (localStorage.getItem(KEY)) welcomeDone(); else f
 if (firstRun) UI.welcome = 0;
 // mykeepwise.com in a browser, first visit: the website comes first. Start opens the app's welcome; the app itself, a home-screen
 // install, tests (navigator.webdriver) and anyone who already uses KeepWise go straight in.
+try { if (!window.Capacitor && SITE_PATHS[sitePath()]) window.KEEPWISE_SITE = true; if (!window.Capacitor && sitePath() === "/signin") setTimeout(siteSignin, 0); } catch(e){}
 try { if (/[?&]site\b/.test(location.search)) window.KEEPWISE_SITE = true; if ((firstRun || window.KEEPWISE_SITE) && !window.Capacitor && !STANDALONE && (!navigator.webdriver || window.KEEPWISE_SITE) && !/[?&#]app\b/.test(location.href)) siteOpen(); } catch(e){}
 try { if (S.env) envFix(); } catch(e){}   // older plans could hold shares that did not total 100
 // Pay and income set up before KeepWise recorded when: count them as added today, so nothing earlier is asked about.
@@ -10412,8 +10426,8 @@ initShared();
 <template id="site-tpl">
 <div class="kws" id="kws"><canvas class="kws-bgdots" aria-hidden="true"></canvas>
 <header class="kws-nav"><div class="kws-in">
-  <a class="kws-brand" href="#" data-kws-top><img src="icons/icon-192.png" alt="" width="34" height="34"><span><b>Keep</b><i>Wise</i></span></a>
-  <nav><a href="#kws-feat">Features</a><a href="#kws-how">How it works</a><a href="#kws-android">Android</a><a href="#kws-plus">Plus</a></nav>
+  <a class="kws-brand" href="/" data-kws-top><img src="icons/icon-192.png" alt="" width="34" height="34"><span><b>Keep</b><i>Wise</i></span></a>
+  <nav><a href="/features" data-kws-sec="kws-feat">Features</a><a href="/how-it-works" data-kws-sec="kws-how">How it works</a><a href="/android" data-kws-sec="kws-android">Android</a><a href="/pricing">Pricing</a></nav>
   <div class="kws-act"><button type="button" class="kws-link" data-kws-signin>Sign in</button><button type="button" class="kws-btn" data-kws-start>Start free</button></div>
 </div></header>
 
@@ -10513,7 +10527,7 @@ initShared();
 </div></section>
 
 <section class="kws-end"><div class="kws-in"><h2>See what you keep this month.</h2><button type="button" class="kws-btn kws-big kws-gold" data-kws-start>Start free <span aria-hidden="true">→</span></button></div></section>
-<footer class="kws-foot"><div class="kws-in"><span>© KeepWise LLC</span><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="delete.html">Delete account</a></nav></div></footer>
+<footer class="kws-foot"><div class="kws-in"><span>© KeepWise LLC</span><nav><a href="/pricing">Pricing</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund.html">Refunds</a><a href="delete.html">Delete account</a></nav></div></footer>
 <div class="kws-modal" data-kws-modal hidden><button class="kws-mback" type="button" data-kws-mclose aria-label="Close"></button><div class="kws-mbox" role="dialog" aria-modal="true"><button class="kws-mx" type="button" data-kws-mclose aria-label="Close">✕</button>
   <div class="kws-phone kws-sm"><img data-kws-mimg alt="" width="585" height="1266"></div><div class="kws-mtxt"><span class="kws-eye" data-kws-meye></span><h3 data-kws-mh></h3><ol data-kws-msteps></ol><button type="button" class="kws-btn" data-kws-start>Try it free</button></div></div></div>
 </div>
@@ -10674,7 +10688,7 @@ initShared();
 @keyframes kwBar{from{transform:scaleY(0)}}
 .kw-see{font-size:.8rem;font-weight:700;color:var(--green);flex:none}
 .kw-tiles{justify-content:space-between}.kw-tl{display:grid;justify-items:center;gap:4px}.kw-tl small{font-size:.66rem;font-weight:700;color:var(--muted)}
-.kws-price.kws-one{grid-template-columns:repeat(2,minmax(0,1fr))}@media (max-width:700px){.kws-price.kws-one{grid-template-columns:1fr}}.kws-ultra{border:2px solid #c9a24d!important;position:relative}.kws-ubadge{position:absolute;top:-12px;left:22px;background:#e0bb5e;color:#1a1205;font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:99px}.kws-or2{margin:2px 0 0;font-size:.84rem;color:var(--muted)}.kws-btn-dark{background:var(--ink)!important;color:var(--bg)!important}
+.kws-ultra{border:2px solid #c9a24d!important;position:relative}.kws-ubadge{position:absolute;top:-12px;left:22px;background:#e0bb5e;color:#1a1205;font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:99px}.kws-or2{margin:2px 0 0;font-size:.84rem;color:var(--muted)}.kws-btn-dark{background:var(--ink)!important;color:var(--bg)!important}
 @media (max-width:880px){.kws-price{grid-template-columns:1fr!important}}
 /* the steps on the left: no tall empty boxes, one slim progress line on the step you're on */
 .kws-list li{min-height:0!important;padding:22px 24px 24px 66px!important}
