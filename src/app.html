@@ -1548,7 +1548,8 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 /* ---- four tabs, side menu, hidden hints, compact phones ---- */
 .tabbar{grid-template-columns:repeat(4,1fr)}
 .seg.sub-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;background:var(--chip);border:0;border-radius:14px;padding:4px;gap:4px;overflow:visible}
-.seg.sub-seg button{border-radius:11px;min-height:42px;font-size:.92rem;min-width:0;padding:4px 6px;white-space:normal;line-height:1.15;overflow-wrap:anywhere}
+.seg.sub-seg button{border-radius:11px;min-height:42px;font-size:.92rem;min-width:0;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:420px){.seg.sub-seg{display:flex}.seg.sub-seg>button{flex:1 1 auto}}
 .seg.sub-seg button+button{border-left:0}
 .seg.sub-seg button[aria-pressed="true"]{background:var(--card);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.14)}
 /* The part switch at the top of Month, Subs and Plan stays in reach: it pins under the header while the page scrolls.
