@@ -1850,14 +1850,16 @@ const THEME_ICON = {
 const SKINS = [["classic", "KeepWise", "Mint Pop: bright and fresh, the default"], ["owl", "Night Owl", "Dark navy with lime, always dark"], ["cream", "Classic", "The original cream and forest green"], ["midnight", "Midnight", "Deep dark with gold"], ["ocean", "Ocean", "Blues and teal"], ["mocha", "Mocha", "Warm browns and cream"], ["rose", "Blossom", "Soft rose and plum"], ["contrast", "Mono", "Black and white, easiest to read"], ["glass", "Liquid Glass", "See-through, frosted cards"], ["terminal", "Terminal", "A trading screen, always dark"]];
 const SKIN_MAP = {simple: "classic", ledger: "mocha", blue: "ocean", plum: "rose", sand: "mocha", slate: "midnight", forest: "classic"};   // themes that were folded into the seven
 const skinNow = () => { const k = SKIN_MAP[S.skin] || S.skin; return SKINS.some(x => x[0] === k) ? k : "classic"; };
+// A native plugin of the Android app: Capacitor.Plugins holds them (registerPlugin only exists when @capacitor/core is bundled)
+function capPlugin(n){ const C = window.Capacitor; if (!C) return null; return (C.Plugins && C.Plugins[n]) || (C.registerPlugin ? C.registerPlugin(n) : null); }
 // In the Android app the home screen icon is the owl in the chosen theme's colours (it changes once the app is in the background).
 let iconSent = null;
 function iconFollow(k){ if (k === iconSent) return; iconSent = k;
-  try { if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("IconBridge")) Capacitor.registerPlugin("IconBridge").set({name: k}).catch(() => {}); } catch(e){} }
+  try { if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("IconBridge")) capPlugin("IconBridge").set({name: k}).catch(() => {}); } catch(e){} }
 // The quick add widget on the Android home screen: tapping it opens the owl, ready to log or ask; its microphone starts listening.
 window.kwWidgetTap = () => { try {
   if (!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("WidgetBridge"))) return;
-  Capacitor.registerPlugin("WidgetBridge").take().then(r => { const a = r && r.action; if (!a) return;
+  capPlugin("WidgetBridge").take().then(r => { const a = r && r.action; if (!a) return;
     const go = () => { const w = $("wise"); if (!w || w.hidden){ if (!UI.askOpen && go.n++ < 20) return setTimeout(go, 250); }
       if (!UI.askOpen && w) w.click();
       if (a === "voice") setTimeout(() => { const m = $("ask-mic"); if (m && !VOICE.rec) m.click(); }, 450);
@@ -1887,7 +1889,7 @@ const save = () => { if (UI.welcome != null || window.__kwErasing || window.__kw
 let widgetT = 0;
 function widgetSoon(){ if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return; clearTimeout(widgetT); widgetT = setTimeout(widgetPush, 800); }
 function widgetPush(){ try {
-  const W = window.Capacitor.registerPlugin ? window.Capacitor.registerPlugin("WidgetBridge") : null; if (!W || !W.update) return;
+  const W = capPlugin("WidgetBridge"); if (!W || !W.update) return;
   const C = compute(), P = C.planPeriod, by = P && P.end ? dayMonth(P.end) : "month end";
   const soon = S.subs.filter(s => s.keep !== "drop").map(s => ({n: s.name, a: +s.price || 0, d: nextRenewal(s)})).filter(x => x.d).sort((a, b) => a.d - b.d)[0];
   const next = soon ? `Next: ${soon.n} ${fmt(soon.a)} · ${whenLabel(daysUntil(soon.d)).toLowerCase()}` : "";
@@ -4659,7 +4661,7 @@ const MIC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke=
 const voiceNative = () => !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform() && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable("VoiceBridge"));
 const voiceCan = () => voiceNative() || (!!(window.SpeechRecognition || window.webkitSpeechRecognition) && !window.Capacitor);
 function NativeRec(){
-  const V = Capacitor.registerPlugin("VoiceBridge"), me = this; let subs = [], live = false;
+  const V = capPlugin("VoiceBridge"), me = this; let subs = [], live = false;
   const off = () => { subs.forEach(h => { try { Promise.resolve(h).then(x => x && x.remove && x.remove()); } catch(e){} }); subs = []; };
   this.start = () => { if (live) throw new Error("busy"); live = true; off();
     subs.push(V.addListener("voiceResult", r => { if (me.onresult) me.onresult({results: [[{transcript: (r && r.text) || ""}]]}); }));

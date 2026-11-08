@@ -6512,7 +6512,9 @@ async def the_owl_hears_you_in_the_android_app(ctx):
       window.Capacitor = {isNativePlatform: () => true, isPluginAvailable: n => n === 'VoiceBridge', getPlatform: () => 'android',
         registerPlugin: () => ({ addListener: (ev, fn) => { __voice.ls[ev] = fn; return Promise.resolve({remove(){}}); },
           start: () => { __voice.started++; setTimeout(() => __voice.ls.voiceResult({text: 'coffee', final: false}), 100); setTimeout(() => __voice.ls.voiceResult({text: 'coffee 4', final: true}), 250); return Promise.resolve(); },
-          stop: () => { __voice.stopped++; return Promise.resolve(); } })}; }""")
+          stop: () => { __voice.stopped++; return Promise.resolve(); } })};
+      // like the real app: plugins sit on Capacitor.Plugins, and there is no registerPlugin without @capacitor/core
+      Capacitor.Plugins = {VoiceBridge: Capacitor.registerPlugin('VoiceBridge')}; delete Capacitor.registerPlugin; }""")
     await owl(pg); await pg.wait_for_timeout(300)
     assert await pg.locator("#ask-mic").is_visible(), "the microphone is there in the app"
     await pg.click("#ask-mic"); await pg.wait_for_timeout(400)
@@ -6529,7 +6531,8 @@ async def the_widgets_get_the_week_and_open_the_owl(ctx):
     await pg.evaluate("""() => { window.__w = {sent: [], action: 'voice'};
       window.Capacitor = {isNativePlatform: () => true, isPluginAvailable: n => n === 'WidgetBridge' || n === 'VoiceBridge', getPlatform: () => 'android',
         registerPlugin: n => n === 'WidgetBridge' ? {update: a => { __w.sent.push(a); return Promise.resolve(); }, take: () => { const a = __w.action; __w.action = ''; return Promise.resolve({action: a}); }}
-          : {addListener: () => Promise.resolve({remove(){}}), start: () => Promise.resolve(), stop: () => Promise.resolve()}}; }""")
+          : {addListener: () => Promise.resolve({remove(){}}), start: () => Promise.resolve(), stop: () => Promise.resolve()}};
+      Capacitor.Plugins = {WidgetBridge: Capacitor.registerPlugin('WidgetBridge'), VoiceBridge: Capacitor.registerPlugin('VoiceBridge')}; delete Capacitor.registerPlugin; }""")
     await pg.evaluate("window.kwWidgetPush()")
     sent = await pg.evaluate("__w.sent[__w.sent.length - 1]")
     week = json.loads(sent["week"]); assert len(week) == 7 and week[0]["t"] == str(datetime.date.today().day), week
