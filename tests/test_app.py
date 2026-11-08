@@ -3568,6 +3568,25 @@ async def plus_free_week_cannot_be_restarted_or_faked(ctx):
     assert await pg.locator("[data-plus-buy]").count() == 0
 
 @test
+async def checkout_trouble_shows_our_own_message(ctx):
+    # when Paddle can't start checkout, KeepWise shows its own calm message instead of Paddle's "Something went wrong"
+    pg = await open_app(ctx, fb=True)
+    await pg.add_init_script("window.KEEPWISE_PADDLE = {env: 'sandbox', token: 'test_abc', monthly: 'pri_m', yearly: 'pri_y'}")
+    await open_account(pg); await pg.click("[data-acc-mode=create]"); await pg.wait_for_timeout(120)
+    await pg.fill("#acc-email", "ada@example.com"); await pg.fill("#acc-pass", "Longenough1!"); await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(500)
+    await pg.route("https://cdn.paddle.com/**", lambda r: r.fulfill(content_type="text/javascript", body="""window.Paddle = {Environment: {set(){}}, Initialize(o){ window.__pcb = o.eventCallback; },
+      Checkout: {open(){ window.__opened = (window.__opened || 0) + 1; setTimeout(() => window.__pcb({name: 'checkout.error'}), 50); }, close(){ window.__closed = 1; }}};"""))
+    await pg.goto(pg.url); await pg.wait_for_timeout(800); await tab(pg, "plan"); await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(150)
+    await pg.locator("[data-plus-open]").first.scroll_into_view_if_needed(); await pg.locator("[data-plus-open]").first.click(); await pg.wait_for_timeout(300)
+    await pg.click("[data-plus-buy=yr]"); await pg.wait_for_timeout(700)
+    assert await pg.evaluate("window.__closed") == 1 and await pg.locator("#pay-oops").count() == 1
+    t = await text(pg, "#pay-oops"); assert "Checkout didn’t open" in t and "Nothing was charged" in t, t
+    await pg.click("[data-oops=retry]"); await pg.wait_for_timeout(600)
+    assert await pg.evaluate("window.__opened") == 2, "Try again opens checkout again"
+    await pg.click("[data-oops=close]"); await pg.wait_for_timeout(100)
+    assert await pg.locator("#pay-oops").count() == 0 and not pg.errors, pg.errors
+
+@test
 async def plus_screen_gives_reasons_and_prices(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(150)
@@ -6730,10 +6749,10 @@ async def subs_switch_between_all_monthly_and_yearly(ctx):
     n_all = await pg.locator("[data-out=subsList] [data-sub]").count()
     await pg.click("[data-sub-cycle=yr]"); await pg.wait_for_timeout(150)
     yr = await pg.locator("[data-out=subsList] [data-sub]").count(); st = await state(pg)
-    assert yr == len([x for x in st["subs"] if x.get("cycle") == "yr"]) and yr < n_all
+    assert yr == len([x for x in st["subs"] if x.get("cycle") == "yr"]) and yr < n_all, (yr, n_all)
     sm = (await text(pg, "[data-out=subsSummary]")).lower(); assert "a year" in sm and "this month" not in sm, sm
     await pg.click("[data-sub-cycle=mo]"); await pg.wait_for_timeout(150)
-    assert await pg.locator("[data-out=subsList] [data-sub]").count() == n_all - yr and "a month" in (await text(pg, "[data-out=subsSummary]")).lower()
+    assert await pg.locator("[data-out=subsList] [data-sub]").count() == n_all - yr and "every month" in (await text(pg, "[data-out=subsSummary]")).lower(), await text(pg, "[data-out=subsSummary]")
     assert await pg.locator("[data-out=subsSummary] #rule-days").count() == 1, "the flag rule sits in the totals card"
     assert not pg.errors, pg.errors
 

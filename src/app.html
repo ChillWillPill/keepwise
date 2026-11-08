@@ -261,6 +261,8 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .es-pill{position:absolute;display:flex;align-items:center;gap:8px;padding:8px 13px 8px 8px;border-radius:99px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 22px -14px rgba(0,0,0,.5);font-weight:700;font-size:.86rem;white-space:nowrap}
 @media (max-width:340px){.es-pill{font-size:.74rem;padding:6px 10px 6px 6px;gap:6px}.es-pill>i{width:22px!important;height:22px!important}}
 .tk-form{display:grid;gap:10px;margin-top:10px}.tk-form textarea{width:100%;font:inherit;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--bg);color:var(--ink);resize:vertical}.tk-list{display:grid;gap:8px}.tk-row{display:flex;gap:10px;align-items:center;text-align:left;width:100%;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);font:inherit}.tk-row>span{flex:1;min-width:0;display:grid}.tk-row small{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tk-st{font-style:normal;font-size:max(.78rem,12.5px);color:var(--muted);text-align:right}.tk-st.new{color:var(--green);font-weight:700}.tk-sub{margin:8px 0}.tk-thread{display:grid;gap:8px}.tk-msg{padding:10px 12px;border-radius:16px;background:var(--chip);max-width:88%}.tk-msg.team{background:var(--green-soft);justify-self:start}.tk-msg.me{justify-self:end}.tk-msg p{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}.tk-msg small{color:var(--muted)}
+.pay-oops{position:fixed;inset:0;z-index:200;background:rgba(10,20,16,.45);display:grid;place-items:center;padding:20px}.pay-oops-card{background:var(--card);color:var(--ink);border-radius:24px;padding:24px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}.pay-oops-owl{width:72px;height:72px;margin:0 auto 6px;border-radius:50%;background:var(--green-soft);display:grid;place-items:center}.pay-oops-owl svg{width:62px;height:62px;animation:none!important}.pay-oops-card h2{margin:4px 0 8px;font-family:var(--display)}.pay-oops-card p{color:var(--muted);margin:0 0 16px}.pay-oops-acts{display:grid;gap:8px}
+.ss-facts{display:grid;gap:0;margin-top:12px;border-top:1px solid var(--line)}.ss-facts>div{display:flex;justify-content:space-between;align-items:baseline;gap:6px 14px;flex-wrap:wrap;padding:10px 2px;border-bottom:1px solid var(--line)}.ss-facts span{color:var(--muted)}.ss-facts b{font-weight:700;text-align:right;min-width:0;overflow-wrap:anywhere;margin-left:auto}
 .es-pill>i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-style:normal;font-size:.8rem}.es-pill em{font-style:normal;color:var(--green)}
 .es-cc{position:absolute;width:62%;height:104px;border-radius:16px;padding:12px 14px;color:#fff;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 16px 30px -16px rgba(0,0,0,.6)}
 .es-chip{display:block;width:26px;height:19px;border-radius:5px;background:linear-gradient(135deg,#f1d17a,#b88a2c)}
@@ -1379,7 +1381,7 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .wk-day .btile{box-shadow:none}
 .wk-list{display:grid;gap:6px}.wk-it{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:14px;background:var(--bg)}.wk-it>div{flex:1;min-width:0}.wk-it b{display:block;font-size:.92rem}.wk-it small{color:var(--muted);font-size:.76rem}
 .wk-it .tnum{font-weight:800}.wk-none{margin:2px 4px}
-.ss-top{display:flex;justify-content:space-between;align-items:flex-end}.ss-big{display:block;font:700 2.2rem var(--display)}.ss-yr{color:var(--muted);font-size:.86rem}.ss-yr b{color:var(--ink)}
+.ss-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:2px 12px}.ss-top>div{min-width:0}.ss-big{display:block;font:700 clamp(1.7rem,9vw,2.2rem) var(--display);white-space:nowrap}.ss-yr{color:var(--muted);font-size:.86rem;margin-left:auto;padding-bottom:6px;white-space:nowrap}.ss-yr b{color:var(--ink)}
 .ss-bar{display:flex;gap:2px;height:14px;border-radius:8px;overflow:hidden}.ss-bar i{min-width:4px}
 .ss-waste{appearance:none;border:0;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:16px;background:var(--rust-soft);color:var(--ink);font:inherit}
 .ss-waste b{display:block;color:var(--rust)}.ss-waste small{color:var(--muted)}.ss-waste>span:nth-child(2){flex:1}.ss-w-ic{font-size:1.2rem;color:var(--rust)}
@@ -4287,7 +4289,7 @@ function moneyNow(C){ const k = C.planKey;
   const end = C.planPeriod && C.planPeriod.end ? new Date(C.planPeriod.end) : null, daysLeft = end ? Math.max(1, Math.round((end - todayMid()) / 864e5) + 1) : 1;
   return {got, out: r2(bills + subs + spent), left: r2(got - bills - subs - spent), safe: r2(Math.max(0, ((+C.envMisc || 0) - miscSpent) / daysLeft))}; }
 const heroTiles = C => { const m = moneyNow(C);
-  const first = m.got > 0 ? ["Left right now", fmt(m.left), m.left < 0] : ["Gone out so far", fmt(m.out), false];
+  const first = m.got > 0 && m.left >= 0 ? ["Left from money in", fmt(m.left), false] : ["Paid out so far", fmt(m.out), false];
   return `<div class="hero-tiles" data-hero-tiles><div><small>${first[0]}</small><b class="tnum${first[2] ? " neg" : ""}">${first[1]}</b></div><div><small>Safe to spend today</small><b class="tnum">${fmt(m.safe)}</b></div></div>`; };
 OUT.billsCard = () => { const C = compute();
   const items = [...S.expenses.filter(e => e.env === "needs" && !expEveryday(e, C.planKey)).map(e => { const w = swapFor("expense", e.id); return {id: "e:" + e.id, n: e.name, emo: emoFor(e.name), a: +(w ? w.altCost : e.amount) || 0, due: e.due}; }),
@@ -4799,19 +4801,21 @@ const subInCycle = s => ((UI.subCycle || "all") === "all" || subCycleOf(s) === U
 OUT.subsSummary = () => {
   const C = compute(), cyc = UI.subCycle || "all", live = C.liveSubs.filter(subInCycle), flagged = C.flagged.filter(subInCycle), dropped = S.subs.filter(s => s.keep === "drop" && subInCycle(s));
   const now = r2(live.reduce((a,s) => a + subCostIn(s, C.planKey), 0)), n = c => S.subs.filter(s => c === "all" || subCycleOf(s) === c).length;
-  const next = cyc === "yr" ? live.map(s => ({s, d: nextRenewal(s)})).filter(x => x.d).sort((a, b) => a.d - b.d)[0] : null;
-  const rows = cyc === "mo" ? [["A month", fmt(r2(live.reduce((a, s) => a + subMonthly(s), 0))), "data-subs-now"], ["A year", fmt(subPer(live).year), "data-subs-year"], ["Flagged a month", fmt(r2(flagged.reduce((a, s) => a + subMonthly(s), 0))), "", flagged.length]]
-    : cyc === "yr" ? [["A year", fmt(subPer(live).year), "data-subs-year"], next ? ["Next renewal", dayMonth(next.d), "", 0, next.s.name] : ["Next renewal", "Add dates", "", 0, "Tap “+ Renewal date” below"], ["Flagged a year", fmt(subPer(flagged).year), "", flagged.length]]
-    : [["This month", fmt(now), "data-subs-now"], ["A year", fmt(subPer(live).year), "data-subs-year"], ["Flagged a year", fmt(subPer(flagged).year), "", flagged.length]];
+  // Just what the headline above doesn't already say: what comes out this month, and the next renewal. One line each,
+  // label on the left and the amount on the right, so it reads the same on a 320px phone with big text as on a tablet.
+  const next = live.map(s => ({s, d: nextRenewal(s)})).filter(x => x.d).sort((a, b) => a.d - b.d)[0] || null;
+  const moTotal = r2(live.reduce((a, s) => a + subMonthly(s), 0));
+  const rows = [...(cyc === "yr" || (cyc === "mo" && Math.abs(now - moTotal) < 0.01) ? [] : [["Comes out this month", fmt(now), "data-subs-now"]]),
+    next ? ["Next renewal", `${dayMonth(next.d)} · ${next.s.name}`, "data-subs-next"] : (cyc === "yr" ? ["Next renewal", "Add a renewal date below", "data-subs-next"] : null)].filter(Boolean);
   return `<div class="card subs-sum"><div class="seg sub-cycle" role="group" aria-label="Show subscriptions">${SUB_CYCLES.map(([k, t]) => `<button type="button" data-sub-cycle="${k}" aria-pressed="${cyc === k}">${t}<small>${n(k)}</small></button>`).join("")}</div>
     ${(() => { const mo = r2(live.reduce((a, s) => a + subMonthly(s), 0)); if (!live.length) return "";
       const bg = n => { const b = BRANDS.find(x => x[0].test(n)); return b ? b[1] : `hsl(${avatarHue(n)} 50% 60%)`; };
-      return `<div class="ss-top"><div><span class="label">Every month</span><b class="ss-big tnum">${fmt(mo)}</b></div><span class="ss-yr tnum"><b>${fmt(subPer(live).year)}</b> a year</span></div>
+      return `<div class="ss-top"><div><span class="label">Every month</span><b class="ss-big tnum">${fmt(mo)}</b></div><span class="ss-yr tnum"><b data-subs-year>${fmt(subPer(live).year)}</b> a year</span></div>
       <div class="ss-bar" aria-hidden="true">${live.slice().sort((a, b) => subMonthly(b) - subMonthly(a)).map(x => `<i style="flex:${subMonthly(x).toFixed(2)};background:${bg(x.name)}" title="${esc(x.name)}"></i>`).join("")}</div>
       ${flagged.length ? `<button type="button" class="ss-waste" data-sub-kind="flag"><span class="ss-w-ic" aria-hidden="true">⚠</span><span><b>${flagged.length} you don’t use</b><small>${fmt(subPer(flagged).year)} a year</small></span><span class="ss-stack" aria-hidden="true">${flagged.slice(0, 4).map(x => brandTile(x.name, 28)).join("")}</span></button>` : ""}`; })()}
     ${(() => { const all = C.liveSubs, kinds = SUB_KINDS.map(([k, t]) => [k, t, all.filter(x => subKindOf(x) === k).length]).filter(x => x[2]); if (!kinds.length && !C.flagged.length) return "";
       return `<div class="ss-chips" data-scroll-x role="group" aria-label="Show a kind">${[["", "All", all.length], ...kinds, ...(C.flagged.length ? [["flag", "⚠ Unused", C.flagged.length]] : [])].map(([k, t, n]) => `<button type="button" class="ss-chip${(UI.subKind || "") === k ? " on" : ""}${k === "flag" ? " bad" : ""}" data-sub-kind="${k}">${t} <small>${n}</small></button>`).join("")}</div>`; })()}
-    <div class="summary3">${rows.map(([l, v, attr, bad, sub]) => `<div><span class="label">${l}</span><b ${attr} class="${bad ? "bad" : ""}">${esc(v)}${sub ? `<small class="muted sub-next">${esc(sub)}</small>` : ""}</b></div>`).join("")}</div>
+    ${rows.length ? `<div class="ss-facts">${rows.map(([l, v, attr]) => `<div><span>${l}</span><b ${attr} class="tnum">${esc(v)}</b></div>`).join("")}</div>` : ""}
     ${(() => { const P = periodOf(new Date()), from = isoOf(P.start), to = isoOf(P.end), m = S.subs.filter(x => x.keep !== "drop" && x.cycle !== "yr" && x.renewDay), n = m.filter(x => (x.paidOn || "") >= from && (x.paidOn || "") <= to).length;
       return m.length && cyc !== "yr" ? `<p class="small muted" data-subs-charged style="margin:0">${n} of ${m.length} monthly ${m.length === 1 ? "subscription" : "subscriptions"} charged this month</p>` : ""; })()}
     <label class="sub-rule"><span>Flag if unused for</span><input id="rule-days" data-bind="ruleDays" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.ruleDays}" aria-label="Days unused before a subscription is flagged"><span>days, or a duplicate</span></label>
@@ -8175,12 +8179,22 @@ const PADDLE_CONFIG = {
 const PADDLE = () => { if (window.KEEPWISE_PADDLE === false) return null; const p = window.KEEPWISE_PADDLE || PADDLE_CONFIG; return p && p.token && p.monthly && p.yearly && !/REPLACE/.test(p.token + p.monthly + p.yearly) && !window.Capacitor ? p : null; };
 let paddleReady = null;
 function paddleLoad(){ if (paddleReady) return paddleReady; const p = PADDLE(); if (!p) return Promise.reject(new Error("off"));
-  paddleReady = new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdn.paddle.com/paddle/v2/paddle.js"; sc.onload = () => { try { if (p.env === "sandbox") window.Paddle.Environment.set("sandbox"); window.Paddle.Initialize({token: p.token, eventCallback: e => { if (e && e.name === "checkout.completed"){ toast("Welcome to KeepWise Plus. Thank you!"); setTimeout(() => plusCheck(true), 4000); setTimeout(() => plusCheck(true), 15000); } }}); ok(window.Paddle); } catch(e){ no(e); } }; sc.onerror = no; document.head.appendChild(sc); });
+  paddleReady = new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdn.paddle.com/paddle/v2/paddle.js"; sc.onload = () => { try { if (p.env === "sandbox") window.Paddle.Environment.set("sandbox"); window.Paddle.Initialize({token: p.token, eventCallback: e => { if (e && (e.name === "checkout.error" || e.name === "checkout.failed")){ try { window.Paddle.Checkout.close(); } catch(x){} payOops(); return; } if (e && e.name === "checkout.completed"){ toast("Welcome to KeepWise Plus. Thank you!"); setTimeout(() => plusCheck(true), 4000); setTimeout(() => plusCheck(true), 15000); } }}); ok(window.Paddle); } catch(e){ no(e); } }; sc.onerror = no; document.head.appendChild(sc); });
   return paddleReady; }
+// Our own message when checkout can't start (instead of Paddle's plain "Something went wrong" box): try again, or write to us.
+function payOops(){ const old = document.getElementById("pay-oops"); if (old) old.remove();
+  const d = document.createElement("div"); d.id = "pay-oops"; d.className = "pay-oops"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-labelledby", "pay-oops-t");
+  d.innerHTML = `<div class="pay-oops-card"><div class="pay-oops-owl" aria-hidden="true">${(document.querySelector("#wise .owl-ic") || {outerHTML: ""}).outerHTML}</div>
+    <h2 id="pay-oops-t">Checkout didn’t open</h2><p>Nothing was charged. This is on our side or the connection, not your card. Try again in a minute, or send us a message and we’ll sort it out.</p>
+    <div class="pay-oops-acts"><button class="btn primary" type="button" data-oops="retry">Try again</button><button class="btn" type="button" data-oops="help">Message us</button><button class="link" type="button" data-oops="close">Not now</button></div></div>`;
+  d.addEventListener("click", e => { const b = e.target.closest("[data-oops]"); if (!b && e.target !== d) return; const k = b ? b.dataset.oops : "close"; d.remove();
+    if (k === "retry") plusBuy(UI.plusCycle === "mo" ? "mo" : "yr");
+    if (k === "help"){ UI.plus = false; UI.settings = "support"; render(false); } });
+  document.body.appendChild(d); const f = d.querySelector("[data-oops=retry]"); if (f) f.focus(); }
 async function plusBuy(plan){ const p = PADDLE(); if (!p) return false; const u = typeof ACC !== "undefined" && ACC.user; if (!u || !u.email){ UI.plus = false; UI.account = true; render(false); toast("Sign in first, so Plus works on all your devices."); return true; }
   try { const P = await paddleLoad(); const ultra = UI.plusPick === "ultra" && p.ultraMonthly && !/REPLACE/.test(p.ultraMonthly + p.ultraYearly);
     P.Checkout.open({items: [{priceId: ultra ? (plan === "yr" ? p.ultraYearly : p.ultraMonthly) : (plan === "yr" ? p.yearly : p.monthly), quantity: 1}], customer: u && u.email ? {email: u.email} : undefined, customData: u ? {uid: u.uid} : undefined, settings: {displayMode: "overlay", theme: "light", successUrl: SITE_URL + "?plus=thanks"}}); return true; }
-  catch(e){ toast("Checkout didn’t open. Try again in a minute."); return true; } }
+  catch(e){ payOops(); return true; } }
 // A signed-in person who paid on another device: ask the KeepWise server once a day whether their Plus is active.
 async function plusCheck(force){ const u = typeof ACC !== "undefined" && ACC.user; if (!PADDLE() || !u || !u.email) return; if (!force && S.plusCheckedAt && S.plusPaid != null && Date.now() - S.plusCheckedAt < 432e5) return;
   try { const idToken = await u.getIdToken(); const r = await fetch(API_BASE + "/plus/status", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({idToken})}); const j = await r.json();
