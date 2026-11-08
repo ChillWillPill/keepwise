@@ -31,26 +31,30 @@
 <title>KeepWise</title>
 <meta name="theme-color" content="#f3efe6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap">
 <style>
 /* Layout: an app shell pinned to the visible screen (sized from visualViewport in JS): header, one scrolling column, tab bar flush to the bottom edge. */
 :root{
-  --bg:#f3efe6; --card:#fbf8f2; --ink:#1c2420; --muted:#4d564e; --line:#e0d5c5; --chip:#efe4d4;
-  --green:#1b6843; --green-soft:#e4f2ea; --on-green:#f3faf6; --rust:#a84b34; --rust-soft:#f6e2da; --gold:#9a7417; --gold-soft:#f3e9cc;
+  --bg:#f2faf6; --card:#ffffff; --ink:#10231c; --muted:#4a5e56; --line:#dcede4; --chip:#e3f3eb;
+  --green:#0b7a55; --green-soft:#d7f5e8; --on-green:#ffffff; --rust:#c2403a; --rust-soft:#ffe2df; --gold:#8a6400; --gold-soft:#fff1cc; --mint:#0e9f6e;
   --av-s:42%; --av-l:86%; --av-fg:28%; --brand-teal:#0e8571; --brand-gold:#a57d2c;
   --lift:0 1px 2px rgba(28,36,32,.04),0 6px 18px -12px rgba(28,36,32,.18);
-  --display:"Fraunces", ui-serif, Georgia, serif;
-  --body:"Figtree", ui-sans-serif, system-ui, sans-serif;
+  --display:"Bricolage Grotesque", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --body:"Inter", ui-sans-serif, system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27;
-  --green:#79c79b; --green-soft:#1f3326; --on-green:#0c1611; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}}
+  --bg:#0c1713; --card:#13221c; --ink:#e8f5ee; --muted:#9db8ac; --line:#22382f; --chip:#1a2c25;
+  --green:#5ee0a8; --green-soft:#143a2b; --on-green:#062018; --rust:#ff8a7e; --rust-soft:#3a1f1c; --gold:#ffd25e; --gold-soft:#332a12; --mint:#5ee0a8; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}}
 :root[data-theme="light"]{color-scheme:light}
 :root[data-theme="dark"]{
-  --bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27;
-  --green:#79c79b; --green-soft:#1f3326; --on-green:#0c1611; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}
+  --bg:#0c1713; --card:#13221c; --ink:#e8f5ee; --muted:#9db8ac; --line:#22382f; --chip:#1a2c25;
+  --green:#5ee0a8; --green-soft:#143a2b; --on-green:#062018; --rust:#ff8a7e; --rust-soft:#3a1f1c; --gold:#ffd25e; --gold-soft:#332a12; --mint:#5ee0a8; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --brand-teal:#3cc2a8; --brand-gold:#e0b75c; --sheet:#22332a; --sheet-line:#4f7a61; --sheet-in:#18241d; --scrim:rgba(4,8,6,.66); --sheet-lift:0 0 0 1px rgba(121,199,155,.14),0 24px 60px rgba(0,0,0,.7); color-scheme:dark}
 
 /* Themes: each look has a light and a dark side; Classic is the original cream and forest look. */
+:root[data-skin="cream"]{--bg:#f3efe6; --card:#fbf8f2; --ink:#1c2420; --muted:#4d564e; --line:#e0d5c5; --chip:#efe4d4; --green:#1b6843; --green-soft:#e4f2ea; --on-green:#f3faf6; --rust:#a84b34; --rust-soft:#f6e2da; --gold:#9a7417; --gold-soft:#f3e9cc; --mint:#1b6843; --display:"Fraunces", ui-serif, Georgia, serif; --body:"Figtree", ui-sans-serif, system-ui, sans-serif}
+:root[data-skin="cream"][data-theme="dark"]{--bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27; --green:#79c79b; --green-soft:#1f3326; --on-green:#0c1611; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --mint:#79c79b; color-scheme:dark}
+@media (prefers-color-scheme: dark){:root[data-skin="cream"]:not([data-theme="light"]){--bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27; --green:#79c79b; --green-soft:#1f3326; --on-green:#0c1611; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --mint:#79c79b; color-scheme:dark}}
+:root[data-skin="owl"],:root[data-skin="owl"][data-theme="dark"],:root[data-skin="owl"][data-theme="light"]{--bg:#0d1420; --card:#162133; --ink:#eef3fa; --muted:#9aa8bc; --line:#24344d; --chip:#1b2840; --green:#c6f432; --green-soft:#24331c; --on-green:#0d1420; --rust:#ff8a65; --rust-soft:#3a2622; --gold:#ffd25e; --gold-soft:#332a12; --mint:#c6f432; --sheet:#1e2e4a; --sheet-line:#3b5579; --sheet-in:#0d1420; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --display:"Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif; --body:"Inter", ui-sans-serif, system-ui, sans-serif; color-scheme:dark}
 :root[data-skin="ledger"]{--bg:#f6f1e7; --card:#fffdf8; --ink:#1d1a16; --muted:#6b6255; --line:#e5d9c2; --chip:#f1e8d6; --green:#1f7a4d; --green-soft:#e2efe6; --gold:#9a7424; }
 :root[data-skin="ledger"][data-theme="dark"]{--bg:#17140f; --card:#211d16; --ink:#f3ead9; --muted:#b5a88f; --line:#3a3326; --chip:#2a251c; --green:#6fc79b; --green-soft:#1d3226; --gold:#d8b25a; --sheet:#2c271d; --sheet-line:#6b5d43; --sheet-in:#17140f; color-scheme:dark}
 @media (prefers-color-scheme: dark){:root[data-skin="ledger"]:not([data-theme="light"]){--bg:#17140f; --card:#211d16; --ink:#f3ead9; --muted:#b5a88f; --line:#3a3326; --chip:#2a251c; --green:#6fc79b; --green-soft:#1d3226; --gold:#d8b25a; --sheet:#2c271d; --sheet-line:#6b5d43; --sheet-in:#17140f; color-scheme:dark}}
@@ -103,7 +107,25 @@ button:not(:disabled):not(.wise-fab):active,a:active{opacity:.6;transition:opaci
 html,body{margin:0;overflow:hidden;overscroll-behavior:none}
 html{touch-action:manipulation}  /* no double-tap zoom; pinch zoom is off too (viewport + gesture events), like a native app */
 body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-text-size-adjust:100%}
-.app{position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100%);display:flex;flex-direction:column;background:var(--bg)}
+.app{position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100%);display:flex;flex-direction:column;background:var(--bg);isolation:isolate}
+/* The owl lives behind every screen: cards cover it, so it shows only in empty space. Its eyes wander, blink and follow a finger. */
+.app-main{display:flex;flex-direction:column}.app-main>.view{flex:none;width:100%;box-sizing:border-box}
+.owl-bg{flex:none;margin:auto auto 0;width:min(56vw,220px);aspect-ratio:1;padding-bottom:18px;pointer-events:none;color:var(--mint,var(--green));transition:opacity .4s}
+.owl-bg .ol{opacity:.4}.owl-bg .od{opacity:.85}.owl-bg .oe{fill:var(--green-soft)}.owl-bg .op{fill:var(--ink)}.owl-bg .ok{fill:var(--bg)}.owl-bg .ob{fill:var(--gold)}
+.owl-bg .opp{transition:transform .18s ease-out}.owl-bg .olid{transform-box:fill-box;transform-origin:50% 0;transform:scaleY(0);transition:transform .09s}
+.app.flowing .owl-bg,.app.sheeting .owl-bg,.app.typing .owl-bg{opacity:0}
+/* Mint Pop (the default) and Night Owl: pill switches, a bold savings card with a bit of play, tabs that light up */
+:root:is([data-skin="classic"],[data-skin="owl"]) .seg{border-radius:999px;padding:3px;gap:3px;background:var(--chip);border-color:transparent}
+:root:is([data-skin="classic"],[data-skin="owl"]) .seg button{border-radius:999px}
+:root:is([data-skin="classic"],[data-skin="owl"]) .seg button[aria-pressed="true"]:not(.drop){background:var(--green);color:var(--on-green)}
+:root:is([data-skin="classic"],[data-skin="owl"]) .tab[aria-current="page"] .ti{background:var(--green);color:var(--on-green)}
+:root[data-skin="classic"] .hero{background:#0b7a55;color:#fff;border:0;position:relative;overflow:hidden;isolation:isolate}
+:root[data-skin="classic"] .hero::before,:root[data-skin="classic"] .hero::after{content:"";position:absolute;z-index:-1;border-radius:50%;pointer-events:none}
+:root[data-skin="classic"] .hero::before{width:150px;height:150px;right:-44px;top:-52px;background:#16a374}
+:root[data-skin="classic"] .hero::after{width:84px;height:84px;left:-26px;bottom:-40px;background:#ffd25e;opacity:.9}
+:root[data-skin="classic"] .hero h1,:root[data-skin="classic"] .hero h1 *,:root[data-skin="classic"] .hero .hero-by,:root[data-skin="classic"] .hero .big,:root[data-skin="classic"] .hero .big.neg,:root[data-skin="classic"] .hero button:not(.chip):not([class*="pill"]){color:#fff!important}
+:root[data-skin="classic"] .hero .muted{color:#d9f5e9}
+.app.flowing .owl-bg,.app.sheeting .owl-bg{display:none}
 .app-header{flex:none;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);position:relative;z-index:3}
 .brand{display:flex;align-items:center;gap:12px;max-width:688px;margin:0 auto}
 .logo{width:40px;height:40px;border-radius:50%;background:#fff;display:block;flex:none;box-shadow:0 0 0 1px var(--line)}
@@ -1034,7 +1056,7 @@ form[data-ctype="debit"] [data-only="credit"],form[data-ctype="credit"] [data-on
 .skin-rose i:nth-child(1){background:#fbf4f5}.skin-rose i:nth-child(2){background:#211317}.skin-rose i:nth-child(3){background:#b4325a}
 .skin-slate i:nth-child(1){background:#f1f4f5}.skin-slate i:nth-child(2){background:#152023}.skin-slate i:nth-child(3){background:#0e7c7b}
 .skin-forest i:nth-child(1){background:#eef3ee}.skin-forest i:nth-child(2){background:#122019}.skin-forest i:nth-child(3){background:#1f6b3f}
-.skin-classic i:nth-child(1){background:#f3efe6}.skin-classic i:nth-child(2){background:#1d201c}.skin-classic i:nth-child(3){background:#a57d2c}
+.skin-classic i:nth-child(1){background:#f2faf6}.skin-cream i:nth-child(1){background:#f3efe6}.skin-cream i:nth-child(2){background:#1b6843}.skin-cream i:nth-child(3){background:#a57d2c}.skin-owl i:nth-child(1){background:#0d1420}.skin-owl i:nth-child(2){background:#c6f432}.skin-owl i:nth-child(3){background:#8b7cff}.skin-classic i:nth-child(2){background:#0e9f6e}.skin-classic i:nth-child(3){background:#f25c54}
 .tell-mails{display:flex;flex-direction:column;gap:8px}.tell-mail{display:flex;gap:8px}.tell-mail input{flex:1;min-width:0}
 .auto-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.auto-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px}.auto-row+.auto-row{border-top:1px solid var(--line)}.auto-row.up .name{color:var(--rust)}.auto-acts{gap:12px;flex:none;flex-wrap:nowrap;align-items:center}.auto-acts .btn{width:auto;min-height:36px;padding:0 14px}@media (max-width:360px){.auto-row{flex-direction:column;align-items:stretch;gap:6px}.auto-acts{justify-content:flex-end}}
 .plaid-part{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--chip)}.plaid-or{margin:2px 0 -4px}.biz-banks{display:flex;flex-direction:column;gap:8px;margin-top:8px}
@@ -1776,7 +1798,7 @@ const THEME_ICON = {
   system:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
   light:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>',
   dark:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>'};
-const SKINS = [["classic", "KeepWise", "Cream and green, the default"], ["midnight", "Midnight", "Deep dark with gold"], ["ocean", "Ocean", "Blues and teal"], ["mocha", "Mocha", "Warm browns and cream"], ["rose", "Blossom", "Soft rose and plum"], ["contrast", "Mono", "Black and white, easiest to read"], ["glass", "Liquid Glass", "See-through, frosted cards"], ["terminal", "Terminal", "A trading screen, always dark"]];
+const SKINS = [["classic", "KeepWise", "Mint Pop: bright and fresh, the default"], ["owl", "Night Owl", "Dark navy with lime, always dark"], ["cream", "Classic", "The original cream and forest green"], ["midnight", "Midnight", "Deep dark with gold"], ["ocean", "Ocean", "Blues and teal"], ["mocha", "Mocha", "Warm browns and cream"], ["rose", "Blossom", "Soft rose and plum"], ["contrast", "Mono", "Black and white, easiest to read"], ["glass", "Liquid Glass", "See-through, frosted cards"], ["terminal", "Terminal", "A trading screen, always dark"]];
 const SKIN_MAP = {simple: "classic", ledger: "mocha", blue: "ocean", plum: "rose", sand: "mocha", slate: "midnight", forest: "classic"};   // themes that were folded into the seven
 const skinNow = () => { const k = SKIN_MAP[S.skin] || S.skin; return SKINS.some(x => x[0] === k) ? k : "classic"; };
 function applyTheme(){
@@ -10436,6 +10458,31 @@ if (firstRun) UI.welcome = 0;
 // install, tests (navigator.webdriver) and anyone who already uses KeepWise go straight in.
 try { if (!window.Capacitor && SITE_PATHS[sitePath()]) window.KEEPWISE_SITE = true; if (!window.Capacitor && sitePath() === "/signin") setTimeout(siteSignin, 0); } catch(e){}
 try { if (/[?&]site\b/.test(location.search)) window.KEEPWISE_SITE = true; if ((firstRun || window.KEEPWISE_SITE) && !window.Capacitor && !STANDALONE && (!navigator.webdriver || window.KEEPWISE_SITE) && !/[?&#]app\b/.test(location.href)) siteOpen(); } catch(e){}
+
+// The owl behind every screen (see .owl-bg). Eyes wander and blink on their own, look toward a finger or the pointer,
+// and rest while the app is hidden or the person prefers less motion.
+(() => { try {
+  const app = document.querySelector(".app"), main = document.getElementById("main"); if (!app || !main || app.querySelector(".owl-bg")) return;
+  const w = document.createElement("div"); w.className = "owl-bg"; w.setAttribute("aria-hidden", "true");
+  w.innerHTML = `<svg viewBox="0 0 260 260" width="100%" height="100%"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path class="ol" stroke-width="1.4" d="M130,64 L149.8,66.2 L167.4,59.6 L180.6,37.6 L185,61.8 L192.7,88.2 L197.1,121.2 L198.2,154.2 L192.7,185 L179.5,209.2 L157.5,223.5 L130,226.8 L102.5,223.5 L80.5,209.2 L67.3,185 L61.8,154.2 L62.9,121.2 L67.3,88.2 L75,61.8 L79.4,37.6 L92.6,59.6 L110.2,66.2Z M101.2,126.3 L91.3,122.9 L83.2,116.3 L77.9,107.3 L76.1,97 L77.9,86.7 L83.2,77.7 L91.3,71.1 L101.2,67.7 L111.6,67.9 L121.3,71.7 L129.1,78.6 L134,87.8 M126,87.8 L130.9,78.6 L138.7,71.7 L148.4,67.9 L158.8,67.7 L168.7,71.1 L176.8,77.7 L182.1,86.7 L183.9,97 L182.1,107.3 L176.8,116.3 L168.7,122.9 L158.8,126.3 M81.6,72.8 L110.2,81.6 L130,92.6 L149.8,81.6 L178.4,72.8 M185,119 L182.8,152 L176.2,179.5 L165.2,202.6 M75,119 L77.2,152 L83.8,179.5 L94.8,202.6 M118.6,148.1 L115.4,152.5 L110.2,154.2 L105,152.5 L101.8,148.1 M138.4,148.1 L135.2,152.5 L130,154.2 L124.8,152.5 L121.6,148.1 M158.2,148.1 L155,152.5 L149.8,154.2 L144.6,152.5 L141.4,148.1 M118.6,164.6 L115.4,169 L110.2,170.7 L105,169 L101.8,164.6 M138.4,164.6 L135.2,169 L130,170.7 L124.8,169 L121.6,164.6 M158.2,164.6 L155,169 L149.8,170.7 L144.6,169 L141.4,164.6 M108,232.3 L111.3,225.7 M114.6,233.4 L114.6,225.7 M121.2,232.3 L117.9,225.7 M138.8,232.3 L142.1,225.7 M145.4,233.4 L145.4,225.7 M152,232.3 L148.7,225.7 M25.5,234.5 L234.5,234.5"/><path class="od" stroke-width="4" stroke-dasharray="0 8" d="M130,64 L149.8,66.2 L167.4,59.6 L180.6,37.6 L185,61.8 L192.7,88.2 L197.1,121.2 L198.2,154.2 L192.7,185 L179.5,209.2 L157.5,223.5 L130,226.8 L102.5,223.5 L80.5,209.2 L67.3,185 L61.8,154.2 L62.9,121.2 L67.3,88.2 L75,61.8 L79.4,37.6 L92.6,59.6 L110.2,66.2Z M81.6,72.8 L110.2,81.6 L130,92.6 L149.8,81.6 L178.4,72.8 M25.5,234.5 L234.5,234.5"/></g>
+    <circle class="oe" cx="105.8" cy="97" r="17"/><circle class="oe" cx="154.2" cy="97" r="17"/>
+    <g class="opp"><circle class="op" cx="105.8" cy="97" r="8"/><circle class="op" cx="154.2" cy="97" r="8"/><circle fill="#fff" cx="108.6" cy="94" r="2.4"/><circle fill="#fff" cx="157" cy="94" r="2.4"/></g>
+    <rect class="olid ok" x="86" y="78" width="40" height="40" rx="20"/><rect class="olid ok" x="134" y="78" width="40" height="40" rx="20"/><path class="ob" d="M124,108 L130,118 L136,108 Z"/></svg>`;
+  main.appendChild(w);
+  const pp = w.querySelector(".opp"), lids = w.querySelectorAll(".olid"), calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fit = () => { const t = document.getElementById("tabbar"); app.style.setProperty("--tabbar-h", (t && t.offsetHeight ? t.offsetHeight : 0) + "px"); };
+  fit(); addEventListener("resize", fit);
+  let tx = 0, ty = 0, x = 0, y = 0, until = 0, next = 0;
+  const look = e => { const p = e.touches ? e.touches[0] : e; if (!p) return; const r = w.getBoundingClientRect(); if (!r.width) return;
+    const dx = p.clientX - (r.left + r.width * .5), dy = p.clientY - (r.top + r.height * .37), d = Math.hypot(dx, dy) || 1, m = Math.min(7, d / 25);
+    tx = dx / d * m; ty = dy / d * m * .7; until = Date.now() + 1500; };
+  addEventListener("pointermove", look, {passive: true}); addEventListener("touchstart", look, {passive: true});
+  if (calm) return;
+  setInterval(() => { if (document.hidden || getComputedStyle(w).opacity === "0") return; const now = Date.now();
+    if (now > until && now > next){ const a = Math.random() * 6.283, r = Math.random() * 7; tx = Math.cos(a) * r; ty = Math.sin(a) * r * .7; next = now + 1400 + Math.random() * 2200; }
+    x += (tx - x) * .22; y += (ty - y) * .22; pp.style.transform = `translate(${x.toFixed(2)}px,${y.toFixed(2)}px)`;
+    const b = (now % 5200) < 130; lids.forEach(l => { l.style.transform = b ? "scaleY(1)" : "scaleY(0)"; }); }, 60);
+} catch(e){} })();
 try { if (S.env) envFix(); } catch(e){}   // older plans could hold shares that did not total 100
 // Pay and income set up before KeepWise recorded when: count them as added today, so nothing earlier is asked about.
 try { if (S.pay && S.pay.when && !S.pay.since) S.pay.since = isoDaysAgo(0); (S.extras || []).forEach(x => { if (!x.added) x.added = isoDaysAgo(0); }); } catch(e){}
