@@ -9005,6 +9005,9 @@ function dataSummary(){
 /* ================= 2-step sign-in (authenticator app only) =================
    After the password or Google, a 6-digit code from Google Authenticator, Microsoft Authenticator, 1Password and the
    like. No text messages: they cost money and can be stolen. Firebase keeps the secret; KeepWise never sees it. */
+// Off until the Firebase project has Identity Platform (it needs the pay-as-you-go plan, so it waits until Plus pays
+// for it). Sign-in still handles the code if an account has it, so nothing breaks either way.
+const MFA_READY = !!window.KEEPWISE_MFA;
 const TOTP = () => window.firebase && firebase.auth && firebase.auth.TotpMultiFactorGenerator;
 const mfaOn = () => { const u = typeof ACC !== "undefined" && ACC.user; try { return !!(u && u.multiFactor && u.multiFactor.enrolledFactors.some(f => f.factorId === "totp")); } catch(e){ return false; } };
 const MFA = {secret: null, url: "", err: "", busy: false};
@@ -9028,7 +9031,7 @@ function mfaAsk(resolver){ return new Promise((ok, no) => { const hint = (resolv
   f.querySelector("[data-mfa-ask-cancel]").addEventListener("click", () => { d.remove(); no(Object.assign(new Error("cancelled"), {code: "auth/cancelled-popup-request"})); });
   document.body.appendChild(d); inp.focus(); }); }
 const mfaErr = e => { const c = e && e.code || ""; return c === "auth/requires-recent-login" ? "For your safety, sign out and sign in again, then turn it on." : c === "auth/unverified-email" ? "Verify your email first, then turn it on." : c === "auth/operation-not-allowed" || c === "auth/admin-restricted-operation" ? "2-step sign-in isn’t switched on for KeepWise yet. Try again soon." : c === "auth/invalid-verification-code" ? "That code didn’t match. Try the newest code in your app." : "That didn’t work. Try again in a moment."; };
-OUT.mfaBox = () => { const u = typeof ACC !== "undefined" && ACC.user; if (!u || !TOTP()) return "";
+OUT.mfaBox = () => { const u = typeof ACC !== "undefined" && ACC.user; if (!u || !TOTP() || (!MFA_READY && !mfaOn())) return "";
   if (mfaOn()) return `<section class="card" data-set-2fa><h2>2-step sign-in</h2>${setRow("On · authenticator app", "Signing in asks for a 6-digit code from your app.", `<button class="btn" type="button" data-mfa-off>Turn off</button>`)}${MFA.err ? `<p class="err small">${esc(MFA.err)}</p>` : ""}</section>`;
   if (!MFA.secret) return `<section class="card" data-set-2fa><h2>2-step sign-in</h2>${setRow("Use an authenticator app", "After your password, type a 6-digit code from Google Authenticator, Microsoft Authenticator or 1Password. No texts.", `<button class="btn primary" type="button" data-mfa-start${MFA.busy ? " disabled" : ""}>Turn on</button>`)}${MFA.err ? `<p class="err small">${esc(MFA.err)}</p>` : ""}</section>`;
   const key = String(MFA.secret.secretKey || "").replace(/(.{4})/g, "$1 ").trim(); setTimeout(mfaQr, 0);

@@ -3658,6 +3658,7 @@ async def admin_customer_profile_gives_early_access(ctx):
 @test
 async def two_step_sign_in_with_an_authenticator_app(ctx):
     pg = await open_app(ctx, fb=True)
+    await pg.add_init_script("window.KEEPWISE_MFA = true")
     await open_account(pg)
     await pg.click("[data-acc-mode=create]"); await pg.wait_for_timeout(120)
     await pg.fill("#acc-email", "ada@example.com"); await pg.fill("#acc-pass", "Longenough1!")
@@ -3669,10 +3670,10 @@ async def two_step_sign_in_with_an_authenticator_app(ctx):
     if os.environ.get("MFA_SHOT"): await pg.locator("[data-set-2fa]").screenshot(path=os.environ["MFA_SHOT"])
     assert await pg.locator("[data-mfa-qr] svg").count() == 1, "the QR code shows"
     v = await text(pg, "[data-set-2fa]"); assert "JBSW Y3DP EHPK 3PXP" in v and "6-digit code" in v, v
-    await pg.fill("[data-mfa-form] input", "000000"); await pg.click("[data-mfa-form] [type=submit]"); await pg.wait_for_timeout(250)
-    assert "didn’t match" in await text(pg, "[data-set-2fa]")
+    await pg.fill("[data-mfa-form] input", "000000"); await pg.click("[data-mfa-form] [type=submit]")
+    await pg.wait_for_function("(document.querySelector('[data-set-2fa]') || {}).textContent.includes('didn’t match') && !document.querySelector('[data-mfa-form] [type=submit]').disabled")
     await pg.fill("[data-mfa-form] input", "123456"); await pg.click("[data-mfa-form] [type=submit]"); await pg.wait_for_timeout(300)
-    assert "On · authenticator app" in await text(pg, "[data-set-2fa]")
+    v = await text(pg, "[data-set-2fa]"); assert "On · authenticator app" in v, v
     # signing in again asks for the code
     await open_account(pg); await pg.click("[data-acc-signout]"); await pg.wait_for_timeout(500)
     await open_account(pg); await pg.fill("#acc-email", "ada@example.com"); await pg.fill("#acc-pass", "Longenough1!")
