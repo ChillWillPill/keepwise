@@ -6330,7 +6330,7 @@ async def the_owl_adds_by_icon_to_misc_or_toward_a_bill(ctx):
     # Expenditures: counted toward the plan, so what you keep stays the same until it goes over
     await pg.click("[data-quick-env=exp]"); await pg.click("[data-quick-ic=cart]"); await pg.wait_for_timeout(150)
     assert "used this month" in await text(pg, ".quick-note")
-    head = "(() => { const h = document.querySelector('[data-out=headline]'); return h ? h.innerText : ''; })()"
+    head = "(() => { const h = document.querySelector('[data-out=headline]'); if (!h) return ''; const c = h.cloneNode(true); c.querySelectorAll('[data-hero-tiles]').forEach(x => x.remove()); return c.innerText; })()"
     before = await pg.evaluate(head)
     await pg.fill("[data-form=quick] [name=amount]", "62"); await pg.click("[data-form=quick] [type=submit]"); await pg.wait_for_timeout(250)
     assert "Counted toward Groceries" in await pg.inner_text("#toast")
@@ -6754,6 +6754,19 @@ async def subs_switch_between_all_monthly_and_yearly(ctx):
     await pg.click("[data-sub-cycle=mo]"); await pg.wait_for_timeout(150)
     assert await pg.locator("[data-out=subsList] [data-sub]").count() == n_all - yr and "every month" in (await text(pg, "[data-out=subsSummary]")).lower(), await text(pg, "[data-out=subsSummary]")
     assert await pg.locator("[data-out=subsSummary] #rule-days").count() == 1, "the flag rule sits in the totals card"
+    assert not pg.errors, pg.errors
+
+@test
+async def left_this_month_counts_every_paycheck_and_bill(ctx):
+    pg = await open_app(ctx, at=(2026, 11, 20, 10, 0))
+    await seed(pg, "s.monthStart = 1; s.pay = {when: 'biweekly', next: '2026-11-06', amount: 1000}; s.payGot = '2026-11-20'; s.extras = []; s.ins = []; s.loans = []; s.cards = []; s.trips = []; s.spends = [];"
+      " s.subs.forEach(x => delete x.paidOn); s.expenses = [{id: 'r', name: 'Rent', amount: 800, env: 'needs'}, {id: 'g', name: 'Groceries', amount: 300, env: 'needs'}];"
+      " s.billSpends = [{e: 'g', k: '2026-11', amount: 350}]; s.paid = {key: '2026-11', on: {'e:r': '2026-11-02'}}")
+    t = await text(pg, "[data-hero-tiles]")
+    # two paychecks (Nov 6 and 20) 2000, rent ticked 800, groceries not ticked but 350 logged against it
+    assert "Left this month" in t and "$850" in t and "$2,000 in" in t and "$1,150 out" in t, t
+    await seed(pg, "s.payGot = '2026-10-23'")
+    t = await text(pg, "[data-hero-tiles]"); assert "Paid out so far" in t and "$1,150" in t and "-" not in t.split("Safe")[0], t
     assert not pg.errors, pg.errors
 
 @test

@@ -134,7 +134,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 :root:is([data-skin="classic"],[data-skin="owl"]) .money-in:focus-within{border-color:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 18%,transparent)}
 :root:is([data-skin="classic"],[data-skin="owl"]) .money-in input:focus{box-shadow:none}
 :root:is([data-skin="classic"],[data-skin="owl"]) select:not([multiple]){appearance:none;-webkit-appearance:none;padding-right:40px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 52%,calc(100% - 15px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
-.hero-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;text-align:left}
+.ht-io{display:block;font-size:.74rem;color:inherit;opacity:.85;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hero-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;text-align:left}
 .hero-tiles>div{padding:10px 12px;border-radius:16px;background:color-mix(in srgb,var(--card) 70%,transparent);min-width:0}
 .hero-tiles small{display:block;font-size:max(.74rem,12.5px);color:var(--muted)}.hero-tiles b{display:block;font:800 1.15rem/1.2 var(--display);overflow-wrap:anywhere}
 :root[data-skin="classic"] .hero .hero-tiles>div{background:rgba(255,255,255,.13)}:root[data-skin="classic"] .hero .hero-tiles small{color:#d9f5e9}:root[data-skin="classic"] .hero .hero-tiles b{color:#fff}
@@ -4310,17 +4310,23 @@ ${progress}`;
 // to one calm line that opens the paid list.
 // Money right now, next to the month-end forecast: what came in this month minus what already went out
 // (bills ticked paid, subscriptions charged, spending logged), and what can go on everyday spending each day until the month ends.
+// Every payday this month up to the last one marked as arrived (two for a 2-weekly pay, not just one).
+const payGotIn = k => { if (!payOn() || !S.payGot) return 0; const P = planPeriodNow(); if (P.key !== k) return inMonth(S.payGot, k) ? +S.pay.amount || 0 : 0;
+  const to = new Date(Math.min(+P.end, +new Date(S.payGot + "T12:00"))); return to < P.start ? 0 : r2(paydaysBetween(P.start, to).length * (+S.pay.amount || 0)); };
 function moneyNow(C){ const k = C.planKey;
-  const got = r2((S.extras || []).reduce((a, x) => a + gotIn(x, k), 0) + (payOn() && S.payGot && inMonth(S.payGot, k) ? +S.pay.amount || 0 : 0));
-  const bills = S.expenses.filter(e => paidOn("e:" + e.id, k)).reduce((a, e) => a + (+e.amount || 0), 0) + (S.loans || []).filter(l => paidOn("l:" + l.id, k)).reduce((a, l) => a + loanMonthly(l), 0);
+  const got = r2((S.extras || []).reduce((a, x) => a + gotIn(x, k), 0) + payGotIn(k) + insTotal(k));
+  // A bill counts once it is ticked paid, or by what was logged against it if that is more (or if it isn't ticked yet).
+  const bills = S.expenses.reduce((a, e) => { const w = swapFor("expense", e.id), plan = +(w ? w.altCost : e.amount) || 0, used = billSpendIn(e.id, k);
+      return a + (paidOn("e:" + e.id, k) ? Math.max(plan, used) : used); }, 0)
+    + (S.loans || []).filter(l => paidOn("l:" + l.id, k)).reduce((a, l) => a + loanMonthly(l), 0) + cardFeesMonthly() + tripsCounted(k);
   const subs = (S.subs || []).filter(s => s.paidOn && inMonth(s.paidOn, k)).reduce((a, s) => a + (+s.price || 0), 0);
   const sp = (S.spends || []).filter(x => (x.k ? x.k === k : inMonth(x.date, k)) && +x.amount > 0), spent = sp.reduce((a, x) => a + (+x.amount || 0), 0);
   const miscSpent = sp.filter(x => x.env !== "needs").reduce((a, x) => a + (+x.amount || 0), 0);
   const end = C.planPeriod && C.planPeriod.end ? new Date(C.planPeriod.end) : null, daysLeft = end ? Math.max(1, Math.round((end - todayMid()) / 864e5) + 1) : 1;
   return {got, out: r2(bills + subs + spent), left: r2(got - bills - subs - spent), safe: r2(Math.max(0, ((+C.envMisc || 0) - miscSpent) / daysLeft))}; }
 const heroTiles = C => { const m = moneyNow(C);
-  const first = m.got > 0 && m.left >= 0 ? ["Left from money in", fmt(m.left), false] : ["Paid out so far", fmt(m.out), false];
-  return `<div class="hero-tiles" data-hero-tiles><div><small>${first[0]}</small><b class="tnum${first[2] ? " neg" : ""}">${first[1]}</b></div><div><small>Safe to spend today</small><b class="tnum">${fmt(m.safe)}</b></div></div>`; };
+  const first = m.got > 0 && m.left >= 0 ? ["Left this month", fmt(m.left), false] : ["Paid out so far", fmt(m.out), false];
+  return `<div class="hero-tiles" data-hero-tiles><div><small>${first[0]}</small><b class="tnum${first[2] ? " neg" : ""}">${first[1]}</b>${m.got > 0 ? `<span class="ht-io tnum" data-hero-io>${fmt(m.got)} in · ${fmt(m.out)} out</span>` : ""}</div><div><small>Safe to spend today</small><b class="tnum">${fmt(m.safe)}</b></div></div>`; };
 OUT.billsCard = () => { const C = compute();
   const items = [...S.expenses.filter(e => e.env === "needs" && !expEveryday(e, C.planKey)).map(e => { const w = swapFor("expense", e.id); return {id: "e:" + e.id, n: e.name, emo: emoFor(e.name), a: +(w ? w.altCost : e.amount) || 0, due: e.due}; }),
     ...(S.loans || []).filter(l => !loanDone(l)).map(l => ({id: "l:" + l.id, n: l.name || loanKind(l.kind), emo: LOAN_EMO[l.kind] || LOAN_EMO.other, a: loanMonthly(l), due: +l.day || 0}))].filter(x => x.a > 0.004);
@@ -6991,7 +6997,7 @@ function incomeFormAll(x, d){
     ${d.kind === "trading" ? `<p class="note small">Count only money you have actually taken out, not gains on paper. Trading income can fall to zero, so keep this number low.</p>` : ""}`}; }
 // Income at a glance: the next payday counting down, and what this month brings in, as a ring.
 OUT.incomeHero = () => { const C = compute(), n = payOn() ? nextPayday() : null, k = todayKey();
-  const got = r2((S.extras || []).reduce((a, x) => a + gotIn(x, k), 0) + (payOn() && S.payGot && inMonth(S.payGot, k) ? +S.pay.amount || 0 : 0)), exp = C.income || 0, pct = exp > 0 ? Math.min(100, got / exp * 100) : 0;
+  const got = r2((S.extras || []).reduce((a, x) => a + gotIn(x, k), 0) + payGotIn(k)), exp = C.income || 0, pct = exp > 0 ? Math.min(100, got / exp * 100) : 0;
   const d = n ? daysUntil(n) : null, hrs = n ? Math.max(0, Math.floor((n - new Date()) / 36e5) % 24) : 0;
   return `<div class="ih-in">${n ? `<button type="button" class="ih-top ih-edit" data-payday-edit aria-label="Change your pay schedule"><div><span class="label">Next payday <span class="ih-chg">Edit</span></span><b class="ih-big">${esc(dayMonth(n))}</b><small class="muted">${d === 0 ? "Today" : d === 1 ? "Tomorrow" : `In ${d} days`} · ${fmt(+S.pay.amount || 0)} · ${esc(payWhenText())}</small></div>
       <div class="ih-cd"><span><b class="tnum">${d}</b><small>${d === 1 ? "day" : "days"}</small></span><span><b class="tnum">${String(hrs).padStart(2, "0")}</b><small>${hrs === 1 ? "hr" : "hrs"}</small></span></div></button>` : `<button type="button" class="ih-set" data-payday-edit><span class="btile" style="--z:44px;background:var(--green-soft);color:var(--green)">📅</span><span><b>How are you paid?</b><small class="muted">Set your payday to see the countdown and each paycheck</small></span><span class="ih-go" aria-hidden="true">›</span></button>`}
