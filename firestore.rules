@@ -56,6 +56,30 @@ service cloud.firestore {
         && request.resource.data.uid is string && request.resource.data.from is string && request.resource.data.from.size() <= 40;
     }
     // Sync across devices: a sealed copy only the owner's devices can open (end-to-end encrypted on the phone).
+    // Support: a signed-in person opens a ticket as themselves and reads only their own; the owner reads and answers all.
+    // Messages live under the ticket; a person can only write as "user", only the owner as "team".
+    match /tickets/{id} {
+      allow read: if isOwner() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid','email','name','topic','subject','status','at','updated','last','unreadUser','unreadTeam','app'])
+        && request.resource.data.status == 'open' && request.resource.data.subject is string && request.resource.data.subject.size() <= 80
+        && request.resource.data.name is string && request.resource.data.name.size() <= 120;
+      allow update: if isOwner() || (request.auth != null && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updated','last','status','unreadUser','unreadTeam'])
+        && request.resource.data.status in ['open','waiting','closed']);
+      allow delete: if isOwner();
+      match /msgs/{m} {
+        allow read: if isOwner() || (request.auth != null && get(/databases/$(database)/documents/tickets/$(id)).data.uid == request.auth.uid);
+        allow create: if request.resource.data.keys().hasOnly(['from','text','at']) && request.resource.data.text is string && request.resource.data.text.size() <= 4000
+          && ((isOwner() && request.resource.data.from == 'team')
+            || (request.auth != null && request.resource.data.from == 'user' && get(/databases/$(database)/documents/tickets/$(id)).data.uid == request.auth.uid));
+        allow update, delete: if isOwner();
+      }
+    }
+    // Reply templates for the admin console: the owner only.
+    match /templates/{t} {
+      allow read, write: if isOwner();
+    }
     match /users/{uid}/sync/{doc} {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid && doc == 'state'

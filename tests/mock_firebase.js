@@ -65,6 +65,21 @@
   };
   const fs = {
     collection(c){ if (c === "ping") return {async add(d){ signed(); store["ping/" + nid()] = clone(d); saveStore(); }};
+      // Support tickets and reply templates, like the rules: a person reads and writes only their own tickets; the owner
+      // reads and answers all of them, and alone keeps the templates.
+      if (c === "tickets" || c === "templates"){ const isOwner = () => current && current.email === (window.__mockOwner || "notartist04@gmail.com") && current.providerData[0].providerId === "google.com";
+        const pre = c + "/", rows = f => Object.keys(store).filter(k => k.startsWith(pre) && !k.slice(pre.length).includes("/")).map(k => ({id: k.slice(pre.length), data: () => clone(store[k])})).filter(f || (() => true));
+        const mine = k => isOwner() || (c === "tickets" && store[k] && store[k].uid === current.uid);
+        const doc = id => { id = id || nid(); const k = pre + id; return {id,
+          async get(){ signed(); if (k in store && !mine(k)) throw err("permission-denied"); return {exists: k in store, data: () => clone(store[k])}; },
+          async set(d){ signed(); if (c === "templates" ? !isOwner() : (k in store ? !mine(k) : d.uid !== current.uid)) throw err("permission-denied"); store[k] = clone(d); saveStore(); },
+          async update(d){ signed(); if (!mine(k)) throw err("permission-denied"); store[k] = {...store[k], ...clone(d)}; saveStore(); },
+          async delete(){ signed(); if (!isOwner()) throw err("permission-denied"); delete store[k]; saveStore(); },
+          collection(){ const mp = k + "/msgs/"; return {
+            async get(){ signed(); if (!mine(k)) throw err("permission-denied"); const docs = Object.keys(store).filter(x => x.startsWith(mp)).map(x => ({id: x.slice(mp.length), data: () => clone(store[x])})); return {docs, size: docs.length}; },
+            doc(){ const mk = mp + nid(); return {async set(d){ signed(); if (!mine(k) || (d.from === "team" && !isOwner())) throw err("permission-denied"); store[mk] = clone(d); saveStore(); }}; } }; } }; };
+        return {doc, where(f, op, v){ return {async get(){ signed(); if (!isOwner() && !(f === "uid" && v === current.uid)) throw err("permission-denied"); const docs = rows(r => r.data()[f] === v); return {docs, size: docs.length}; }}; },
+          async get(){ signed(); if (!isOwner()) throw err("permission-denied"); const docs = rows(); return {docs, size: docs.length}; }}; }
       if (special[c]) return {doc: special[c]};
       return {
       async get(){  // listing the whole collection: only the owner's verified Google account, like the real rules

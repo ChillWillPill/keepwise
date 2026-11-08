@@ -260,6 +260,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .es-bar{display:block;height:5px;border-radius:5px;background:rgba(255,255,255,.28);overflow:hidden}.es-bar u{display:block;height:100%;background:#fff}.es-bar.dk{background:var(--line);margin-top:4px}.es-bar.dk u{background:var(--green)}
 .es-pill{position:absolute;display:flex;align-items:center;gap:8px;padding:8px 13px 8px 8px;border-radius:99px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 22px -14px rgba(0,0,0,.5);font-weight:700;font-size:.86rem;white-space:nowrap}
 @media (max-width:340px){.es-pill{font-size:.74rem;padding:6px 10px 6px 6px;gap:6px}.es-pill>i{width:22px!important;height:22px!important}}
+.tk-form{display:grid;gap:10px;margin-top:10px}.tk-form textarea{width:100%;font:inherit;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--bg);color:var(--ink);resize:vertical}.tk-list{display:grid;gap:8px}.tk-row{display:flex;gap:10px;align-items:center;text-align:left;width:100%;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);font:inherit}.tk-row>span{flex:1;min-width:0;display:grid}.tk-row small{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tk-st{font-style:normal;font-size:max(.78rem,12.5px);color:var(--muted);text-align:right}.tk-st.new{color:var(--green);font-weight:700}.tk-sub{margin:8px 0}.tk-thread{display:grid;gap:8px}.tk-msg{padding:10px 12px;border-radius:16px;background:var(--chip);max-width:88%}.tk-msg.team{background:var(--green-soft);justify-self:start}.tk-msg.me{justify-self:end}.tk-msg p{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}.tk-msg small{color:var(--muted)}
 .es-pill>i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-style:normal;font-size:.8rem}.es-pill em{font-style:normal;color:var(--green)}
 .es-cc{position:absolute;width:62%;height:104px;border-radius:16px;padding:12px 14px;color:#fff;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 16px 30px -16px rgba(0,0,0,.6)}
 .es-chip{display:block;width:26px;height:19px;border-radius:5px;background:linear-gradient(135deg,#f1d17a,#b88a2c)}
@@ -8769,6 +8770,7 @@ function accInit(){
           save(); ACC.state = "ready"; renderAcctBtn();
           if (u && /[?&]verified=1/.test(location.search)){ try { history.replaceState(null, "", location.pathname); } catch(x){} UI.account = true; setTimeout(() => accCheckVerified(true), 300); }
           if (u) setTimeout(mailMonthly, 2500);   // Plus: this month's balance emails, once a month
+          TK.list = null; TK.open = null; if (u) setTimeout(() => tkLoad().then(() => { if ((TK.list || []).some(t => t.unreadUser)) toast("The KeepWise team replied. See Support in the menu."); }), 3000);   // a reply to a support message
           if (u) setTimeout(invReminders, 4000);   // Plus: late invoices get a polite reminder
           if (u) setTimeout(friendStart, 3000);   // friends on KeepWise: be findable, check who uses it, collect what they sent
           if (UI.account) render(true);
@@ -8823,7 +8825,51 @@ const legalLinks = `<a href="https://mykeepwise.com/terms.html" target="_blank" 
 // Help and contact. Support runs on KeepWise's own social accounts; add a line here when another account opens.
 const SUPPORT_EMAIL = "support@mykeepwise.com";
 const SOCIAL = [["X", "@MyKeepWise", "https://x.com/MyKeepWise"], ["Instagram", "@mykeepwise", "https://www.instagram.com/mykeepwise"]];
-const helpCard = () => `<section class="card" data-help><h2>Help and contact</h2>
+// Support messages: a signed-in person can write to the team and see replies here. Stored in Firestore tickets/{id}
+// (only that person and the owner can read it); the owner answers from the admin console.
+const TK = {list: null, open: null, msgs: null, busy: false, err: ""};
+const TK_TOPICS = [["help", "A question"], ["bug", "Something isn't working"], ["idea", "An idea"], ["billing", "Plus and billing"], ["account", "My account"]];
+async function tkLoad(){ if (!ACC.db || !ACC.user) return; try { const q = await ACC.db.collection("tickets").where("uid", "==", ACC.user.uid).get();
+  TK.list = q.docs.map(d => ({id: d.id, ...d.data()})).sort((a, b) => (b.updated || 0) - (a.updated || 0)); } catch(e){ TK.list = TK.list || []; } tkPaint(); }
+async function tkOpen(id){ TK.open = id; TK.msgs = null; tkPaint(); try { const q = await ACC.db.collection("tickets").doc(id).collection("msgs").get();
+  TK.msgs = q.docs.map(d => d.data()).sort((a, b) => (a.at || 0) - (b.at || 0));
+  const t = (TK.list || []).find(x => x.id === id); if (t && t.unreadUser){ t.unreadUser = false; ACC.db.collection("tickets").doc(id).update({unreadUser: false}).catch(() => {}); } } catch(e){ TK.msgs = []; } tkPaint(); }
+function tkPaint(){ const b = document.querySelector("[data-tk-box]"); if (b) b.innerHTML = tkBody(); }
+const tkWhen = t => t ? new Date(t).toLocaleDateString("en-US", {month: "short", day: "numeric"}) : "";
+const tkStatus = t => t.status === "closed" ? "Closed" : t.unreadUser ? "New reply" : t.status === "waiting" ? "Answered" : "Open";
+function tkBody(){
+  if (!ACC.user) return `<p class="muted small">Sign in to send us a message from here and see our replies in the app. Or email us below.</p>`;
+  if (TK.open){ const t = (TK.list || []).find(x => x.id === TK.open) || {};
+    return `<button class="link small" type="button" data-tk-back>‹ All messages</button><h3 class="tk-sub">${esc(t.subject || "Message")}</h3>
+      <div class="tk-thread">${TK.msgs == null ? `<p class="muted small">Loading…</p>` : TK.msgs.map(m => `<div class="tk-msg ${m.from === "team" ? "team" : "me"}"><small>${m.from === "team" ? "KeepWise team" : "You"} · ${tkWhen(m.at)}</small><p>${esc(m.text)}</p></div>`).join("")}</div>
+      ${t.status === "closed" ? `<p class="muted small">This conversation is closed. Write again any time.</p>` : `<form data-tk-reply class="tk-form"><textarea name="text" rows="3" maxlength="2000" required placeholder="Write a reply" aria-label="Your reply"></textarea><button class="btn primary" type="submit"${TK.busy ? " disabled" : ""}>Send</button></form>`}`; }
+  const list = TK.list == null ? `<p class="muted small">Loading your messages…</p>` : TK.list.length ? `<div class="tk-list">${TK.list.map(t => `<button type="button" class="tk-row" data-tk-open="${esc(t.id)}"><span><b>${esc(t.subject)}</b><small>${esc((t.last && t.last.text) || "")}</small></span><em class="tk-st${t.unreadUser ? " new" : ""}">${tkStatus(t)}<br><small>${tkWhen(t.updated)}</small></em></button>`).join("")}</div>` : "";
+  return `${list}<form data-tk-new class="tk-form"><label class="field"><span>About</span><select name="topic">${TK_TOPICS.map(([k, n]) => `<option value="${k}">${n}</option>`).join("")}</select></label>
+    <label class="field"><span>Subject</span><input name="subject" maxlength="80" required placeholder="A few words"></label>
+    <label class="field"><span>Message</span><textarea name="text" rows="4" maxlength="2000" required placeholder="Tell us what happened or what you need. Please leave out passwords and card numbers."></textarea></label>
+    ${TK.err ? `<p class="err small">${esc(TK.err)}</p>` : ""}<button class="btn primary" type="submit"${TK.busy ? " disabled" : ""}>Send to the KeepWise team</button></form>`;
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-tk-open],[data-tk-back]"); if (!b) return; e.preventDefault();
+  if (b.hasAttribute("data-tk-back")){ TK.open = null; tkPaint(); } else tkOpen(b.dataset.tkOpen); });
+document.addEventListener("submit", async e => { const f = e.target.closest("form[data-tk-new],form[data-tk-reply]"); if (!f || !ACC.db || !ACC.user) return; e.preventDefault(); e.stopPropagation();
+  const d = Object.fromEntries(new FormData(f)), text = String(d.text || "").trim().slice(0, 2000), now = Date.now(); if (!text) return;
+  TK.busy = true; TK.err = ""; tkPaint();
+  try {
+    if (f.hasAttribute("data-tk-new")){ const ref = ACC.db.collection("tickets").doc(), subject = String(d.subject || "").trim().slice(0, 80) || "Message";
+      await ref.set({uid: ACC.user.uid, email: ACC.user.email || "", name: String((ACC.profile && ACC.profile.name) || "").slice(0, 120), topic: TK_TOPICS.some(x => x[0] === d.topic) ? d.topic : "help", subject,
+        status: "open", at: now, updated: now, last: {from: "user", text: text.slice(0, 140), at: now}, unreadUser: false, unreadTeam: true,
+        app: (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform() ? "android" : "web")});
+      await ref.collection("msgs").doc().set({from: "user", text, at: now});
+      toast("Sent. We'll reply here, usually within a day."); await tkLoad(); }
+    else { const ref = ACC.db.collection("tickets").doc(TK.open);
+      await ref.collection("msgs").doc().set({from: "user", text, at: now});
+      await ref.update({updated: now, last: {from: "user", text: text.slice(0, 140), at: now}, status: "open", unreadTeam: true});
+      TK.busy = false; await tkLoad(); await tkOpen(TK.open); }
+  } catch(err){ TK.err = "Couldn't send. Check your connection and try again."; }
+  TK.busy = false; tkPaint(); }, true);
+const helpCard = () => { if (ACC.user && TK.list == null) setTimeout(tkLoad, 0);
+  return `<section class="card" data-tk-card><h2>Messages</h2><div data-tk-box>${tkBody()}</div></section>` + helpCardBase(); };
+const helpCardBase = () => `<section class="card" data-help><h2>Help and contact</h2>
   <p class="muted small">Questions, a problem, or an idea? Email or message us and a person will read it.</p>
   <a class="btn primary" href="mailto:${SUPPORT_EMAIL}" data-help-link="email">Email ${SUPPORT_EMAIL}</a>
   ${SOCIAL.map(([net, handle, url]) => `<a class="btn" href="${url}" target="_blank" rel="noopener" data-help-link="${net}">Message ${esc(handle)} on ${esc(net)}</a>`).join("")}

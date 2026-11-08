@@ -5658,6 +5658,45 @@ async def admin_owner_sees_dashboard_and_lists(ctx):
     assert pg.errors == [], pg.errors
 
 @test
+async def support_tickets_from_app_to_admin_and_back(ctx):
+    # a signed-in person writes from Support; the owner sees it in Tickets, answers with a template; the reply shows in the app
+    pg = await open_app(ctx, fb=True)
+    await open_account(pg)
+    await pg.click("[data-acc-mode=create]"); await pg.wait_for_timeout(120)
+    await pg.fill("#acc-email", "ada@example.com"); await pg.fill("#acc-pass", "Longenough1!")
+    await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(500)
+    await pg.goto(pg.url); await pg.wait_for_timeout(800); await menu_to(pg, "support"); await pg.wait_for_timeout(500)
+    await pg.fill("[data-tk-new] [name=subject]", "Bill shows twice"); await pg.fill("[data-tk-new] textarea", "My rent appears two times this month.")
+    await pg.click("[data-tk-new] [type=submit]"); await pg.wait_for_timeout(600)
+    assert "Bill shows twice" in await text(pg, "[data-tk-box]"), await text(pg, "[data-tk-box]")
+    store = await pg.evaluate("localStorage.getItem('__mock_fs')")
+    ad = await open_admin(ctx)
+    if not await ad.locator("[data-google]").count(): await ad.click("[data-signout]"); await ad.wait_for_timeout(400)   # the app's sign-in carries over in this test browser
+    await ad.click("[data-google]"); await ad.wait_for_timeout(500)
+    assert "Open tickets 1" in await text(ad, ".tk-tiles") and "1 waiting on you" in await text(ad, ".tk-tiles")
+    await ad.click("[data-view=tickets]"); await ad.wait_for_timeout(200)
+    await ad.click("[data-tk]"); await ad.wait_for_timeout(400)
+    assert "two times" in await text(ad, "#thread")
+    await ad.select_option("#tplpick", "t-thanks"); await ad.wait_for_timeout(100)
+    assert (await ad.input_value("#reply")).startswith("Hi Ada,") or "Hi " in await ad.input_value("#reply")
+    await ad.click("[data-send]"); await ad.wait_for_timeout(400)
+    assert "Answered" in await text(ad, "#app") and "looking into this" in await text(ad, "#thread")
+    await ad.click("[data-view=customers]"); await ad.wait_for_timeout(150); await ad.click("[data-cust]"); await ad.wait_for_timeout(150)
+    assert "Connections" in await text(ad, "#app"), await text(ad, "#app")
+    await ad.click("[data-view=templates]"); await ad.wait_for_timeout(150); await ad.click("[data-tpl-new]"); await ad.fill("#tpltitle", "Refund"); await ad.click("[data-tpl-save]"); await ad.wait_for_timeout(300)
+    assert "Refund" in await text(ad, "#app") and ad.errors == [], ad.errors
+    await ad.click("[data-view=map]"); await ad.wait_for_timeout(300)
+    assert "Top cities" in await text(ad, "#app"), await text(ad, "#app")
+    sw = await ad.evaluate("[document.documentElement.scrollWidth, innerWidth]"); assert sw[0] <= sw[1], sw
+    # back in the app (signed in as Ada again: this test browser shares one sign-in between the two pages), the reply is there
+    await ad.evaluate("firebase.auth().signInWithEmailAndPassword('ada@example.com', 'Longenough1!')"); await ad.wait_for_timeout(200)
+    await pg.reload(); await pg.wait_for_timeout(3800)
+    await menu_to(pg, "support"); await pg.wait_for_timeout(600)
+    assert "New reply" in await text(pg, "[data-tk-box]"), await text(pg, "[data-tk-box]")
+    await pg.click("[data-tk-open]"); await pg.wait_for_timeout(500)
+    assert "looking into this" in await text(pg, "[data-tk-box]") and not pg.errors, pg.errors
+
+@test
 async def admin_blocks_other_accounts(ctx):
     pg = await open_admin(ctx, owner=False)
     await pg.click("[data-google]"); await pg.wait_for_timeout(500)
