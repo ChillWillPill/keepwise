@@ -19,6 +19,11 @@
       getIdToken: async () => "mock-id-token-" + rec.uid,
       reauthenticateWithCredential: async c => { if (!c || c.email !== rec.email) throw err("auth/user-mismatch"); if (window.__mockOffline) throw err("auth/network-request-failed"); if (c.pw !== rec.pw) throw err("auth/wrong-password"); },
       reauthenticateWithPopup: async () => { const e = window.__mockGoogleEmail || "gina@example.com"; if (e !== rec.email) throw err("auth/user-mismatch"); },
+      multiFactor: {
+        get enrolledFactors(){ return (users[rec.email] && users[rec.email].totp) ? [{uid: "f1", factorId: "totp", displayName: "Authenticator app"}] : []; },
+        getSession: async () => { if (!users[rec.email].verified) throw err("auth/unverified-email"); return {email: rec.email}; },
+        enroll: async a => { if (a.code !== "123456") throw err("auth/invalid-verification-code"); users[rec.email].totp = true; saveUsers(); },
+        unenroll: async () => { delete users[rec.email].totp; saveUsers(); } },
       delete: async () => { delete users[rec.email]; saveUsers(); setUser(null); }
     };
   }
@@ -27,6 +32,9 @@
     localStorage.setItem("__mock_session", rec ? rec.email : "");
     cbs.forEach(cb => setTimeout(() => cb(current), 0));
   }
+  // An account with 2-step sign-in turned on: the first step returns a resolver that wants the 6-digit code (123456).
+  const gate = u => { if (!u.totp){ setUser(u); return {user: current}; }
+    throw Object.assign(err("auth/multi-factor-auth-required"), {resolver: {hints: [{uid: "f1", factorId: "totp"}], async resolveSignIn(a){ if (a.code !== "123456") throw err("auth/invalid-verification-code"); setUser(u); return {user: current}; }}}); };
   const s = localStorage.getItem("__mock_session"); if (s && users[s]) current = mk(users[s]);
   const auth = {
     get currentUser(){ return current; },
@@ -39,7 +47,7 @@
     },
     async signInWithEmailAndPassword(email, pw){
       const u = users[email]; if (!u || u.pw !== pw) throw err("auth/invalid-credential");
-      setUser(u); return {user: current};
+      return gate(u);
     },
     async signInWithPopup(){
       const email = window.__mockGoogleEmail || "gina@example.com";
@@ -98,5 +106,7 @@
     }; } }; }
   };
   const authFn = () => auth; authFn.GoogleAuthProvider = function(){}; authFn.EmailAuthProvider = {credential: (email, pw) => ({email, pw})};
+  authFn.TotpMultiFactorGenerator = {generateSecret: async () => ({secretKey: "JBSWY3DPEHPK3PXP", generateQrCodeUrl: (acct, iss) => `otpauth://totp/${iss}:${acct}?secret=JBSWY3DPEHPK3PXP&issuer=${iss}`}),
+    assertionForEnrollment: (sec, code) => ({code}), assertionForSignIn: (uid, code) => ({code})};
   window.firebase = { apps: [], initializeApp(c){ this.apps.push(c); return {}; }, app(){ return {}; }, auth: authFn, firestore: () => fs };
 })();

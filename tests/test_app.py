@@ -3656,6 +3656,34 @@ async def admin_customer_profile_gives_early_access(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def two_step_sign_in_with_an_authenticator_app(ctx):
+    pg = await open_app(ctx, fb=True)
+    await open_account(pg)
+    await pg.click("[data-acc-mode=create]"); await pg.wait_for_timeout(120)
+    await pg.fill("#acc-email", "ada@example.com"); await pg.fill("#acc-pass", "Longenough1!")
+    await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_timeout(500)
+    await pg.evaluate("window.__mockVerify('ada@example.com')")
+    await pg.goto(pg.url); await pg.wait_for_timeout(800); await menu_to(pg, "security"); await pg.wait_for_timeout(500)
+    assert await pg.locator("[data-set-2fa]").count() == 1, await text(pg, "#view")
+    await pg.click("[data-mfa-start]"); await pg.wait_for_timeout(600)
+    if os.environ.get("MFA_SHOT"): await pg.locator("[data-set-2fa]").screenshot(path=os.environ["MFA_SHOT"])
+    assert await pg.locator("[data-mfa-qr] svg").count() == 1, "the QR code shows"
+    v = await text(pg, "[data-set-2fa]"); assert "JBSW Y3DP EHPK 3PXP" in v and "6-digit code" in v, v
+    await pg.fill("[data-mfa-form] input", "000000"); await pg.click("[data-mfa-form] [type=submit]"); await pg.wait_for_timeout(250)
+    assert "didn’t match" in await text(pg, "[data-set-2fa]")
+    await pg.fill("[data-mfa-form] input", "123456"); await pg.click("[data-mfa-form] [type=submit]"); await pg.wait_for_timeout(300)
+    assert "On · authenticator app" in await text(pg, "[data-set-2fa]")
+    # signing in again asks for the code
+    await open_account(pg); await pg.click("[data-acc-signout]"); await pg.wait_for_timeout(500)
+    await open_account(pg); await pg.fill("#acc-email", "ada@example.com"); await pg.fill("#acc-pass", "Longenough1!")
+    await pg.click("[data-form=acc-email] [type=submit]"); await pg.wait_for_selector("#mfa-ask")
+    await pg.fill("#mfa-ask input", "111111"); await pg.click("#mfa-ask [type=submit]"); await pg.wait_for_timeout(200)
+    assert "didn’t match" in await text(pg, "#mfa-ask")
+    await pg.fill("#mfa-ask input", "123456"); await pg.click("#mfa-ask [type=submit]"); await pg.wait_for_timeout(500)
+    assert await pg.locator("#mfa-ask").count() == 0 and await pg.evaluate("localStorage.getItem('__mock_session')") == "ada@example.com"
+    assert not pg.errors, pg.errors
+
+@test
 async def plus_screen_gives_reasons_and_prices(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(150)
