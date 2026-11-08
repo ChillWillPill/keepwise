@@ -1,0 +1,22 @@
+// One owl drawing, coloured per theme. Used for the theme icons preview (and later the Android icon files).
+exports.owl=(c,vb='5 8.5 54 54')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}"><path d="M16 13l8 9-5 3zM48 13l-8 9 5 3z" fill="${c.tuft}"/><ellipse cx="32" cy="37" rx="19" ry="21" fill="${c.body}"/>
+<path d="M18 29C11 31 7.5 40 8.5 48C9 51.5 10.5 54 12.5 55A2.3 2.3 0 0 0 15.6 53.6A2.3 2.3 0 0 0 18.6 51.8A2.3 2.3 0 0 0 20.4 48.6C21.2 42 21 34.5 18 29Z" fill="${c.wing}"/><path d="M12.4 38.5c1.8 3 2.5 6.6 2.3 10.6M15.8 35.5c1.4 3.6 1.9 7.6 1.6 11.8" fill="none" stroke="${c.wline}" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M46 29C53 31 56.5 40 55.5 48C55 51.5 53.5 54 51.5 55A2.3 2.3 0 0 1 48.4 53.6A2.3 2.3 0 0 1 45.4 51.8A2.3 2.3 0 0 1 43.6 48.6C42.8 42 43 34.5 46 29Z" fill="${c.wing}"/><path d="M51.6 38.5c-1.8 3-2.5 6.6-2.3 10.6M48.2 35.5c-1.4 3.6-1.9 7.6-1.6 11.8" fill="none" stroke="${c.wline}" stroke-width="1.2" stroke-linecap="round"/>
+<ellipse cx="32" cy="47" rx="11" ry="10.5" fill="${c.belly}"/><path d="M27 45l2 2 2-2M33 45l2 2 2-2M30 50l2 2 2-2" fill="none" stroke="${c.chev}" stroke-width="1.3" stroke-linecap="round"/>
+<circle cx="24" cy="30" r="9.2" fill="${c.face}"/><circle cx="40" cy="30" r="9.2" fill="${c.face}"/><circle cx="24" cy="30" r="4.6" fill="${c.iris}"/><circle cx="40" cy="30" r="4.6" fill="${c.iris}"/><circle cx="24" cy="30" r="2.7" fill="${c.pupil}"/><circle cx="40" cy="30" r="2.7" fill="${c.pupil}"/><circle cx="25.3" cy="28.6" r="1.2" fill="#fff"/><circle cx="41.3" cy="28.6" r="1.2" fill="#fff"/>
+<circle cx="24" cy="30" r="8.4" fill="none" stroke="${c.frame}" stroke-width="2.2"/><circle cx="40" cy="30" r="8.4" fill="none" stroke="${c.frame}" stroke-width="2.2"/><path d="M30.6 29.4q1.4-1.5 2.8 0" fill="none" stroke="${c.frame}" stroke-width="2" stroke-linecap="round"/>
+<path d="M32 36l-2.6 2.6L32 42l2.6-3.4z" fill="${c.beak}"/><ellipse cx="17.5" cy="38" rx="2.6" ry="1.5" fill="${c.cheek}" opacity=".8"/><ellipse cx="46.5" cy="38" rx="2.6" ry="1.5" fill="${c.cheek}" opacity=".8"/>
+<path d="M26 57.5l1.6-2 1.6 2M34.8 57.5l1.6-2 1.6 2" fill="none" stroke="${c.beak}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const base={face:'#ffffff',iris:'#f5b52e',pupil:'#10231c',frame:'#10231c',beak:'#f5b52e',cheek:'#ff9e8f'};
+exports.T=[
+ ['classic','Mint Pop (default · Play Store icon)','linear-gradient(160deg,#ffffff,#d7f5e8)',{...base,tuft:'#05432f',body:'#075a3f',wing:'#0e9f6e',wline:'#075a3f',belly:'#d7f5e8',chev:'#8fd9b8'}],
+ ['owl','Night Owl','radial-gradient(circle at 30% 25%,#22324d,#0d1420)',{...base,tuft:'#9fd12a',body:'#c6f432',wing:'#a8dc22',wline:'#7fae12',belly:'#f4ffd6',chev:'#a8dc22',frame:'#0d1420',pupil:'#0d1420'}],
+ ['cream','Classic','linear-gradient(160deg,#fbf8f2,#efe4d4)',{...base,tuft:'#134d31',body:'#1b6843',wing:'#2a8a5a',wline:'#134d31',belly:'#e4f2ea',chev:'#a9d6bd',iris:'#d9a43a',beak:'#d9a43a'}],
+ ['midnight','Midnight','radial-gradient(circle at 30% 25%,#2a2d33,#0b0c0e)',{...base,tuft:'#c9ced6',body:'#f2f3f5',wing:'#d5dae1',wline:'#aab1bb',belly:'#ffffff',chev:'#0f6e46',frame:'#0b0c0e',pupil:'#0b0c0e',iris:'#2fbf7f'}],
+ ['ocean','Ocean','linear-gradient(160deg,#ffffff,#d6e6fb)',{...base,tuft:'#174a96',body:'#1f5fbf',wing:'#3b7fe0',wline:'#174a96',belly:'#dbe9fb',chev:'#9cc0f0'}],
+ ['mocha','Mocha','linear-gradient(160deg,#fffaf6,#ecdccf)',{...base,tuft:'#6b4434',body:'#8a5a44',wing:'#a8775e',wline:'#6b4434',belly:'#f6e7dc',chev:'#d6b29d',iris:'#e0a93c',beak:'#e0a93c'}],
+ ['rose','Rose','linear-gradient(160deg,#ffffff,#f8d9e2)',{...base,tuft:'#8e2246',body:'#b4325a',wing:'#d4517a',wline:'#8e2246',belly:'#fde6ec',chev:'#f0a9bd'}],
+ ['contrast','High contrast','#ffffff',{...base,tuft:'#000000',body:'#000000',wing:'#005c34',wline:'#000000',belly:'#ffffff',chev:'#000000',cheek:'#ff6a55'}],
+ ['glass','Liquid Glass','linear-gradient(150deg,rgba(255,255,255,.95),rgba(198,236,218,.85)),radial-gradient(circle at 20% 15%,#fff,transparent 40%),#cfe9dc',{...base,tuft:'#0c5b40',body:'#127a57',wing:'#2aa57a',wline:'#0c5b40',belly:'rgba(255,255,255,.85)',chev:'#8fd9b8'}],
+ ['terminal','Terminal','radial-gradient(circle at 30% 25%,#0e1d17,#04080a)',{...base,tuft:'#1fc965',body:'#39ff88',wing:'#22d873',wline:'#10a04e',belly:'#0b1a12',chev:'#39ff88',face:'#04080a',iris:'#39ff88',pupil:'#04080a',frame:'#39ff88',beak:'#e8c35a',cheek:'#39ff88'}],
+];

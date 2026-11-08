@@ -75,7 +75,7 @@ for k in ("month", "subs", "banks", "split"):
 tap_tab("month")
 js(ws, "document.getElementById('wise').click()"); time.sleep(2); shot("2-owl")
 js(ws, "document.querySelector('.ask-back') && document.querySelector('.ask-back').click()"); time.sleep(1)
-print(LABEL, "native bridges:", js(ws, "JSON.stringify(['WidgetBridge','VoiceBridge'].map(n => [n, !!(window.Capacitor && Capacitor.isPluginAvailable(n))]))"))
+print(LABEL, "native bridges:", js(ws, "JSON.stringify(['WidgetBridge','VoiceBridge','IconBridge'].map(n => [n, !!(window.Capacitor && Capacitor.isPluginAvailable(n))]))"))
 print(LABEL, "mic button shown:", js(ws, "(document.getElementById('wise').click(), new Promise(r => setTimeout(() => r(!!document.getElementById('ask-mic') && !document.getElementById('ask-mic').hidden), 1500)))"))
 if errs:
     print("LAYOUT PROBLEMS", *errs, sep="\n"); sys.exit(1)

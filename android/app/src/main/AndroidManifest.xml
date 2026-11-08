@@ -15,11 +15,138 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
+        </activity>
+        <!-- One home screen icon per theme; the app turns on the one that matches the chosen theme (IconBridge). -->
+        <activity-alias
+            android:name=".Icon_classic"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:label="@string/app_name"
+            android:enabled="true"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_owl"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_kw_owl"
+            android:roundIcon="@mipmap/ic_kw_owl_round"
+            android:label="@string/app_name"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_cream"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_kw_cream"
+            android:roundIcon="@mipmap/ic_kw_cream_round"
+            android:label="@string/app_name"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_midnight"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_kw_midnight"
+            android:roundIcon="@mipmap/ic_kw_midnight_round"
+            android:label="@string/app_name"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_ocean"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_kw_ocean"
+            android:roundIcon="@mipmap/ic_kw_ocean_round"
+            android:label="@string/app_name"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_mocha"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_kw_mocha"
+            android:roundIcon="@mipmap/ic_kw_mocha_round"
+            android:label="@string/app_name"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_rose"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_kw_rose"
+            android:roundIcon="@mipmap/ic_kw_rose_round"
+            android:label="@string/app_name"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_contrast"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_kw_contrast"
+            android:roundIcon="@mipmap/ic_kw_contrast_round"
+            android:label="@string/app_name"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_glass"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_kw_glass"
+            android:roundIcon="@mipmap/ic_kw_glass_round"
+            android:label="@string/app_name"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_terminal"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_kw_terminal"
+            android:roundIcon="@mipmap/ic_kw_terminal_round"
+            android:label="@string/app_name"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <provider
             android:name="androidx.core.content.FileProvider"

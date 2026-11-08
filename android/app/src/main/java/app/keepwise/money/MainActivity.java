@@ -13,6 +13,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(WidgetBridge.class);   // the home screen widget's link to the app
         registerPlugin(VoiceBridge.class);    // speaking to the owl
+        registerPlugin(IconBridge.class);     // the home screen icon follows the theme
         super.onCreate(savedInstanceState);
         capTextZoom();
     }
@@ -21,6 +22,12 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {
         super.onResume();
         capTextZoom();   // the phone's text size can change while the app is in the background
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        IconBridge.apply(this);   // swap the home screen icon once the app is out of sight
     }
 
     private void capTextZoom() {
