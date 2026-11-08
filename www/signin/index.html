@@ -1846,7 +1846,18 @@ function applyTheme(){
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
 (S.settlements || (S.settlements = [])).forEach(x => { if (!x.id) x.id = uid(); });
 if (!S.subAskFrom) S.subAskFrom = isoDaysAgo(0);   // "Did it charge you?" asks only about renewals from today on
-const save = () => { if (UI.welcome != null || window.__kwErasing || window.__kwTour) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} remindSync(); pushSync(); if (typeof syncSoon === "function") syncSoon(); };
+const save = () => { if (UI.welcome != null || window.__kwErasing || window.__kwTour) return; recordStatement(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} remindSync(); pushSync(); if (typeof syncSoon === "function") syncSoon(); widgetSoon(); };
+// The Android home screen widget: what you'll keep and what's due next, sent to the phone a moment after each change.
+// "Hide the big number" hides it on the widget too. Nothing leaves the phone.
+let widgetT = 0;
+function widgetSoon(){ if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return; clearTimeout(widgetT); widgetT = setTimeout(widgetPush, 800); }
+function widgetPush(){ try {
+  const W = window.Capacitor.registerPlugin ? window.Capacitor.registerPlugin("WidgetBridge") : null; if (!W || !W.update) return;
+  const C = compute(), P = C.planPeriod, by = P && P.end ? dayMonth(P.end) : "month end";
+  const soon = S.subs.filter(s => s.keep !== "drop").map(s => ({n: s.name, a: +s.price || 0, d: nextRenewal(s)})).filter(x => x.d).sort((a, b) => a.d - b.d)[0];
+  const next = soon ? `Next: ${soon.n} ${fmt(soon.a)} · ${whenLabel(daysUntil(soon.d)).toLowerCase()}` : "";
+  W.update({label: C.savings >= 0 ? `You'll keep by ${by}` : `Short by ${by}`, amount: S.hideBal ? "••••" : fmt(Math.abs(C.savings)), next}).catch(() => {});
+} catch(e){} }
 window.addEventListener("pagehide", save);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); });
 // Back from the email app: if the email was just verified, the profile says so without a tap.
@@ -10531,6 +10542,7 @@ try { if (/[?&]site\b/.test(location.search)) window.KEEPWISE_SITE = true; if ((
     x += (tx - x) * .22; y += (ty - y) * .22; pp.style.transform = `translate(${x.toFixed(2)}px,${y.toFixed(2)}px)`;
     const b = (now % 5200) < 130; lids.forEach(l => { l.style.transform = b ? "scaleY(1)" : "scaleY(0)"; }); }, 60);
 } catch(e){} })();
+try { widgetSoon(); } catch(e){}   // the widget catches up when the app opens
 try { if (S.env) envFix(); } catch(e){}   // older plans could hold shares that did not total 100
 // Pay and income set up before KeepWise recorded when: count them as added today, so nothing earlier is asked about.
 try { if (S.pay && S.pay.when && !S.pay.since) S.pay.since = isoDaysAgo(0); (S.extras || []).forEach(x => { if (!x.added) x.added = isoDaysAgo(0); }); } catch(e){}
