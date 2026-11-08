@@ -4627,7 +4627,21 @@ function plainly(){
 // Speaking instead of typing, in English, where the browser offers it. The phone or browser turns speech into text;
 // KeepWise only receives the words, and keeps no audio.
 const MIC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.500 11a6.500 6.500 0 0 0 13 0M12 17.500V21"/></svg>';
-const voiceCan = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition) && !window.Capacitor;
+// In the Android app the web view has no speech-to-text, so a small native bridge (VoiceBridge) stands in for it with
+// the same shape as the browser's: start, stop, and results as they are heard.
+const voiceNative = () => !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform() && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable("VoiceBridge"));
+const voiceCan = () => voiceNative() || (!!(window.SpeechRecognition || window.webkitSpeechRecognition) && !window.Capacitor);
+function NativeRec(){
+  const V = Capacitor.registerPlugin("VoiceBridge"), me = this; let subs = [], live = false;
+  const off = () => { subs.forEach(h => { try { Promise.resolve(h).then(x => x && x.remove && x.remove()); } catch(e){} }); subs = []; };
+  this.start = () => { if (live) throw new Error("busy"); live = true; off();
+    subs.push(V.addListener("voiceResult", r => { if (me.onresult) me.onresult({results: [[{transcript: (r && r.text) || ""}]]}); }));
+    subs.push(V.addListener("voiceError", r => { if (me.onerror) me.onerror({error: r && r.error}); }));
+    subs.push(V.addListener("voiceEnd", () => { live = false; off(); if (me.onend) me.onend(); }));
+    V.start({lang: me.lang || "en-US"}).catch(e => { live = false; off(); if (me.onerror) me.onerror({error: (e && e.message) || "network"}); });
+  };
+  this.stop = () => { live = false; off(); V.stop().catch(() => {}); };
+}
 // While listening, the words appear as they are heard and a Stop button is always there. People pause to think, so it
 // waits: up to 8 seconds for the first word, then 4 seconds of quiet after the last one, with a ring on the mic that
 // runs down during a pause and starts again with the next word. Tap Stop to send at once. If the phone ends listening by
@@ -4655,13 +4669,13 @@ function voiceFinish(send){
 function voiceStart(rec){ try { rec.start(); return true; } catch(e){ return false; } }
 function voiceToggle(){
   if (VOICE.rec){ voiceFinish(true); return; }
-  const R = window.SpeechRecognition || window.webkitSpeechRecognition; if (!R) return;
+  const R = voiceNative() ? NativeRec : (window.SpeechRecognition || window.webkitSpeechRecognition); if (!R) return;
   const rec = new R(); rec.lang = "en-US"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
   rec.onresult = e => { let t = ""; for (let k = 0; k < e.results.length; k++){ const r = e.results[k]; if (r && r[0]) t += (t ? " " : "") + String(r[0].transcript || "").trim(); }
     VOICE.text = [VOICE.base, t.trim()].filter(Boolean).join(" "); const h = document.querySelector("[data-voice-heard]"); if (h) h.textContent = VOICE.text || "…";
     voiceWait(VOICE_PAUSE); };   // every word heard starts the pause over: nothing is sent while someone is still talking or thinking
   rec.onerror = e => { const err = e && e.error; if (err === "no-speech" || err === "aborted") return;   // quiet is handled by our own timers
-    voiceFinish(false); toast(err === "not-allowed" || err === "service-not-allowed" ? "The microphone is off for KeepWise. Allow it in your browser settings, or type instead." : "Could not hear that. Try again, or type instead."); };
+    voiceFinish(false); toast(err === "not-allowed" || err === "service-not-allowed" ? (voiceNative() ? "The microphone is off for KeepWise. Allow it in your phone's Settings, Apps, KeepWise, Permissions, or type instead." : "The microphone is off for KeepWise. Allow it in your browser settings, or type instead.") : "Could not hear that. Try again, or type instead."); };
   rec.onend = () => { if (VOICE.done || VOICE.rec !== rec) return;
     VOICE.base = VOICE.text;   // the phone stopped on its own: keep what was said and listen again
     if (!voiceStart(rec)){ const said = VOICE.text.trim(); VOICE.done = true; clearTimeout(VOICE.quiet); clearTimeout(VOICE.max); VOICE.rec = null; const b = $("ask-mic"); if (b) b.classList.remove("quiet"); voicePaint();

@@ -12,6 +12,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(WidgetBridge.class);   // the home screen widget's link to the app
+        registerPlugin(VoiceBridge.class);    // speaking to the owl
         super.onCreate(savedInstanceState);
         capTextZoom();
     }
