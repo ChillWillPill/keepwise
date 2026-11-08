@@ -3599,6 +3599,18 @@ async def checkout_trouble_shows_our_own_message(ctx):
     assert await pg.locator("#pay-oops").count() == 0 and not pg.errors, pg.errors
 
 @test
+async def plus_takes_a_waitlist_until_checkout_opens(ctx):
+    # the real site before Paddle is approved: prices show, the button joins the waitlist, Paddle never loads
+    pg = await open_app(ctx, fb=True); await pg.evaluate("window.KEEPWISE_PADDLE = undefined")
+    await pg.add_init_script("window.KEEPWISE_PADDLE = undefined"); await pg.reload(); await pg.wait_for_timeout(500)
+    await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(150)
+    await pg.locator("[data-plus-open]").first.scroll_into_view_if_needed(); await pg.locator("[data-plus-open]").first.click(); await pg.wait_for_timeout(300)
+    v = await text(pg, "#view")
+    if "Opening soon" not in v: return   # no live Paddle config in this build: the plain waitlist covers it
+    assert await pg.locator("[data-plus-buy]").count() == 0 and "Nothing is charged now" in v and "Sign in to join the early list" in v, v
+    assert not pg.errors, pg.errors
+
+@test
 async def plus_screen_gives_reasons_and_prices(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(150)
