@@ -110,6 +110,15 @@ textarea{resize:vertical;min-height:90px}
 .bars{display:grid;gap:8px}.bars div{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:.88rem}.bars i{display:block;height:10px;border-radius:99px;background:var(--teal)}
 .rel{display:flex;flex-wrap:wrap;gap:8px}.rel span{background:var(--chip);border-radius:99px;padding:4px 10px;font-size:.82rem}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.dm-wrap{gap:12px}.dm-head h2{margin:0}.dm-key{display:inline-flex;gap:6px;align-items:center;margin-left:6px}.dm-scroll{overflow-x:auto;margin:0 -4px;padding:4px}.dm{position:relative}.dm-svg{position:absolute;inset:0;pointer-events:none}
+.dm-ln{fill:none;stroke:var(--teal);stroke-width:1.8;opacity:.55}.dm-ln.dash{stroke-dasharray:5 5;opacity:.35}.dm-dot{fill:var(--teal);opacity:.7}
+.dm-t{all:unset;box-sizing:border-box;position:absolute;background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;box-shadow:0 4px 14px rgba(0,0,0,.05);transition:opacity .15s,border-color .15s}
+.dm-t:hover,.dm-t:focus-visible{border-color:var(--teal)}.dm-t.phone{background:var(--chip);border-style:dashed}
+.dm-h{display:flex;justify-content:space-between;align-items:center;gap:6px;height:34px;padding:0 10px;background:var(--teal-soft);font-size:.85rem}.dm-t.phone .dm-h{background:transparent}.dm-h b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dm-h em{font-style:normal;font-weight:800;font-size:.75rem;background:var(--card);border-radius:999px;padding:1px 8px;color:var(--teal)}
+.dm-f{display:flex;align-items:center;gap:6px;height:22px;padding:0 10px;font-size:.78rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dm-f:first-of-type{margin-top:4px}
+.dm i,.dm-key i{font-style:normal;font-size:.6rem;font-weight:800;width:20px;text-align:center;border-radius:4px;flex:none}.dm i.pk,.dm-key i.pk{background:var(--gold);color:#fff}.dm i.fk,.dm-key i.fk{background:var(--teal);color:#fff}
+.dm:has(.dm-t.on) .dm-t:not(.on){opacity:.35}.dm-t.on{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft)}
+.dm:has(.dm-t.on) .dm-ln:not(.hot),.dm:has(.dm-t.on) .dm-dot{opacity:.1}.dm-ln.hot{opacity:1;stroke-width:2.6}.dm-info{background:var(--teal-soft);border-radius:12px;padding:10px 14px;font-size:.88rem}.dm-info ul{margin:6px 0 0;padding-left:18px}
 </style>
 </head>
 <body>
@@ -306,7 +315,7 @@ async function loadDesk(){
   try { const q = await A.db.collection("templates").get(); A.tpls = q.docs.map(d => ({id: d.id, ...d.data()})); } catch(e){ A.tpls = []; }
   if (!A.tpls.length) A.tpls = DEF_TPLS.map(t => ({...t, unsaved: true}));
 }
-const VIEW_LABEL = {overview: "Overview", tickets: "Tickets", customers: "Customers", map: "Map", templates: "Templates"};
+const VIEW_LABEL = {overview: "Overview", tickets: "Tickets", customers: "Customers", map: "Map", templates: "Templates", data: "Data map"};
 function nav(){ const n = A.tickets.filter(t => t.unreadTeam).length;
   return `<nav class="nav" aria-label="Admin sections">${Object.keys(VIEW_LABEL).map(k => `<button type="button" data-view="${k}"${A.view === k ? ' aria-current="page"' : ""}>${VIEW_LABEL[k]}${k === "tickets" && n ? `<b>${n}</b>` : ""}</button>`).join("")}</nav>`; }
 const userOf = id => A.users.find(u => u.id === id) || null;
@@ -316,7 +325,40 @@ const initial = s => esc(String(s || "?").trim().charAt(0).toUpperCase() || "?")
 const ago = t => { if (!t) return ""; const m = Math.round((Date.now() - t) / 6e4); return m < 60 ? `${Math.max(1, m)}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : fmtDate(t); };
 const TOPIC = {help: "Question", bug: "Problem", idea: "Idea", billing: "Plus & billing", account: "Account"};
 const stPill = t => t.unreadTeam ? `<span class="pill new">New</span>` : t.status === "open" ? `<span class="pill open">Open</span>` : t.status === "waiting" ? `<span class="pill wait">Answered</span>` : `<span class="pill">Closed</span>`;
+
+// The data map: every collection in Firestore, its fields, and which field points at which. Kept here by hand from
+// firestore.rules, so a new collection there gets a box here too. Budgets, bills and spending never leave the phone.
+const DM = {W: 210, H: 34, R: 22,
+  T: [
+    {k: "users", t: "users", x: 375, y: 20, n: () => A.users.length, d: "Everyone with an account", f: [["uid", "pk"], ["name"], ["email"], ["city · location"], ["createdAt"], ["termsVersion"], ["marketing"], ["plusInterest", "", "the Plus early list"], ["plusInterestAt"], ["photo"]]},
+    {k: "sync", t: "users/{uid}/sync", x: 20, y: 20, d: "Sealed copy of the phone’s data (end-to-end encrypted)", f: [["uid", "fk"], ["data", "", "sealed, unreadable here"], ["at · dev"]]},
+    {k: "find", t: "find", x: 20, y: 160, d: "Find a friend by email", f: [["code", "pk", "hash of the email"], ["uid", "fk"], ["at"]]},
+    {k: "push", t: "push", x: 20, y: 300, d: "Web push addresses", f: [["token", "pk"], ["uid", "fk"], ["dates · tz"]]},
+    {k: "sites", t: "sites", x: 20, y: 440, d: "Business pages at name.mykeepwise.com", f: [["name", "pk"], ["uid", "fk"], ["logo · email · phone"], ["pay"]]},
+    {k: "inbox", t: "inbox/{uid}/items", x: 375, y: 300, d: "Splits a friend sent", f: [["id", "pk"], ["uid", "fk", "who it’s for"], ["fromUid", "fk", "who sent it"], ["kind · title"], ["total · owe"]]},
+    {k: "ping", t: "ping", x: 375, y: 470, d: "Asks the server to send a push", f: [["id", "pk"], ["uid", "fk"], ["from · at"]]},
+    {k: "tickets", t: "tickets", x: 730, y: 20, n: () => A.tickets.length, d: "Support conversations", f: [["id", "pk"], ["uid", "fk"], ["subject · topic"], ["status"], ["last"], ["unreadTeam · unreadUser"]]},
+    {k: "msgs", t: "tickets/{id}/msgs", x: 730, y: 210, d: "Messages in a ticket", f: [["id", "pk"], ["ticket", "fk"], ["from", "", "user or team"], ["text · at"]]},
+    {k: "templates", t: "templates", x: 730, y: 370, n: () => (A.tpls || []).filter(t => !t.unsaved).length, d: "Saved replies", f: [["id", "pk"], ["title"], ["body"]]},
+    {k: "phone", t: "On the phone only", x: 730, y: 490, phone: 1, d: "Never stored in the cloud as readable data", f: [["plan · bills · subs"], ["spends · splits · trips"], ["loans · cards · goals"]]}],
+  L: [["users", "uid", "sync", "uid"], ["users", "uid", "find", "uid"], ["users", "uid", "push", "uid"], ["users", "uid", "sites", "uid"], ["users", "uid", "inbox", "uid"], ["users", "uid", "inbox", "fromUid"],
+    ["users", "uid", "ping", "uid"], ["users", "uid", "tickets", "uid"], ["tickets", "id", "msgs", "ticket"], ["templates", "body", "msgs", "text", 1], ["sync", "data", "phone", "plan · bills · subs", 1]]};
+function dmBox(T){ return {x: T.x, y: T.y, w: DM.W, h: DM.H + T.f.length * DM.R + 8}; }
+function dmRow(T, f){ const i = Math.max(0, T.f.findIndex(r => r[0] === f)); return T.y + DM.H + i * DM.R + DM.R / 2 + 4; }
+function dmLines(){ const by = k => DM.T.find(t => t.k === k);
+  return DM.L.map(([a, fa, b, fb, dash]) => { const A1 = by(a), B1 = by(b), ya = dmRow(A1, fa), yb = dmRow(B1, fb); let d;
+    if (B1.x > A1.x + 10){ const x1 = A1.x + DM.W, x2 = B1.x, m = (x1 + x2) / 2; d = `M${x1} ${ya} C${m} ${ya} ${m} ${yb} ${x2} ${yb}`; }
+    else if (B1.x < A1.x - 10){ const x1 = A1.x, x2 = B1.x + DM.W, m = (x1 + x2) / 2; d = `M${x1} ${ya} C${m} ${ya} ${m} ${yb} ${x2} ${yb}`; }
+    else { const x = A1.x - 22; d = `M${A1.x} ${ya} C${x} ${ya} ${x} ${yb} ${B1.x} ${yb}`; }
+    return `<path d="${d}" class="dm-ln${dash ? " dash" : ""}${A.dmOn && (A.dmOn === a || A.dmOn === b) ? " hot" : ""}" data-a="${a}" data-b="${b}"/><circle cx="${d.split(" ").slice(-2)[0]}" cy="${yb}" r="3.5" class="dm-dot" data-a="${a}" data-b="${b}"/>`; }).join(""); }
 const VIEWS = {
+  data(){
+    const h = Math.max(...DM.T.map(t => dmBox(t).y + dmBox(t).h)) + 20;
+    return `<section class="card dm-wrap"><div class="dm-head"><h2>Data map</h2><p class="muted small">Every table in the cloud, its fields, and how they connect. Tap a table to see its links. <span class="dm-key"><i class="pk">PK</i> its own id <i class="fk">FK</i> points to another table</span></p></div>
+      <div class="dm-scroll"><div class="dm" style="width:${730 + DM.W + 20}px;height:${h}px"><svg class="dm-svg" width="${730 + DM.W + 20}" height="${h}" aria-hidden="true">${dmLines()}</svg>
+      ${DM.T.map(T => { const b = dmBox(T), n = T.n ? T.n() : null; return `<button type="button" class="dm-t${T.phone ? " phone" : ""}${A.dmOn === T.k ? " on" : ""}" data-dm="${T.k}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px" title="${esc(T.d)}"><span class="dm-h"><b>${esc(T.t)}</b>${n != null ? `<em>${n}</em>` : ""}</span>${T.f.map(([f, kind, note]) => `<span class="dm-f"${note ? ` title="${esc(note)}"` : ""}>${kind ? `<i class="${kind}">${kind.toUpperCase()}</i>` : "<i></i>"}${esc(f)}</span>`).join("")}</button>`; }).join("")}</div></div>
+      ${A.dmOn ? (() => { const T = DM.T.find(t => t.k === A.dmOn), rel = DM.L.filter(l => l[0] === T.k || l[2] === T.k); return `<div class="dm-info"><b>${esc(T.t)}</b> · ${esc(T.d)}${rel.length ? `<ul>${rel.map(l => `<li>${esc(l[0])}.${esc(l[1])} → ${esc(l[2])}.${esc(l[3])}${l[4] ? " (loosely)" : ""}</li>`).join("")}</ul>` : ""}</div>`; })() : ""}</section>`;
+  },
   tickets(){
     const F = {open: t => t.status === "open", waiting: t => t.status === "waiting", closed: t => t.status === "closed", all: () => true};
     const q = A.tq.trim().toLowerCase(), rows = A.tickets.filter(F[A.tkFilter]).filter(t => !q || [t.subject, t.name, t.email, t.last && t.last.text].some(v => String(v || "").toLowerCase().includes(q)));
@@ -399,6 +441,7 @@ async function delTpl(){ const t = A.tpls.find(x => x.id === A.tpl); if (!t) ret
   A.tpls = A.tpls.filter(x => x !== t); A.tpl = null; render(); }
 document.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.view){ A.view = b.dataset.view; render(); window.scrollTo(0, 0); return; }
+  if (b.dataset.dm){ A.dmOn = A.dmOn === b.dataset.dm ? null : b.dataset.dm; const sc = document.querySelector(".dm-scroll"), x = sc ? sc.scrollLeft : 0; render(); const s2 = document.querySelector(".dm-scroll"); if (s2) s2.scrollLeft = x; return; }
   if (b.dataset.tkf){ A.tkFilter = b.dataset.tkf; render(); return; }
   if (b.dataset.tk){ openTicket(b.dataset.tk); return; }
   if (b.dataset.tkGo){ A.view = "tickets"; A.tkFilter = "all"; openTicket(b.dataset.tkGo); return; }

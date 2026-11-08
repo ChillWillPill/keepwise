@@ -8326,7 +8326,7 @@ V.plus = () => { const P = plusPrice(), perMonth = Math.round(P.yr / 12 * 100) /
     <h1>More from your money, on every device.</h1><p>Everything free stays free. Plus adds sync, your banks and your business.</p></section>
   ${UI.plusLimit ? plusLimitCard() : ""}${on || plusOn() ? trialCard : ""}
   ${window.Capacitor ? `<p class="muted small" style="text-align:center" data-plus-app-note>Plus is coming to the Android app later. Join the waitlist and we’ll email you when it’s here.</p>` : `${plusCta()}
-  <p class="muted small" style="text-align:center;margin:0">Prices for ${esc(priceCountry() ? countryName(priceCountry()) : "your country")}${S.cur && S.cur !== "USD" ? `, shown in ${esc(S.cur)}` : ""}.${PADDLE() ? "" : " Plus is not on sale yet. Join the waitlist and we will email you when it opens."} <a class="link" href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund policy</a></p>`}
+  <p class="muted small" style="text-align:center;margin:0">${S.cur && S.cur !== "USD" ? `Shown in ${esc(S.cur)}. ` : ""}<a class="link" href="https://mykeepwise.com/refund.html" target="_blank" rel="noopener">Refund policy</a></p>`}
   <section class="card px-feats"><h2>What Plus adds</h2><div class="px-grid">${PLUS_REASONS().map(([ic, t, d, soon]) => `<div class="px-f${soon ? " soon" : ""}"><span class="plus-ic">${ic}</span><b>${t}</b>${soon ? `<small>${soon}</small>` : ""}</div>`).join("")}</div></section>
   <details class="card px-free"><summary>Free, and staying free</summary><ul class="plus-free">${PLUS_FREE.map(t => `<li>${I.check}<span>${t}</span></li>`).join("")}</ul></details>`; };
 // KeepWise's own codes for Plus. They carry the early user prices, so the Codes tab and the Plus screen always agree.

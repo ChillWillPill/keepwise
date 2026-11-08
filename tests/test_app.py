@@ -3611,6 +3611,24 @@ async def plus_takes_a_waitlist_until_checkout_opens(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def admin_data_map_shows_every_table_and_its_links(ctx):
+    pg = await open_admin(ctx); await pg.click("[data-google]"); await pg.wait_for_timeout(500)
+    await pg.click("[data-view=data]"); await pg.wait_for_timeout(300)
+    names = await pg.locator("[data-dm]").evaluate_all("els => els.map(e => e.dataset.dm)")
+    assert set(names) >= {"users", "sync", "find", "push", "sites", "inbox", "ping", "tickets", "msgs", "templates", "phone"}, names
+    assert await pg.locator(".dm-ln").count() >= 10
+    await pg.click("[data-dm=tickets]"); await pg.wait_for_timeout(200)
+    v = await pg.inner_text(".dm-info"); assert "users.uid → tickets.uid" in v and "tickets.id → msgs.ticket" in v, v
+    hot = await pg.locator(".dm-ln.hot").count(); assert hot == 2, (hot, await pg.evaluate("[...document.querySelectorAll('.dm-ln')].map(e => e.getAttribute('class')).join('|')"))
+    # no table overlaps another
+    boxes = await pg.locator(".dm-t").evaluate_all("els => els.map(e => [e.offsetLeft, e.offsetTop, e.offsetWidth, e.offsetHeight])")
+    for i, a in enumerate(boxes):
+        for b in boxes[i + 1:]:
+            assert a[0] + a[2] <= b[0] or b[0] + b[2] <= a[0] or a[1] + a[3] <= b[1] or b[1] + b[3] <= a[1], (a, b)
+    await pg.screenshot(path=os.environ.get("DM_SHOT", "/dev/null"), full_page=True) if os.environ.get("DM_SHOT") else None
+    assert not pg.errors, pg.errors
+
+@test
 async def plus_screen_gives_reasons_and_prices(ctx):
     pg = await open_app(ctx); await tab(pg, "plan")
     await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(150)
