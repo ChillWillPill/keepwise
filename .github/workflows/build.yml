@@ -41,7 +41,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - run: npm ci
+      - run: npm ci --ignore-scripts   # sharp (only for making icons) downloads libvips on install, which times out sometimes
       - name: Copy the app into the Android project
         run: python3 scripts/build.py && npx cap sync android
       - name: Build the test APK and the Google Play bundle
