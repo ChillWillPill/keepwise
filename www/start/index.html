@@ -135,6 +135,16 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 :root:is([data-skin="classic"],[data-skin="owl"]) .money-in:focus-within{border-color:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 18%,transparent)}
 :root:is([data-skin="classic"],[data-skin="owl"]) .money-in input:focus{box-shadow:none}
 :root:is([data-skin="classic"],[data-skin="owl"]) select:not([multiple]){appearance:none;-webkit-appearance:none;padding-right:40px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 52%,calc(100% - 15px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.hero-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;text-align:left}
+.hero-tiles>div{padding:10px 12px;border-radius:16px;background:color-mix(in srgb,var(--card) 70%,transparent);min-width:0}
+.hero-tiles small{display:block;font-size:max(.74rem,12.5px);color:var(--muted)}.hero-tiles b{display:block;font:800 1.15rem/1.2 var(--display);overflow-wrap:anywhere}
+:root[data-skin="classic"] .hero .hero-tiles>div{background:rgba(255,255,255,.13)}:root[data-skin="classic"] .hero .hero-tiles small{color:#d9f5e9}:root[data-skin="classic"] .hero .hero-tiles b{color:#fff}
+/* Split in Mint Pop and Night Owl: one balance card; the people list below already shows each person */
+:root:is([data-skin="classic"],[data-skin="owl"]) .split-hero .sp-bub{display:none}
+:root[data-skin="classic"] .split-hero{background:#10231c;color:#fff;border:0}
+:root[data-skin="classic"] .split-hero .label{color:#b9cec5}:root[data-skin="classic"] .split-hero .big.good{color:#5ee0a8}:root[data-skin="classic"] .split-hero .big.bad{color:#ff9f96}:root[data-skin="classic"] .split-hero .split-square{color:#fff}
+:root[data-skin="classic"] .split-hero .sm-in{background:rgba(94,224,168,.14);color:#fff}:root[data-skin="classic"] .split-hero .sm-out{background:rgba(242,92,84,.16);color:#fff}
+:root[data-skin="classic"] .split-hero .sm-in .good{color:#5ee0a8!important}:root[data-skin="classic"] .split-hero .sm-out .bad{color:#ff9f96!important}:root[data-skin="classic"] .split-hero .muted,:root[data-skin="classic"] .split-hero .small{color:#b9cec5}
 /* Calmer screens in Mint Pop and Night Owl: more room between cards and inside them, softer edges, easier line spacing */
 :root:is([data-skin="classic"],[data-skin="owl"]) .card{border-color:color-mix(in srgb,var(--line) 70%,transparent)}
 /* The example month's call to action: one clear, friendly button */
@@ -4177,9 +4187,9 @@ V.month = () => {
   if (UI.biz) return spaceSwitch() + (plusOn() || bizDemoOn() ? bizSpace() : bizPreview());
   const C = compute(), tabs = monthTabs(), on = k => !tabs || (UI.mseg || "now") === k;
   const top = `${spaceSwitch()}${S.hideNote || TOUR.on || coachOn("month") ? "" : `<div class="note inline" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">${S.example ? `<div class="ex-cta"><div class="ex-t"><b>This is an example month</b><span>Look around, then make it yours in about a minute.</span></div><button class="ex-go" type="button" data-w-start><span>Set up my month</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>` : `<p>${S.expenses.length > 1 || S.subs.length ? "Your month, stored only on this device. Change the income and the list and the month-end number follows." : !+S.income && !S.expenses.length ? "Start with the money coming in below, then add your bills on Budget, or import a bank statement. Everything stays on this device." : "Add your other bills on Budget and subscriptions on Subs, or import a bank statement. Everything stays on this device."}</p>`}<button class="link plain" type="button" data-hide-note style="font-weight:600;flex:none">Hide</button></div>`}
-  <div data-out="week">${OUT.week()}</div>
   <section class="hero hero-keep"><p class="muted small" data-out="planNote">${esc(C.planNote)}</p>
-  <div data-out="headline">${OUT.headline()}</div></section>`;
+  <div data-out="headline">${OUT.headline()}</div></section>
+  <div data-out="week">${OUT.week()}</div>`;
   const now = `${coach("month", "Your month at a glance")}  <div data-out="autoCard">${OUT.autoCard()}</div>
   <div data-out="monthClose">${OUT.monthClose()}</div>
   <div data-out="keepSafe">${OUT.keepSafe()}</div>
@@ -4238,6 +4248,19 @@ ${progress}`;
 // how far the month's bills have got, and how the savings are building.
 // Bills this month names what is still to pay, each with a tick, so it can be done right here. Once everything is paid it folds
 // to one calm line that opens the paid list.
+// Money right now, next to the month-end forecast: what came in this month minus what already went out
+// (bills ticked paid, subscriptions charged, spending logged), and what can go on everyday spending each day until the month ends.
+function moneyNow(C){ const k = C.planKey;
+  const got = r2((S.extras || []).reduce((a, x) => a + gotIn(x, k), 0) + (payOn() && S.payGot && inMonth(S.payGot, k) ? +S.pay.amount || 0 : 0));
+  const bills = S.expenses.filter(e => paidOn("e:" + e.id, k)).reduce((a, e) => a + (+e.amount || 0), 0) + (S.loans || []).filter(l => paidOn("l:" + l.id, k)).reduce((a, l) => a + loanMonthly(l), 0);
+  const subs = (S.subs || []).filter(s => s.paidOn && inMonth(s.paidOn, k)).reduce((a, s) => a + (+s.price || 0), 0);
+  const sp = (S.spends || []).filter(x => (x.k ? x.k === k : inMonth(x.date, k)) && +x.amount > 0), spent = sp.reduce((a, x) => a + (+x.amount || 0), 0);
+  const miscSpent = sp.filter(x => x.env !== "needs").reduce((a, x) => a + (+x.amount || 0), 0);
+  const end = C.planPeriod && C.planPeriod.end ? new Date(C.planPeriod.end) : null, daysLeft = end ? Math.max(1, Math.round((end - todayMid()) / 864e5) + 1) : 1;
+  return {got, out: r2(bills + subs + spent), left: r2(got - bills - subs - spent), safe: r2(Math.max(0, ((+C.envMisc || 0) - miscSpent) / daysLeft))}; }
+const heroTiles = C => { const m = moneyNow(C);
+  const first = m.got > 0 ? ["Left right now", fmt(m.left), m.left < 0] : ["Gone out so far", fmt(m.out), false];
+  return `<div class="hero-tiles" data-hero-tiles><div><small>${first[0]}</small><b class="tnum${first[2] ? " neg" : ""}">${first[1]}</b></div><div><small>Safe to spend today</small><b class="tnum">${fmt(m.safe)}</b></div></div>`; };
 OUT.billsCard = () => { const C = compute();
   const items = [...S.expenses.filter(e => e.env === "needs" && !expEveryday(e, C.planKey)).map(e => { const w = swapFor("expense", e.id); return {id: "e:" + e.id, n: e.name, emo: emoFor(e.name), a: +(w ? w.altCost : e.amount) || 0, due: e.due}; }),
     ...(S.loans || []).filter(l => !loanDone(l)).map(l => ({id: "l:" + l.id, n: l.name || loanKind(l.kind), emo: LOAN_EMO[l.kind] || LOAN_EMO.other, a: loanMonthly(l), due: +l.day || 0}))].filter(x => x.a > 0.004);
@@ -4299,6 +4322,7 @@ OUT.headline = () => {
   const spark = `<svg class="hero-spark" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,60 ${done} ${X(today - 1)},60" fill="currentColor" opacity=".12"/><polyline points="${done}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><polyline points="${pace}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="4 5" opacity=".6" vector-effect="non-scaling-stroke"/></svg>`;
   return `${eye}<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"} <span class="hero-by">by ${dayMonth(P.end)}</span></h1>
   <div class="big ${C.savings < 0 ? "neg" : ""}" style="margin-top:8px;${fitSize(fmt(Math.abs(C.savings)), 3, 88)}">${fmt(Math.abs(C.savings))}</div>
+  ${heroTiles(C)}
   ${C.savings < 0 || over > 0.005 ? `<button type="button" class="hero-warn" data-hero-warn data-hero-over>${C.savings < 0 ? `${C.planMonth} spends more than comes in. Drop a flagged subscription or use a cheaper swap to close it.` : ""}${over > 0.005 ? ` Expenditures are ${fmt(over)} over your budget ›` : ""}</button>` : ""}
   ${cum[today - 1] > 0 && today > 2 ? spark : ""}
   ${C.savings >= 0 || C.payBonus.extra > 0 ? `<p class="muted" style="margin-top:10px">${C.savings >= 0 ? `${C.planMonth} ends with ${fmt(C.endSaved)} saved ${tail}.` : ""}${C.payBonus.extra > 0 ? ` ${C.planMonth} has ${C.payBonus.count} paydays, so an extra ${fmt(C.payBonus.extra)} is counted.` : ""}</p>` : ""}`;
