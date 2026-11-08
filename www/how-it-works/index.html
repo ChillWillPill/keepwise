@@ -8392,7 +8392,7 @@ function arrivePlan(){  // the morning after money was due, if it has not been l
   const now = new Date(), t = todayMid(), out = [], at = d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10, 0);
   const add = (key, name, amount, d) => { const when = at(d) > now ? at(d) : at(t); out.push({at: when, key, date: isoOf(d), title: `Did ${name} arrive?`, body: `${fmt(amount)} was expected ${dayMonth(d)}. Tap to log it.`}); };
   arrivals(true).forEach(a => add(a.key, a.key === "pay" ? "your pay" : a.name, a.amount, a.date));
-  if (payOn()){ const d = paydaysBetween(t, dayPlus(t, 40))[0]; if (d && !((S.payGot || "") >= isoOf(d))) add("pay", "your pay", +S.pay.amount || 0, d); }
+  // regular pay counts by itself on payday, so the phone never asks about it
   (S.extras || []).forEach(x => { const d = nextIncome(x); if (d && !incomeLogged(x, isoOf(d))) add(x.id, x.name, +x.amount || 0, d); });
   return out.sort((a, b) => a.at - b.at).slice(0, ARRIVE_IDS.length).map((x, i) => ({...x, id: ARRIVE_IDS[i]}));
 }

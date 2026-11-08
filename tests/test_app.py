@@ -1611,11 +1611,11 @@ async def android_reminders_for_income_and_each_renewal(ctx):
     await pg.clock.run_for(2000); assert await pg.evaluate("window.__n.pending.length") == 0, "nothing until reminders are on"
     await tab(pg, "subs"); await pg.click("[data-remind-on]"); await pg.wait_for_timeout(100); await pg.clock.run_for(2000)
     inc = await pg.evaluate("window.__n.pending.filter(x => x.id >= 7300).map(x => [x.when, x.title, x.body, x.extra.kind])")
-    # the morning after each was due: Tutoring on the 13th, pay on the 26th
-    assert [x[0] for x in inc] == [[10, 13, 10, 0], [10, 26, 10, 0]], inc
+    # the morning after it was due: Tutoring on the 13th. Regular pay counts by itself, so the phone never asks about it
+    assert [x[0] for x in inc] == [[10, 13, 10, 0]], inc
     ch = await pg.evaluate("window.__n.channel"); assert ch and ch["id"] == "kw_reminders" and ch["sound"] == "keepwise_hoot.wav" and ch["importance"] == 4, ch
     look = await pg.evaluate("window.__n.pending.map(x => [x.channelId, x.smallIcon, x.iconColor])"); assert look and all(x == ["kw_reminders", "ic_stat_keepwise", "#1B6843"] for x in look), "every reminder uses the KeepWise channel, chime and owl icon"
-    assert inc[0][1] == "Did Tutoring arrive?" and "$250 was expected Oct 12" in inc[0][2] and inc[1][1] == "Did your pay arrive?" and "$3,000 was expected Oct 25" in inc[1][2] and all(x[3] == "income" for x in inc)
+    assert inc[0][1] == "Did Tutoring arrive?" and "$250 was expected Oct 12" in inc[0][2] and all(x[3] == "income" for x in inc)
     # each subscription with a charge date outside the days before payday gets its own question, 7 or 5 days ahead of the charge
     ren = await pg.evaluate("window.__n.pending.filter(x => x.id >= 7200 && x.id < 7300).map(x => [x.schedule.at.getTime(), x.title, x.extra.subId])")
     st = await state(pg); now = await pg.evaluate("Date.now()")
@@ -1628,7 +1628,7 @@ async def android_reminders_for_income_and_each_renewal(ctx):
     await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 12, 20, 0)); await tab(pg, "month")
     await pg.click("[data-inc-log]"); await pg.click("form[data-form=incomeLog] [type=submit]"); await pg.wait_for_timeout(150); await pg.clock.run_for(2000)
     inc = await pg.evaluate("window.__n.pending.filter(x => x.id >= 7300).map(x => x.title)")
-    assert "Did Tutoring arrive?" not in inc and "Did your pay arrive?" in inc, inc
+    assert "Did Tutoring arrive?" not in inc and "Did your pay arrive?" not in inc, inc
     # tapping an income reminder opens Month
     await tab(pg, "codes"); await pg.evaluate("window.__n.listener({actionId: 'tap', notification: {extra: {kind: 'income'}}})"); await pg.wait_for_timeout(150)
     assert (await state(pg))["tab"] == "month"
@@ -1649,21 +1649,10 @@ async def notes_and_notifications_open_the_exact_place(ctx):
     await tab(pg, "subs"); await pg.click("[data-remind-on]"); await pg.wait_for_timeout(100); await pg.clock.run_for(2000); await tab(pg, "month")
     assert await pg.locator("[data-arrived]").count() == 0, "nothing from before the pay was added"
     await pg.click("#bell"); await pg.wait_for_timeout(150); assert "arrive" not in await text(pg, "#view"); await pg.click("[data-close-inbox]")
-    # 6 November: the day after the next payday it asks. "Ask me tomorrow" hides the card, the bell note brings it back.
+    # 6 November: regular pay is never asked about, on the card, in the bell or on the phone
     await pg.clock.set_fixed_time(datetime.datetime(2026, 11, 6, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
-    assert await pg.locator("[data-arrive=pay]").count() == 1
-    await pg.click("[data-arrived] [data-arrive-later]"); await pg.wait_for_timeout(150); assert await pg.locator("[data-arrive=pay]").count() == 0
-    await tab(pg, "codes"); await pg.click("#bell"); await pg.wait_for_timeout(150)
-    await pg.locator(".note-row", has_text="Did your pay arrive?").locator("[data-note-open]").click(); await pg.wait_for_timeout(200)
-    assert (await state(pg))["tab"] == "month" and await pg.locator("[data-arrive=pay].flash").count() == 1, "the note opens the question itself"
-    assert await pg.evaluate("(() => { const r = document.querySelector('[data-arrive=pay]').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; })()"), "and it is on screen"
-    # the notification for that payday, tapped while unanswered, lands on the same card; once logged it says so
-    tap = "window.__n.listener({actionId: 'tap', notification: {extra: {kind: 'income', key: 'pay', date: '2026-11-05'}}})"
-    await tab(pg, "plan"); await pg.evaluate(tap); await pg.wait_for_timeout(200)
-    assert (await state(pg))["tab"] == "month" and await pg.locator("[data-arrive=pay].flash").count() == 1
-    await pg.click("[data-arrive=pay] [data-arrive-yes]"); await pg.wait_for_timeout(200)
-    await tab(pg, "plan"); await pg.evaluate(tap); await pg.wait_for_timeout(200)
-    assert (await state(pg))["tab"] == "month" and "already logged" in await pg.inner_text("#toast") and await pg.locator("[data-arrive=pay]").count() == 0
+    assert await pg.locator("[data-arrived]").count() == 0
+    await pg.click("#bell"); await pg.wait_for_timeout(150); assert "Did your pay arrive?" not in await text(pg, "#view"); await pg.click("[data-close-inbox]")
     # a "Still using it?" notification opens that subscription's question; answering it once is enough
     sub = (await state(pg))["subs"][0]; sid, name = sub["id"], sub["name"]
     ask = "window.__n.listener({actionId: 'tap', notification: {extra: {subId: %r, cycle: 'x', at: '2026-11-04'}}})" % sid
@@ -1732,23 +1721,23 @@ async def asks_once_if_a_bill_you_pay_yourself_was_paid(ctx):
 
 @test
 async def needs_you_is_one_card_with_one_kind_of_question_at_a_time(ctx):
-    # 6 October: pay was due yesterday and so was the electricity bill, and there is a subscription to check
+    # 6 October: side income was due yesterday and so was the electricity bill, and there is a subscription to check
     pg = await open_at(ctx, (2026, 10, 2, 9, 0))
-    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
-    await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
-    f = pg.locator("form[data-form=pay]"); await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("1420"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]")
+    await f.locator("[name=name]").fill("Tutoring"); await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=income]"); await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("1420"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
     await tab(pg, "plan"); await pg.click("[data-add-exp]"); await pg.wait_for_timeout(100); f = pg.locator("form[data-form=exp]")
     await f.locator("[name=name]").fill("Electricity"); await f.locator("[name=amount]").fill("90"); await f.locator("[name=due]").select_option("5"); await f.locator("[type=submit]").click(); await pg.wait_for_timeout(200)
     await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 6, 9, 0)); await tab(pg, "month")
     assert await pg.locator("[data-needs]").count() == 1, "one card, not three"
     card = pg.locator("[data-needs]"); assert await card.get_attribute("data-needs") == "arrived" and "1 of 3" in await card.inner_text()
-    assert await pg.locator("[data-arrive=pay]").count() == 1 and await pg.locator("[data-bill-due]").count() == 0 and await pg.locator("[data-needs] .review").count() == 0, "money that was due comes first, alone"
+    assert await pg.locator("[data-arrived] [data-arrive]").count() == 1 and await pg.locator("[data-bill-due]").count() == 0 and await pg.locator("[data-needs] .review").count() == 0, "money that was due comes first, alone"
     # Next steps through the kinds and comes back round
     await pg.click("[data-need-next]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-needs]").get_attribute("data-needs") == "bills" and "2 of 3" in await pg.locator("[data-needs]").inner_text() and await pg.locator("[data-bill-due]").count() == 1
     await pg.click("[data-need-next]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-needs] .review").count() == 1
-    await pg.click("[data-need-next]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-arrive=pay]").count() == 1
+    await pg.click("[data-need-next]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-arrived] [data-arrive]").count() == 1
     # answering one moves on to what is left, and the count follows
-    await pg.click("[data-arrive=pay] [data-arrive-yes]"); await pg.wait_for_timeout(200)
+    await pg.click("[data-arrived] [data-arrive-yes]"); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-needs]").get_attribute("data-needs") == "bills" and "1 of 2" in await pg.locator("[data-needs]").inner_text()
     # a bell note brings its own question to the front
     await pg.click("[data-need-next]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-needs] .review").count() == 1
@@ -3219,16 +3208,16 @@ async def locked_pdf_statement_asks_for_its_password(ctx):
 async def notifications_bell_counts_read_and_unread(ctx):
     # 6 October: pay was due yesterday, so there is at least money to confirm, plus whatever renews this week
     pg = await open_at(ctx, (2026, 10, 5, 9, 0))
-    await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
-    await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
-    f = pg.locator("form[data-form=pay]"); await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("1420")
+    await pg.click("[data-inc-add]"); f = pg.locator("form[data-form=income]")
+    await f.locator("[name=name]").fill("Tutoring"); await f.locator("[name=when]").select_option("monthly"); await pg.wait_for_timeout(100)
+    f = pg.locator("form[data-form=income]"); await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("1420")
     await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
     await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 6, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
     bell = lambda: pg.evaluate("document.getElementById('bell-n').hidden ? 0 : +document.getElementById('bell-n').textContent.replace('+', '')")
     assert await pg.locator("#bell").is_visible()
     await pg.click("#bell"); await pg.wait_for_timeout(200)
     rows = pg.locator(".note-row"); n = await rows.count(); assert 2 <= n <= 9, n
-    v = await text(pg, "#view"); assert "Did your pay arrive?" in v and "$1,420 was expected Oct 5" in v and "renews" in v, v
+    v = await text(pg, "#view"); assert "Did Tutoring arrive?" in v and "$1,420 was expected Oct 5" in v and "renews" in v, v
     seg = lambda: text(pg, ".note-seg")
     assert await pg.locator(".note-row.unread").count() == n and await bell() == n and f"Unread {n}" in await seg(), "everything starts unread; Unread is shown first and the count matches"
     # mark one as read: in Unread it leaves the list (with Undo); in All it shows as read and can be set back to unread
@@ -3243,8 +3232,8 @@ async def notifications_bell_counts_read_and_unread(ctx):
     await pg.reload(); await pg.wait_for_timeout(400); assert await bell() == n - 1
     # tapping a note marks it read and takes you there
     await pg.click("#bell"); await pg.wait_for_timeout(200); await pg.click("[data-note-view=all]"); await pg.wait_for_timeout(120)
-    was = await pg.locator(".note-row.unread", has_text="Did your pay arrive?").count()
-    await pg.locator(".note-row", has_text="Did your pay arrive?").locator("[data-note-open]").click(); await pg.wait_for_timeout(200)
+    was = await pg.locator(".note-row.unread", has_text="Did Tutoring arrive?").count()
+    await pg.locator(".note-row", has_text="Did Tutoring arrive?").locator("[data-note-open]").click(); await pg.wait_for_timeout(200)
     assert (await state(pg))["tab"] == "month" and await pg.locator("[data-arrived]").count() == 1 and await bell() == n - 1 - was
     # mark all as read clears the bell and the button goes away; All is shown; one can still be set back to unread
     await pg.click("#bell"); await pg.wait_for_timeout(200); await pg.click("[data-note-all]"); await pg.wait_for_timeout(200)
@@ -3253,13 +3242,13 @@ async def notifications_bell_counts_read_and_unread(ctx):
     await pg.click("[data-note-all]"); await pg.wait_for_timeout(150); assert await bell() == 0
     await pg.click("[data-note-view=unread]"); await pg.wait_for_timeout(120); assert await pg.locator("[data-note-none]").count() == 1, "an empty Unread says so and offers All"
     # answering the question removes its note; a later payday is a new, unread note
-    await pg.click("[data-close-inbox]"); await pg.click("[data-arrive=pay] [data-arrive-yes]"); await pg.wait_for_timeout(200)
-    await pg.click("#bell"); await pg.wait_for_timeout(200); assert "Did your pay arrive?" not in await text(pg, "#view")
+    await pg.click("[data-close-inbox]"); await pg.click("[data-arrived] [data-arrive-yes]"); await pg.wait_for_timeout(200)
+    await pg.click("#bell"); await pg.wait_for_timeout(200); assert "Did Tutoring arrive?" not in await text(pg, "#view")
     await pg.click("[data-close-inbox]")
     await pg.clock.set_fixed_time(datetime.datetime(2026, 11, 6, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
     assert await bell() >= 1
     await pg.click("#bell"); await pg.wait_for_timeout(200)
-    assert await pg.locator(".note-row.unread", has_text="Did your pay arrive?").count() == 1 and "expected Nov 5" in await text(pg, "#view")
+    assert await pg.locator(".note-row.unread", has_text="Did Tutoring arrive?").count() == 1 and "expected Nov 5" in await text(pg, "#view")
     assert await pg.locator(".note-row.unread").count() == await bell(), "the bell always equals the unread rows"
     assert not pg.errors, pg.errors
 
@@ -5537,7 +5526,7 @@ async def business_split_pay_rules_and_profit_report(ctx):
 @test
 async def keepwise_never_flags_itself(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
-    flagged = lambda s: re.search(r"\$[\d,.]+", s.split("FLAGGED")[-1]).group(0)
+    flagged = lambda s: re.search(r"you don.t use\s*\$[\d,.]+", s).group(0)
     flag0 = flagged(await text(pg, "[data-out=subsSummary]"))
     await pg.click("text=Add a subscription"); f = pg.locator("form[data-form=addSub]")
     await f.locator("[name=name]").fill("KeepWise Plus"); await f.locator("[name=price]").fill("15"); await f.locator("[name=last]").fill("2025-01-01"); await f.locator("[name=group]").fill("Video")
