@@ -7,45 +7,54 @@
     android:gravity="center_vertical"
     android:padding="16dp"
     android:background="@drawable/widget_bg">
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="KeepWise"
-        android:textColor="#FFD25E"
-        android:textSize="12sp"
-        android:textStyle="bold" />
-    <TextView
-        android:id="@+id/kw_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:textAllCaps="true"
-        android:letterSpacing="0.06"
-        android:textColor="#D9F5E9"
-        android:textSize="11sp"
-        android:textStyle="bold" />
-    <TextView
-        android:id="@+id/kw_amount"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:maxLines="1"
-        android:autoSizeTextType="uniform"
-        android:autoSizeMinTextSize="16sp"
-        android:autoSizeMaxTextSize="32sp"
-        android:textColor="#FFFFFF"
-        android:textSize="30sp"
-        android:textStyle="bold" />
-    <TextView
-        android:id="@+id/kw_next"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:textColor="#E6FFF4"
-        android:textSize="13sp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="KeepWise"
+            android:textColor="#FFD25E"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/kw_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textAllCaps="true"
+            android:letterSpacing="0.06"
+            android:textColor="#D9F5E9"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/kw_amount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="16sp"
+            android:autoSizeMaxTextSize="32sp"
+            android:textColor="#FFFFFF"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/kw_next"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="#E6FFF4"
+            android:textSize="13sp" />
+        </LinearLayout>
+        <!-- how much of this month's money you keep, as a ring, and what is safe to spend today -->
+        <LinearLayout android:id="@+id/kw_side" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:orientation="vertical" android:gravity="center_horizontal">
+            <ImageView android:id="@+id/kw_ring" android:layout_width="76dp" android:layout_height="76dp" android:contentDescription="Share of this month's money you keep" />
+            <TextView android:id="@+id/kw_safe" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:maxLines="2" android:gravity="center" android:textColor="#D9F5E9" android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
     <!-- the last three things spent, newest first -->
     <LinearLayout
         android:id="@+id/kw_recent"
