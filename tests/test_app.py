@@ -6762,7 +6762,7 @@ async def left_this_month_counts_every_paycheck_and_bill(ctx):
     assert "Left this month" in t and "$850" in t and "$2,000 in" in t and "$1,150 out" in t, t
     # regular pay counts by itself; a paycheck that didn't come is marked in the breakdown
     await pg.click("[data-io-open]"); await pg.wait_for_timeout(150); sh = await text(pg, "#io-sheet")
-    assert "Money in" in sh and "Rent" in sh and "Groceries" in sh and sh.count("Didn’t come") == 2, sh
+    assert "Money in" in sh and "Rent" in sh and "Groceries" in sh and await pg.locator("[data-io-miss]").count() == 2, sh
     await pg.locator("[data-io-miss]").nth(0).click(); await pg.locator("[data-io-miss]").nth(1).click(); await pg.click("[data-io-close]"); await pg.wait_for_timeout(150)
     t = await text(pg, "[data-hero-tiles]"); assert "Paid out so far" in t and "$1,150" in t and "Next pay" in t, t
     assert not pg.errors, pg.errors
