@@ -6499,6 +6499,9 @@ async def the_widgets_get_the_week_and_open_the_owl(ctx):
         assert d["t"] in s and (not d["a"] or d["a"].replace("−", "").replace("+", "")[:2] in s.replace(",", "")), (d, s)
     assert sent["weekSum"].endswith(("out", "due")) or sent["weekSum"] == "", sent["weekSum"]
     if any(d["k"] == "in" for d in week): assert sent["weekInSum"].endswith(" in"), ("money coming in shows beside money going out", sent)
+    rec = json.loads(sent["recent"]); st = await state(pg)
+    newest = sorted([x for x in st.get("spends", []) if x["amount"] > 0], key=lambda x: (x["date"], x.get("at", 0)), reverse=True)[:3]
+    assert [r["n"] for r in rec] == [x["name"] for x in newest], ("the three latest spends, newest first", rec, newest)
     await pg.evaluate("window.kwWidgetTap()"); await pg.wait_for_timeout(900)
     assert await pg.locator(".ask-panel").count() == 1, "a tap on the quick add widget opens the owl"
     assert not pg.errors, pg.errors

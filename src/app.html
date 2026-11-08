@@ -1864,8 +1864,11 @@ function widgetPush(){ try {
   const week = [...Array(7)].map((_, i) => { const d = dayPlus(t0, i), on = it.filter(x => x.d === isoOf(d)), o = on.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0), n = on.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0);
     return {n: d.toLocaleDateString("en-US", {weekday: "short"}), t: String(d.getDate()), a: S.hideBal ? (o || n ? "•" : "") : o ? "−" + short(o) : n ? "+" + short(n) : "", k: o ? "out" : n ? "in" : ""}; });
   const wo = r2(it.filter(x => x.amt < 0).reduce((a, x) => a - x.amt, 0)), wi = r2(it.filter(x => x.amt > 0).reduce((a, x) => a + x.amt, 0));
+  // the last three things spent, newest first, for the main widget
+  const recent = (S.spends || []).filter(x => +x.amount > 0).slice().sort((a, b) => (b.date || "").localeCompare(a.date || "") || (+b.at || 0) - (+a.at || 0)).slice(0, 3)
+    .map(x => { const n = Math.round((todayMid() - isoDate(x.date)) / DAY); return {n: String(x.name || "Spending"), w: n <= 0 ? "Today" : n === 1 ? "Yesterday" : isoDate(x.date).toLocaleDateString("en-US", {month: "short", day: "numeric"}), a: S.hideBal ? "••" : "−" + fmt(+x.amount)}; });
   const weekSum = S.hideBal ? "" : wo ? `−${fmt(wo)} out` : wi ? "" : "Nothing due", weekInSum = S.hideBal || !wi ? "" : `+${short(wi)} in`;
-  W.update({label: C.savings >= 0 ? `You'll keep by ${by}` : `Short by ${by}`, amount: S.hideBal ? "••••" : fmt(Math.abs(C.savings)), next, week: JSON.stringify(week), weekSum, weekInSum}).catch(() => {});
+  W.update({label: C.savings >= 0 ? `You'll keep by ${by}` : `Short by ${by}`, amount: S.hideBal ? "••••" : fmt(Math.abs(C.savings)), next, week: JSON.stringify(week), weekSum, weekInSum, recent: JSON.stringify(recent)}).catch(() => {});
 } catch(e){} }
 window.kwWidgetPush = widgetPush;
 window.addEventListener("pagehide", save);

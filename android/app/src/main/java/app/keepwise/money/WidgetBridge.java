@@ -35,6 +35,7 @@ public class WidgetBridge extends Plugin {
             .putString("week", call.getString("week", "[]"))
             .putString("weekSum", call.getString("weekSum", ""))
             .putString("weekInSum", call.getString("weekInSum", ""))
+            .putString("recent", call.getString("recent", "[]"))
             .apply();
         KeepWiseWidget.refresh(getContext());
         WeekWidget.refresh(getContext());
