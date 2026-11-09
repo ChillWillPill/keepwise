@@ -156,8 +156,8 @@ async def open_misc(pg):
     if await pg.locator("[data-env-open=misc][aria-expanded=true]").count() == 0: await pg.click("[data-env-open=misc]")
     await pg.wait_for_timeout(150)
 async def kept_month(pg):
-    if await pg.locator("[data-out=envelopes] .env-row .name.tnum").count() == 0: await tab(pg, "month")
-    return await pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
+    if await pg.locator("[data-out=envelopes] .env-save .bud-amt b").count() == 0: await tab(pg, "month")
+    return await pg.evaluate("document.querySelector('[data-out=envelopes] .env-save .bud-amt b').textContent")
 async def said(pg):
     # what Ask answered: a command that changed something lands you on it and says so in the toast; anything else answers in the box
     t = await pg.evaluate("(() => { const o = document.getElementById('ask-out'), t = document.getElementById('toast'); const a = o && !o.hidden ? o.innerText : '', b = t && !t.hidden ? (t.dataset.full || t.innerText.replace(/\\s*Undo\\s*$/, '')) : ''; return /^(Added|Updated|Removed|Started)/.test(b) ? b : (a || b); })()")
@@ -1810,7 +1810,7 @@ async def coming_up_drops_logged_income_and_yearly_dates_show_the_year(ctx):
 async def trips_keep_their_own_budget_until_you_decide(ctx):
     # 8 October. Plan a trip from the 10th to the 12th with a 600 budget.
     pg = await open_at(ctx, (2026, 10, 8, 9, 0))
-    kept = lambda: pg.evaluate("(() => { const el = document.querySelector('[data-out=envelopes] .env-row .name.tnum'); return el.textContent; })()")
+    kept = lambda: kept_month(pg)
     kept0 = money(await kept())
     assert "Plan a trip" in await text(pg, "[data-out=trips]") and await pg.locator("[data-trips]").count() == 0
     await pg.click("[data-trip-add]"); f = "form[data-form=trip] "
@@ -1938,7 +1938,7 @@ async def one_off_spending_lands_in_the_month_on_screen(ctx):
     # 30 October: the month is still October until it ends. A one-off logged now must show up right there.
     pg = await open_at(ctx, (2026, 10, 30, 9, 0))
     kept = lambda: kept_month(pg)
-    misc = lambda: pg.evaluate("document.querySelectorAll('[data-out=envelopes] .env-row')[2].querySelector('.name.tnum').textContent")
+    misc = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-misc .bud-so b').textContent")   # spent so far
     assert "October" in await tc(pg, ".hero"), "the plan stays on October until November 1"
     await pg.click("[data-env-open=misc]"); await pg.wait_for_timeout(150)   # details already open: they must update on their own
     k0 = money(await kept()); m0 = money(await misc())
@@ -4195,7 +4195,7 @@ async def a_bill_can_be_ticked_as_paid_this_month(ctx):
     body = pg.locator("[data-env-open=needs] + .env-body"); assert await body.locator(".tick[aria-pressed=true]").count() == 1, "the tick is remembered"
     # a loan repayment is ticked the same way
     lb = pg.locator("#view [data-loans-row]"); await lb.locator(".tick").first.click(); await pg.wait_for_timeout(200)   # loans are listed with their ticks without opening Details
-    assert "1 of 1 paid this month" in await pg.inner_text("[data-loans-row] .env-foot")
+    assert "1 of 1" in await pg.inner_text("[data-loans-row] .bud-foot")
     assert "l:L1" in (await state(pg))["paid"]["on"]
     # tap again to undo
     await pg.locator("#view [data-loans-row] .tick").first.click(); await pg.wait_for_timeout(200)
@@ -4771,9 +4771,9 @@ async def the_over_budget_warning_and_the_expenditures_card_agree(ctx):
     warn = await pg.locator("[data-hero-warn]").count() and await pg.inner_text("[data-hero-warn]") or ""
     await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(200)
     head = await pg.locator(".env-row", has=pg.locator("[data-env-open=needs]")).locator(".env-head").inner_text()
-    vals = [num(x) for x in re_.findall(r"\$[\d,]+(?:\.\d+)?", head)]
+    chip = await pg.locator(".env-needs .bud-foot .pill").inner_text()
     assert "loans" not in head.lower(), head
-    if vals[0] > vals[1] + 0.005: assert "Expenditures are" in warn and abs(num(warn.split(" are ")[1].split(" over")[0]) - (vals[0] - vals[1])) < 0.02, (warn, head)
+    if "over" in chip: assert "Expenditures are" in warn and abs(num(warn.split(" are ")[1].split(" over")[0]) - num(chip.split(" ")[0])) < 0.02, (warn, head)
     else: assert "over your budget" not in warn, ("a big loan alone never says Expenditures are over", warn, head)
     legend = await pg.inner_text(".legend"); assert "Expenditures" in legend and "Loans $900" in legend, legend
     assert "Car loan" in await pg.inner_text("[data-loans-row]") or "900" in await pg.inner_text("[data-loans-row]")
@@ -4892,7 +4892,7 @@ async def envelopes_can_be_set_as_amounts(ctx):
     chk = await pg.inner_text("[data-out=envCheck]"); assert chk.strip() == "" and "%" in await pg.inner_text("[data-env-save]"), ("no sentence: Savings shows its share in its box", chk)
     # the month measures against the amounts, and they stay put when pay changes
     await tab(pg, "month"); await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(200)
-    b = await pg.inner_text("[data-out=envelopes]"); assert "of $2,000" in b and "of $500" in b, b
+    b = await pg.inner_text("[data-out=envelopes]"); assert "$2,000" in b and "$500" in b, b
     # back to shares: the amounts become the nearest whole percentages
     await tab(pg, "income"); (await pg.locator("[data-envmode=pct]").count()) or await pg.locator("[data-env-edit]").first.click(); await pg.click("[data-envmode=pct]"); await pg.wait_for_timeout(200)
     v = int(await pg.input_value("[data-env=needs]")); assert v == round(2000 / inc * 100), (v, inc)
@@ -5182,7 +5182,7 @@ async def loans_section_counts_and_finishes(ctx):
     pg = await open_at(ctx, (2026, 10, 5, 10, 0)); await tab(pg, "plan")
     leg = lambda: text(pg, "[data-out=stack] .legend")
     need0 = money(re.search(r"Expenditures (\S+)", await leg()).group(1))
-    await tab(pg, "month"); kept0 = money(await text(pg, "[data-out=envelopes] .env-row >> nth=0")); assert await pg.locator("[data-loans-row]").count() == 0, "no row until there is a loan"
+    await tab(pg, "month"); kept0 = money(await kept_month(pg)); assert await pg.locator("[data-loans-row]").count() == 0, "no row until there is a loan"
     await tab(pg, "plan")
     assert await pg.locator("[data-loan-add]").count() >= 1, "an empty Loans card offers to add one"
     await pg.evaluate("window.KEEPWISE_LOAN_FORM_ALL = true"); await pg.click("[data-loan-add]"); f = pg.locator("form[data-form=loan]")
@@ -5204,8 +5204,8 @@ async def loans_section_counts_and_finishes(ctx):
     assert len((await state(pg))["loans"]) == 2
     # Month has its own Loans & debts row: read-only, it lowers what you keep, and Expenditures does not count it twice
     await tab(pg, "month"); row = pg.locator("[data-loans-row]")
-    head = await row.inner_text(); assert "Loans & debts" in head and "$560" in head and "2 repayments each month" in head and "% of income" in head, head
-    assert abs(kept0 - money(await text(pg, "[data-out=envelopes] .env-row >> nth=0")) - 560) < 0.01, "what you keep drops by the repayments"
+    head = await row.inner_text(); assert "Loans & debts" in head and "$560" in head and "a month" in head and "0 of 2" in head, head
+    assert abs(kept0 - money(await kept_month(pg)) - 560) < 0.01, "what you keep drops by the repayments"
     if await pg.locator("[data-env-open=needs][aria-expanded=false]").count(): await pg.click("[data-env-open=needs]")
     await pg.wait_for_timeout(150); assert "Student debt" not in await text(pg, ".env-body")
     if await pg.locator("[data-env-open=loans][aria-expanded=false]").count(): await pg.click("[data-env-open=loans]"); await pg.wait_for_timeout(150)
@@ -6857,17 +6857,20 @@ async def subs_switch_between_all_monthly_and_yearly(ctx):
 @test
 async def left_this_month_counts_every_paycheck_and_bill(ctx):
     pg = await open_app(ctx, at=(2026, 11, 20, 10, 0))
-    await seed(pg, "s.monthStart = 1; s.pay = {when: 'biweekly', next: '2026-11-06', amount: 1000}; s.payMiss = {}; s.extras = []; s.ins = []; s.loans = []; s.cards = []; s.trips = []; s.spends = [];"
-      " s.subs.forEach(x => delete x.paidOn); s.expenses = [{id: 'r', name: 'Rent', amount: 800, env: 'needs'}, {id: 'g', name: 'Groceries', amount: 300, env: 'needs'}];"
+    await seed(pg, "s.monthStart = 1; s.pay = {when: 'biweekly', next: '2026-11-06', amount: 1000}; s.payMiss = {}; s.extras = []; s.ins = []; s.loans = []; s.trips = []; s.spends = [];"
+      " s.cards = [{id: 'c1', name: 'Chase', kind: 'debit', charge: 5, day: 1, fee: 95, feeOn: '2027-02-10'}];"
+      " s.subs = [{id: 's1', name: 'Netflix', price: 15, cycle: 'mo', renewDay: 10, keep: 'keep'}, {id: 's2', name: 'Hulu', price: 20, cycle: 'mo', renewDay: 25, keep: 'keep'}, {id: 's3', name: 'Old gym', price: 40, cycle: 'mo', renewDay: 3, keep: 'drop'}]; s.expenses = [{id: 'r', name: 'Rent', amount: 800, env: 'needs'}, {id: 'g', name: 'Groceries', amount: 300, env: 'needs'}];"
       " s.billSpends = [{e: 'g', k: '2026-11', amount: 350}]; s.paid = {key: '2026-11', on: {'e:r': '2026-11-02'}}")
     t = await text(pg, "[data-hero-tiles]")
-    # two paychecks (Nov 6 and 20) 2000, rent ticked 800, groceries not ticked but 350 logged against it
-    assert "Left this month" in t and "$850" in t and "$2,000 in" in t and "$1,150 out" in t, t
+    # in: two paychecks (Nov 6 and 20) 2000. out: rent ticked 800, groceries not ticked but 350 logged against it,
+    # Netflix renewed on the 10th 15, the Chase charge on the 1st 5. Not yet: Hulu (25th), the yearly fee (February), the dropped gym
+    assert "Coming in" in t and "$2,000 arrived" in t and "Going out" in t and "$1,170 so far" in t, t
     # regular pay counts by itself; a paycheck that didn't come is marked in the breakdown
     await pg.click("[data-io-open]"); await pg.wait_for_timeout(150); sh = await text(pg, "#io-sheet")
-    assert "Money in" in sh and "Rent" in sh and "Groceries" in sh and await pg.locator("[data-io-miss]").count() == 2, sh
+    assert "Money in" in sh and "Rent" in sh and "Groceries" in sh and "Netflix" in sh and "Chase charge" in sh and await pg.locator("[data-io-miss]").count() == 2, sh
+    assert "Hulu" not in sh and "Old gym" not in sh and "yearly fee" not in sh, sh
     await pg.locator("[data-io-miss]").nth(0).click(); await pg.locator("[data-io-miss]").nth(1).click(); await pg.click("[data-io-close]"); await pg.wait_for_timeout(150)
-    t = await text(pg, "[data-hero-tiles]"); assert "Paid out so far" in t and "$1,150" in t and "Next pay" in t, t
+    t = await text(pg, "[data-hero-tiles]"); assert "$0 arrived" in t and "$1,170 so far" in t, t
     assert not pg.errors, pg.errors
 
 @test
