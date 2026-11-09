@@ -29,6 +29,10 @@
 </head>
 <body>
 <title>KeepWise</title>
+<script>/* the website covers the app at mykeepwise.com: keep the app hidden from the first frame so it never flashes */
+try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "") || "/";
+  if (!window.Capacitor && !(window.matchMedia && matchMedia("(display-mode: standalone)").matches) && !/[?&#]app\b/.test(location.href) && (kp === "/" || /^\/(features|how-it-works|android|plus)$/.test(kp) || /[?&]site\b/.test(location.search))) document.documentElement.classList.add("kw-site-boot"); } catch(e){}</script>
+<style>html.kw-site-boot .app,html.kw-site-boot #wise,html.kw-site-boot .wise-fab{visibility:hidden}</style>
 <meta name="theme-color" content="#f2faf6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap">
@@ -134,7 +138,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 :root:is([data-skin="classic"],[data-skin="owl"]) .money-in:focus-within{border-color:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 18%,transparent)}
 :root:is([data-skin="classic"],[data-skin="owl"]) .money-in input:focus{box-shadow:none}
 :root:is([data-skin="classic"],[data-skin="owl"]) select:not([multiple]){appearance:none;-webkit-appearance:none;padding-right:40px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 52%,calc(100% - 15px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
-.ht-btn{all:unset;box-sizing:border-box;cursor:pointer;display:block;min-width:0;text-align:left}.ht-btn:focus-visible{outline:2px solid currentColor;outline-offset:2px}.pay-oops-card.io-card{text-align:left;max-height:86vh;overflow:auto}.io-card h3{text-align:left;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 4px}.io-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.io-sum>div{background:var(--green-soft);border-radius:14px;padding:8px 10px;min-width:0}.io-sum small{display:block;color:var(--muted);font-size:.75rem}.io-sum b{font-size:1rem;white-space:nowrap}.io-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.io-row.has-tk{grid-template-columns:auto minmax(0,1fr) auto}.io-row>span{min-width:0}.io-row span b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.io-row small{color:var(--muted);font-size:.78rem}.io-tk{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--green);background:var(--green);color:#fff;font:700 .8rem/1 var(--body,inherit);display:grid;place-items:center;padding:0;cursor:pointer}.io-row.miss .io-tk{background:transparent;border-color:var(--muted)}.io-tip{font-size:.78rem;color:var(--muted);margin:0 0 4px}.io-row small{display:block;margin-top:1px}.io-row>b{text-align:right}.io-row.miss>b{text-decoration:line-through;opacity:.5}.io-row.miss span b{opacity:.6}.io-add{margin-top:12px;width:100%}.io-card>.btn.primary{width:100%;margin-top:16px}.ht-io{display:block;font-size:.74rem;color:inherit;opacity:.85;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hero-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;text-align:left}
+.ht-btn{all:unset;box-sizing:border-box;cursor:pointer;display:block;min-width:0;text-align:left}.ht-btn:focus-visible{outline:2px solid currentColor;outline-offset:2px}.pay-oops-card.io-card{text-align:left;max-height:86vh;overflow:auto}.io-card h3{text-align:left;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 4px}.io-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.io-sum>div{background:var(--green-soft);border-radius:14px;padding:8px 10px;min-width:0}.io-sum small{display:block;color:var(--muted);font-size:.75rem}.io-sum.io-rows{grid-template-columns:minmax(0,1fr);gap:6px}.io-rows>div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px}.io-rows small{font-size:.85rem}.io-rows b{font-size:1.1rem}.io-sum b{display:block;font-size:1rem;white-space:nowrap;overflow:hidden}.hero-tiles .ht-btn>b{display:block;white-space:nowrap}.io-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.io-row.has-tk{grid-template-columns:auto minmax(0,1fr) auto}.io-row>span{min-width:0}.io-row span b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.io-row small{color:var(--muted);font-size:.78rem}.io-tk{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--green);background:var(--green);color:#fff;font:700 .8rem/1 var(--body,inherit);display:grid;place-items:center;padding:0;cursor:pointer}.io-row.miss .io-tk{background:transparent;border-color:var(--muted)}.io-tip{font-size:.78rem;color:var(--muted);margin:0 0 4px}.io-row small{display:block;margin-top:1px}.io-row>b{text-align:right}.io-row.miss>b{text-decoration:line-through;opacity:.5}.io-row.miss span b{opacity:.6}.io-add{margin-top:12px;width:100%}.io-card>.btn.primary{width:100%;margin-top:16px}.ht-io{display:block;font-size:.74rem;color:inherit;opacity:.85;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hero-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;text-align:left}
 .hero-tiles>div,.hero-tiles>.ht-btn{padding:10px 12px;border-radius:16px;background:color-mix(in srgb,var(--card) 70%,transparent);min-width:0}
 .hero-tiles small{display:block;font-size:max(.74rem,12.5px);color:var(--muted)}.hero-tiles b{display:block;font:800 1.15rem/1.2 var(--display);overflow-wrap:anywhere}
 :root[data-skin="classic"] .hero .hero-tiles>div,.hero-tiles>.ht-btn{background:rgba(255,255,255,.13)}:root[data-skin="classic"] .hero .hero-tiles small{color:#d9f5e9}:root[data-skin="classic"] .hero .hero-tiles b{color:#fff}
@@ -452,11 +456,11 @@ a.btn{display:block;text-decoration:none}
 .stack i{display:block;height:100%}
 .dn{display:flex;flex-wrap:wrap;gap:16px 18px;align-items:center;justify-content:center}
 .dn-card,.dn{flex:none}
-.dn-ring{position:relative;width:200px;height:200px;max-width:100%;margin:0 auto;flex:none}
+.dn-ring{container-type:inline-size;position:relative;width:200px;height:200px;max-width:100%;margin:0 auto;flex:none}
 .dn-ring svg{width:100%;height:100%;display:block}
 .dn-pct{font:700 6.2px var(--body);fill:#fff}.dn-pct.dk{fill:#1c2420}.dn-pct.kp{fill:var(--card)}
 .dn-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;padding:0 26%}
-.dn-mid b{font:600 1.15rem/1.1 var(--display);letter-spacing:-.02em;white-space:nowrap}.dn-mid span{font-size:.72rem}
+.dn-mid b{font:600 1.15rem/1.1 var(--display);letter-spacing:-.02em;white-space:nowrap;font-size:min(var(--fsm,1.15rem),calc(74cqi / max(var(--n,4),4)))!important}   /* any amount fits inside the hole */.dn-mid span{font-size:.72rem}
 .dn-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.dn-head h2{margin:0;min-width:0}
 .dn-tools{display:flex;flex:none}
 .dn-kind{border-radius:10px}.dn-kind button{padding:4px 8px;min-height:30px}.dn-kind svg{width:15px;height:15px}
@@ -487,7 +491,7 @@ a.btn{display:block;text-decoration:none}
 .dn-compact .dn-pct-out{display:inline}
 .dn-tap{appearance:none;border:0;background:none;color:inherit;font:inherit;text-align:left;padding:0;width:100%;cursor:pointer}
 .dn-open .dn-ring-big,.dn-compact .dn-open .dn-ring-big{appearance:none;border:0;background:none;padding:0;cursor:pointer;color:inherit;font:inherit;width:min(240px,70vw);height:min(240px,70vw);margin:4px auto 6px}
-.dn-compact .dn-open .dn-pct{display:inline}.dn-open .dn-mid b{font-size:1.25rem!important}.dn-open .dn-mid span{font-size:.72rem}
+.dn-compact .dn-open .dn-pct{display:inline}.dn-open .dn-mid b{--fsm:1.25rem}.dn-open .dn-mid span{font-size:.72rem}
 .dn-full{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .dn-full li{display:grid;grid-template-columns:10px minmax(0,1fr) auto;grid-template-areas:"d n v" ". b b";column-gap:10px;row-gap:6px;padding:10px 0;border-top:1px solid var(--line);align-items:center}
 .dn-full li:first-child{border-top:0}.dn-full i{grid-area:d;width:10px;height:10px;border-radius:50%}
@@ -504,7 +508,7 @@ a.btn{display:block;text-decoration:none}
 /* on the phone's Overview the chart is a small ring with its list beside it, so it shares the screen with the rest */
 .dn-compact .dn{flex-wrap:nowrap;justify-content:flex-start;gap:16px;align-items:center}
 .dn-compact .dn-ring{width:124px;height:124px}.dn-compact .dn-pct{display:none}
-.dn-compact .dn-mid b{font-size:.86rem!important}.dn-compact .dn-mid span{font-size:max(.62rem,12.5px)}
+.dn-compact .dn-mid b{--fsm:.86rem}.dn-compact .dn-mid span{font-size:max(.62rem,12.5px)}
 .dn-compact .dn-list{flex:1 1 0;gap:4px}.dn-compact .dn-list li{grid-template-columns:8px minmax(0,1fr) 3.4ch;gap:6px;font-size:.8rem}
 .dn-compact .dn-list i{width:8px;height:8px}.dn-compact .dn-amt{display:none}.dn-compact .dn-list li.keep{padding-top:4px}
 .dn-compact .dn-card{gap:8px;padding:14px 16px}.dn-compact .dn-card h2{font-size:1.05rem}
@@ -1675,7 +1679,7 @@ h2.hint-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .bud-top .label{color:var(--bud-sub)!important}.bud-big{font:800 clamp(2.1rem,11vw,2.6rem)/1.1 var(--display);color:var(--bud-ink)}
 .bud-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
 .bud-tile{all:unset;box-sizing:border-box;background:var(--bud-tile);border-radius:16px;padding:10px 12px;min-width:0;cursor:default;color:var(--bud-ink)}button.bud-tile{cursor:pointer}
-.bud-tile small{display:block;color:var(--bud-sub);font-size:.78rem}.bud-tile b{display:block;font:800 clamp(1rem,5.2vw,1.2rem)/1.25 var(--display);white-space:nowrap}.bud-tile b.neg{color:var(--rust)}.bud-tile span{font-size:.75rem;font-weight:600;opacity:.92}
+.bud-tile small{display:block;color:var(--bud-sub);font-size:.78rem}.bud-tile b{display:block;font:800 clamp(1rem,5.2vw,1.2rem)/1.25 var(--display);white-space:nowrap}.bud-tile b.neg{color:#ffe08a}.bud-tile span{font-size:.75rem;font-weight:600;opacity:.92}
 .bud-sec{display:flex;justify-content:space-between;align-items:baseline;font:800 .74rem var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:18px 4px 8px}.bud-sec b{color:var(--ink);letter-spacing:0}
 .env-row.bud-card{padding:0!important;border-radius:20px}
 .env-head.bud-head{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:14px 16px!important;text-align:left;box-sizing:border-box}
@@ -4375,7 +4379,7 @@ function ioSheet(){ const old = document.getElementById("io-sheet"), m = moneyNo
   const row = x => `<div class="io-row${x.miss ? " miss" : ""}${x.pay ? " has-tk" : ""}">${x.pay ? `<button type="button" class="io-tk" data-io-miss="${x.pay}" aria-pressed="${!x.miss}" aria-label="${x.miss ? "Pay on " + dayMonth(isoDate(x.pay)) + " didn’t come. Tap if it came" : "Pay on " + dayMonth(isoDate(x.pay)) + " came. Tap if it didn’t"}">${x.miss ? "" : "✓"}</button>` : ""}<span><b>${esc(x.n)}</b>${x.d || x.note ? `<small>${[x.d ? dayMonth(isoDate(x.d)) : "", x.miss ? "Didn’t come" : x.note || ""].filter(Boolean).join(" · ")}</small>` : ""}</span><b class="tnum">${fmt(x.a)}</b></div>`;
   const d = old || document.createElement("div"); d.id = "io-sheet"; d.className = "pay-oops io-sheet"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-labelledby", "io-t");
   d.innerHTML = `<div class="pay-oops-card io-card"><h2 id="io-t">This month so far</h2>
-    <div class="io-sum"><div><small>In</small><b class="tnum">${fmt(m.got)}</b></div><div><small>Out</small><b class="tnum">${fmt(m.out)}</b></div><div><small>Left</small><b class="tnum${m.left < 0 ? " neg" : ""}">${fmt(m.left)}</b></div></div>
+    <div class="io-sum${[m.got, m.out, m.left].some(v => fmt(v).length > 9) ? " io-rows" : ""}"><div><small>In</small><b class="tnum">${fmt(m.got)}</b></div><div><small>Out</small><b class="tnum">${fmt(m.out)}</b></div><div><small>Left</small><b class="tnum${m.left < 0 ? " neg" : ""}">${fmt(m.left)}</b></div></div>
     <h3>Money in</h3>${m.ins.some(x => x.pay) ? `<p class="io-tip">Pay counts on payday. Tap ✓ if one didn’t come.</p>` : ""}${m.ins.length ? m.ins.map(row).join("") : `<p class="small muted">Nothing yet.${payOn() ? "" : " Hourly, daily or tip money? Add it when it comes in."}</p>`}
     <button type="button" class="btn io-add" data-io-add>+ Money in</button>
     <h3>Money out</h3>${m.outs.length ? m.outs.map(row).join("") : `<p class="small muted">Nothing yet.</p>`}
@@ -4517,13 +4521,13 @@ OUT.donut = () => {
   if (open){ const big = D.parts.filter(x => !x.keep).reduce((m, x) => Math.max(m, x.amount), 0) || 1;
     return `<section class="card dn-card dn-open dn-k-${kind}" data-donut>${head}
     ${kind === "ring" ? `<button type="button" class="dn-ring dn-ring-big dn-tap" data-dn-open aria-label="Close the full breakdown"><svg viewBox="0 0 120 120" role="img" aria-label="${lbl}">${ring}</svg>
-      <div class="dn-mid"><b class="tnum" data-dn-total>${fmtBar(D.out)}</b><span class="muted">goes out of ${fmtBar(D.total)}</span></div></button>`
+      <div class="dn-mid"><b class="tnum" style="--n:${fmtBar(D.out).length}" data-dn-total>${fmtBar(D.out)}</b><span class="muted">goes out of ${fmtBar(D.total)}</span></div></button>`
       : `<button type="button" class="dn-tap dn-big" data-dn-open aria-label="Close the full breakdown">${visual(true)}</button>`}
     <ul class="dn-full" data-dn-full>${D.parts.map(x => `<li${x.keep ? ' class="keep"' : ""}><i style="background:${x.color}"></i><span class="dn-nm"><b>${esc(x.name)}</b>${x.kind ? `<small class="muted">${esc(x.kind)}</small>` : ""}</span><span class="tnum dn-v">${fmt(x.amount)}<small class="muted">${x.pct >= 0.5 ? Math.round(x.pct) : "<1"}%</small></span>${x.keep ? "" : `<span class="dn-bar"><span style="width:${(x.amount / big * 100).toFixed(1)}%;background:${x.color}"></span></span>`}</li>`).join("")}</ul>
     <div class="dn-foot"><p class="muted small">Of ${fmt(D.total)} coming in</p><button class="link small" type="button" data-dn-open aria-expanded="true">Show less</button></div></section>`; }
   return `<section class="card dn-card dn-k-${kind}" data-donut>${head}
     <button type="button" class="dn dn-tap" data-dn-open aria-label="Open the full breakdown">${kind === "ring" ? `<div class="dn-ring"><svg viewBox="0 0 120 120" width="200" height="200" role="img" aria-label="${lbl}">${ring}</svg>
-      <div class="dn-mid"><b class="tnum" style="font-size:min(1.15rem, calc(6rem / ${(fmt(D.out).length * 0.62).toFixed(2)}))" data-dn-total>${monthTabs() ? fmtBar(D.out) : fmt(D.out)}</b><span class="muted">goes out</span></div></div>` : `<div class="dn-vis">${visual(false)}</div>`}
+      <div class="dn-mid"><b class="tnum" style="--n:${(monthTabs() ? fmtBar(D.out) : fmt(D.out)).length}" data-dn-total>${monthTabs() ? fmtBar(D.out) : fmt(D.out)}</b><span class="muted">goes out</span></div></div>` : `<div class="dn-vis">${visual(false)}</div>`}
       <ul class="dn-list">${D.parts.map(x => `<li${x.keep ? ' class="keep"' : ""}><i style="background:${x.color}"></i><span class="dn-name">${esc(x.name)}</span><span class="tnum dn-amt">${fmt(x.amount)}</span><span class="tnum dn-p">${x.pct >= 0.5 ? Math.round(x.pct) : "<1"}%</span></li>`).join("")}</ul></button></section>`;
 };
 const UI = {compare:false};
@@ -6656,15 +6660,16 @@ addEventListener("popstate", () => { if (window.Capacitor) return; const p = sit
 function siteOpen(){
   if (document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", siteOpen, {once: true}); return; }
   const t = document.getElementById("site-tpl"); if (!t || document.getElementById("kws")) return;
-  document.body.appendChild(t.content.cloneNode(true)); const root = document.getElementById("kws"); document.documentElement.style.overflow = "hidden";
+  document.body.appendChild(t.content.cloneNode(true)); const root = document.getElementById("kws"); document.documentElement.style.overflow = "hidden"; document.documentElement.classList.remove("kw-site-boot");
   const close = then => { root.remove(); document.documentElement.style.overflow = ""; if (then) then(); };
   root.addEventListener("click", e => { const c = e.target.closest("[data-kws-cyc]"); if (c){ const v = c.dataset.kwsCyc; root.querySelector(".kws-price").dataset.cyc = v; root.querySelectorAll("[data-kws-cyc]").forEach(x => x.setAttribute("aria-pressed", String(x === c))); return; } });
   // Every section and button has its own address (/features, /pricing, /signin, /start), so Back works and links can be shared.
   const go = path => { try { if (!window.Capacitor && location.pathname !== path) history.pushState({kws: 1}, "", path + location.search); } catch(x){} };
-  root.addEventListener("click", e => { const b = e.target.closest("[data-kws-start],[data-kws-signin],[data-kws-top],[data-kws-sec],a[href^='#kws']"); if (!b) return;
+  root.addEventListener("click", e => { const b = e.target.closest("[data-kws-plusjoin],[data-kws-start],[data-kws-signin],[data-kws-top],[data-kws-sec],a[href^='#kws']"); if (!b) return;
     if (b.matches("a[href^='#kws']")){ e.preventDefault(); const id = b.getAttribute("href").slice(1); const pth = Object.keys(SITE_PATHS).find(k => SITE_PATHS[k] === id); if (pth) go(pth); root.querySelector("#" + id).scrollIntoView({behavior: "smooth"}); return; }
     if (b.hasAttribute("data-kws-sec")){ e.preventDefault(); go(b.getAttribute("href")); const el = root.querySelector("#" + b.dataset.kwsSec); if (el) el.scrollIntoView({behavior: "smooth"}); return; }
     if (b.hasAttribute("data-kws-top")){ e.preventDefault(); go("/"); root.scrollTo({top: 0, behavior: "smooth"}); return; }
+    if (b.hasAttribute("data-kws-plusjoin")){ if (ACC.user){ go("/app"); close(() => { render(true); plusJoinNow(); }); return; } ACC.joinPlus = true; }   // signed out: sign in first, then they are added
     if (b.hasAttribute("data-kws-start")){ go(firstRun ? "/start" : "/app"); close(() => render(true)); }
     else { go("/signin"); close(() => { render(true); const x = document.createElement("button"); x.type = "button"; x.hidden = true; x.setAttribute("data-open-account", ""); x.setAttribute("data-acc-start", "signin"); view.appendChild(x); x.click(); x.remove(); }); } });
   siteLocalize(root);
@@ -6746,6 +6751,7 @@ function siteOpen(){
   const calc = root.querySelector("[data-kws-calc]");
   if (calc){ const m = v => "$" + Math.round(Math.abs(v)).toLocaleString("en-US"), upd = () => { const v = k => +calc.querySelector(`[data-k=${k}]`).value, keep = v("pay") - v("bills") - v("spend");
       ["pay", "bills", "spend"].forEach(k => calc.querySelector(`[data-o=${k}]`).textContent = m(v(k)));
+      calc.querySelectorAll("input[type=range]").forEach(r => { const f = (r.value - r.min) / (r.max - r.min); r.style.setProperty("--p", `calc(${(f * 100).toFixed(2)}% + ${(11 - 22 * f).toFixed(1)}px)`); });
       const kb = calc.querySelector("[data-o=keep]"); kb.textContent = (keep < 0 ? "−" : "") + m(keep); kb.classList.toggle("neg", keep < 0);
       calc.querySelector("[data-o=yr]").textContent = keep < 0 ? `${m(keep * 12)} short a year` : `${m(keep * 12)} a year`; };
     calc.addEventListener("input", upd); upd(); }
@@ -8288,6 +8294,10 @@ const plusSoon = (signedIn, joined) => `<div class="soon${joined ? " in" : ""}" 
   <div class="soon-t"><span class="soon-tag">${joined ? "✓ You’re on the early list" : "Opening soon"}</span><b>${joined ? "We’ll email you when it opens." : "Be first in line for Plus."}</b>
   ${joined ? "" : `<ul class="soon-pts"><li>Free week ready</li><li>Nothing charged now</li></ul>`}</div></div>
   ${joined ? `<button class="link small" type="button" data-acc-plus-off style="align-self:center">Leave the list</button>` : signedIn ? `<button class="btn primary" type="button" data-acc-plus>Join the early list</button>` : `<button class="btn primary" type="button" data-open-account>Sign in to join the early list</button>`}`;
+// "Join the early list" on the website: adds the signed-in person to the Plus list (the same field the app's join button sets)
+async function plusJoinNow(){ ACC.joinPlus = false; if (!ACC.user) return; const data = {plusInterest: true, plusInterestAt: Date.now(), updatedAt: Date.now()};
+  try { await accDoc().set(data, {merge: true}); ACC.profile = Object.assign(ACC.profile || {}, data); render(true); toast("You’re on the KeepWise Plus early list. We’ll email you the day it opens."); }
+  catch(e){ toast("Couldn’t add you just now. Open KeepWise Plus in the menu to try again."); } }
 const PADDLE = () => { if (window.KEEPWISE_PADDLE === false) return null; const p = window.KEEPWISE_PADDLE || PADDLE_CONFIG; return p && p.token && p.monthly && p.yearly && !/REPLACE/.test(p.token + p.monthly + p.yearly) && !window.Capacitor ? p : null; };
 let paddleReady = null;
 function paddleLoad(){ if (paddleReady) return paddleReady; const p = PADDLE(); if (!p) return Promise.reject(new Error("off"));
@@ -8823,6 +8833,16 @@ if (navigator.webdriver) document.documentElement.classList.add("wd");   // auto
 function flowSync(){ const v = $("view"), page = !!(v && v.querySelector(".wiz")); if (!page) UI.kst = {}; const sheet = !!(v && v.querySelector(".kw-modal")), was = appEl.classList.contains("flowing") || appEl.classList.contains("sheeting");
   if ((page || sheet) && !was){ const a = document.activeElement; if (a && a.blur && a.matches && a.matches("input,textarea") && !a.closest(".wiz,.kw-modal")) a.blur(); }
   appEl.classList.toggle("flowing", page); appEl.classList.toggle("sheeting", sheet); }
+// Big numbers never get cut off: any amount that is wider than its box is scaled down until it fits (to half size at most).
+// Runs after every change to the page, so it covers every screen and sheet, at any amount and any screen size.
+const FIT_SEL = "b.tnum, .big, .tnum.big, .bud-amt b, .io-sum b, .bud-tile b, [data-fit]";
+function fitNums(){ const els = [...document.querySelectorAll(FIT_SEL)].filter(e => !e.firstElementChild || e.hasAttribute("data-fit"));
+  els.forEach(e => { if (e.dataset.fitted){ e.style.fontSize = ""; delete e.dataset.fitted; } });
+  const todo = els.map(e => [e, e.clientWidth, e.scrollWidth]).filter(([e, cw, sw]) => cw > 0 && sw > cw + 1);
+  todo.forEach(([e, cw, sw]) => { const f = parseFloat(getComputedStyle(e).fontSize); e.style.fontSize = Math.max(f * 0.5, f * cw / sw * 0.97).toFixed(1) + "px"; e.dataset.fitted = "1"; }); }
+let fitQ = 0;
+try { new MutationObserver(() => { if (!fitQ) fitQ = requestAnimationFrame(() => { fitQ = 0; try { fitNums(); } catch(e){} }); }).observe(document.documentElement, {childList: true, subtree: true, characterData: true});
+  addEventListener("resize", () => { if (!fitQ) fitQ = requestAnimationFrame(() => { fitQ = 0; fitNums(); }); }); } catch(e){}
 function refreshOuts(){
   const active = document.activeElement;
   document.querySelectorAll("#view [data-out]").forEach(el => {
@@ -8894,6 +8914,7 @@ function accInit(){
           ACC.user = u; ACC.profile = null; ACC.draft = {}; ACC.del = false; if (u) setTimeout(() => { try { plusCheck(); } catch(e){} }, 1500);
           if (u) ACC.err = "";  // signed in: an earlier "sign-in was closed" message no longer applies
           if (u) await accLoadProfile();
+          if (u && ACC.joinPlus) setTimeout(plusJoinNow, 400);   // came from "Join the early list" on the website
           S.acctOn = !!u; if (u && (!LOCK.on || !S.acct)) S.acct = {uid: u.uid, email: u.email || "", prov: (u.providerData && u.providerData[0] && u.providerData[0].providerId) || "password"};
           save(); ACC.state = "ready"; renderAcctBtn();
           if (u && /[?&]verified=1/.test(location.search)){ try { history.replaceState(null, "", location.pathname); } catch(x){} UI.account = true; setTimeout(() => accCheckVerified(true), 300); }
@@ -10767,7 +10788,7 @@ if (firstRun) UI.welcome = 0;
 // mykeepwise.com in a browser, first visit: the website comes first. Start opens the app's welcome; the app itself, a home-screen
 // install, tests (navigator.webdriver) and anyone who already uses KeepWise go straight in.
 try { if (!window.Capacitor && SITE_PATHS[sitePath()]) window.KEEPWISE_SITE = true; if (!window.Capacitor && sitePath() === "/signin") setTimeout(siteSignin, 0); } catch(e){}
-try { if (/[?&]site\b/.test(location.search)) window.KEEPWISE_SITE = true; if ((firstRun || window.KEEPWISE_SITE || sitePath() === "/") && !["/app", "/start", "/signin"].includes(sitePath()) && !window.Capacitor && !STANDALONE && (!navigator.webdriver || window.KEEPWISE_SITE) && !/[?&#]app\b/.test(location.href)) siteOpen(); } catch(e){}
+try { if (/[?&]site\b/.test(location.search)) window.KEEPWISE_SITE = true; if ((firstRun || window.KEEPWISE_SITE || sitePath() === "/") && !["/app", "/start", "/signin"].includes(sitePath()) && !window.Capacitor && !STANDALONE && (!navigator.webdriver || window.KEEPWISE_SITE) && !/[?&#]app\b/.test(location.href)) siteOpen(); else document.documentElement.classList.remove("kw-site-boot"); } catch(e){ document.documentElement.classList.remove("kw-site-boot"); }
 
 // The owl behind every screen (see .owl-bg). Eyes wander and blink on their own, look toward a finger or the pointer,
 // and rest while the app is hidden or the person prefers less motion.
@@ -10876,6 +10897,14 @@ initShared();
       <div class="kws-w kws-trip"><b>✈️ Miami weekend</b><div class="kws-bar"><i style="width:58%;background:#f5b93a"></i></div><small>$252 left · $126 a day</small></div></article>
     <article class="kws-card"><h3>Loans paid off sooner</h3><button type="button" class="kws-see" data-kws-feat="loans">See it in the app →</button><p>What's left, when it ends, and how extra payments help.</p>
       <div class="kws-w kws-trip"><b>🚗 Car loan</b><div class="kws-bar"><i style="width:41%"></i></div><small>$7,420 left · ends Mar 2029</small></div></article>
+    <article class="kws-card kws-wide"><h3>Run your side business too</h3><p>Sales, costs and profit by month, invoices that remind late payers, and a page for your business at name.mykeepwise.com. Part of Plus.</p>
+      <div class="kws-w kws-biz"><div><small>Sales</small><b>$3,420</b></div><div><small>Costs</small><b>$1,180</b></div><div><small>Profit</small><b class="good">$2,240</b></div><div class="kws-row kws-inv"><span class="kws-lg" style="background:#0b7a55">#12</span>Invoice to Lena's Café<em>Paid</em></div></div></article>
+    <article class="kws-card"><h3>Bank statements in seconds</h3><p>Drop in a CSV, a PDF or a photo of a statement. Or connect your bank with Plus.</p>
+      <div class="kws-w"><div class="kws-row"><span class="kws-lg" style="background:#2f6fd6">⇣</span>October statement<em>42 lines</em></div><div class="kws-row"><span class="kws-lg" style="background:#c9a13a">✓</span>Bills and subs found<em>11</em></div></div></article>
+    <article class="kws-card"><h3>Savings goals and a safety net</h3><p>Save for what you want and build an emergency fund, a little every payday.</p>
+      <div class="kws-w kws-trip"><b>🕋 Umrah</b><div class="kws-bar"><i style="width:45%"></i></div><small>45% · about 9 months to go</small></div></article>
+    <article class="kws-card"><h3>Right on your home screen</h3><p>Add spending from a widget, see your week at a glance, get a nudge before each bill.</p>
+      <div class="kws-w kws-ask"><span>Widget · “coffee 4”</span><b>Logged. $41.20 safe to spend today.</b></div></article>
     <article class="kws-card kws-wide"><h3>Ask the owl anything</h3><button type="button" class="kws-see" data-kws-feat="owl">See it in the app →</button><p>Type or say it: "coffee 5", "Netflix sub 15", "can I afford $300?" Snap a receipt and it fills itself in.</p>
       <div class="kws-w kws-ask"><span>"Split pizza $60 with Sam and Alex"</span><b>Added. Sam and Alex each owe you $20.</b></div></article>
   </div>
@@ -10902,7 +10931,20 @@ initShared();
     <p class="kws-sub">The same app on your Android phone, with fingerprint lock and reminders. Or add it to any phone's home screen from this site.</p>
     <a class="kws-play kws-play-dark" href="https://play.google.com/store/apps/details?id=com.mykeepwise.app" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="#34a853" d="M3.6 2.2 13.4 12l-9.8 9.8c-.4-.2-.6-.6-.6-1.1V3.3c0-.5.2-.9.6-1.1z"/><path fill="#fbbc04" d="m16.7 15.3-3.3-3.3 3.3-3.3 3.8 2.2c1 .6 1 1.6 0 2.2z"/><path fill="#ea4335" d="M16.7 15.3 13.4 12l-9.8 9.8c.4.2.9.2 1.4-.1z"/><path fill="#4285f4" d="M16.7 8.7 5 2.3c-.5-.3-1-.3-1.4-.1l9.8 9.8z"/></svg><span><small>Get it on</small>Google Play</span></a>
     <ul class="kws-checks kws-dark"><li>Fingerprint and face lock</li><li>Bill reminders</li><li>Works offline</li></ul></div>
-  <div class="kws-duo"><div class="kws-phone kws-sm kws-back"><img src="site/subs.webp" alt="Subscriptions" width="585" height="1266" loading="lazy"></div><div class="kws-phone kws-sm"><img src="site/owl.webp" alt="Ask KeepWise" width="585" height="1266" loading="lazy"></div></div>
+  <div class="kws-duo"><div class="kws-phone kws-sm kws-back"><img src="site/budget.webp" alt="Budget" width="585" height="1266" loading="lazy"></div><div class="kws-phone kws-sm"><img src="site/month-dark.webp" alt="Your month in dark mode" width="585" height="1266" loading="lazy"></div></div>
+</div></section>
+
+<section class="kws-sec kws-px" id="kws-plusx"><div class="kws-in">
+  <span class="kws-eye kws-eye-gold">KeepWise Plus · coming soon</span><h2>Plus does the boring parts for you.</h2>
+  <div class="kws-pxg">
+    <article class="kws-pxc"><div class="kws-pxv"><div class="kws-pxr"><i style="background:#0b7a55">C</i><span>Checking <small>••4821</small></span><b>$3,240.18</b></div><div class="kws-pxr"><i style="background:#3b6fd8">S</i><span>Savings <small>••0937</small></span><b>$8,905.00</b></div><span class="kws-pxlive"><em></em>Updated just now</span></div><h3>Your banks, live</h3><p>Connect up to 2 banks. Spends land on their own.</p></article>
+    <article class="kws-pxc"><div class="kws-pxv"><div class="kws-pxr"><i style="background:#7a4a2a">☕</i><span>Bean &amp; Co <small>Coffee</small></span><b class="neg">−$6.45</b></div><div class="kws-pxr"><i style="background:#c2403a">🛒</i><span>FreshMart <small>Groceries</small></span><b class="neg">−$84.12</b></div><div class="kws-pxr"><i style="background:#d99a14">⛽</i><span>CityGas <small>Fuel</small></span><b class="neg">−$41.00</b></div></div><h3>Every spend, sorted</h3><p>Store logos and categories, with no typing.</p></article>
+    <article class="kws-pxc"><div class="kws-pxv kws-pxsync"><span class="kws-pxdev">📱</span><span class="kws-pxline"><em>🔒</em></span><span class="kws-pxdev">💻</span></div><h3>On every device</h3><p>Phone, tablet and laptop stay in step. Encrypted before it leaves your phone.</p></article>
+    <article class="kws-pxc"><div class="kws-pxv"><div class="kws-biz"><div><small>Sales</small><b>$8,400</b></div><div><small>Costs</small><b>$2,950</b></div><div><small>Profit</small><b class="good">$5,450</b></div></div><div class="kws-pxr kws-pxinv"><i style="background:#0b7a55">#</i><span>Invoice 1042 <small>Bloom Studio</small></span><b class="kws-pxpaid">Paid</b></div></div><h3>Run your business</h3><p>Sales, costs, profit and invoices that chase late payers.</p></article>
+    <article class="kws-pxc"><div class="kws-pxv"><div class="kws-pxurl"><span>🔒</span>maya.mykeepwise.com</div><div class="kws-pxpage"><b>Maya’s Cakes</b><small>Custom cakes · Austin</small><span>Pay $45 deposit</span></div></div><h3>Your own page</h3><p>A page for your business, with your name on it.</p></article>
+    <article class="kws-pxc"><div class="kws-pxv"><div class="kws-pxmail"><small>To: Sam</small><b>You owe $42.50 for Friday dinner</b><span>Settle up →</span></div><div class="kws-pxmail kws-pxmail2"><small>Sam paid you</small><b class="good">+$42.50 ✓</b></div></div><h3>Splits that chase for you</h3><p>Friends get an email. You get paid back.</p></article>
+  </div>
+  <div class="kws-pxcta"><button type="button" class="kws-btn kws-gold" data-kws-plusjoin>Join the early list</button><span>Free to join. We’ll email you the day it opens.</span></div>
 </div></section>
 
 <section class="kws-sec" id="kws-plus"><div class="kws-in">
@@ -10910,7 +10952,7 @@ initShared();
   <div class="kws-cyc" role="group" aria-label="Billing"><button type="button" data-kws-cyc="mo" aria-pressed="false">Monthly</button><button type="button" data-kws-cyc="yr" aria-pressed="true">Yearly <span>Save 34%</span></button></div>
   <div class="kws-price" data-cyc="yr">
     <div class="kws-card"><h3>Free</h3><p class="kws-amt">$0</p><ul><li>Month-end number and plan</li><li>Bills and subscriptions</li><li>Trips, splits and loans</li><li>Ask the owl</li></ul><button type="button" class="kws-btn kws-ghost" data-kws-start>Start free</button></div>
-    <div class="kws-card kws-pro"><h3>KeepWise Plus</h3><p class="kws-amt"><span class="y">$79 a year</span><span class="m">$9.99 a month</span></p><p class="kws-or"><span class="y">That’s $6.58 a month · first week free · cancel anytime</span><span class="m">Billed monthly · first week free · cancel anytime</span></p><ul><li>Connect up to 2 banks</li><li>Sync on every device, end-to-end encrypted</li><li>Live balances with store logos</li><li>Business space, invoices and reports</li><li>Your own page at yourname.mykeepwise.com</li><li>Split emails and live sales</li></ul><button type="button" class="kws-btn" data-kws-start>Try Plus free for a week</button></div><div class="kws-card kws-ultra"><span class="kws-ubadge">For more banks</span><h3>Plus Ultra</h3><p class="kws-amt"><span class="y">$159 a year</span><span class="m">$19.99 a month</span></p><p class="kws-or2"><span class="y">That’s $13.25 a month · first week free · cancel anytime</span><span class="m">Billed monthly · first week free · cancel anytime</span></p><ul><li>Everything in Plus</li><li>Connect up to 5 banks</li><li>Personal and business banks side by side</li></ul><button type="button" class="kws-btn kws-btn-dark" data-kws-start>Try Ultra free for a week</button></div>
+    <div class="kws-card kws-pro"><h3>KeepWise Plus</h3><p class="kws-amt"><span class="y">$79 a year</span><span class="m">$9.99 a month</span></p><p class="kws-or"><span class="y">That’s $6.58 a month · first week free · cancel anytime</span><span class="m">Billed monthly · first week free · cancel anytime</span></p><ul><li>Connect up to 2 banks</li><li>Sync on every device, end-to-end encrypted</li><li>Live balances with store logos</li><li>Business space, invoices and reports</li><li>Your own page at yourname.mykeepwise.com</li><li>Split emails and live sales</li></ul><button type="button" class="kws-btn" data-kws-plusjoin>Join the early list</button></div><div class="kws-card kws-ultra"><span class="kws-ubadge">For more banks</span><h3>Plus Ultra</h3><p class="kws-amt"><span class="y">$159 a year</span><span class="m">$19.99 a month</span></p><p class="kws-or2"><span class="y">That’s $13.25 a month · first week free · cancel anytime</span><span class="m">Billed monthly · first week free · cancel anytime</span></p><ul><li>Everything in Plus</li><li>Connect up to 5 banks</li><li>Personal and business banks side by side</li></ul><button type="button" class="kws-btn kws-btn-dark" data-kws-plusjoin>Join the early list</button></div>
   </div>
 </div></section>
 
@@ -10936,6 +10978,8 @@ initShared();
 .kws-brand{display:flex;align-items:center;gap:9px;text-decoration:none;font:700 1.3rem var(--display)}.kws-brand img{border-radius:50%}.kws-brand b{color:var(--brand-teal);font-weight:700}.kws-brand i{color:var(--brand-gold);font-style:normal}
 .kws-nav nav{display:flex;gap:22px;margin-right:auto}.kws-nav nav a{text-decoration:none;color:var(--muted);font-weight:600;font-size:.95rem}.kws-nav nav a:hover{color:var(--ink)}
 .kws-act{display:flex;gap:10px;align-items:center}.kws-act .kws-btn,.kws-act .kws-link{white-space:nowrap}@media (max-width:380px){.kws-act .kws-btn{padding-inline:12px;font-size:.9rem}.kws-my{display:none}}
+@media (max-width:440px){.kws-nav .kws-in{gap:8px}.kws-act{gap:6px}.kws-act .kws-btn{padding:9px 14px;font-size:.92rem}.kws-act .kws-link{font-size:.92rem;padding-inline:6px}.kws-brand{font-size:1.15rem;gap:7px;min-width:0}.kws-brand img{width:30px;height:30px}}
+@media (max-width:370px){.kws-brand span{display:none}.kws-act .kws-btn{padding:8px 12px}}   /* the tiniest phones: owl alone, both buttons stay on screen */
 .kws-btn{appearance:none;border:0;cursor:pointer;background:var(--green);color:var(--on-green);font:700 .98rem var(--body);padding:11px 18px;border-radius:14px;box-shadow:0 10px 24px -12px var(--green);transition:transform .2s,box-shadow .2s}
 .kws-btn:hover{transform:translateY(-2px);box-shadow:0 16px 30px -14px var(--green)}.kws-btn:focus-visible,.kws-link:focus-visible,.kws-play:focus-visible{outline:3px solid var(--brand-gold);outline-offset:2px}
 .kws-big{padding:15px 24px;font-size:1.06rem;border-radius:16px}.kws-gold{background:#ffd25e;color:#10231c;box-shadow:0 12px 28px -12px #8a6400}
@@ -10977,7 +11021,7 @@ initShared();
 .kws-bar{height:9px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:8px}.kws-bar i{display:block;height:100%;background:var(--green);border-radius:9px;transition:width 1.2s}
 .kws-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-weight:700}.kws-row em{margin-left:auto;font-style:normal;font-size:.76rem;font-weight:700}.bad{color:var(--rust)!important}
 .kws-lg{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:.8rem;flex:none}
-.kws-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center;font-size:.76rem;font-weight:700;color:var(--muted)}.kws-days span{display:grid;justify-items:center;gap:6px}.kws-days .on{color:var(--ink)}.kws-days i{width:100%;max-width:26px;aspect-ratio:1;border-radius:8px;border:1.5px dashed var(--line);box-sizing:border-box}.kws-days .on i{border:0;background:var(--rust)}.kws-days .on:nth-child(4) i{background:#3b82f6}.kws-days .on:nth-child(6) i{background:var(--green)}
+.kws-biz{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.kws-biz>div:not(.kws-row){background:var(--green-soft);border-radius:12px;padding:8px 10px}.kws-biz small{display:block;color:var(--muted);font-size:.72rem}.kws-biz b{font-size:1.05rem}.kws-biz b.good{color:var(--green)}.kws-biz .kws-inv{grid-column:1/-1}.kws-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center;font-size:.76rem;font-weight:700;color:var(--muted)}.kws-days span{display:grid;justify-items:center;gap:6px}.kws-days .on{color:var(--ink)}.kws-days i{width:100%;max-width:26px;aspect-ratio:1;border-radius:8px;border:1.5px dashed var(--line);box-sizing:border-box}.kws-days .on i{border:0;background:var(--rust)}.kws-days .on:nth-child(4) i{background:#3b82f6}.kws-days .on:nth-child(6) i{background:var(--green)}
 .kws-people{display:flex;gap:14px;justify-content:center}.kws-people span{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#10231c;position:relative}.kws-people em{position:absolute;bottom:-18px;font-style:normal;font-size:.74rem;color:var(--green)}
 .kws-people{padding-bottom:28px}.kws-trip b{font-size:1rem}.kws-trip small{display:block;margin-top:8px;color:var(--muted);font-weight:600}
 .kws-ask{display:grid;gap:8px}.kws-ask span{justify-self:end;background:var(--green);color:var(--on-green);padding:9px 13px;border-radius:16px 16px 4px 16px;font-weight:600}.kws-ask b{justify-self:start;background:var(--green-soft);padding:9px 13px;border-radius:16px 16px 16px 4px;font-weight:600}
@@ -11025,6 +11069,32 @@ initShared();
   .kws-c1{left:-14px}.kws-c2{right:-14px}.kws-c3{left:0}.kws-sticky{display:none}.kws-list li{min-height:0}.kws-price{grid-template-columns:1fr}.kws-sec{padding-block:64px}}
 @media (prefers-reduced-motion:reduce){.kws *{animation:none!important;transition:none!important}.kws{scroll-behavior:auto}}
 
+.kws-eye-gold{background:var(--gold-soft,#fff1cc);color:#7a5a00}
+.kws-pxg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:32px}
+.kws-pxc{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:16px 16px 20px;box-shadow:var(--lift);min-width:0;display:flex;flex-direction:column;gap:6px}
+.kws-pxc h3{font:700 1.1rem var(--body);margin:10px 4px 0}.kws-pxc p{color:var(--muted);margin:0 4px;line-height:1.45;font-size:.95rem}
+.kws-pxv{background:linear-gradient(160deg,var(--green-soft),color-mix(in srgb,var(--card) 70%,var(--green-soft)));border-radius:18px;padding:12px;display:grid;gap:8px;min-height:150px;align-content:center}
+.kws-pxr{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:8px 10px;box-shadow:0 6px 16px -12px rgba(0,0,0,.4)}
+.kws-pxr i{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:#fff;font-style:normal;font-weight:800;font-size:.9rem}
+.kws-pxr span{font-weight:700;font-size:.9rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kws-pxr small{display:block;color:var(--muted);font-weight:500;font-size:.72rem}
+.kws-pxr b{font-size:.92rem;font-variant-numeric:tabular-nums}.kws-pxr b.neg{color:var(--ink)}
+.kws-pxlive{font-size:.74rem;font-weight:700;color:var(--green);display:flex;align-items:center;gap:6px;justify-self:end}.kws-pxlive em{width:8px;height:8px;border-radius:50%;background:var(--green);animation:kwsPulse 1.6s infinite}
+@keyframes kwsPulse{50%{opacity:.3}}
+.kws-pxsync{grid-template-columns:auto 1fr auto;align-items:center;justify-items:center;padding-inline:22px}.kws-pxdev{font-size:2.6rem;width:72px;height:72px;display:grid;place-items:center;background:var(--card);border-radius:20px;box-shadow:0 8px 20px -14px rgba(0,0,0,.45)}
+.kws-pxline{width:100%;height:3px;background:repeating-linear-gradient(90deg,var(--green) 0 8px,transparent 8px 14px);position:relative;display:grid;place-items:center}.kws-pxline em{position:absolute;font-style:normal;background:var(--card);border-radius:50%;width:34px;height:34px;display:grid;place-items:center;box-shadow:0 4px 12px -8px rgba(0,0,0,.5)}
+.kws-pxinv .kws-pxpaid{font-size:.75rem;color:var(--green);background:var(--green-soft);padding:3px 9px;border-radius:99px}
+.kws-pxurl{display:flex;gap:6px;align-items:center;background:var(--card);border-radius:99px;padding:7px 12px;font-size:.82rem;font-weight:700;min-width:0;overflow:hidden;white-space:nowrap}
+.kws-pxpage{background:var(--card);border-radius:14px;padding:12px;display:grid;gap:2px;text-align:center}.kws-pxpage small{color:var(--muted);font-size:.75rem}.kws-pxpage span{margin-top:6px;background:var(--green);color:#fff;border-radius:99px;padding:6px 10px;font-weight:700;font-size:.8rem;justify-self:center}
+.kws-pxmail{background:var(--card);border-radius:14px;padding:10px 12px;display:grid;gap:2px;max-width:88%}.kws-pxmail small{color:var(--muted);font-size:.72rem}.kws-pxmail b{font-size:.88rem}.kws-pxmail span{color:var(--green);font-weight:700;font-size:.8rem}
+.kws-pxmail2{justify-self:end;background:var(--green-soft)}.kws-pxmail b.good,.kws-biz b.good{color:var(--green)}
+.kws-pxcta{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 16px;margin-top:28px;text-align:center}.kws-pxcta span{color:var(--muted);font-size:.92rem}
+@media (max-width:900px){.kws-pxg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.kws-pxg{grid-template-columns:minmax(0,1fr)}}
+.kws-calc input{-webkit-appearance:none;appearance:none;height:22px;background:transparent;cursor:pointer;--p:50%}
+.kws-calc input::-webkit-slider-runnable-track{height:8px;border-radius:9px;background:linear-gradient(90deg,var(--green) var(--p),color-mix(in srgb,var(--ink) 14%,transparent) var(--p))}
+.kws-calc input::-moz-range-track{height:8px;border-radius:9px;background:linear-gradient(90deg,var(--green) var(--p),color-mix(in srgb,var(--ink) 14%,transparent) var(--p))}
+.kws-calc input::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-7px;border-radius:50%;background:var(--green);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.kws-calc input::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--green);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .kws-calc{margin-top:22px;max-width:440px;padding:16px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(8px);display:grid;gap:10px}
 .kws-calc-h{display:flex;justify-content:space-between;align-items:center}.kws-calc-h span{font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#ffe08a}
 .kws-calc label{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:.84rem;color:rgba(243,250,246,.85)}.kws-calc output{font-weight:800;color:#fff}

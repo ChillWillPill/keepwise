@@ -1562,7 +1562,7 @@ async def asks_if_money_arrived_from_the_day_after(ctx):
     # 6 October: regular pay is never asked about; it counts by itself on payday
     await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 6, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
     assert await pg.locator("[data-arrived]").count() == 0, "no question about the pay"
-    assert "$1,420 in" in await text(pg, "[data-hero-tiles]")
+    assert "$1,420 arrived" in await text(pg, "[data-hero-tiles]")
     # 10 October: the side income was due yesterday and is not logged
     await pg.clock.set_fixed_time(datetime.datetime(2026, 10, 10, 9, 0)); await tab(pg, "subs"); await tab(pg, "month")
     card = await text(pg, "[data-arrived]"); assert "Tutoring" in card and "Expected Oct 9" in card and "$250" in card and "Your pay" not in card, card
@@ -2967,7 +2967,7 @@ async def coming_up_reads_in_date_order_and_a_trip_is_never_logged_as_spending(c
     await pg.click("[data-payday-cancel]"); await pg.wait_for_timeout(120)   # the pay sheet closes with ✕, then opens again from Edit
     await pg.locator("[data-payday-edit]").first.click(); await pg.wait_for_timeout(150); assert await pg.locator("form[data-form=pay]").count() == 1; await pg.click("[data-payday-cancel]"); await pg.wait_for_timeout(120)
     # "plan a trip": the trip card opens with the name and budget filled in, and nothing goes into the month
-    k = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-row .name.tnum').textContent")
+    k = lambda: pg.evaluate("document.querySelector('[data-out=envelopes] .env-save .bud-amt b').textContent")
     k0 = await k(); n0 = len((await state(pg)).get("spends") or [])
     await showpay(pg) or await pg.select_option("#m-cur", "GBP"); await pg.wait_for_timeout(150); k0 = await k()
     await tab(pg, "plan"); await owl(pg); await pg.wait_for_timeout(200)
@@ -3354,7 +3354,7 @@ async def field_stays_above_the_keyboard(ctx):
 async def opening_details_does_not_jump(ctx):
     pg = await open_app(ctx)
     top = "k => Math.round(document.querySelector(`[data-env-open='${k}']`).getBoundingClientRect().top)"
-    keys = await pg.evaluate("[...document.querySelectorAll('[data-env-open]')].map(e => e.dataset.envOpen)")
+    keys = await pg.evaluate("[...document.querySelectorAll('button[data-env-open]')].map(e => e.dataset.envOpen)")
     assert len(keys) >= 3, keys
     await pg.click(f"[data-env-open='{keys[1]}']"); await pg.wait_for_timeout(150)   # a tall group is open above
     await pg.locator(f"[data-env-open='{keys[2]}']").scroll_into_view_if_needed(); await pg.wait_for_timeout(100)
@@ -3362,7 +3362,7 @@ async def opening_details_does_not_jump(ctx):
     await pg.click(f"[data-env-open='{keys[2]}']"); await pg.wait_for_timeout(200)
     after = await pg.evaluate(top, keys[2])
     assert abs(after - before) <= 2, f"the row you tapped moved from {before} to {after}"
-    assert "Hide details" in await text(pg, f"[data-env-open='{keys[2]}']") or await pg.locator("[data-out=envelopes] input").count() > 0
+    assert await pg.get_attribute(f"[data-env-open='{keys[2]}']", "aria-expanded") == "true", "the tapped group is open"
 
 @test
 async def contacts_button_in_split_form_shows_what_to_do(ctx):
@@ -3608,6 +3608,17 @@ async def plus_takes_a_waitlist_until_checkout_opens(ctx):
     v = await text(pg, "#view")
     if "Opening soon" not in v: return   # no live Paddle config in this build: the plain waitlist covers it
     assert await pg.locator("[data-plus-buy]").count() == 0 and "Nothing charged now" in v and "Sign in to join the early list" in v, v
+    assert not pg.errors, pg.errors
+
+@test
+async def the_website_shows_plus_and_joins_the_early_list(ctx):
+    # the website shows what Plus adds; "Join the early list" signs the visitor in, then adds them (no checkout)
+    pg = await open_app(ctx, fb=True); await pg.goto(URL + "?site"); await pg.wait_for_timeout(800)
+    v = await pg.inner_text("#kws-plusx"); assert "Your banks, live" in v and "Run your business" in v and "Join the early list" in v, v
+    assert "free for a week" not in await pg.inner_text("#kws-plus"), "no free-week button while Plus is not on sale"
+    await pg.locator("#kws-plusx [data-kws-plusjoin]").click(); await pg.wait_for_timeout(600)
+    await pg.click("[data-acc-google]")
+    await pg.wait_for_function("document.body.innerText.includes('on the KeepWise Plus early list')", timeout=6000)   # signing in from the website adds them to the list
     assert not pg.errors, pg.errors
 
 @test
@@ -4428,6 +4439,19 @@ async def the_owl_panel_stands_out_in_the_dark(ctx):
         await pg.close()
 
 @test
+async def the_donut_fits_any_amount(ctx):
+    # a huge month (millions going out) still fits inside the ring's hole, on a small phone and a wide screen
+    for w in (320, 1280):
+        pg = await open_app(ctx, w=w, h=800, month_tabs=True); await ask_type(pg, "laptop 1499999"); await pg.wait_for_timeout(500)
+        await tab(pg, "month"); m = pg.locator("#view [data-mseg=now]")
+        if await m.count() and await m.first.is_visible(): await m.first.click()
+        await pg.wait_for_timeout(300); b = pg.locator("[data-donut] .dn-mid b").first
+        assert await b.count(), "the donut is on the month screen"
+        fit = await b.evaluate("e => { const r = e.closest('.dn-ring, .dn-ring-big') || e.parentElement.parentElement, x = e.getBoundingClientRect(), y = r.getBoundingClientRect(); return [x.width, y.width, e.scrollWidth <= e.clientWidth + 1, e.textContent]; }")
+        assert fit[0] <= fit[1] * 0.56 and fit[2], (w, fit)
+        await pg.close()
+
+@test
 async def the_owl_adds_up_spending_by_kind(ctx):
     # each logged line has a kind (its icon), so the owl can total a kind, say what a habit comes to, and rank them
     pg = await open_app(ctx)
@@ -4544,7 +4568,7 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     assert await wide.locator("[data-mseg-switch]").count() == 0 and await wide.locator("[data-out=envelopes]").count() == 1 and await wide.locator("[data-env-edit]").count() == 1 and await wide.locator("[data-out=loans]").count() == 1 and await wide.locator("[data-donut]").count() == 1
     assert not wide.errors, wide.errors
 
-SPILL_CHECK = r"""() => { const out = [], vw = innerWidth, box = e => e.getBoundingClientRect(), vis = e => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility !== 'hidden' && !e.closest('[hidden]') && !e.closest('.sr') && box(e).width > 0; };
+SPILL_CHECK = r"""() => { const out = [], vw = innerWidth, box = e => e.getBoundingClientRect(), vis = e => { const c = getComputedStyle(e); return c.display !== 'none' && c.visibility !== 'hidden' && !e.closest('[hidden]') && !e.closest('.sr, .sr-only') && box(e).width > 0; };
   const tag = e => (e.className && typeof e.className === 'string' ? '.' + e.className.split(' ').join('.') : e.tagName) + ' "' + (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40) + '"', scrolls = e => { let p = e.parentElement; while (p && p.id !== 'main'){ const o = getComputedStyle(p).overflowX; if (o === 'auto' || o === 'scroll') return true; p = p.parentElement; } return false; };
   if (document.documentElement.scrollWidth > vw + 1) out.push('SIDE-SCROLL ' + document.documentElement.scrollWidth);
   document.querySelectorAll('#view section.card, #view section.hero, #view .note').forEach(card => { if (!vis(card) || card.parentElement.closest('section.card')) return; const cb = box(card);

@@ -224,7 +224,11 @@ function render(){
   const week = A.users.filter(x => x.createdAt && now - x.createdAt < 7 * DAY).length;
   const pct = total ? Math.round(L.waitlist.length / total * 100) : 0;
   const rows = filtered(L[A.tab]), cols = COLS[A.tab];
-  if (A.view !== "overview"){ app.innerHTML = nav() + VIEWS[A.view](); after(); return; }
+  if (A.view !== "overview"){ // keep each list where it was scrolled (picking someone low in the list must not jump it to the top)
+    const keep = [...app.querySelectorAll(".rows, .dm-scroll")].map(e => [e.scrollTop, e.scrollLeft]), wy = window.scrollY, same = app.dataset.view === A.view;
+    app.innerHTML = nav() + VIEWS[A.view](); app.dataset.view = A.view; after();
+    if (same){ [...app.querySelectorAll(".rows, .dm-scroll")].forEach((e, i) => { if (keep[i]){ e.scrollTop = keep[i][0]; e.scrollLeft = keep[i][1]; } }); window.scrollTo(0, wy); }
+    return; }
   const T = A.tickets, openN = T.filter(t => t.status === "open").length, newN = T.filter(t => t.unreadTeam).length;
   app.innerHTML = nav() + `
   <div class="head"><div><h1>Dashboard</h1><p class="muted small">Updated ${new Date().toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"})}. Account profiles only. Budgets and statements never leave users’ phones.</p></div>
