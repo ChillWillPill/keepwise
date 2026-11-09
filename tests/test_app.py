@@ -4529,6 +4529,16 @@ async def business_asks_its_name_first_and_is_a_dashboard_on_a_computer(ctx):
     assert not pg.errors, pg.errors
 
 @test
+async def no_sheet_squashes_its_buttons(ctx):
+    # a business entry's sheet on a short phone: every row keeps its full height and the sheet scrolls instead
+    pg = await open_app(ctx, w=375, h=667); await space(pg, "business"); await pg.click("[data-bz-demo-on]"); await pg.wait_for_timeout(300)
+    await pg.click("#tabbar [data-bseg=money]"); await pg.wait_for_timeout(300)
+    await pg.locator("[data-bz-open-entry]").first.click(); await pg.wait_for_timeout(400)
+    r = await pg.evaluate("""() => { const s = document.querySelector('.bz-sheet'), a = s.querySelector('.bz-acts'), b = a.querySelector('button'); return [a.getBoundingClientRect().height, b.scrollHeight, b.clientHeight, s.scrollHeight > s.clientHeight || s.getBoundingClientRect().bottom <= innerHeight + 1]; }""")
+    assert r[0] >= r[1] - 1 and r[2] >= r[1] - 1, ("the Edit / Receipt / Refund / Delete row is squashed", r)
+    assert not pg.errors, pg.errors
+
+@test
 async def the_donut_fits_any_amount(ctx):
     # a huge month (millions going out) still fits inside the ring's hole, on a small phone and a wide screen
     for w in (320, 1280):
