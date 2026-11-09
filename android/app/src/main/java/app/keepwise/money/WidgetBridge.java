@@ -28,7 +28,11 @@ public class WidgetBridge extends Plugin {
     @PluginMethod
     public void update(PluginCall call) {
         SharedPreferences p = getContext().getSharedPreferences(KeepWiseWidget.PREFS, Context.MODE_PRIVATE);
-        p.edit()
+        boolean hide = Boolean.TRUE.equals(call.getBoolean("hide", false));
+        SharedPreferences.Editor e = p.edit();
+        // the eye in the app changed: the widget follows it again (until its own eye is tapped)
+        if (p.getBoolean("hide", false) != hide) e.remove("whide");
+        e
             .putString("label", call.getString("label", ""))
             .putString("amount", call.getString("amount", ""))
             .putString("next", call.getString("next", ""))
@@ -40,7 +44,7 @@ public class WidgetBridge extends Plugin {
             .putString("parts", call.getString("parts", "[]"))
             .putString("said", call.getString("said", ""))
             .putString("safe", call.getString("safe", ""))
-            .putBoolean("hide", Boolean.TRUE.equals(call.getBoolean("hide", false)))
+            .putBoolean("hide", hide)
             .apply();
         KeepWiseWidget.refresh(getContext());
         WeekWidget.refresh(getContext());

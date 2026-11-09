@@ -1,0 +1,6 @@
+<!-- picker preview only: the "kept" ring, about three quarters full -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="76dp" android:height="76dp" android:viewportWidth="76" android:viewportHeight="76">
+    <path android:fillColor="#00000000" android:strokeColor="#33FFFFFF" android:strokeWidth="9" android:pathData="M38,4.5a33.5,33.5 0,1 1,0 67a33.5,33.5 0,1 1,0 -67z" />
+    <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="9" android:pathData="M38,4.5A33.5,33.5 0,1 1,4.76 33.8" />
+    <path android:fillColor="#00000000" android:strokeColor="#FFD25E" android:strokeWidth="9" android:pathData="M4.76,33.8A33.5,33.5 0,0 1,38 4.5" />
+</vector>

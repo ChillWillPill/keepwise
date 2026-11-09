@@ -12,6 +12,21 @@ import android.widget.RemoteViews;
 // Home screen widget: what you'll keep this month and what's due next. Tapping it opens KeepWise.
 public class KeepWiseWidget extends AppWidgetProvider {
     static final String PREFS = "keepwise_widget";
+    static final String EYE = "app.keepwise.money.WIDGET_EYE";
+
+    // amounts are hidden when the widget's own eye says so, or (until it is tapped) when the app's eye does
+    static boolean hidden(SharedPreferences p) { return p.contains("whide") ? p.getBoolean("whide", false) : p.getBoolean("hide", false); }
+
+    @Override
+    public void onReceive(Context c, Intent i) {
+        if (i != null && EYE.equals(i.getAction())) {
+            SharedPreferences p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            p.edit().putBoolean("whide", !hidden(p)).apply();
+            refresh(c); WeekWidget.refresh(c); QuickAddWidget.refresh(c);
+            return;
+        }
+        super.onReceive(c, i);
+    }
 
     @Override
     public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
@@ -22,15 +37,22 @@ public class KeepWiseWidget extends AppWidgetProvider {
         SharedPreferences p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.keepwise_widget);
         String amount = p.getString("amount", "");
+        boolean hid = hidden(p);
         v.setTextViewText(R.id.kw_label, nz(p.getString("label", ""), "What you'll keep"));
-        v.setTextViewText(R.id.kw_amount, nz(amount, "Open KeepWise"));
+        v.setTextViewText(R.id.kw_amount, amount.isEmpty() ? "Open KeepWise" : hid ? "••••••" : amount);
+        // the eye: show or hide the amounts right on the home screen
+        v.setViewVisibility(R.id.kw_eye, amount.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
+        v.setImageViewResource(R.id.kw_eye, hid ? R.drawable.ic_kw_eye_off : R.drawable.ic_kw_eye);
+        v.setContentDescription(R.id.kw_eye, hid ? "Show amounts" : "Hide amounts");
+        Intent eye = new Intent(c, KeepWiseWidget.class).setAction(EYE);
+        v.setOnClickPendingIntent(R.id.kw_eye, PendingIntent.getBroadcast(c, 31, eye, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         v.setTextViewText(R.id.kw_next, nz(p.getString("next", ""), amount.isEmpty() ? "Set up your month to see it here" : ""));
         // the ring: what share of this month's money you keep
         int pct = p.getInt("pct", -1);
         v.setViewVisibility(R.id.kw_side, pct < 0 ? android.view.View.GONE : android.view.View.VISIBLE);
         if (pct >= 0) {
-            v.setImageViewBitmap(R.id.kw_ring, ring(c, pct, p.getBoolean("hide", false), p.getString("parts", "[]")));
-            v.setTextViewText(R.id.kw_safe, p.getString("safe", ""));
+            v.setImageViewBitmap(R.id.kw_ring, ring(c, pct, hid, p.getString("parts", "[]")));
+            v.setTextViewText(R.id.kw_safe, hid ? "" : p.getString("safe", ""));
         }
         // the last three things spent
         int[] row = {R.id.kw_r0, R.id.kw_r1, R.id.kw_r2}, rn = {R.id.kw_rn0, R.id.kw_rn1, R.id.kw_rn2}, rw = {R.id.kw_rw0, R.id.kw_rw1, R.id.kw_rw2}, ra = {R.id.kw_ra0, R.id.kw_ra1, R.id.kw_ra2};
@@ -44,7 +66,7 @@ public class KeepWiseWidget extends AppWidgetProvider {
                 org.json.JSONObject x = r.getJSONObject(i);
                 v.setTextViewText(rn[i], x.optString("n", ""));
                 v.setTextViewText(rw[i], x.optString("w", ""));
-                v.setTextViewText(ra[i], x.optString("a", ""));
+                v.setTextViewText(ra[i], hid ? "••" : x.optString("a", ""));
                 shown++;
             }
         } catch (Exception e) { shown = 0; }

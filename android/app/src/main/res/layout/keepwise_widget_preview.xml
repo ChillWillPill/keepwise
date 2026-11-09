@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/kw_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_vertical"
+    android:padding="16dp"
+    android:background="@drawable/widget_bg">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="KeepWise"
+            android:textColor="#FFD25E"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+        <!-- the eye: hide or show the amounts on the home screen -->
+        <ImageView android:id="@+id/kw_eye" android:layout_width="30dp" android:layout_height="30dp" android:padding="6dp"
+            android:background="@drawable/widget_eye_bg" android:src="@drawable/ic_kw_eye" android:contentDescription="Hide amounts" />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/kw_label" android:text="You\'ll keep by Nov 30"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textAllCaps="true"
+            android:letterSpacing="0.06"
+            android:textColor="#D9F5E9"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/kw_amount" android:text="$1,456.99"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="16sp"
+            android:autoSizeMaxTextSize="32sp"
+            android:textColor="#FFFFFF"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/kw_next" android:text="Next: Netflix $17.99 · tomorrow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="#E6FFF4"
+            android:textSize="13sp" />
+        </LinearLayout>
+        <!-- how much of this month's money you keep, as a ring, and what is safe to spend today -->
+        <LinearLayout android:id="@+id/kw_side" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:orientation="vertical" android:gravity="center_horizontal">
+            <ImageView android:id="@+id/kw_ring" android:src="@drawable/wk_ring_preview" android:layout_width="76dp" android:layout_height="76dp" android:contentDescription="Share of this month's money you keep" />
+            <TextView android:id="@+id/kw_safe" android:text="Safe today\n$45.22" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:maxLines="2" android:gravity="center" android:textColor="#D9F5E9" android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+    <!-- the last three things spent, newest first -->
+    <LinearLayout
+        android:id="@+id/kw_recent" android:visibility="visible"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:background="@drawable/widget_recent_bg"
+        >
+        <LinearLayout android:id="@+id/kw_r0" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="0dp">
+            <TextView android:id="@+id/kw_rn0" android:text="Coffee" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:maxLines="1" android:ellipsize="end" android:textColor="#FFFFFF" android:textSize="13sp" />
+            <TextView android:id="@+id/kw_rw0" android:text="Today" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:maxLines="1" android:textColor="#BFEBD6" android:textSize="12sp" />
+            <TextView android:id="@+id/kw_ra0" android:text="−$4.50" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:maxLines="1" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/kw_r1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="5dp">
+            <TextView android:id="@+id/kw_rn1" android:text="Groceries" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:maxLines="1" android:ellipsize="end" android:textColor="#FFFFFF" android:textSize="13sp" />
+            <TextView android:id="@+id/kw_rw1" android:text="Yesterday" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:maxLines="1" android:textColor="#BFEBD6" android:textSize="12sp" />
+            <TextView android:id="@+id/kw_ra1" android:text="−$62.18" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:maxLines="1" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/kw_r2" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="5dp">
+            <TextView android:id="@+id/kw_rn2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:maxLines="1" android:ellipsize="end" android:textColor="#FFFFFF" android:textSize="13sp" />
+            <TextView android:id="@+id/kw_rw2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:maxLines="1" android:textColor="#BFEBD6" android:textSize="12sp" />
+            <TextView android:id="@+id/kw_ra2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:maxLines="1" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

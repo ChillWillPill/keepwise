@@ -26,10 +26,11 @@ public class WeekWidget extends AppWidgetProvider {
         SharedPreferences p = c.getSharedPreferences(KeepWiseWidget.PREFS, Context.MODE_PRIVATE);
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.keepwise_week);
         // what comes in and what goes out this week, each in its own pill, as in the app
-        String in = p.getString("weekInSum", ""), out = p.getString("weekSum", "");
+        boolean hid = KeepWiseWidget.hidden(p);
+        String in = hid ? "" : p.getString("weekInSum", ""), out = hid ? "" : p.getString("weekSum", "");
         v.setTextViewText(R.id.kw_win, in);
         v.setViewVisibility(R.id.kw_win, in.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
-        boolean none = out.isEmpty() && in.isEmpty();
+        boolean none = out.isEmpty() && in.isEmpty() && !hid;
         v.setTextViewText(R.id.kw_wsum, none ? "Open KeepWise" : out);
         v.setViewVisibility(R.id.kw_wsum, !none && out.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
         try {
@@ -39,7 +40,8 @@ public class WeekWidget extends AppWidgetProvider {
                 String k = d.optString("k", "");
                 v.setTextViewText(N[i], d.optString("n", ""));
                 v.setTextViewText(T[i], d.optString("t", ""));
-                v.setTextViewText(A[i], d.optString("a", ""));
+                String a = d.optString("a", "");
+                v.setTextViewText(A[i], hid && !a.isEmpty() ? "•" : a);
                 v.setTextColor(A[i], "in".equals(k) ? 0xFF0B7A55 : 0xFFB3362F);
                 v.setInt(D[i], "setBackgroundResource", i == 0 ? R.drawable.wk_today : "out".equals(k) ? R.drawable.wk_dayout : "in".equals(k) ? R.drawable.wk_dayin : R.drawable.wk_day);
             }

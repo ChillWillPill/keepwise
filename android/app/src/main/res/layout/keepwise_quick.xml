@@ -14,15 +14,15 @@
     android:orientation="horizontal"
     android:gravity="center_vertical">
     <ImageView
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:src="@drawable/kw_owl"
         android:contentDescription="KeepWise owl" />
     <!-- looks like a text box (Android widgets can't hold a real one); a tap opens the owl with the keyboard up -->
     <TextView
         android:id="@+id/kq_field"
         android:layout_width="0dp"
-        android:layout_height="44dp"
+        android:layout_height="40dp"
         android:layout_weight="1"
         android:layout_marginStart="6dp"
         android:layout_marginEnd="8dp"
@@ -37,9 +37,9 @@
         android:textSize="14sp" />
     <ImageView
         android:id="@+id/kq_mic"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:padding="11dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="10dp"
         android:background="@drawable/widget_mic_bg"
         android:src="@drawable/ic_kw_mic"
         android:contentDescription="@string/quick_mic" />
@@ -52,12 +52,12 @@
         android:layout_marginTop="6dp"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
-        android:paddingTop="7dp"
-        android:paddingBottom="7dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
         android:background="@drawable/widget_said_bg"
         android:text="@string/quick_tip"
-        android:maxLines="2"
+        android:maxLines="1"
         android:ellipsize="end"
         android:textColor="#10231C"
-        android:textSize="13sp" />
+        android:textSize="12sp" />
 </LinearLayout>

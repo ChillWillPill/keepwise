@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Picker preview of the This week widget (sample days). This week widget: seven days from today with what goes out (or comes in) on each, like This week in the app. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/kw_wroot" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="12dp" android:background="@drawable/widget_week_bg">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/week_title" android:textColor="#10231C" android:textSize="16sp" android:textStyle="bold" />
+        <TextView android:id="@+id/kw_win" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="6dp" android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="3dp" android:paddingBottom="3dp"
+            android:background="@drawable/wk_in" android:textColor="#0B7A55" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:visibility="gone" />
+        <TextView android:id="@+id/kw_wsum" android:text="−$48.97 out" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="3dp" android:paddingBottom="3dp"
+            android:background="@drawable/wk_out" android:textColor="#B3362F" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="8dp" android:orientation="horizontal" android:gravity="center_vertical">
+        <LinearLayout android:id="@+id/kw_d0" android:layout_width="0dp" android:layout_height="64dp" android:layout_weight="1"
+            android:layout_marginStart="0dp" android:orientation="vertical" android:gravity="center" android:background="@drawable/wk_today">
+            <TextView android:id="@+id/kw_n0" android:text="Mon" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#4A5E56" android:textSize="11sp" android:maxLines="1" />
+            <TextView android:id="@+id/kw_t0" android:text="9" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#10231C" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/kw_a0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/kw_d1" android:layout_width="0dp" android:layout_height="64dp" android:layout_weight="1"
+            android:layout_marginStart="3dp" android:orientation="vertical" android:gravity="center" android:background="@drawable/wk_dayout">
+            <TextView android:id="@+id/kw_n1" android:text="Tue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#4A5E56" android:textSize="11sp" android:maxLines="1" />
+            <TextView android:id="@+id/kw_t1" android:text="10" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#10231C" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/kw_a1" android:text="−$19" android:textColor="#B3362F" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/kw_d2" android:layout_width="0dp" android:layout_height="64dp" android:layout_weight="1"
+            android:layout_marginStart="3dp" android:orientation="vertical" android:gravity="center" android:background="@drawable/wk_day">
+            <TextView android:id="@+id/kw_n2" android:text="Wed" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#4A5E56" android:textSize="11sp" android:maxLines="1" />
+            <TextView android:id="@+id/kw_t2" android:text="11" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#10231C" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/kw_a2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/kw_d3" android:layout_width="0dp" android:layout_height="64dp" android:layout_weight="1"
+            android:layout_marginStart="3dp" android:orientation="vertical" android:gravity="center" android:background="@drawable/wk_dayout">
+            <TextView android:id="@+id/kw_n3" android:text="Thu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#4A5E56" android:textSize="11sp" android:maxLines="1" />
+            <TextView android:id="@+id/kw_t3" android:text="12" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#10231C" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/kw_a3" android:text="−$18" android:textColor="#B3362F" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/kw_d4" android:layout_width="0dp" android:layout_height="64dp" android:layout_weight="1"
+            android:layout_marginStart="3dp" android:orientation="vertical" android:gravity="center" android:background="@drawable/wk_dayin">
+            <TextView android:id="@+id/kw_n4" android:text="Fri" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#4A5E56" android:textSize="11sp" android:maxLines="1" />
+            <TextView android:id="@+id/kw_t4" android:text="13" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#10231C" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/kw_a4" android:text="+$1.4k" android:textColor="#0B7A55" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/kw_d5" android:layout_width="0dp" android:layout_height="64dp" android:layout_weight="1"
+            android:layout_marginStart="3dp" android:orientation="vertical" android:gravity="center" android:background="@drawable/wk_day">
+            <TextView android:id="@+id/kw_n5" android:text="Sat" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#4A5E56" android:textSize="11sp" android:maxLines="1" />
+            <TextView android:id="@+id/kw_t5" android:text="14" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#10231C" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/kw_a5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/kw_d6" android:layout_width="0dp" android:layout_height="64dp" android:layout_weight="1"
+            android:layout_marginStart="3dp" android:orientation="vertical" android:gravity="center" android:background="@drawable/wk_dayout">
+            <TextView android:id="@+id/kw_n6" android:text="Sun" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#4A5E56" android:textSize="11sp" android:maxLines="1" />
+            <TextView android:id="@+id/kw_t6" android:text="15" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#10231C" android:textSize="16sp" android:textStyle="bold" android:maxLines="1" />
+            <TextView android:id="@+id/kw_a6" android:text="−$12" android:textColor="#B3362F" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" android:maxLines="1" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

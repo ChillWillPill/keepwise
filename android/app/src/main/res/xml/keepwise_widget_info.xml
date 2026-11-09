@@ -9,6 +9,6 @@
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/keepwise_widget"
-    android:previewLayout="@layout/keepwise_widget"
+    android:previewLayout="@layout/keepwise_widget_preview"
     android:description="@string/widget_description"
     android:widgetCategory="home_screen" />

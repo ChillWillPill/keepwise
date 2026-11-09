@@ -4443,6 +4443,7 @@ async def the_amount_box_stays_above_the_keyboard(ctx):
     # iPhone: picking an icon in the owl opens the amount box at the foot of the sheet; with the keyboard up it must still show
     pg = await open_app(ctx, w=390, h=844); await owl(pg); await pg.wait_for_timeout(300)
     await pg.locator("[data-quick-ic]").first.click(); await pg.wait_for_timeout(300)
+    h = await pg.evaluate("document.querySelector('.ask-panel .ask-chips').getBoundingClientRect().height"); assert h > 30, f"the question chips at the foot of the owl are squashed ({h}px)"
     await pg.evaluate("Object.defineProperty(window, 'visualViewport', {configurable: true, get: () => ({height: 420, offsetTop: 0, addEventListener(){}})})")   # the keyboard takes the bottom half
     inp = pg.locator("form[data-form=quick] [name=amount]"); await inp.evaluate("e => { e.blur(); e.focus(); }"); await pg.wait_for_timeout(900)
     r = await inp.evaluate("e => [e.getBoundingClientRect().top, e.getBoundingClientRect().bottom]")
@@ -6700,6 +6701,11 @@ async def the_widgets_get_the_week_and_open_the_owl(ctx):
     await pg.fill("#ask-in", "how much will I save?"); await pg.evaluate("document.getElementById('ask-in').form.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}))"); await pg.wait_for_timeout(400)
     await pg.evaluate("window.kwWidgetPush()"); said = (await pg.evaluate("__w.sent[__w.sent.length - 1]"))["said"]
     assert said and said == (await pg.inner_text("#ask-out")).replace("\n", " ").strip()[:160], ("the quick add widget shows the owl's last answer", said)
+    # the eye: the widgets get the real figures and the app's setting, and hide them themselves (the month widget has its own eye)
+    await pg.evaluate("document.querySelectorAll('[data-ask-close]').forEach(b => b.click())"); await pg.wait_for_timeout(300); await tab(pg, "month")
+    await pg.evaluate("document.querySelector('[data-hide-bal]').click()"); await pg.wait_for_timeout(200)
+    await pg.evaluate("window.kwWidgetPush()"); sent = await pg.evaluate("__w.sent[__w.sent.length - 1]")
+    assert sent["hide"] is True and any(ch.isdigit() for ch in sent["amount"]), ("hidden in the app: the widget is told to hide, and can still show it", sent["amount"], sent["hide"])
     assert not pg.errors, pg.errors
 
 @test
