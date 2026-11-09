@@ -290,7 +290,7 @@ export default {
   },
 };
 
-// ---- business pages: name.mykeepwise.com, read from the public sites/{name} document ----
+// ---- business pages (old name.mykeepwise.com addresses; the site now serves mykeepwise.com/b/name itself), read from the public sites/{name} document ----
 const FS = "https://firestore.googleapis.com/v1/projects/keepwise-c28c3/databases/(default)/documents/sites/";
 const h = s => String(s || "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 async function sitePage(name){

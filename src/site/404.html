@@ -3,14 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Page not found · KeepWise</title>
+<title>KeepWise</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="/icons/favicon-64.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&family=Fraunces:opsz,wght@9..144,600&display=swap">
 <link rel="stylesheet" href="/legal.css">
+<style>
+/* Business pages (mykeepwise.com/b/name): a card with the logo, name, address and ways to pay or get in touch */
+.bp-body{margin:0;background:#f3efe6;color:#1c2420;font:16px/1.5 Figtree,system-ui,-apple-system,Segoe UI,sans-serif;display:grid;place-items:center;min-height:100vh;padding:20px;box-sizing:border-box}
+.bp{background:#fbf8f2;border:1px solid #e0d5c5;border-radius:28px;padding:32px 24px;max-width:420px;width:100%;text-align:center;box-shadow:0 30px 60px -36px rgba(28,36,32,.45)}
+.bp img{width:96px;height:96px;border-radius:24px;object-fit:cover;background:#fff}
+.bp h1{font:600 1.9rem Fraunces,Georgia,serif;margin:14px 0 4px}.bp p{color:#4d564e;margin:4px 0}
+.bp a.b{display:block;margin-top:12px;padding:14px;border-radius:14px;text-decoration:none;font-weight:700;background:#fff;color:#1c2420;border:1px solid #e0d5c5}
+.bp a.p{background:#1b6843;color:#fff;border:0}
+.bp .f{margin-top:22px;font-size:.8rem}.bp .f a{color:#1b6843}
+</style>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap" id="nf">
 <header class="top">
   <a class="brand" href="/"><img class="logo" src="/icons/favicon-64.png" alt="" width="34" height="34"><span class="wordmark">Keep<span>Wise</span></span></a>
   <nav><a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a></nav>
@@ -19,5 +29,23 @@
 <p>The link may be old or typed wrong. Everything in KeepWise lives in the app.</p>
 <p><a href="/">Open KeepWise</a></p>
 </div>
+<script>
+(function(){
+  var m = location.pathname.match(/^\/b\/([a-z0-9][a-z0-9-]{2,29})\/?$/i); if (!m) return;
+  var name = m[1].toLowerCase(), nf = document.getElementById("nf");
+  var h = function(s){ return String(s || "").replace(/[&<>"']/g, function(c){ return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]; }); };
+  var show = function(title, inner){ document.title = title; nf.remove(); document.body.className = "bp-body"; var c = document.createElement("main"); c.className = "bp"; c.innerHTML = inner + '<p class="f">Made with <a href="https://mykeepwise.com">KeepWise</a></p>'; document.body.prepend(c); };
+  fetch("https://firestore.googleapis.com/v1/projects/keepwise-c28c3/databases/(default)/documents/sites/" + name).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
+    var f = (j && j.fields) || {}, d = {}; Object.keys(f).forEach(function(k){ var v = f[k]; d[k] = v.stringValue != null ? v.stringValue : v.integerValue != null ? v.integerValue : ""; });
+    if (!d.name){ show("Not found · KeepWise", "<h1>No page here yet</h1><p>mykeepwise.com/b/" + h(name) + " isn’t set up.</p>"); return; }
+    var safe = function(u){ return /^https:\/\//.test(u) ? u : ""; };
+    show(d.name, (/^data:image\//.test(d.logo) ? '<img src="' + h(d.logo) + '" alt="">' : "") + "<h1>" + h(d.name) + "</h1>" + (d.address ? "<p>" + h(d.address) + "</p>" : "")
+      + (safe(d.pay) ? '<a class="b p" href="' + h(d.pay) + '" rel="noopener">Pay ' + h(d.name) + "</a>" : "")
+      + (d.email ? '<a class="b" href="mailto:' + h(d.email) + '">Email ' + h(d.email) + "</a>" : "")
+      + (d.phone ? '<a class="b" href="tel:' + h(String(d.phone).replace(/[^+\d]/g, "")) + '">Call ' + h(d.phone) + "</a>" : "")
+      + (d.website ? '<a class="b" href="https://' + h(String(d.website).replace(/^https?:\/\//, "")) + '" rel="noopener">' + h(String(d.website).replace(/^https?:\/\//, "")) + "</a>" : ""));
+  }).catch(function(){});
+})();
+</script>
 </body>
 </html>

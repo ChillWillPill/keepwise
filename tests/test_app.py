@@ -1292,6 +1292,14 @@ async def the_website_lives_at_home_and_the_app_at_app(ctx):
         assert await pg.locator("#kws").count() == 0, "/app opens the app, not the website"
         await pg.goto(base + "start/"); await pg.wait_for_timeout(500)
         assert await pg.evaluate("location.pathname") == "/app", "once set up, the address is /app"
+        # Business has its own address: mykeepwise.com/business opens in Business, and switching space changes the address
+        await pg.goto(base + "business/"); await pg.wait_for_timeout(600)
+        assert (await pg.evaluate("location.pathname")).rstrip("/") == "/business" and await pg.locator("#kws").count() == 0, "/business opens the app in Business"
+        assert await pg.locator("[data-space=business][aria-pressed=true], [data-space=business][aria-selected=true], [data-space=business].on").count() >= 1 or "Business" in await pg.inner_text("#view"), "it is the Business space"
+        await pg.locator("[data-space=personal]").first.click(); await pg.wait_for_timeout(400)
+        assert await pg.evaluate("location.pathname") == "/app", "switching to Personal shows /app"
+        await pg.locator("[data-space=business]").first.click(); await pg.wait_for_timeout(400)
+        assert await pg.evaluate("location.pathname") == "/business", "and back to Business shows /business"
         await c2.close()
     finally:
         try: httpd.shutdown(); httpd.server_close()
@@ -4448,6 +4456,77 @@ async def the_amount_box_stays_above_the_keyboard(ctx):
     inp = pg.locator("form[data-form=quick] [name=amount]"); await inp.evaluate("e => { e.blur(); e.focus(); }"); await pg.wait_for_timeout(900)
     r = await inp.evaluate("e => [e.getBoundingClientRect().top, e.getBoundingClientRect().bottom]")
     assert r[0] > 60 and r[1] <= 420, f"the amount box is under the keyboard: {r}"
+
+@test
+async def business_and_personal_notifications_are_separate(ctx):
+    # the bell shows the space you're in; the other space's new ones are a tap away
+    pg = await open_app(ctx, month_tabs=True); await space(pg, "business"); await pg.wait_for_timeout(200)
+    for _ in range(7): await pg.click("[data-plus-tap]", force=True)
+    await pg.wait_for_timeout(900)
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); s.biz = s.biz || {}; s.plusTester = true; const d = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10); s.biz.invoices = [{id: 'i1', no: 1, client: 'Bloom Shop', items: [{desc: 'Candles', qty: 1, price: 320}], date: d(30), due: d(10), status: 'open'}]; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.reload(); await pg.wait_for_timeout(600); await space(pg, "business"); await pg.wait_for_timeout(200)
+    await pg.click("#bell"); await pg.wait_for_timeout(300); v = await pg.inner_text("#view")
+    assert "Business notifications" in v and "Bloom Shop" in v, v[:400].replace("\n", " | ")
+    await pg.click("[data-close-inbox]"); await space(pg, "personal"); await pg.wait_for_timeout(200)
+    await pg.click("#bell"); await pg.wait_for_timeout(300); v = await pg.inner_text("#view")
+    assert "Bloom Shop" not in v and "new in Business" in v, ("personal shows its own, and points to Business", v[:400])
+    await pg.click("[data-inbox-space=business]"); await pg.wait_for_timeout(300)
+    assert "Business notifications" in await pg.inner_text("#view")
+    assert not pg.errors, pg.errors
+
+@test
+async def a_business_page_lives_at_b_name(ctx):
+    # mykeepwise.com/b/name shows the business page (the site's own 404 page draws it from the public page details)
+    if not APP.endswith(os.path.join("www", "index.html")): return
+    import http.server, threading, functools, socket
+    root = os.path.dirname(APP); sock = socket.socket(); sock.bind(("127.0.0.1", 0)); port = sock.getsockname()[1]; sock.close()
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a): pass
+        def send_error(self, code, message=None, explain=None):   # GitHub Pages: unknown paths get 404.html
+            if code == 404:
+                body = open(os.path.join(root, "404.html"), "rb").read(); self.send_response(404); self.send_header("Content-Type", "text/html; charset=utf-8"); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body); return
+            return super().send_error(code, message, explain)
+    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", port), functools.partial(Quiet, directory=root)); threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    try:
+        c2 = await ctx.browser.new_context(); pg = await c2.new_page()
+        doc = {"fields": {"name": {"stringValue": "Candle Co"}, "address": {"stringValue": "Austin, TX"}, "pay": {"stringValue": "https://pay.example.com/candle"}, "email": {"stringValue": "hi@candle.co"}}}
+        await pg.route("**/documents/sites/candleco", lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(doc)))
+        await pg.route("**/documents/sites/nobody", lambda r: r.fulfill(status=404, content_type="application/json", body="{}"))
+        await pg.route("https://fonts.googleapis.com/**", lambda r: r.fulfill(status=200, body=""))
+        await pg.goto(f"http://127.0.0.1:{port}/b/candleco"); await pg.wait_for_timeout(600)
+        t = await pg.inner_text("body"); assert "Candle Co" in t and "Pay Candle Co" in t and "Austin, TX" in t and "Made with KeepWise" in t, t
+        await pg.goto(f"http://127.0.0.1:{port}/b/nobody"); await pg.wait_for_timeout(600)
+        assert "No page here yet" in await pg.inner_text("body")
+        await pg.goto(f"http://127.0.0.1:{port}/some/old/link"); await pg.wait_for_timeout(300)
+        assert "This page isn’t here" in await pg.inner_text("body"), "other unknown links keep the friendly 404"
+        await c2.close()
+    finally:
+        try: httpd.shutdown(); httpd.server_close()
+        except Exception: pass
+
+@test
+async def business_asks_its_name_first_and_is_a_dashboard_on_a_computer(ctx):
+    pg = await open_app(ctx, w=1366, h=860, month_tabs=True); await space(pg, "business"); await pg.wait_for_timeout(200)
+    for _ in range(7): await pg.click("[data-plus-tap]", force=True)
+    await pg.wait_for_timeout(300)
+    # first visit: name and what it does
+    assert await pg.locator("[data-bz-setup]").count() == 1, ("Business asks for its details first", (await pg.inner_text("#view"))[:300])
+    await pg.fill("[data-bz-setup] input[name=name]", "Candle Co"); await pg.select_option("[data-bz-setup] select[name=type]", "Online shop")
+    await pg.click("[data-bz-setup] button[type=submit]"); await pg.wait_for_timeout(300)
+    assert await pg.locator("[data-bz-setup]").count() == 0 and "Candle Co" in await pg.inner_text(".bz-side") and "Online shop" in await pg.inner_text(".bz-side")
+    # on a computer: + New leads the sidebar, figures in a row, tables for money and invoices
+    order = await pg.evaluate("[...document.querySelectorAll('#tabbar > *')].filter(e => getComputedStyle(e).display !== 'none').sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top).map(e => e.className)")
+    assert "tab-add" in order[0], ("+ New is first in the sidebar", order)
+    await pg.click("#tabbar [data-bseg=overview]"); await pg.wait_for_timeout(300)
+    assert await pg.locator(".bzw-kpis .bzw-k").count() == 4 and await pg.locator(".bzw-kpis [data-biz-hero]").count() == 1
+    await pg.click("#tabbar [data-bseg=invoices]"); await pg.wait_for_timeout(300)
+    assert await pg.locator("[data-inv-list]").count() == 1 and await pg.locator("[data-bzw] h1").inner_text() == "Invoices" and await pg.locator("[data-bzw] .bzw-kpis.four .bzw-k").count() == 4
+    sw = await pg.evaluate("document.documentElement.scrollWidth <= innerWidth"); assert sw, "nothing spills sideways"
+    # a phone keeps its own layout
+    await pg.set_viewport_size({"width": 390, "height": 844}); await pg.wait_for_timeout(400)
+    await pg.click("#tabbar [data-bseg=overview]"); await pg.wait_for_timeout(300)
+    assert await pg.locator(".bzw-kpis").count() == 0 and await pg.locator(".bz-hstats").count() == 1
+    assert not pg.errors, pg.errors
 
 @test
 async def the_donut_fits_any_amount(ctx):

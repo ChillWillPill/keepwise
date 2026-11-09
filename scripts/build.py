@@ -119,7 +119,7 @@ print("built www/ (version", version + ")")
 # GitHub Pages and answers 200. <base href="/"> keeps icons, styles and scripts loading from the root.
 _page = open(os.path.join(ROOT, "www", "index.html"), encoding="utf-8").read()
 _based = _page.replace("<head>", '<head>\n<base href="/">', 1)
-for _p in ("features", "how-it-works", "android", "plus", "signin", "start", "app"):
+for _p in ("features", "how-it-works", "android", "plus", "signin", "start", "app", "business"):
     os.makedirs(os.path.join(ROOT, "www", _p), exist_ok=True)
     open(os.path.join(ROOT, "www", _p, "index.html"), "w", encoding="utf-8").write(_based)
 # The Android app gets only what it uses: the app page, its icons and the legal pages. Not the website's extra
