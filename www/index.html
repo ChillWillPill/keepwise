@@ -5226,7 +5226,7 @@ const expCard = () => `
   <section class="card" data-col="b"><h2>What goes out each month</h2>
     <div data-out="expTotal">${OUT.expTotal()}</div>
     <div data-out="expList" style="display:flex;flex-direction:column;gap:10px">${OUT.expList()}</div></section>`;
-const GOAL_PICKS = ["Umrah", "Laptop", "Car", "Home", "Trip", "Wedding"];
+const GOAL_PICKS = ["Vacation", "Laptop", "Car", "Home", "Trip", "Wedding"];
 const savingsCard = () => { const C = compute(), cur = esc(sym());
   const money = (k, label, v) => `<label class="field"><span>${label}</span><span class="money-in"><em>${cur}</em><input data-bind="${k}" data-num type="text" inputmode="decimal" enterkeyhint="done" value="${v}"></span></label>`;
   const hasGoal = !!S.goalName || +S.goalAmt > 0;
@@ -10914,7 +10914,7 @@ initShared();
     <article class="kws-card"><h3>Bank statements in seconds</h3><p>Drop in a CSV, a PDF or a photo of a statement. Or connect your bank with Plus.</p>
       <div class="kws-w"><div class="kws-row"><span class="kws-lg" style="background:#2f6fd6">⇣</span>October statement<em>42 lines</em></div><div class="kws-row"><span class="kws-lg" style="background:#c9a13a">✓</span>Bills and subs found<em>11</em></div></div></article>
     <article class="kws-card"><h3>Savings goals and a safety net</h3><p>Save for what you want and build an emergency fund, a little every payday.</p>
-      <div class="kws-w kws-trip"><b>🕋 Umrah</b><div class="kws-bar"><i style="width:45%"></i></div><small>45% · about 9 months to go</small></div></article>
+      <div class="kws-w kws-trip"><b>🚗 New car</b><div class="kws-bar"><i style="width:45%"></i></div><small>45% · about 9 months to go</small></div></article>
     <article class="kws-card"><h3>Right on your home screen</h3><p>Add spending from a widget, see your week at a glance, get a nudge before each bill.</p>
       <div class="kws-w kws-ask"><span>Widget · “coffee 4”</span><b>Logged. $41.20 safe to spend today.</b></div></article>
     <article class="kws-card kws-wide"><h3>Ask the owl anything</h3><button type="button" class="kws-see" data-kws-feat="owl">See it in the app →</button><p>Type or say it: "coffee 5", "Netflix sub 15", "can I afford $300?" Snap a receipt and it fills itself in.</p>

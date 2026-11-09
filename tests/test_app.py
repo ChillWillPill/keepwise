@@ -5440,19 +5440,19 @@ async def on_payday_whats_left_is_set_aside_for_the_goal(ctx):
     pg = await open_at(ctx, (2026, 10, 10, 10, 0))
     await pg.click("[data-payday-edit]"); f = pg.locator("form[data-form=pay]")
     await f.locator("[name=day]").select_option("5"); await f.locator("[name=amount]").fill("4200"); await f.locator("button[type=submit]").click(); await pg.wait_for_timeout(250)
-    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); Object.assign(s, {goalName: 'Umrah', goalAmt: 4000, goalSaved: 0, priority: 'goal', efSaved: 0}); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await pg.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); Object.assign(s, {goalName: 'Vacation', goalAmt: 4000, goalSaved: 0, priority: 'goal', efSaved: 0}); localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
     await pg.reload(); await pg.wait_for_timeout(400)
     sv = await text(pg, "[data-save-goal]"); assert "$0 of $4,000" in sv and "planned for October" in sv and "to go" in sv, sv
     assert await pg.locator("[data-save-goal] .meter i").evaluate("e => parseFloat(e.style.width)") == 0, "nothing saved yet, so the bar is empty"
     await pg.close()
     p1 = await open_at(ctx, (2026, 11, 3, 10, 0)); assert await text(p1, "[data-out=monthClose]") == "", "not before payday"; await p1.close()
     p2 = await open_at(ctx, (2026, 11, 5, 10, 0)); card = await text(p2, "[data-out=monthClose]")
-    assert "PAYDAY · NOV 5" in card.upper() and "October is done" in card and "To Umrah" in card, card
+    assert "PAYDAY · NOV 5" in card.upper() and "October is done" in card and "To Vacation" in card, card
     await p2.fill("form[data-form=closeMonth] [name=amount]", "200"); await p2.wait_for_timeout(100)
-    live = await text(p2, "[data-close-live]"); assert "To Umrah $200" in live and "To emergency fund $0" in live, live
+    live = await text(p2, "[data-close-live]"); assert "To Vacation $200" in live and "To emergency fund $0" in live, live
     await p2.click("[data-close-yes]"); await p2.wait_for_timeout(250)
     st = await state(p2); assert st["goalSaved"] == 200 and st["efSaved"] == 0, (st["goalSaved"], st["efSaved"])
-    assert "Set aside $200 for Umrah" in await p2.inner_text("#toast")
+    assert "Set aside $200 for Vacation" in await p2.inner_text("#toast")
     assert "$200 of $4,000" in await text(p2, "[data-save-goal]")
     # a month that ran short says so, and offers nothing to set aside
     await p2.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); const k = s.statements['2026-10']; k.kept = -85; delete k.confirmed; delete k.actual; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
