@@ -6815,7 +6815,11 @@ function coach(k, title){ if (!coachOn(k)) return ""; const d = COACH_DEMO[k] ||
 document.addEventListener("focusin", e => { const t = e.target; if (!t || !t.matches || !t.matches("input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea")) return;
   const w = t.closest(".wiz") || t.closest(".ask-panel"); if (!w) return;   // the rest of the app already keeps its fields above the keyboard
   let s0 = w.scrollTop;   // once the person (or anything else) scrolls the screen themselves, stop pulling the field back
-  const lift = () => { if (document.activeElement !== t || ptrDown || Math.abs(w.scrollTop - s0) > 4) return; const vv = window.visualViewport, vb = vv ? vv.offsetTop + vv.height : innerHeight, bar = w.classList.contains("wiz") ? w.querySelector(".wiz-bar") : null, r = t.getBoundingClientRect(), wr = w.getBoundingClientRect();
+  // a field at the very end of a sheet (the amount box under the icons) has nothing below it to scroll with: while the
+  // keyboard is up, the sheet gets that much room at its foot so the field can always sit just above the keyboard
+  const room = () => { const vv = window.visualViewport, kb = vv ? Math.max(0, w.getBoundingClientRect().bottom - (vv.offsetTop + vv.height)) : 0; w.style.paddingBottom = kb > 40 ? (kb + 24) + "px" : ""; };
+  if (!w.dataset.kbRoom){ w.dataset.kbRoom = "1"; w.addEventListener("focusout", () => setTimeout(() => { if (!w.contains(document.activeElement)) w.style.paddingBottom = ""; }, 120)); }
+  const lift = () => { if (document.activeElement !== t || ptrDown || Math.abs(w.scrollTop - s0) > 4) return; room(); const vv = window.visualViewport, vb = vv ? vv.offsetTop + vv.height : innerHeight, bar = w.classList.contains("wiz") ? w.querySelector(".wiz-bar") : null, r = t.getBoundingClientRect(), wr = w.getBoundingClientRect();
     const bottom = Math.min(bar ? bar.getBoundingClientRect().top : wr.bottom, vb) - 12, top = Math.max(wr.top, 0) + (w.id === "main" ? 70 : 60);
     if (r.bottom > bottom) w.scrollTop += r.bottom - bottom; else if (r.top < top) w.scrollTop -= top - r.top; s0 = w.scrollTop; };
   setTimeout(lift, 60); setTimeout(lift, 350); setTimeout(lift, 700); });

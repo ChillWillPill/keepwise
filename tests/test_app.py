@@ -4439,6 +4439,16 @@ async def the_owl_panel_stands_out_in_the_dark(ctx):
         await pg.close()
 
 @test
+async def the_amount_box_stays_above_the_keyboard(ctx):
+    # iPhone: picking an icon in the owl opens the amount box at the foot of the sheet; with the keyboard up it must still show
+    pg = await open_app(ctx, w=390, h=844); await owl(pg); await pg.wait_for_timeout(300)
+    await pg.locator("[data-quick-ic]").first.click(); await pg.wait_for_timeout(300)
+    await pg.evaluate("Object.defineProperty(window, 'visualViewport', {configurable: true, get: () => ({height: 420, offsetTop: 0, addEventListener(){}})})")   # the keyboard takes the bottom half
+    inp = pg.locator("form[data-form=quick] [name=amount]"); await inp.evaluate("e => { e.blur(); e.focus(); }"); await pg.wait_for_timeout(900)
+    r = await inp.evaluate("e => [e.getBoundingClientRect().top, e.getBoundingClientRect().bottom]")
+    assert r[0] > 60 and r[1] <= 420, f"the amount box is under the keyboard: {r}"
+
+@test
 async def the_donut_fits_any_amount(ctx):
     # a huge month (millions going out) still fits inside the ring's hole, on a small phone and a wide screen
     for w in (320, 1280):
