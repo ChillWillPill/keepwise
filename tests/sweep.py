@@ -43,11 +43,19 @@ async def io(pg):
     await tab(pg, "month"); b = pg.locator("[data-io-open]")
     if await b.count(): await b.click(); await pg.wait_for_timeout(300)
 async def owl(pg): await pg.click("#wise"); await pg.wait_for_timeout(600)
+async def bizsheet(pg):   # a business entry's sheet: its last row (Edit, Receipt, Refund, Delete) must be whole and on screen
+    await space(pg, "business"); await pg.click("[data-bz-demo-on]"); await pg.wait_for_timeout(300)
+    await pg.locator("[data-bz-needs] button").first.click(); await pg.wait_for_timeout(500)
+    await pg.evaluate("document.querySelector('.bz-sheet').scrollTop = 1e5"); await pg.wait_for_timeout(200)
+    bad = await pg.evaluate("""() => { const s = document.querySelector('.bz-sheet'), r = s.getBoundingClientRect(), out = [];
+      for (const b of s.querySelectorAll('.bz-acts button')){ const q = b.getBoundingClientRect(); if (q.bottom > Math.min(r.bottom, innerHeight) + 1 || b.clientHeight + 2 < b.scrollHeight) out.push(['sheet row cut', b.innerText.trim() + ' ' + Math.round(q.bottom) + ' > ' + Math.round(Math.min(r.bottom, innerHeight))]); }
+      return out; }""")
+    pg.extra = bad
 async def acct(pg): await open_account(pg); await pg.wait_for_timeout(300)
 
 SCREENS = [("month", lambda pg: seg(pg, "now")), ("budget", lambda pg: seg(pg, "budget")), ("income", lambda pg: seg(pg, "more")),
   ("breakdown", io), ("subs", lambda pg: tab(pg, "subs")), ("banks", lambda pg: pg.click("[data-tab=banks]")), ("split", lambda pg: tab(pg, "split")),
-  ("plus", plus), ("owl", owl), ("account", acct), ("settings", lambda pg: open_menu(pg, "settings")), ("security", lambda pg: open_menu(pg, "security")),
+  ("plus", plus), ("owl", owl), ("bizsheet", bizsheet), ("account", acct), ("settings", lambda pg: open_menu(pg, "settings")), ("security", lambda pg: open_menu(pg, "security")),
   ("support", lambda pg: open_menu(pg, "support")), ("data", lambda pg: open_menu(pg, "data"))]
 
 async def site(ctx, w, h):
@@ -68,7 +76,7 @@ async def main():
                     try:
                         pg = await open_app(ctx, w=w, h=h, fb=(nm in ("account", "security")))
                         await fn(pg); await pg.wait_for_timeout(250)
-                        found = await pg.evaluate(CHECK) + [["script error", x[:120]] for x in pg.errors]
+                        found = await pg.evaluate(CHECK) + [["script error", x[:120]] for x in pg.errors] + list(getattr(pg, "extra", []))
                         if found: report[key] = found
                         await pg.screenshot(path=f"{OUT}/{eng}-{sz}-{nm}.png", full_page=w >= 768)
                         await pg.close()
