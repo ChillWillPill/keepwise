@@ -793,6 +793,7 @@ details summary::-webkit-details-marker{display:none}
 .qh-list{margin-top:8px}.qh-row{gap:10px;padding:9px 0}.qh-row:first-child{border-top:0}.qh-row .btn.small{padding:6px 12px}.qh-row .ln-t{min-width:0}.qh-row .ln-t>div:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.qh-x{appearance:none;border:0;background:none;color:var(--muted);width:32px;height:32px;margin:0 -6px 0 -4px;border-radius:50%;display:grid;place-items:center;cursor:pointer;flex:none}.qh-x:hover{background:var(--chip);color:var(--rust)}
 [data-out=envTotal]{display:flex;flex-direction:column;gap:8px}.env-tot{font-size:.95rem;color:var(--muted)}.env-tot b{color:var(--ink);font-size:1.05rem}.env-bar{display:flex;height:8px;border-radius:8px;overflow:hidden;background:var(--chip)}.env-bar i{display:block;height:100%}
 .bills-list .line:first-of-type{border-top:0}.bills-left{margin-top:4px}.bl-row{display:flex;align-items:center;gap:10px;padding:5px 0}.bl-row .tick{width:24px;height:24px;flex:none}.bl-n{flex:1;min-width:0;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bl-foot{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}.bills-ln{padding:9px 0}.bills-all{appearance:none;border:0;background:none;font:inherit;color:inherit;width:100%;display:flex;align-items:center;gap:10px;padding:0;cursor:pointer;text-align:left}.bills-all b{flex:1;font-size:1.02rem}.bills-ok{width:28px;height:28px;border-radius:50%;background:var(--green);color:var(--bg);display:grid;place-items:center;flex:none}.bills-ok svg{width:15px;height:15px}.bills-all[aria-expanded=true] .dt-tog svg{transform:rotate(90deg)}.bills-done .bills-list{margin-top:8px}
+@media (max-width:1023px){#view{padding-bottom:max(110px,env(safe-area-inset-bottom))}}
 .up-paid{margin-top:4px}.up-paid-t{padding:10px 0;min-height:44px}.lq-paid-t{display:block;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--muted);font:inherit;font-size:.9rem;font-weight:600;text-align:left;padding:12px 14px;min-height:44px;cursor:pointer}.lq-paid-t:hover{color:var(--ink)}
 .up-tick{width:28px;height:28px;margin-left:8px;flex:none}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.grid3 .btn{padding-left:6px;padding-right:6px;font-size:.84rem}
 /* Calm, consistent type: card titles in the clean sans; the serif stays for big numbers, page titles and the logo. */
@@ -824,7 +825,7 @@ details summary::-webkit-details-marker{display:none}
 .debt{gap:10px}.debt-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.debt-top .name{font:600 1.12rem var(--display)}
 .debt-owed{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:2px}.debt-owed>div:first-child{display:flex;flex-direction:column;gap:2px;min-width:0}
 .debt-owed .lbl{font-size:max(.7rem,12.5px);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.debt-big{font:700 1.9rem/1.05 var(--display);letter-spacing:-.02em;white-space:nowrap}
+.debt-big{font:700 1.6rem/1.05 var(--display);letter-spacing:-.02em;white-space:nowrap}
 .debt-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .dt{background:color-mix(in srgb,var(--ink) 5%,transparent);border-radius:13px;padding:9px 11px;display:flex;flex-direction:column;gap:2px;min-width:0}.dt small{color:var(--muted);font-size:.74rem}.dt b{font-size:.92rem;font-weight:650;overflow-wrap:anywhere}
 .debt-tip{margin:0;background:color-mix(in srgb,var(--green) 12%,var(--card));color:color-mix(in srgb,var(--green) 70%,var(--ink));border-radius:13px;padding:10px 12px;font-size:.86rem}
@@ -1521,7 +1522,8 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .sv-ring i{width:66px;height:66px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font:700 1rem var(--display);font-style:normal}.sv-gold{--c:var(--gold)}
 .up-next{padding:14px 12px!important;border:1px solid color-mix(in srgb,var(--rust) 22%,transparent)!important;margin:4px 0 6px}
 .up-next .up-date{display:none}.up-next .btile{width:52px;height:52px;border-radius:15px;font-size:22px;margin-left:0}
-.up-next .up-main::before{content:"NEXT";display:block;font-size:max(.68rem,12.5px);font-weight:800;letter-spacing:.08em;color:var(--rust)}
+.up-next .up-main::before{content:"NEXT";display:block;font-size:max(.68rem,12.5px);font-weight:800;letter-spacing:.08em;color:var(--green)}
+.up-list .up-next{background:color-mix(in srgb,var(--green) 6%,var(--card))!important;border:1.5px solid color-mix(in srgb,var(--green) 35%,transparent)!important}
 .up-next .up-main .name{font-size:1.06rem}.up-next>.tnum.name{font:700 clamp(1.1rem,5.6vw,1.45rem) var(--display)}
 /* Big text or a narrow phone: the amount moves under the name instead of squeezing the name to one letter a line */
 .up-row{flex-wrap:wrap;row-gap:4px}.up-row>.up-main{min-width:min(7.5em,100%)}.up-row>.tnum.name{margin-left:auto;max-width:100%;overflow-wrap:anywhere;text-align:right}
@@ -1604,7 +1606,8 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 .seg.sub-seg button[aria-pressed="true"]{background:var(--card);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.14)}
 /* The part switch at the top of Month, Subs and Plan stays in reach: it pins under the header while the page scrolls.
    A ring of page colour around it hides whatever slides underneath; a soft shadow shows once it is pinned. */
-.view>.seg.sub-seg{position:sticky;top:8px;z-index:25;box-shadow:0 0 0 8px var(--bg);transition:box-shadow .18s ease}
+.view>.seg.sub-seg{position:sticky;top:8px;z-index:25;box-shadow:0 0 0 8px var(--bg);transition:box-shadow .18s ease,transform .25s ease,opacity .2s}
+.view.seg-away>.seg.sub-seg{transform:translateY(calc(-100% - 24px));opacity:0;pointer-events:none}
 .view>.seg.sub-seg.stuck{box-shadow:0 0 0 8px var(--bg),0 16px 18px -14px rgba(0,0,0,.35)}
 #sidenav{position:fixed;inset:0;z-index:55}
 .sn-back{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;background:rgba(0,0,0,.5);cursor:pointer}
@@ -4596,7 +4599,8 @@ function donutItems(all){
 }
 function donutParts(all){
   const C = compute(), items = donutItems(all);
-  const N = all ? 9 : monthTabs() ? 4 : 6;   // the small chart on a phone's Overview names fewer slices
+  let N = all ? 9 : monthTabs() ? 4 : 6;   // the small chart on a phone's Overview names fewer slices
+  if (!all){ const tot = items.reduce((t, x) => t + x.amount, 0) || 1; while (N < 7 && items.length > N + 1 && items.slice(N).reduce((t, x) => t + x.amount, 0) / tot > .15) N++; }   // never let "Other" be the biggest slice
   const top = items.slice(0, N).map((x, i) => ({...x, color: DONUT_COLORS[i % DONUT_COLORS.length]})), rest = items.slice(N).reduce((t, x) => t + x.amount, 0);
   if (all) items.slice(N).forEach(x => top.push({...x, color: "#8d968f"}));
   if (!all && rest > 0.005) top.push({name: `Other (${items.length - N})`, amount: rest, color: "#8d968f"});
@@ -4717,7 +4721,7 @@ function loansRow(C, M){
     <div class="env-head bud-head env-head-static" data-env-open="loans" aria-expanded="true">
       <span class="bud-t"><span class="bud-emo" aria-hidden="true">🏦</span><b>Loans & debts</b></span><span class="bud-amt"><b class="tnum">${fmt(C.loans)}</b> <small>a month</small></span>
       <span class="bud-bar"><i style="width:${C.loans > 0 ? Math.min(100, paidAmt / C.loans * 100) : 0}%"></i></span>
-      <span class="bud-foot"><span class="bud-so"><b class="tnum">${fmt(paidAmt)}</b> paid so far · ${pd.length} of ${live.length}</span>${owed > 0 ? `<span class="pill ok">${fmt(owed)} left</span>` : ""}
+      <span class="bud-foot"><span class="bud-so">${live.length && pd.length === live.length ? `<b class="good">✓ All paid this month</b>` : `<b class="tnum">${fmt(paidAmt)}</b> paid · ${live.length - pd.length} to go`}</span>${owed > 0 ? `<span class="pill ok">${fmt(owed)} left</span>` : ""}
       <button type="button" class="amt-eye" data-amt-eye="loans" aria-pressed="${!!S.hideLoans}" aria-label="${S.hideLoans ? "Show amounts" : "Hide amounts"}" title="${S.hideLoans ? "Show amounts" : "Hide amounts"}">${S.hideLoans ? EYE_OFF : EYE_ON}</button></span>
     </div>
     ${(() => { const cc = live.filter(l => l.kind === "card"); if (!cc.length) return ""; const ow = r2(cc.reduce((a, l) => a + (+l.total || 0), 0)), mo = r2(cc.reduce((a, l) => a + loanMonthly(l), 0));
@@ -9662,6 +9666,8 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("click", e => { const t = e.target.closest("[data-up-paid],[data-lq-paid]"); if (!t) return;
   if (t.hasAttribute("data-up-paid")) UI.upPaid = !UI.upPaid; else UI.lqPaid = !UI.lqPaid; render(false); });
+{ let last = 0; $("main").addEventListener("scroll", () => { const m = $("main"), y = m.scrollTop, v = $("view"); if (!v) return;
+    if (y < 80 || y < last - 6) v.classList.remove("seg-away"); else if (y > last + 6) v.classList.add("seg-away"); last = y; }, {passive: true}); }
 $("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return;
   if (b.dataset.tab === "banks" && S.tab !== "banks" && bankLocked() && !LOCK.on){ LOCK.gate = "tab"; lockNow(); return; }
   if (b.dataset.tab !== "banks"){ UI.bankEye = false; UI.bankMenu = null; UI.bankRename = null; } UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
