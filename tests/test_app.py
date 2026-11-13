@@ -6716,7 +6716,11 @@ async def cards_have_colours_payments_and_live_only_in_cards(ctx):
     await pg.locator("[data-card]", has_text="Gold card").locator("[data-card-pay=charge]").click(); await pg.fill("[data-form=cardPay] [name=amount]", "600"); await pg.click("[data-form=cardPay] [type=submit]"); await pg.wait_for_timeout(200)
     assert "$150 over the $500 limit" in await text(pg, "[data-card]:has-text('Gold card')")
     await pg.click("[data-tab=month]"); await pg.click("[data-mseg=now]"); await pg.wait_for_timeout(150)
+    # a paid card steps out of Coming up; one tap shows it again
+    assert await pg.locator("[data-up-card]", has_text="Gold card").count() == 0 and "1 paid" in await text(pg, "[data-up-paid]")
+    await pg.click("[data-up-paid]"); await pg.wait_for_timeout(150)
     assert "Paid $150" in await text(pg, "[data-up-card]:has-text('Gold card')")
+    await pg.click("[data-up-paid]"); await pg.wait_for_timeout(100)
     # Loans and debt shows one line for cards that opens Cards
     await tab(pg, "loans"); await pg.wait_for_timeout(150)
     loans = pg.locator(".loan-card"); assert await loans.locator("[data-loan]", has_text="Gold card").count() == 0
