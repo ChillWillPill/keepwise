@@ -828,6 +828,16 @@ details summary::-webkit-details-marker{display:none}
 .bv-ring i small{display:block;font-size:.55em;font-weight:600;font-style:normal;opacity:.75;margin-top:1px}
 @keyframes kwPop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}.kw-pop{animation:kwPop .32s ease-out}
 @media (prefers-reduced-motion:reduce){.kw-pop{animation:none}}
+.calm #view{gap:18px}
+.calm #view>.card,.calm #view>section{padding:20px 18px}
+.calm .calm-more{display:flex;flex-direction:column;border-radius:22px;background:var(--card);border:1px solid var(--line);overflow:hidden}
+.calm .calm-fold>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;padding:17px 18px;min-height:24px;font-weight:700;font-size:1rem;cursor:pointer;border-top:1px solid var(--line)}
+.calm .calm-fold:first-child>summary{border-top:0}.calm .calm-fold>summary::-webkit-details-marker{display:none}
+.calm .cf-ch{font-size:1.4rem;color:var(--muted);transition:transform .2s}.calm .calm-fold[open] .cf-ch{transform:rotate(90deg)}
+.calm .calm-fold[open]{padding:0 10px 12px}.calm .calm-fold>.card,.calm .calm-fold section{box-shadow:none}
+.calm #view>.wk-card,.calm #view>[data-out]>.wk-card{display:none}
+.calm .up-list>.up-row:nth-child(n+5){display:none}.calm.calm-all .up-list>.up-row{display:flex}
+.calm [data-hero-warn] ~ *:is(svg,.spark){display:none}
 .up-paid{margin-top:4px}.up-paid-t{padding:10px 0;min-height:44px}.lq-paid-t{display:block;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--muted);font:inherit;font-size:.9rem;font-weight:600;text-align:left;padding:12px 14px;min-height:44px;cursor:pointer}.lq-paid-t:hover{color:var(--ink)}
 .up-tick{width:28px;height:28px;margin-left:8px;flex:none}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.grid3 .btn{padding-left:6px;padding-right:6px;font-size:.84rem}
 /* Calm, consistent type: card titles in the clean sans; the serif stays for big numbers, page titles and the logo. */
@@ -2257,6 +2267,9 @@ const tagIcon = t => ({Dinner:I.food, Lunch:I.food, Family:I.bag, Borrow:I.cash,
 const dFrom = v => !v || v >= isoDaysAgo(0) ? ` min="${isoDaysAgo(0)}"` : "", dUpTo = () => ` max="${isoDaysAgo(0)}"`;
 const dayOptions = sel => `<option value="">Pick a day</option>${Array.from({length: 31}, (_, i) => `<option value="${i + 1}" ${sel === i + 1 ? "selected" : ""}>${ordinal(i + 1)} of each month</option>`).join("")}`;
 const SUB_TABS = ["subs","cheaper","codes"];
+// Calm Overview (test build): the money card and what's next, the rest folded away. ?calm=1 on, ?calm=0 off.
+const CALM = (() => { try { const q = location.search.match(/[?&]calm=([01])/); if (q) localStorage.setItem("kw_calm", q[1]); return localStorage.getItem("kw_calm") === "1"; } catch(e){ return false; } })();
+if (CALM) document.documentElement.classList.add("calm");
 const subSeg = () => `<div class="seg sub-seg" role="group" aria-label="Subscriptions, cheaper options and codes">${[["subs","Yours"],["cheaper","Cheaper"],["codes","Codes"]].map(([k,n]) => `<button type="button" data-go="${k}" aria-pressed="${S.tab === k}">${n}</button>`).join("")}</div>`;
 const TABS = [["month","Month"],["subs","Subs"],["cheaper","Cheaper"],["codes","Codes"],["banks","Banks"],["split","Split"]];
 
@@ -4469,6 +4482,10 @@ ${trips}`;   // where the money goes: envelopes, trips and events with budgets o
 ${envSplitCard()}
 ${income}
 ${savingsCard()}`;   // what comes in: pay, other income, and a statement to read it from
+  if (CALM){ const fold = (k, t, body) => `<details class="calm-fold" data-calm="${k}"${(UI.calmOpen || {})[k] ? " open" : ""}><summary><span>${t}</span><span class="cf-ch" aria-hidden="true">›</span></summary>${body}</details>`;
+    return `${spaceSwitch()}${sw}${top.slice(spaceSwitch().length)}
+${coming}
+<div class="calm-more">${fold("week", "This week and what needs you", now + `<div data-out="tripsNow">${OUT.tripsNow()}</div>`)}${fold("where", "Where your month goes", donut)}${fold("bills", "Bills and savings", progress)}</div>`; }
   return `${spaceSwitch()}${sw}${top.slice(spaceSwitch().length)}
 ${now}
   <div data-out="tripsNow">${OUT.tripsNow()}</div>
@@ -9709,6 +9726,8 @@ document.addEventListener("click", e => { const t = e.target.closest("[data-up-p
     const to = parseFloat(m[2].replace(/,/g, "")), dec = (m[2].split(".")[1] || "").length, t0 = performance.now(); const step = t => { const k = Math.min(1, (t - t0) / 600), e = 1 - Math.pow(1 - k, 3); b.textContent = m[1] + (to * e).toLocaleString("en-US", {minimumFractionDigits: dec, maximumFractionDigits: dec}) + m[3]; if (k < 1) requestAnimationFrame(step); else b.textContent = txt; }; requestAnimationFrame(step); };
   new MutationObserver(() => requestAnimationFrame(countUp)).observe($("view"), {childList: true}); setTimeout(countUp, 300);
   document.addEventListener("click", e => { const t = e.target.closest(".tick,[data-up-card-pay],[data-loan-tick],[data-bill-paid],[data-up-bill-paid]"); if (!t) return; try { navigator.vibrate && navigator.vibrate(12); } catch(_){} t.classList.remove("kw-pop"); void t.offsetWidth; t.classList.add("kw-pop"); }, true); }
+document.addEventListener("toggle", e => { const d = e.target; if (d.matches && d.matches(".calm-fold")) (UI.calmOpen = UI.calmOpen || {})[d.dataset.calm] = d.open; }, true);
+document.addEventListener("click", e => { const b = e.target.closest("[data-calm-all]"); if (!b) return; UI.calmAll = !UI.calmAll; render(false); });
 $("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return;
   if (b.dataset.tab === "banks" && S.tab !== "banks" && bankLocked() && !LOCK.on){ LOCK.gate = "tab"; lockNow(); return; }
   if (b.dataset.tab !== "banks"){ UI.bankEye = false; UI.bankMenu = null; UI.bankRename = null; } UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
