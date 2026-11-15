@@ -10,7 +10,7 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
 :root[data-skin="bold"] h1,:root[data-skin="bold"] h2,:root[data-skin="bold"] .card>h3{font-family:var(--display);font-weight:800;letter-spacing:-.02em}
 :root[data-skin="bold"] .hero{background:#eef0f4!important;color:#0b0e16!important;border:0!important;border-radius:28px!important;box-shadow:0 30px 60px -30px rgba(0,0,0,.9)}
 :root[data-skin="bold"] .hero *{color:inherit}
-:root[data-skin="bold"] .hero :is(.over,.kicker,small,.lbl,h1){font-family:"JetBrains Mono",ui-monospace,monospace!important;font-size:.72rem!important;letter-spacing:.14em!important;text-transform:uppercase;font-weight:700!important;color:#5a6274!important}
+:root[data-skin="bold"] .hero :is(.over,.kicker,small,.lbl,h1){font-family:var(--display)!important;font-size:.74rem!important;letter-spacing:.08em!important;text-transform:uppercase;font-weight:700!important;color:#5a6274!important}
 :root[data-skin="bold"] .hero .big{color:#0b0e16!important;font-size:min(3.2rem,14vw)!important}
 :root[data-skin="bold"] .hero :is(.hero-tile,.tile,.stat){background:#e0e3ea!important;border-radius:18px!important}
 :root[data-skin="bold"] .hero .pill,:root[data-skin="bold"] .hero a{color:#c8281c!important}
@@ -810,6 +810,14 @@ details summary::-webkit-details-marker{display:none}
 .calm .ct-line{display:block;height:10px;border-radius:99px;background:color-mix(in srgb,var(--ink) 12%,transparent);overflow:hidden}.calm .ct-line i{display:block;height:100%;background:var(--green);border-radius:99px}
 .calm .ct-open{animation:nlin .25s ease-out both}
 @keyframes nlin{from{opacity:0;transform:translateY(6px)}}
+.calm #wise{display:none!important}
+.calm .tabbar .tab-owl{position:relative;align-self:center;justify-self:center;width:60px;height:60px;min-width:60px;padding:0;margin-top:-26px;border-radius:22px;border:4px solid var(--bg);background:var(--green);display:grid;place-items:center;box-shadow:0 10px 24px -10px rgba(0,0,0,.6)}
+.calm .tabbar .tab-owl img{width:42px;height:42px;border-radius:12px}
+.calm .tabbar{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))}
+.calm .ex-cta{flex-direction:row!important;align-items:center!important;gap:12px}.calm .ex-cta .ex-t span{display:none}.calm .ex-cta .ex-go{padding:10px 14px!important;font-size:.9rem!important;white-space:nowrap}
+.calm .note:has(.ex-cta){padding:12px 14px!important;align-items:center!important;gap:10px}.calm .ex-cta{flex:1;min-width:0;justify-content:space-between}.calm .ex-t b{font-size:.98rem;white-space:nowrap}
+.calm .has-chip #brand-tag{display:none!important}
+.calm .ct-emos{display:flex;gap:4px}.calm .ct-emos i{font-style:normal;width:28px;height:28px;border-radius:9px;background:var(--chip);display:grid;place-items:center;font-size:15px}
 .calm #view{gap:18px}
 .calm #view>.card,.calm #view>section{padding:20px 18px}
 .calm .calm-more{display:flex;flex-direction:column;border-radius:22px;background:var(--card);border:1px solid var(--line);overflow:hidden}
@@ -3475,7 +3483,7 @@ function bizAnswer(q){
 // Personal / Business switch. Business is a KeepWise Plus preview: an example space with the waitlist on top.
 // With Plus, Personal and Business are switched from the header: a small chip under KeepWise says which one is open,
 // and a tap shows both. Without Plus, the switch on Month stays as the way to see what Business is.
-const spaceChipOn = () => plusOn() && !window.Capacitor;
+const spaceChipOn = () => (plusOn() && !window.Capacitor) || CALM;
 function renderSpace(){
   const chip = $("space-chip"), pop = $("space-pop"); if (!chip || !pop) return;
   const on = spaceChipOn() && UI.welcome == null; chip.hidden = !on; chip.parentElement.classList.toggle("has-chip", on); if (!on){ pop.hidden = true; return; }
@@ -4474,7 +4482,7 @@ ${savingsCard()}`;   // what comes in: pay, other income, and a statement to rea
     const T = (k, title, big, sub, viz) => `<button type="button" class="ct${open === k ? " on" : ""}" data-calm-tile="${k}" aria-expanded="${open === k}"><span class="ct-t">${title}</span><b class="ct-b tnum">${big}</b><span class="ct-viz" aria-hidden="true">${viz}</span><span class="ct-s">${sub}</span></button>`;
     const tiles = T("week", "This week", wkOut, needN ? `${needN} need you` : "out", `<span class="ct-bars">${wkAmts.map(v => `<i style="height:${Math.max(6, v / wMax * 100)}%"></i>`).join("")}</span>`)
       + T("where", "Where it goes", dn[0] ? esc(dn[0][0]) : "—", dn[0] ? `${dn[0][1]}% of your month` : "", `<span class="ct-stack">${dn.map((x, i) => `<i style="flex:${x[1]};background:${x[2] || PAL[i]}"></i>`).join("")}</span>`)
-      + T("bills", "Bills", bc[2] ? `${bc[1]}/${bc[2]}` : "—", bTo ? `${bTo} to go` : "paid", `<span class="ct-ring" style="--p:${bc[2] ? bc[1] / bc[2] * 100 : 0}"></span>`)
+      + T("bills", "Bills", !bc[2] ? "—" : +bc[1] ? `${bc[1]} of ${bc[2]}` : `${bc[2]} to pay`, bTo ? `${bTo} to go` : "all paid", +bc[1] ? `<span class="ct-ring" style="--p:${bc[1] / bc[2] * 100}"></span>` : `<span class="ct-emos">${(progress.slice(progress.indexOf("bv-tiles")).match(/\p{Extended_Pictographic}/gu) || []).slice(0, 5).map(x => `<i>${x}</i>`).join("")}</span>`)
       + T("save", "Savings", svP != null ? svP + "%" : "—", "of your first goal", `<span class="ct-line"><i style="width:${svP || 0}%"></i></span>`);
     const body = open === "week" ? `<div data-out="week">${OUT.week ? OUT.week() : ""}</div>` + now + `<div data-out="tripsNow">${OUT.tripsNow()}</div>` : open === "where" ? donut : open === "bills" || open === "save" ? progress : "";
     return `${spaceSwitch()}${sw}${top.slice(spaceSwitch().length).replace(/<div data-out="week">[\s\S]*?<\/section><\/div>/, "")}
@@ -8959,6 +8967,8 @@ function renderTabs(){
     const sheet = UI.bizAddSheet ? `<div class="biz-add-sheet" role="menu" aria-label="Add to your business"><button type="button" data-biz-new="out"><span class="bas-ic">＋</span><span><b>Cost</b><small class="muted">Something the business paid for</small></span></button><button type="button" data-biz-new="in"><span class="bas-ic in">＋</span><span><b>Money in</b><small class="muted">A sale or a payment</small></span></button><button type="button" data-biz-new="rcpt"><span class="bas-ic">📷</span><span><b>Receipt</b><small class="muted">Snap it and KeepWise reads it</small></span></button><button type="button" data-biz-import><span class="bas-ic">📄</span><span><b>Statement</b><small class="muted">Sort a bank statement</small></span></button></div>` : "";
     bar.innerHTML = tb(BSEGS[0]) + tb(BSEGS[1]) + `<button class="tab tab-add" type="button" data-biz-plus aria-expanded="${!!UI.bizAddSheet}" aria-label="Add to your business"><span class="add-ring">${UI.bizAddSheet ? "×" : "＋"}</span></button>` + tb(BSEGS[2]) + tb(BSEGS[3]) + (() => { const bd = bizData(); return `<button class="bz-side" type="button" data-goto-prof><b>${esc(bd.name || "Your business")}</b><span class="muted small">${bd.name ? `${esc(bd.type || "Business")} · ${esc(S.cur || "USD")}` : "Add its name and logo"}</span><span class="small bz-side-go">Business profile →</span></button>`; })() + sheet; return; }
   bar.setAttribute("aria-label", "Sections");
+  if (CALM){ const tb = TABS.filter(([k]) => !SUB_TABS.includes(k) || k === "subs").map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k || (k === "subs" && SUB_TABS.includes(S.tab))?'aria-current="page"':""}><span class="ti">${I[k]}</span><span>${n}</span></button>`), lg = document.querySelector("#home-link img.logo");
+    tb.splice(2, 0, `<button class="tab tab-owl" type="button" data-owl-tab aria-label="Ask KeepWise or add something">${lg ? `<img src="${lg.src}" alt="">` : "+"}</button>`); bar.innerHTML = tb.join(""); return; }
   bar.innerHTML = TABS.filter(([k]) => !SUB_TABS.includes(k) || k === "subs").map(([k,n]) => `<button class="tab" type="button" data-tab="${k}" ${S.tab===k || (k === "subs" && SUB_TABS.includes(S.tab))?'aria-current="page"':""}><span class="ti">${I[k]}</span><span>${n}</span></button>`).join("");
 }
 // Lists that scroll inside a card (and the Ask panel) keep their place when the screen is redrawn, so a change low down never jumps back to the top.
@@ -9721,7 +9731,7 @@ document.addEventListener("click", e => { const t = e.target.closest("[data-up-p
   new MutationObserver(() => requestAnimationFrame(countUp)).observe($("view"), {childList: true}); setTimeout(countUp, 300);
   document.addEventListener("click", e => { const t = e.target.closest(".tick,[data-up-card-pay],[data-loan-tick],[data-bill-paid],[data-up-bill-paid]"); if (!t) return; try { navigator.vibrate && navigator.vibrate(12); } catch(_){} t.classList.remove("kw-pop"); void t.offsetWidth; t.classList.add("kw-pop"); }, true); }
 document.addEventListener("toggle", e => { const d = e.target; if (d.matches && d.matches(".calm-fold")) (UI.calmOpen = UI.calmOpen || {})[d.dataset.calm] = d.open; }, true);
-document.addEventListener("click", e => { const b = e.target.closest("[data-calm-tile]"); if (!b) return; UI.calmOpen = UI.calmOpen === b.dataset.calmTile ? "" : b.dataset.calmTile; render(false); });
+document.addEventListener("click", e => { if (e.target.closest("[data-owl-tab]")){ const w = $("wise"); if (w) w.click(); return; } const b = e.target.closest("[data-calm-tile]"); if (!b) return; UI.calmOpen = UI.calmOpen === b.dataset.calmTile ? "" : b.dataset.calmTile; render(false); });
 $("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return;
   if (b.dataset.tab === "banks" && S.tab !== "banks" && bankLocked() && !LOCK.on){ LOCK.gate = "tab"; lockNow(); return; }
   if (b.dataset.tab !== "banks"){ UI.bankEye = false; UI.bankMenu = null; UI.bankRename = null; } UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
