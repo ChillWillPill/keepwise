@@ -4897,8 +4897,8 @@ async def the_over_budget_warning_and_the_expenditures_card_agree(ctx):
     head = await pg.locator(".env-row", has=pg.locator("[data-env-open=needs]")).locator(".env-head").inner_text()
     chip = await pg.locator(".env-needs .bud-foot .pill").inner_text()
     assert "loans" not in head.lower(), head
-    if "over" in chip: assert "Expenditures are" in warn and abs(num(warn.split(" are ")[1].split(" over")[0]) - num(chip.split(" ")[0])) < 0.02, (warn, head)
-    else: assert "over your budget" not in warn, ("a big loan alone never says Expenditures are over", warn, head)
+    if "over" in chip: assert "over budget" in warn and abs(num(warn.split("⚠")[1].split(" over")[0]) - num(chip.split(" ")[0])) < 0.02, (warn, head)
+    else: assert "over budget" not in warn, ("a big loan alone never says Expenditures are over", warn, head)
     legend = await pg.inner_text(".legend"); assert "Expenditures" in legend and "Loans $900" in legend, legend
     assert "Car loan" in await pg.inner_text("[data-loans-row]") or "900" in await pg.inner_text("[data-loans-row]")
     assert not pg.errors, pg.errors
@@ -6079,7 +6079,7 @@ async def explanations_wait_behind_the_info_icon_but_warnings_stay(ctx):
     await pg.click(".hero [data-hint]"); await pg.wait_for_timeout(120); assert not await pg.locator(".hero [data-out=headline] p.muted").is_visible()
     # a money warning is never hidden: push needs over the envelope
     await tab(pg, "plan"); await ask_type(pg, "add rent top up 4000 as a bill"); await pg.wait_for_timeout(600); await tab(pg, "month")
-    w = pg.locator("[data-hero-warn]"); assert await w.is_visible() and ("over your budget" in await w.inner_text() or "spends more than comes in" in await w.inner_text()), await pg.inner_text(".hero")
+    w = pg.locator("[data-hero-warn]"); assert await w.is_visible() and ("over budget" in await w.inner_text() or "spends more than comes in" in await w.inner_text()), await pg.inner_text(".hero")
     # an empty month keeps its guidance
     await tab(pg, "plan"); await menu_to(pg, "data"); await pg.click("[data-reset=blank]"); await pg.click("#reset-confirm [data-reset-yes]"); await pg.wait_for_timeout(400)
     await tab(pg, "month"); await pg.wait_for_timeout(200)
