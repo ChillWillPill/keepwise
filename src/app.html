@@ -4792,7 +4792,12 @@ function loansRow(C, M){
 // A bill or a loan repayment can be ticked once it has gone out. The ticks belong to the month the plan covers and
 // start again with the next one. They only keep track: the bill was already counted in what you keep.
 const TICK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
-const paidOn = (id, key) => (S.paid && S.paid.key === key && S.paid.on && S.paid.on[id]) || "";
+const paidOn = (id, key) => (S.paid && S.paid.key === key && S.paid.on && S.paid.on[id]) || (S.paidHist && S.paidHist[key] && S.paidHist[key].on && S.paidHist[key].on[id]) || "";
+// A new month starts its own ticks; the month before keeps its ticks (and amounts) so its statement can still read them.
+function paidFor(k){ const p = S.paid;
+  if (p && p.key && p.key !== k && ((p.on && Object.keys(p.on).length) || (p.amt && Object.keys(p.amt).length))){ S.paidHist = S.paidHist || {}; S.paidHist[p.key] = {on: p.on || {}, amt: p.amt || {}};
+    Object.keys(S.paidHist).sort().reverse().slice(13).forEach(x => delete S.paidHist[x]); }
+  if (!S.paid || S.paid.key !== k) S.paid = {key: k, on: {}}; }
 const tickBtn = (id, name, key) => `<button class="tick" type="button" data-paid="${id}" aria-pressed="${!!paidOn(id, key)}" aria-label="${paidOn(id, key) ? `${esc(name)} is paid. Tap to mark it not paid` : `Mark ${esc(name)} as paid`}">${TICK_SVG}</button>`;
 function paidSum(items, key){   // items: [id, amount]
   if (!items.length) return "";
@@ -6145,6 +6150,21 @@ function recordStatement(){
   try { const st = buildStatement(); S.statements = S.statements || {}; const old = S.statements[st.key];
     if (old && old.example) return;
     S.statements[st.key] = st; } catch(e){}
+  try { settlePast(); } catch(e){}
+}
+// A month that has ended but isn't closed yet: spending logged for it late still lands in it, and what it kept is
+// what was planned to come in, less any paycheck marked as not coming, less what went out, never less than the plan.
+function settlePast(){
+  const cur = compute().planKey;
+  Object.keys(S.statements || {}).filter(k => k < cur).forEach(k => { const st = S.statements[k]; if (!st || st.example || st.confirmed != null) return;
+    if (st.planKept == null) st.planKept = st.kept;
+    const sp = spendsTotal(k), was = st.spends && st.spends.total != null ? +st.spends.total : sp, d = r2(sp - was);
+    if (Math.abs(d) > 0.004){ st.misc = r2((+st.misc || 0) + d); st.spends = {...(st.spends || {}), count: spendsIn(k).length, total: sp, by: spendsByKind(k)}; }
+    const R = keyRange(k), m = moneyNow({planKey: k, planPeriod: R, envMisc: 0}), planOut = r2((+st.needs || 0) + (+st.misc || 0));
+    if (st.planIncome == null) st.planIncome = st.income;
+    const inc = r2((+st.planIncome || 0) - paysIn(k).filter(x => x.miss).reduce((a, x) => a + x.a, 0));   // a paycheck marked as not coming is taken off
+    const out = Math.max(planOut, m.out);
+    st.income = r2(inc); st.kept = r2(inc - out); st.realOut = r2(m.out); st.settled = isoDaysAgo(0); });
 }
 const statementKeys = () => Object.keys(S.statements || {}).sort().reverse();
 const currentKey = () => compute().planKey;
@@ -8161,7 +8181,7 @@ function giftsOf(g, k){
   const on = paidOn("g:" + g.id, k); return on ? [{id: "", g: g.id, k, amount: givenAmt(g, k), date: on, legacy: true}] : [];
 }
 function giveSync(g, k){
-  if (!S.paid || S.paid.key !== k) S.paid = {key: k, on: {}}; S.paid.amt = S.paid.amt || {};
+  paidFor(k); S.paid.amt = S.paid.amt || {};
   const list = (S.gives || []).filter(x => x.g === g.id && x.k === k), id = "g:" + g.id;
   if (list.length){ S.paid.on[id] = list.map(x => x.date).sort()[0]; S.paid.amt[id] = r2(list.reduce((a, x) => a + (+x.amount || 0), 0)); }
   else { delete S.paid.on[id]; delete S.paid.amt[id]; }
@@ -8281,7 +8301,7 @@ function logLoanPay(l, amt, date){
   loanPays().push({id: uid(), l: l.id, date, k: planPeriodNow().key, at: Date.now(), amount: amt});
   if (+l.total > 0) l.total = r2(Math.max(0, l.total - amt));
   if (+l.left > 0 && amt >= (+l.pay || 0) - 0.005) l.left = l.left - 1;
-  const k = compute().planKey; if (!S.paid || S.paid.key !== k) S.paid = {key: k, on: {}}; S.paid.on = S.paid.on || {}; S.paid.on["l:" + l.id] = date;
+  const k = compute().planKey; paidFor(k); S.paid.on = S.paid.on || {}; S.paid.on["l:" + l.id] = date;
 }
 /* ---- Debt details: interest, payoff and payments ----
    The rate is the one KeepWise works out from the numbers when it can, or the APR typed in. Nothing is guessed: with no
@@ -9816,7 +9836,7 @@ view.addEventListener("input", e => {
   }
 });
 view.addEventListener("change", e => {
-  if (e.target.dataset && e.target.dataset.giveAmt){ const k = compute().planKey; if (!S.paid || S.paid.key !== k) S.paid = {key: k, on: {}}; S.paid.amt = S.paid.amt || {};
+  if (e.target.dataset && e.target.dataset.giveAmt){ const k = compute().planKey; paidFor(k); S.paid.amt = S.paid.amt || {};
     S.paid.amt["g:" + e.target.dataset.giveAmt] = Math.max(0, numv(e.target.value)); save(); toast("Saved how much was given."); return; }
   const t = e.target;
   if (t.form && t.form.dataset.form === "loan"){ if (t.name && UI.loanDraft && t.name !== "rate") UI.loanDraft[t.name] = t.value; loanCalc(t.form); }
@@ -9980,7 +10000,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-exp-all")){ UI.expAll = !UI.expAll; render(true); const t = view.querySelector("[data-exp-all]"); if (t && !UI.expAll) t.scrollIntoView({block: "nearest"}); return; }
   if (b.hasAttribute("data-hero-over")){ if (monthTabs()){ UI.mseg = "budget"; render(false); $("main").scrollTop = 0; } else { const t = view.querySelector('[data-out="stack"]'); if (t) t.scrollIntoView({behavior: "smooth", block: "start"}); } return; }
   if (b.dataset.mseg){ UI.mseg = b.dataset.mseg; UI.info = null; UI.needOpen = false; UI.comingAll = false; render(false); $("main").scrollTop = 0; const t = view.querySelector(`[data-mseg="${UI.mseg}"]`); if (t) t.focus({preventScroll: true}); return; }
-  if (b.dataset.paid){ const k = compute().planKey, id = b.dataset.paid; if (!S.paid || S.paid.key !== k) S.paid = {key: k, on: {}};
+  if (b.dataset.paid){ const k = compute().planKey, id = b.dataset.paid; paidFor(k);
     if (S.paid.on[id]) delete S.paid.on[id]; else S.paid.on[id] = isoDaysAgo(0);
     if (id.startsWith("g:")){ const gid = id.slice(2), g = (S.giving || []).find(x => x.id === gid); S.gives = (S.gives || []).filter(x => x.k === k && x.g !== gid);   // a tick on giving is one gift of the planned amount; untick clears the gifts
       if (g && S.paid.on[id]){ S.gives.push({id: uid(), g: gid, k, amount: giveCostIn(g, k), date: isoDaysAgo(0)}); } if (g) giveSync(g, k); }
@@ -10034,7 +10054,7 @@ view.addEventListener("click", async e => {
   if (billRow && (b.hasAttribute("data-bill-yes") || b.hasAttribute("data-bill-no"))){ const e = S.expenses.find(x => x.id === billRow.dataset.billDue); if (!e) return; const u = undoable(), yes = b.hasAttribute("data-bill-yes");
     e.ans = billRow.dataset.billDate; e.ansPaid = yes; save(); refreshOuts(); toast(yes ? `${e.name} marked as paid. Next question after ${dayMonth(billNextDue(e) || todayMid())}.` : `Noted. ${e.name} shows as not paid on Budget, and we will not ask again this month.`, u); return; }
   if (b.dataset.upCharged){ const x = S.subs.find(y => y.id === b.dataset.upCharged); if (!x) return; const u = undoable(); subCharged0(x, b.dataset.upDate); save(); refreshOuts(); toast(`${x.name} marked as charged.`, u); return; }
-  if (b.dataset.upBillPaid){ const e = S.expenses.find(y => y.id === b.dataset.upBillPaid); if (!e) return; const u = undoable(), k = compute().planKey; e.ans = b.dataset.upDate; e.ansPaid = true; if (!S.paid || S.paid.key !== k) S.paid = {key: k, on: {}}; S.paid.on["e:" + e.id] = isoDaysAgo(0); save(); refreshOuts(); toast(`${e.name} marked as paid.`, u); return; }
+  if (b.dataset.upBillPaid){ const e = S.expenses.find(y => y.id === b.dataset.upBillPaid); if (!e) return; const u = undoable(), k = compute().planKey; e.ans = b.dataset.upDate; e.ansPaid = true; paidFor(k); S.paid.on["e:" + e.id] = isoDaysAgo(0); save(); refreshOuts(); toast(`${e.name} marked as paid.`, u); return; }
   const sdRow = b.closest("[data-sub-due]");
   if (sdRow && (b.hasAttribute("data-subdue-yes") || b.hasAttribute("data-subdue-cancel") || b.hasAttribute("data-subdue-amt"))){ const x = S.subs.find(y => y.id === sdRow.dataset.subDue); if (!x) return;
     if (b.hasAttribute("data-subdue-amt")){ UI.subDueAmt = x.id; refreshOuts(); const i = view.querySelector(`form[data-form="subDueAmt"][data-sub="${x.id}"] [name=amount]`); if (i) i.focus(); return; }
@@ -10548,7 +10568,7 @@ view.addEventListener("submit", async e => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > isoDaysAgo(0)){ toast("Pick a date up to today."); f.querySelector("[name=date]").focus(); return; }
     const u = undoable(), back = x.amount < 0;
     if (Math.abs(Math.abs(x.amount) - amount) > 0.004){ x.amount = back ? -amount : amount; delete x.orig; delete x.ocur; delete x.rate; }
-    if (date !== x.date){ x.date = date; delete x.at; x.k = date >= isoDaysAgo(3) ? compute().planKey : periodKeyOfIso(date); }   // a recent one stays in the month the plan is showing
+    if (date !== x.date){ x.date = date; delete x.at; const cur = compute().planKey, pk = periodKeyOfIso(date), pst = (S.statements || {})[pk]; x.k = pk !== cur && pst && !pst.example && pst.confirmed == null ? pk : date >= isoDaysAgo(3) ? cur : pk; }   // a recent one stays in the month the plan is showing
     UI.spendEdit = null; save(); render(true); savedToast("Saved.", u); return;
   }
   if (kind === "pay"){

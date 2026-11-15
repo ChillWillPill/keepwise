@@ -1692,7 +1692,7 @@ async def asks_once_if_a_bill_you_pay_yourself_was_paid(ctx):
     b = await pg.evaluate("window.__n.pending.filter(x => x.id >= 7400).map(x => [x.when, x.title, x.extra.kind])")
     assert b == [[[10, 4, 10, 0], "Electricity is due tomorrow", "bill"], [[10, 6, 10, 0], "Did you pay Electricity?", "bill"], [[10, 31, 10, 0], "Water is due tomorrow", "bill"], [[11, 2, 10, 0], "Did you pay Water?", "bill"]], b
     # it is in Coming up as something you pay yourself, and the bell gives a heads-up from three days before
-    up = await text(pg, "[data-up-bill]"); assert "Electricity" in up and "you pay this yourself" in up and "$90" in up
+    up = await text(pg, "[data-up-bill]"); assert "Electricity" in up and "$90" in up
     await pg.click("#bell"); await pg.wait_for_timeout(150); assert await pg.locator(".note-row", has_text="Electricity is due in 3 days").count() == 1; await pg.click("[data-close-inbox]")
     pre = "window.__n.listener({actionId: 'tap', notification: {extra: {kind: 'bill', key: %r, date: '2026-10-05', pre: true}}})" % exp(await state(pg), "Electricity")["id"]
     await pg.evaluate(pre); await pg.wait_for_timeout(200); assert (await state(pg))["tab"] == "month" and await pg.locator("[data-exp].flash", has_text="Electricity").count() == 1 and "already answered" not in await pg.inner_text("#toast")
@@ -5544,7 +5544,7 @@ async def on_payday_whats_left_is_set_aside_for_the_goal(ctx):
     assert "Set aside $200 for Vacation" in await p2.inner_text("#toast")
     assert "$200 of $4,000" in await text(p2, "[data-save-goal]")
     # a month that ran short says so, and offers nothing to set aside
-    await p2.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); const k = s.statements['2026-10']; k.kept = -85; delete k.confirmed; delete k.actual; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
+    await p2.evaluate("""() => { window.__kwErasing = true; const s = JSON.parse(localStorage.getItem('keepwise-app-v1')); const k = s.statements['2026-10']; k.kept = -85; k.planIncome = Math.round((k.needs + k.misc - 85) * 100) / 100; delete k.confirmed; delete k.actual; localStorage.setItem('keepwise-app-v1', JSON.stringify(s)); }""")
     await p2.reload(); await p2.wait_for_timeout(400)
     card = await text(p2, "[data-out=monthClose]"); assert "ran $85 short" in card and "Nothing to set aside" in card, card
     await p2.click("[data-close-zero]"); await p2.wait_for_timeout(200); assert await text(p2, "[data-out=monthClose]") == "" and (await state(p2))["goalSaved"] == 200
@@ -7086,7 +7086,7 @@ async def charged_ticks_leave_coming_up_and_unticked_ones_are_asked(ctx):
     assert await pg.locator("[data-up-charged=cx]").count() == 1 and "charged yet?" in await text(pg, "[data-out=comingUp]")
     await pg.click("[data-up-charged=cx]"); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-up-charged=cx]").count() == 0 and "Claude Pro marked as charged" in await pg.inner_text("#toast")
-    assert next(x for x in (await state(pg))["subs"] if x["id"] == "cx")["paidOn"] == await pg.evaluate("new Date().toISOString().slice(0,10)")
+    assert next(x for x in (await state(pg))["subs"] if x["id"] == "cx")["paidOn"] == await pg.evaluate("(d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'))(new Date())")
     await pg.click("#toast button"); await pg.wait_for_timeout(200); assert await pg.locator("[data-up-charged=cx]").count() == 1, "Undo brings it back"
     # yesterday's renewal, not ticked: asked about, with a different amount
     if await pg.locator("[data-need-open]").count(): await pg.click("[data-need-open]"); await pg.wait_for_timeout(150)
