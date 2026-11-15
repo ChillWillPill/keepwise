@@ -4214,7 +4214,7 @@ async def a_bill_can_be_ticked_as_paid_this_month(ctx):
     body = pg.locator("[data-env-open=needs] + .env-body"); assert await body.locator(".tick[aria-pressed=true]").count() == 1, "the tick is remembered"
     # a loan repayment is ticked the same way
     lb = pg.locator("#view [data-loans-row]"); await lb.locator(".tick").first.click(); await pg.wait_for_timeout(200)   # loans are listed with their ticks without opening Details
-    assert "1 of 1" in await pg.inner_text("[data-loans-row] .bud-foot")
+    assert "All paid this month" in await pg.inner_text("[data-loans-row] .bud-foot")
     assert "l:L1" in (await state(pg))["paid"]["on"]
     # tap again to undo
     await pg.locator("#view [data-loans-row] .tick").first.click(); await pg.wait_for_timeout(200)
@@ -5328,7 +5328,7 @@ async def loans_section_counts_and_finishes(ctx):
     assert len((await state(pg))["loans"]) == 2
     # Month has its own Loans & debts row: read-only, it lowers what you keep, and Expenditures does not count it twice
     await tab(pg, "month"); row = pg.locator("[data-loans-row]")
-    head = await row.inner_text(); assert "Loans & debts" in head and "$560" in head and "a month" in head and "0 of 2" in head, head
+    head = await row.inner_text(); assert "Loans & debts" in head and "$560" in head and "a month" in head and "2 to go" in head, head
     assert abs(kept0 - money(await kept_month(pg)) - 560) < 0.01, "what you keep drops by the repayments"
     if await pg.locator("[data-env-open=needs][aria-expanded=false]").count(): await pg.click("[data-env-open=needs]")
     await pg.wait_for_timeout(150); assert "Student debt" not in await text(pg, ".env-body")
