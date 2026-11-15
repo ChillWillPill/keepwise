@@ -33,10 +33,26 @@
 <script>/* the website covers the app at mykeepwise.com: keep the app hidden from the first frame so it never flashes */
 try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "") || "/";
   if (!window.Capacitor && !(window.matchMedia && matchMedia("(display-mode: standalone)").matches) && !/[?&#]app\b/.test(location.href) && (kp === "/" || /^\/(features|how-it-works|android|plus)$/.test(kp) || /[?&]site\b/.test(location.search))) document.documentElement.classList.add("kw-site-boot"); } catch(e){}</script>
-<style>html.kw-site-boot .app,html.kw-site-boot #wise,html.kw-site-boot .wise-fab{visibility:hidden}</style>
+<style>html.kw-site-boot .app,html.kw-site-boot #wise,html.kw-site-boot .wise-fab{visibility:hidden}:root[data-skin="bold"],:root[data-skin="bold"][data-theme="dark"],:root[data-skin="bold"][data-theme="light"]{--bg:#090c14; --card:#121826; --ink:#f4f6fa; --muted:#a6b0c2; --line:#222b3d; --chip:#1a2233; --green:#ffcf4a; --green-soft:#2a2410; --on-green:#0b0e16; --rust:#ff5b4f; --rust-soft:#3a1a18; --gold:#ffcf4a; --gold-soft:#2a2410; --mint:#ffcf4a; --sheet:#182033; --sheet-line:#33405c; --sheet-in:#090c14; --display:"Outfit", "Inter", system-ui, sans-serif; color-scheme:dark}
+:root:is([data-skin="bold"],[data-skin="bold"][data-theme="dark"],[data-skin="bold"][data-theme="light"]){--bg:#090c14; --card:#121826; --ink:#f4f6fa; --muted:#a6b0c2; --line:#222b3d; --chip:#1a2233; --green:#ffcf4a; --green-soft:#2a2410; --on-green:#0b0e16; --rust:#ff5b4f; --rust-soft:#3a1a18; --gold:#ffcf4a; --gold-soft:#2a2410; --mint:#ffcf4a; --sheet:#182033; --sheet-line:#33405c; --sheet-in:#090c14; --display:"Outfit", "Inter", system-ui, sans-serif; color-scheme:dark}
+:root[data-skin="bold"] body{background:radial-gradient(120% 60% at 50% 0%,#141b2c 0%,#090c14 60%)}
+:root[data-skin="bold"] .card{border-radius:26px;border:1px solid #1d2638;box-shadow:0 20px 40px -26px rgba(0,0,0,.8)}
+:root[data-skin="bold"] :is(.big,.debt-big,.nl-big,.up-next>.tnum.name,.bud-amt b,.hero .big){font-family:var(--display)!important;font-weight:800!important;letter-spacing:-.035em}
+:root[data-skin="bold"] h1,:root[data-skin="bold"] h2,:root[data-skin="bold"] .card>h3{font-family:var(--display);font-weight:800;letter-spacing:-.02em}
+:root[data-skin="bold"] .hero{background:#eef0f4!important;color:#0b0e16!important;border:0!important;border-radius:28px!important;box-shadow:0 30px 60px -30px rgba(0,0,0,.9)}
+:root[data-skin="bold"] .hero *{color:inherit}
+:root[data-skin="bold"] .hero :is(.over,.kicker,small,.lbl,h1){font-family:"JetBrains Mono",ui-monospace,monospace!important;font-size:.72rem!important;letter-spacing:.14em!important;text-transform:uppercase;font-weight:700!important;color:#5a6274!important}
+:root[data-skin="bold"] .hero .big{color:#0b0e16!important;font-size:min(3.2rem,14vw)!important}
+:root[data-skin="bold"] .hero :is(.hero-tile,.tile,.stat){background:#e0e3ea!important;border-radius:18px!important}
+:root[data-skin="bold"] .hero .pill,:root[data-skin="bold"] .hero a{color:#c8281c!important}
+:root[data-skin="bold"] .hero::after{display:none}
+:root[data-skin="bold"] .neg,:root[data-skin="bold"] .bad{color:var(--rust)!important}
+:root[data-skin="bold"] .tabbar{background:#0d1220;border-top:1px solid #1d2638}
+:root[data-skin="bold"] .wordmark{font-family:var(--display);font-weight:900}
+</style>
 <meta name="theme-color" content="#f2faf6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Outfit:wght@600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap">
 <style>
 /* Layout: an app shell pinned to the visible screen (sized from visualViewport in JS): header, one scrolling column, tab bar flush to the bottom edge. */
 :root{
@@ -59,7 +75,7 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
 :root[data-skin="cream"]{--bg:#f3efe6; --card:#fbf8f2; --ink:#1c2420; --muted:#4d564e; --line:#e0d5c5; --chip:#efe4d4; --green:#1b6843; --green-soft:#e4f2ea; --on-green:#f3faf6; --rust:#a84b34; --rust-soft:#f6e2da; --gold:#9a7417; --gold-soft:#f3e9cc; --mint:#1b6843; --display:"Fraunces", ui-serif, Georgia, serif; --body:"Figtree", ui-sans-serif, system-ui, sans-serif}
 :root[data-skin="cream"][data-theme="dark"]{--bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27; --green:#79c79b; --green-soft:#1f3326; --on-green:#0c1611; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --mint:#79c79b; color-scheme:dark}
 @media (prefers-color-scheme: dark){:root[data-skin="cream"]:not([data-theme="light"]){--bg:#141613; --card:#1d201c; --ink:#ece8de; --muted:#a3a095; --line:#343830; --chip:#2a2d27; --green:#79c79b; --green-soft:#1f3326; --on-green:#0c1611; --rust:#e79075; --rust-soft:#3a2219; --gold:#e0bb5e; --gold-soft:#332a12; --mint:#79c79b; color-scheme:dark}}
-:root[data-skin="owl"],:root[data-skin="owl"][data-theme="dark"],:root[data-skin="owl"][data-theme="light"]{--bg:#0d1420; --card:#162133; --ink:#eef3fa; --muted:#9aa8bc; --line:#24344d; --chip:#1b2840; --green:#c6f432; --green-soft:#24331c; --on-green:#0d1420; --rust:#ff8a65; --rust-soft:#3a2622; --gold:#ffd25e; --gold-soft:#332a12; --mint:#c6f432; --sheet:#1e2e4a; --sheet-line:#3b5579; --sheet-in:#0d1420; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --display:"Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif; --body:"Inter", ui-sans-serif, system-ui, sans-serif; color-scheme:dark}
+:root:is([data-skin="owl"],[data-skin="bold"]),:root:is([data-skin="owl"],[data-skin="bold"])[data-theme="dark"],:root:is([data-skin="owl"],[data-skin="bold"])[data-theme="light"]{--bg:#0d1420; --card:#162133; --ink:#eef3fa; --muted:#9aa8bc; --line:#24344d; --chip:#1b2840; --green:#c6f432; --green-soft:#24331c; --on-green:#0d1420; --rust:#ff8a65; --rust-soft:#3a2622; --gold:#ffd25e; --gold-soft:#332a12; --mint:#c6f432; --sheet:#1e2e4a; --sheet-line:#3b5579; --sheet-in:#0d1420; --lift:0 1px 0 rgba(255,255,255,.03),0 8px 22px -14px rgba(0,0,0,.6); --av-s:28%; --av-l:26%; --av-fg:82%; --display:"Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif; --body:"Inter", ui-sans-serif, system-ui, sans-serif; color-scheme:dark}
 :root[data-skin="ledger"]{--bg:#f6f1e7; --card:#fffdf8; --ink:#1d1a16; --muted:#6b6255; --line:#e5d9c2; --chip:#f1e8d6; --green:#1f7a4d; --green-soft:#e2efe6; --gold:#9a7424; }
 :root[data-skin="ledger"][data-theme="dark"]{--bg:#17140f; --card:#211d16; --ink:#f3ead9; --muted:#b5a88f; --line:#3a3326; --chip:#2a251c; --green:#6fc79b; --green-soft:#1d3226; --gold:#d8b25a; --sheet:#2c271d; --sheet-line:#6b5d43; --sheet-in:#17140f; color-scheme:dark}
 @media (prefers-color-scheme: dark){:root[data-skin="ledger"]:not([data-theme="light"]){--bg:#17140f; --card:#211d16; --ink:#f3ead9; --muted:#b5a88f; --line:#3a3326; --chip:#2a251c; --green:#6fc79b; --green-soft:#1d3226; --gold:#d8b25a; --sheet:#2c271d; --sheet-line:#6b5d43; --sheet-in:#17140f; color-scheme:dark}}
@@ -120,10 +136,10 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 .owl-bg .opp{transition:transform .18s ease-out}.owl-bg .olid{transform-box:fill-box;transform-origin:50% 0;transform:scaleY(0);transition:transform .09s}
 .app.flowing .owl-bg,.app.sheeting .owl-bg,.app.typing .owl-bg{opacity:0}
 /* Mint Pop (the default) and Night Owl: pill switches, a bold savings card with a bit of play, tabs that light up */
-:root:is([data-skin="classic"],[data-skin="owl"]) .seg{border-radius:999px;padding:3px;gap:3px;background:var(--chip);border-color:transparent}
-:root:is([data-skin="classic"],[data-skin="owl"]) .seg button{border-radius:999px}
-:root:is([data-skin="classic"],[data-skin="owl"]) .seg button[aria-pressed="true"]:not(.drop){background:var(--green);color:var(--on-green)}
-:root:is([data-skin="classic"],[data-skin="owl"]) .tab[aria-current="page"] .ti{background:var(--green);color:var(--on-green)}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .seg{border-radius:999px;padding:3px;gap:3px;background:var(--chip);border-color:transparent}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .seg button{border-radius:999px}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .seg button[aria-pressed="true"]:not(.drop){background:var(--green);color:var(--on-green)}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .tab[aria-current="page"] .ti{background:var(--green);color:var(--on-green)}
 :root[data-skin="classic"] .hero{background:#0b7a55;color:#fff;border:0;position:relative;overflow:hidden;isolation:isolate}
 :root[data-skin="classic"] .hero::before,:root[data-skin="classic"] .hero::after{content:"";position:absolute;z-index:-1;border-radius:50%;pointer-events:none}
 :root[data-skin="classic"] .hero::before{width:150px;height:150px;right:-44px;top:-52px;background:#16a374}
@@ -135,30 +151,30 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 :root[data-skin="classic"] .hero .muted{color:#d9f5e9}
 .app.flowing .owl-bg,.app.sheeting .owl-bg{display:none}
 /* Mint Pop and Night Owl fields: a clear edge, a soft green ring when in use, one chevron on lists */
-:root:is([data-skin="classic"],[data-skin="owl"]) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea){border-width:1.5px;transition:border-color .15s,box-shadow .15s}
-:root:is([data-skin="classic"],[data-skin="owl"]) .money-in{border-width:1.5px;transition:border-color .15s,box-shadow .15s}
-:root:is([data-skin="classic"],[data-skin="owl"]) :is(input,select,textarea):focus{outline:0;border-color:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 18%,transparent)}
-:root:is([data-skin="classic"],[data-skin="owl"]) .money-in:focus-within{border-color:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 18%,transparent)}
-:root:is([data-skin="classic"],[data-skin="owl"]) .money-in input:focus{box-shadow:none}
-:root:is([data-skin="classic"],[data-skin="owl"]) select:not([multiple]){appearance:none;-webkit-appearance:none;padding-right:40px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 52%,calc(100% - 15px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea){border-width:1.5px;transition:border-color .15s,box-shadow .15s}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .money-in{border-width:1.5px;transition:border-color .15s,box-shadow .15s}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) :is(input,select,textarea):focus{outline:0;border-color:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 18%,transparent)}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .money-in:focus-within{border-color:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 18%,transparent)}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .money-in input:focus{box-shadow:none}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) select:not([multiple]){appearance:none;-webkit-appearance:none;padding-right:40px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 52%,calc(100% - 15px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
 .ht-btn{all:unset;box-sizing:border-box;cursor:pointer;display:block;min-width:0;text-align:left}.ht-btn:focus-visible{outline:2px solid currentColor;outline-offset:2px}.pay-oops-card.io-card{text-align:left;max-height:86vh;overflow:auto}.io-card h3{text-align:left;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 4px}.io-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.io-sum>div{background:var(--green-soft);border-radius:14px;padding:8px 10px;min-width:0}.io-sum small{display:block;color:var(--muted);font-size:.75rem}.io-sum.io-rows{grid-template-columns:minmax(0,1fr);gap:6px}.io-rows>div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px}.io-rows small{font-size:.85rem}.io-rows b{font-size:1.1rem}.io-sum b{display:block;font-size:1rem;white-space:nowrap;overflow:hidden}.hero-tiles .ht-btn>b{display:block;white-space:nowrap}.io-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.io-row.has-tk{grid-template-columns:auto minmax(0,1fr) auto}.io-row>span{min-width:0}.io-row span b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.io-row small{color:var(--muted);font-size:.78rem}.io-tk{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--green);background:var(--green);color:#fff;font:700 .8rem/1 var(--body,inherit);display:grid;place-items:center;padding:0;cursor:pointer}.io-row.miss .io-tk{background:transparent;border-color:var(--muted)}.io-tip{font-size:.78rem;color:var(--muted);margin:0 0 4px}.io-row small{display:block;margin-top:1px}.io-row>b{text-align:right}.io-row.miss>b{text-decoration:line-through;opacity:.5}.io-row.miss span b{opacity:.6}.io-add{margin-top:12px;width:100%}.io-card>.btn.primary{width:100%;margin-top:16px}.ht-io{display:block;font-size:.74rem;color:inherit;opacity:.85;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hero-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;text-align:left}
 .hero-tiles>div,.hero-tiles>.ht-btn{padding:10px 12px;border-radius:16px;background:color-mix(in srgb,var(--card) 70%,transparent);min-width:0}
 .hero-tiles small{display:block;font-size:max(.74rem,12.5px);color:var(--muted)}.hero-tiles b{display:block;font:800 1.15rem/1.2 var(--display);overflow-wrap:anywhere}
 :root[data-skin="classic"] .hero .hero-tiles>div,.hero-tiles>.ht-btn{background:rgba(255,255,255,.13)}:root[data-skin="classic"] .hero .hero-tiles small{color:#d9f5e9}:root[data-skin="classic"] .hero .hero-tiles b{color:#fff}
 /* Split in Mint Pop and Night Owl: one balance card; the people list below already shows each person */
-:root:is([data-skin="classic"],[data-skin="owl"]) .split-hero .sp-bub{display:none}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .split-hero .sp-bub{display:none}
 :root[data-skin="classic"] .split-hero{background:var(--hero2);color:#fff;border:0}
 :root[data-skin="classic"] .split-hero .label{color:color-mix(in srgb,#fff 82%,var(--hero2))}:root[data-skin="classic"] .split-hero .big.good{color:var(--hero2-good)}:root[data-skin="classic"] .split-hero .big.bad{color:var(--hero2-bad)}:root[data-skin="classic"] .split-hero .split-square{color:#fff}
 :root[data-skin="classic"] .split-hero .sm-in{background:var(--hero2-in);color:#fff}:root[data-skin="classic"] .split-hero .sm-out{background:var(--hero2-out);color:#fff}
 :root[data-skin="classic"] .split-hero .sm-in .good{color:var(--hero2-good)!important}:root[data-skin="classic"] .split-hero .sm-out .bad{color:var(--hero2-bad)!important}:root[data-skin="classic"] .split-hero .muted,:root[data-skin="classic"] .split-hero .small{color:color-mix(in srgb,#fff 78%,var(--hero2))}
-:root:is([data-skin="classic"],[data-skin="owl"]) .card.ask-panel{border-color:var(--sheet-line,var(--line))}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .card.ask-panel{border-color:var(--sheet-line,var(--line))}
 /* The owl button in Mint Pop and Night Owl: a mint (or lime) disc, the owl on white, a sunny + badge,
    a soft glow, a gentle halo now and then, and a little head tilt so it feels alive */
-:root:is([data-skin="classic"],[data-skin="owl"]) .wise-fab{border:0;background:radial-gradient(circle at 35% 30%,#7ff0c0,#1fb985 60%,#0e9f6e);box-shadow:0 0 0 4px color-mix(in srgb,var(--mint) 22%,transparent),0 12px 26px -8px color-mix(in srgb,var(--mint) 80%,#000)}
-:root:is([data-skin="classic"],[data-skin="owl"]) .wise-fab .owl-ic{width:58px;height:58px;animation:owlHop 8s ease-in-out infinite;transform-origin:50% 90%}
-:root:is([data-skin="classic"],[data-skin="owl"]) .wise-fab::after{background:#ffd25e;color:#10231c;border:2px solid var(--bg);width:24px;height:24px;font:800 16px/20px var(--body);right:-4px;bottom:-4px}
-:root:is([data-skin="classic"],[data-skin="owl"]) .wise-fab::before{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--mint);opacity:0;animation:fabHalo 7s ease-out infinite;pointer-events:none}
-:root:is([data-skin="classic"],[data-skin="owl"]) .wise-fab:active{transform:scale(.93)}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .wise-fab{border:0;background:radial-gradient(circle at 35% 30%,#7ff0c0,#1fb985 60%,#0e9f6e);box-shadow:0 0 0 4px color-mix(in srgb,var(--mint) 22%,transparent),0 12px 26px -8px color-mix(in srgb,var(--mint) 80%,#000)}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .wise-fab .owl-ic{width:58px;height:58px;animation:owlHop 8s ease-in-out infinite;transform-origin:50% 90%}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .wise-fab::after{background:#ffd25e;color:#10231c;border:2px solid var(--bg);width:24px;height:24px;font:800 16px/20px var(--body);right:-4px;bottom:-4px}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .wise-fab::before{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--mint);opacity:0;animation:fabHalo 7s ease-out infinite;pointer-events:none}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .wise-fab:active{transform:scale(.93)}
 @keyframes fabHalo{0%,78%{transform:scale(.92);opacity:0}84%{opacity:.75}100%{transform:scale(1.28);opacity:0}}
 @keyframes owlTilt{0%,86%,100%{transform:rotate(0)}89%{transform:rotate(-9deg)}93%{transform:rotate(7deg)}96%{transform:rotate(-3deg)}}
 .wise-fab .owl-ic{border-radius:0!important;overflow:visible}
@@ -171,7 +187,7 @@ body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tex
 @keyframes owlHop{0%,68%,100%{transform:translateY(0) rotate(0)}72%{transform:translateY(-5px) rotate(-6deg)}76%{transform:translateY(0) rotate(0)}80%{transform:translateY(-3px) rotate(5deg)}84%{transform:translateY(0)}}
 @media (prefers-reduced-motion:reduce){.wise-fab .owl-ic,.wise-fab::before,.owl-eye,.owl-wr,.owl-glint{animation:none!important}}
 /* Calmer screens in Mint Pop and Night Owl: more room between cards and inside them, softer edges, easier line spacing */
-:root:is([data-skin="classic"],[data-skin="owl"]) .card{border-color:color-mix(in srgb,var(--line) 70%,transparent)}
+:root:is([data-skin="classic"],:is([data-skin="owl"],[data-skin="bold"])) .card{border-color:color-mix(in srgb,var(--line) 70%,transparent)}
 /* The example month's call to action: one clear, friendly button */
 .ex-cta{display:flex;flex-direction:column;gap:12px;flex:1;min-width:0}
 .ex-t{display:flex;flex-direction:column;gap:2px}.ex-t b{font:700 1.05rem/1.25 var(--display);color:var(--ink)}.ex-t span{color:var(--muted);font-size:.92rem;line-height:1.4}
@@ -1936,7 +1952,7 @@ const THEME_ICON = {
   system:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
   light:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>',
   dark:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>'};
-const SKINS = [["classic", "KeepWise", "Mint Pop: bright and fresh, the default"], ["owl", "Night Owl", "Dark navy with lime, always dark"], ["cream", "Classic", "The original cream and forest green"], ["midnight", "Midnight", "Deep dark with gold"], ["ocean", "Ocean", "Blues and teal"], ["mocha", "Mocha", "Warm browns and cream"], ["rose", "Blossom", "Soft rose and plum"], ["contrast", "Mono", "Black and white, easiest to read"], ["glass", "Liquid Glass", "See-through, frosted cards"], ["terminal", "Terminal", "A trading screen, always dark"]];
+const SKINS = [["classic", "KeepWise", "Mint Pop: bright and fresh, the default"], ["owl", "Night Owl", "Dark navy with lime, always dark"], ["bold", "Bold", "Night screen, heavy numbers, red and gold. Always dark"], ["cream", "Classic", "The original cream and forest green"], ["midnight", "Midnight", "Deep dark with gold"], ["ocean", "Ocean", "Blues and teal"], ["mocha", "Mocha", "Warm browns and cream"], ["rose", "Blossom", "Soft rose and plum"], ["contrast", "Mono", "Black and white, easiest to read"], ["glass", "Liquid Glass", "See-through, frosted cards"], ["terminal", "Terminal", "A trading screen, always dark"]];
 const SKIN_MAP = {simple: "classic", ledger: "mocha", blue: "ocean", plum: "rose", sand: "mocha", slate: "midnight", forest: "classic"};   // themes that were folded into the seven
 const skinNow = () => { const k = SKIN_MAP[S.skin] || S.skin; return SKINS.some(x => x[0] === k) ? k : "classic"; };
 // A native plugin of the Android app: Capacitor.Plugins holds them (registerPlugin only exists when @capacitor/core is bundled)
