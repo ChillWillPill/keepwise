@@ -828,6 +828,19 @@ details summary::-webkit-details-marker{display:none}
 .bv-ring i small{display:block;font-size:.55em;font-weight:600;font-style:normal;opacity:.75;margin-top:1px}
 @keyframes kwPop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}.kw-pop{animation:kwPop .32s ease-out}
 @media (prefers-reduced-motion:reduce){.kw-pop{animation:none}}
+.calm .ct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.calm .ct{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:150px;padding:16px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;text-align:left;cursor:pointer;transition:transform .15s,border-color .15s}
+.calm .ct:active{transform:scale(.97)}.calm .ct.on{border-color:var(--green)}
+.calm .ct-t{font-size:.82rem;font-weight:700;color:color-mix(in srgb,var(--muted) 55%,var(--ink))}
+.calm .ct-b{font:800 1.55rem/1.05 var(--display);letter-spacing:-.02em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calm .ct-s{font-size:.8rem;font-weight:600;color:color-mix(in srgb,var(--muted) 55%,var(--ink))}
+.calm .ct-viz{margin-top:auto;width:100%;display:block}
+.calm .ct-bars{display:flex;align-items:flex-end;gap:4px;height:34px}.calm .ct-bars i{flex:1;border-radius:4px;background:var(--rust);opacity:.9}
+.calm .ct-stack{display:flex;gap:3px;height:10px;border-radius:99px;overflow:hidden}.calm .ct-stack i{display:block;border-radius:2px}
+.calm .ct-ring{display:block;width:40px;height:40px;border-radius:50%;background:conic-gradient(var(--green) calc(var(--p)*1%),color-mix(in srgb,var(--ink) 12%,transparent) 0);-webkit-mask:radial-gradient(circle,transparent 55%,#000 56%);mask:radial-gradient(circle,transparent 55%,#000 56%)}
+.calm .ct-line{display:block;height:10px;border-radius:99px;background:color-mix(in srgb,var(--ink) 12%,transparent);overflow:hidden}.calm .ct-line i{display:block;height:100%;background:var(--green);border-radius:99px}
+.calm .ct-open{animation:nlin .25s ease-out both}
+@keyframes nlin{from{opacity:0;transform:translateY(6px)}}
 .calm #view{gap:18px}
 .calm #view>.card,.calm #view>section{padding:20px 18px}
 .calm .calm-more{display:flex;flex-direction:column;border-radius:22px;background:var(--card);border:1px solid var(--line);overflow:hidden}
@@ -4482,10 +4495,22 @@ ${trips}`;   // where the money goes: envelopes, trips and events with budgets o
 ${envSplitCard()}
 ${income}
 ${savingsCard()}`;   // what comes in: pay, other income, and a statement to read it from
-  if (CALM){ const fold = (k, t, body) => `<details class="calm-fold" data-calm="${k}"${(UI.calmOpen || {})[k] ? " open" : ""}><summary><span>${t}</span><span class="cf-ch" aria-hidden="true">›</span></summary>${body}</details>`;
-    return `${spaceSwitch()}${sw}${top.slice(spaceSwitch().length)}
-${coming}
-<div class="calm-more">${fold("week", "This week and what needs you", now + `<div data-out="tripsNow">${OUT.tripsNow()}</div>`)}${fold("where", "Where your month goes", donut)}${fold("bills", "Bills and savings", progress)}</div>`; }
+  if (CALM){ const strip = h => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    const WK = top + now, wkOut = (WK.match(/wk-out"><b class="tnum">([^<]+)</) || [])[1] || "$0", wkAmts = [...WK.matchAll(/class="wk-day[^"]*"[^>]*>([\s\S]*?)<\/button>/g)].slice(0, 7).map(m => { const v = (strip(m[1]).match(/−\$([\d,.]+)/) || [])[1]; return v ? +v.replace(/,/g, "") : 0; });
+    const wMax = Math.max(1, ...wkAmts), needN = (now.match(/data-needs[^>]*>[\s\S]{0,400}?(\d+) of (\d+)/) || [])[2] || "";
+    const dn = [...donut.matchAll(/<li><i style="background:([^"]+)"><\/i><span class="dn-name">([^<]+)<\/span>[\s\S]*?class="tnum dn-p">(\d+)%/g)].map(m => [m[2].trim(), +m[3], m[1]]).filter(x => !/keep/i.test(x[0])).slice(0, 4), PAL = ["#4f8fe8", "#ffcf4a", "#ff5b4f", "#9a7cf0"];
+    const bc = progress.match(/data-bills-count>(\d+) of (\d+) paid/) || [], bTo = (strip(progress).match(/(\$[\d,.]+) to go/) || [])[1] || "";
+    const sv = (progress.match(/--p:([\d.]+)/g) || []).slice(1).map(x => +x.slice(4)), svP = sv.length ? Math.round(sv[0]) : null;
+    const open = UI.calmOpen || "";
+    const T = (k, title, big, sub, viz) => `<button type="button" class="ct${open === k ? " on" : ""}" data-calm-tile="${k}" aria-expanded="${open === k}"><span class="ct-t">${title}</span><b class="ct-b tnum">${big}</b><span class="ct-viz" aria-hidden="true">${viz}</span><span class="ct-s">${sub}</span></button>`;
+    const tiles = T("week", "This week", wkOut, needN ? `${needN} need you` : "out", `<span class="ct-bars">${wkAmts.map(v => `<i style="height:${Math.max(6, v / wMax * 100)}%"></i>`).join("")}</span>`)
+      + T("where", "Where it goes", dn[0] ? esc(dn[0][0]) : "—", dn[0] ? `${dn[0][1]}% of your month` : "", `<span class="ct-stack">${dn.map((x, i) => `<i style="flex:${x[1]};background:${x[2] || PAL[i]}"></i>`).join("")}</span>`)
+      + T("bills", "Bills", bc[2] ? `${bc[1]}/${bc[2]}` : "—", bTo ? `${bTo} to go` : "paid", `<span class="ct-ring" style="--p:${bc[2] ? bc[1] / bc[2] * 100 : 0}"></span>`)
+      + T("save", "Savings", svP != null ? svP + "%" : "—", "of your first goal", `<span class="ct-line"><i style="width:${svP || 0}%"></i></span>`);
+    const body = open === "week" ? `<div data-out="week">${OUT.week ? OUT.week() : ""}</div>` + now + `<div data-out="tripsNow">${OUT.tripsNow()}</div>` : open === "where" ? donut : open === "bills" || open === "save" ? progress : "";
+    return `${spaceSwitch()}${sw}${top.slice(spaceSwitch().length).replace(/<div data-out="week">[\s\S]*?<\/section><\/div>/, "")}
+<div class="ct-grid">${tiles}</div>${body ? `<div class="ct-open">${body}</div>` : ""}
+${coming}`; }
   return `${spaceSwitch()}${sw}${top.slice(spaceSwitch().length)}
 ${now}
   <div data-out="tripsNow">${OUT.tripsNow()}</div>
@@ -9727,7 +9752,7 @@ document.addEventListener("click", e => { const t = e.target.closest("[data-up-p
   new MutationObserver(() => requestAnimationFrame(countUp)).observe($("view"), {childList: true}); setTimeout(countUp, 300);
   document.addEventListener("click", e => { const t = e.target.closest(".tick,[data-up-card-pay],[data-loan-tick],[data-bill-paid],[data-up-bill-paid]"); if (!t) return; try { navigator.vibrate && navigator.vibrate(12); } catch(_){} t.classList.remove("kw-pop"); void t.offsetWidth; t.classList.add("kw-pop"); }, true); }
 document.addEventListener("toggle", e => { const d = e.target; if (d.matches && d.matches(".calm-fold")) (UI.calmOpen = UI.calmOpen || {})[d.dataset.calm] = d.open; }, true);
-document.addEventListener("click", e => { const b = e.target.closest("[data-calm-all]"); if (!b) return; UI.calmAll = !UI.calmAll; render(false); });
+document.addEventListener("click", e => { const b = e.target.closest("[data-calm-tile]"); if (!b) return; UI.calmOpen = UI.calmOpen === b.dataset.calmTile ? "" : b.dataset.calmTile; render(false); });
 $("tabbar").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return;
   if (b.dataset.tab === "banks" && S.tab !== "banks" && bankLocked() && !LOCK.on){ LOCK.gate = "tab"; lockNow(); return; }
   if (b.dataset.tab !== "banks"){ UI.bankEye = false; UI.bankMenu = null; UI.bankRename = null; } UI.find = false; UI.settle = null; UI.askOpen = false; UI.survey = null; UI.giveAdd = false; UI.giveEdit = null; UI.tripAdd = false; UI.tripEdit = null; UI.pdfLock = null; UI.expEdit = null; UI.expAdd = false; UI.subEdit = null; UI.codeEdit = null; UI.inbox = false; UI.account = false; UI.biz = false; UI.moments = false; UI.history = false; UI.banks = false; UI.stmt = null; UI.memories = false; UI.share = false; UI.plus = false; UI.settings = false; UI.menu = false; UI.delOpen = false; S.tab = b.dataset.tab; UI.info = null; if (S.tab === "subs") remindSeen(); save(); render(false); });
