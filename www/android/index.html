@@ -841,10 +841,11 @@ details summary::-webkit-details-marker{display:none}
 .calm .ct-line{display:block;height:10px;border-radius:99px;background:color-mix(in srgb,var(--ink) 12%,transparent);overflow:hidden}.calm .ct-line i{display:block;height:100%;background:var(--green);border-radius:99px}
 .calm .ct-open{animation:nlin .25s ease-out both}
 @keyframes nlin{from{opacity:0;transform:translateY(6px)}}
-.calm #wise{display:none!important}
+@media (max-width:880px){.calm #wise{display:none!important}
 .calm .tabbar .tab-owl{position:relative;align-self:center;justify-self:center;width:60px;height:60px;min-width:60px;padding:0;margin-top:-26px;border-radius:22px;border:4px solid var(--bg);background:var(--green);display:grid;place-items:center;box-shadow:0 10px 24px -10px rgba(0,0,0,.6)}
 .calm .tabbar .tab-owl img{width:42px;height:42px;border-radius:12px}
-.calm .tabbar{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))}
+.calm .tabbar{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (min-width:881px){.calm .tabbar .tab-owl{display:none!important}}
 .calm .ex-cta{flex-direction:row!important;align-items:center!important;gap:12px}.calm .ex-cta .ex-t span{display:none}.calm .ex-cta .ex-go{padding:10px 14px!important;font-size:.9rem!important;white-space:nowrap}
 .calm .note:has(.ex-cta){padding:12px 14px!important;align-items:center!important;gap:10px}.calm .ex-cta{flex:1;min-width:0;justify-content:space-between}.calm .ex-t b{font-size:.98rem;line-height:1.25}
 .calm .has-chip #brand-tag{display:none!important}
