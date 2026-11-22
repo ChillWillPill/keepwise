@@ -160,7 +160,7 @@ async def kept_month(pg):
     return await pg.evaluate("document.querySelector('[data-out=envelopes] .env-save .bud-amt b').textContent")
 async def said(pg):
     # what Ask answered: a command that changed something lands you on it and says so in the toast; anything else answers in the box
-    t = await pg.evaluate("(() => { const o = document.getElementById('ask-out'), t = document.getElementById('toast'); const a = o && !o.hidden ? o.innerText : '', b = t && !t.hidden ? (t.dataset.full || t.innerText.replace(/\\s*Undo\\s*$/, '')) : ''; return /^(Added|Updated|Removed|Started)/.test(b) ? b : (a || b); })()")
+    t = await pg.evaluate("(() => { const o = document.getElementById('ask-out'), t = document.getElementById('toast'); const a = o && !o.hidden ? o.innerText : '', b = t && !t.hidden ? (t.dataset.full || t.innerText.replace(/\\s*Undo\\s*$/, '')) : ''; const c = [...document.querySelectorAll('#asksheet .kc-bot .kc-tx')].pop(); if (c) return c.innerText; return /^(Added|Updated|Removed|Started)/.test(b) ? b : (a || b); })()")
     return t.replace("\n", " ").replace("\u00a0", " ")
 
 # ---------------- layout ----------------
@@ -2918,10 +2918,12 @@ async def the_owl_button_opens_ask_on_any_tab_and_can_be_moved(ctx):
     # from another tab: tap it, log something, and the answer is right there; still only one Ask box on the page
     await tab(pg, "subs"); await fab.click(); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-ask-sheet] form[data-form=ask]").count() == 1 and await pg.locator("#ask-in").count() == 1 and not await fab.is_visible()
-    panel = await pg.locator(".ask-panel").bounding_box(); assert panel["x"] >= 0 and panel["x"] + panel["width"] <= 390 and panel["y"] >= 60
+    panel = await pg.locator(".ask-panel").bounding_box(); assert panel["x"] >= 0 and panel["x"] + panel["width"] <= 390 and panel["y"] >= 0
     await ask_type(pg, "coffee 4"); await pg.wait_for_timeout(350)
-    st = await state(pg); assert st["spends"][-1]["name"] == "Coffee" and st["tab"] == "month" and await pg.locator("[data-ask-sheet]").count() == 0, "logging takes you to what was logged"
-    assert await pg.locator(f"[data-spend='{st['spends'][-1]['id']}'].flash").count() == 1 and "Coffee, $4" in await pg.inner_text("#toast") and "You now keep" not in await pg.inner_text("#toast") and await pg.locator("#toast .toast-undo").count() == 1
+    st = await state(pg); assert st["spends"][-1]["name"] == "Coffee" and "Coffee, $4" in await said(pg) and await pg.locator("[data-chat-undo]").count() == 1, "the chat says what it logged, with Undo"
+    await pg.locator("[data-chat-go]").last.click(); await pg.wait_for_timeout(400)
+    st = await state(pg); assert st["tab"] == "month" and await pg.locator("[data-ask-sheet]").count() == 0, "See it takes you to what was logged"
+    assert await pg.locator(f"[data-spend='{st['spends'][-1]['id']}'].flash").count() == 1
     assert await pg.evaluate("(() => { const r = document.querySelector('[data-spend].flash').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; })()"), "and it is on screen"
     await tab(pg, "subs"); await fab.click(); await pg.wait_for_timeout(200)
     await pg.locator("[data-ask-sheet] [data-ask]").first.click(); await pg.wait_for_timeout(200); assert len(await text(pg, "#ask-out")) > 10 and await pg.locator("[data-ask-sheet]").count() == 1, "a question is answered in the panel"
@@ -2930,13 +2932,13 @@ async def the_owl_button_opens_ask_on_any_tab_and_can_be_moved(ctx):
     await pg.evaluate("document.getElementById('main').scrollTop = 1500; window.scrollTo(0, 1500)"); await pg.wait_for_timeout(100)
     sc = await pg.evaluate("document.getElementById('main').scrollTop + window.scrollY"); assert sc > 400, sc
     await fab.click(); await pg.wait_for_timeout(250); pb = await pg.locator(".ask-panel").bounding_box()
-    assert 60 <= pb["y"] < 200 and pb["y"] + pb["height"] <= 844, f"the panel is on screen where you are: {pb}"
+    assert 0 <= pb["y"] < 200 and pb["y"] + pb["height"] <= 844, f"the panel is on screen where you are: {pb}"
     assert await pg.evaluate("document.getElementById('main').scrollTop + window.scrollY") == sc, "and the page has not jumped"
     await pg.click("[data-info=ask]"); await pg.wait_for_timeout(150); assert await pg.locator("[data-ask-sheet] [data-info-tip=ask]").count() == 1
     await tab(pg, "subs") if False else None; await pg.locator(".ask-panel [data-ask-close]").click(); await pg.wait_for_timeout(150); await tab(pg, "subs"); await fab.click(); await pg.wait_for_timeout(200)
     # close with the X or by tapping outside; you are still on the same tab
     await pg.locator(".ask-panel [data-ask-close]").click(); await pg.wait_for_timeout(150); assert await pg.locator("[data-ask-sheet]").count() == 0 and (await state(pg))["tab"] == "subs" and await fab.is_visible()
-    await fab.click(); await pg.wait_for_timeout(150); await pg.mouse.click(195, 20); await pg.wait_for_timeout(150); assert await pg.locator("[data-ask-sheet]").count() == 0
+    await fab.click(); await pg.wait_for_timeout(150); await pg.click(".kc-head [data-ask-close]"); await pg.wait_for_timeout(150); assert await pg.locator("[data-ask-sheet]").count() == 0   # the chat fills the screen: back closes it
     # opened on Month, the card at the foot steps aside so there is never a second box
     await tab(pg, "month"); await fab.click(); await pg.wait_for_timeout(150); assert await pg.locator("form[data-form=ask]").count() == 1 and await pg.locator("[data-ask-sheet] form[data-form=ask]").count() == 1
     await pg.locator(".ask-panel [data-ask-close]").click(); await pg.wait_for_timeout(150)
@@ -3008,7 +3010,8 @@ async def an_event_works_like_a_trip_with_a_place_and_people(ctx):
     assert "Trips and events" in (await text(pg, "[data-trips] h2")).replace("TRIPS AND EVENTS", "Trips and events") or "TRIPS AND EVENTS" in (await text(pg, "[data-trips]")).upper()
     # spending said today goes to the event, not the month, and the cost per person follows
     await owl(pg); await pg.wait_for_timeout(150); await ask_type(pg, "cake 60, balloons 24"); await pg.wait_for_timeout(350)
-    assert "to Birthday party. $84 spent of $600." in await said(pg) and await pg.locator("[data-ask-sheet]").count() == 0 and await pg.locator("[data-trip].flash").count() == 1, "it lands on the event"
+    assert "to Birthday party. $84 spent of $600." in await said(pg); await pg.locator("[data-chat-go]").last.click(); await pg.wait_for_timeout(500)
+    assert await pg.locator("[data-ask-sheet]").count() == 0 and await pg.locator("[data-trip].flash").count() == 1, "it lands on the event"
     assert "$7 a person so far" in await text(pg, "[data-trip]") and await kept() == k0
     await pg.fill("form[data-form=tripAdd] [name=q]", "venue 300"); await pg.click("form[data-form=tripAdd] [type=submit]"); await pg.wait_for_timeout(300)
     assert "$32 a person so far · $50 a person budgeted" in await text(pg, "[data-trip]")
@@ -4449,9 +4452,9 @@ async def the_owl_panel_stands_out_in_the_dark(ctx):
 @test
 async def the_amount_box_stays_above_the_keyboard(ctx):
     # iPhone: picking an icon in the owl opens the amount box at the foot of the sheet; with the keyboard up it must still show
-    pg = await open_app(ctx, w=390, h=844); await owl(pg); await pg.wait_for_timeout(300)
+    pg = await open_app(ctx, w=390, h=844); await owl(pg); await pg.wait_for_timeout(300); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(200)
     await pg.locator("[data-quick-ic]").first.click(); await pg.wait_for_timeout(300)
-    h = await pg.evaluate("document.querySelector('.ask-panel .ask-chips').getBoundingClientRect().height"); assert h > 30, f"the question chips at the foot of the owl are squashed ({h}px)"
+    h = await pg.evaluate("document.querySelector('.ask-panel .kc-chips').getBoundingClientRect().height"); assert h > 30, f"the question chips at the foot of the owl are squashed ({h}px)"
     await pg.evaluate("Object.defineProperty(window, 'visualViewport', {configurable: true, get: () => ({height: 420, offsetTop: 0, addEventListener(){}})})")   # the keyboard takes the bottom half
     inp = pg.locator("form[data-form=quick] [name=amount]"); await inp.evaluate("e => { e.blur(); e.focus(); }"); await pg.wait_for_timeout(900)
     r = await inp.evaluate("e => [e.getBoundingClientRect().top, e.getBoundingClientRect().bottom]")
@@ -4644,6 +4647,7 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     assert await has("[data-out=envelopes]") == 0
     # a jump by name finds its part: the owl logs spending and lands on its row in Budget
     await ask_type(pg, "coffee 4"); await pg.wait_for_timeout(600)
+    await pg.locator("[data-chat-go]").last.click(); await pg.wait_for_timeout(500)   # the chat says what it did; See it goes there
     assert await pg.locator("[data-mseg=budget]").get_attribute("aria-pressed") == "true" and await has("[data-spend-g='coffee']") == 1
     assert await pg.evaluate("(() => { const r = document.querySelector(\"[data-spend-g='coffee']\").getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; })()")
     # the tour walks through the parts
@@ -5969,7 +5973,9 @@ async def _keep(pg):
 async def _ask(pg, q):
     await pg.evaluate("(() => { const c = document.querySelector('#asksheet [data-ask-close]'); if (c) c.click(); })()"); await pg.wait_for_timeout(120)
     await ask_type(pg, q); await pg.wait_for_timeout(650)
-    return await pg.evaluate("(() => { const t = document.getElementById('toast'), o = document.getElementById('ask-out'); return (t && !t.hidden && (t.dataset.full || t.innerText)) || (o && !o.hidden && o.innerText) || ''; })()")
+    r = await pg.evaluate("(() => { const t = document.getElementById('toast'), o = document.getElementById('ask-out'); const c = [...document.querySelectorAll('#asksheet .kc-bot .kc-tx')].pop(); return (t && !t.hidden && (t.dataset.full || t.innerText)) || (c && c.innerText) || (o && !o.hidden && o.innerText) || ''; })()")
+    await pg.evaluate("(() => { const c = document.querySelector('#asksheet [data-ask-close]'); if (c) c.click(); })()"); await pg.wait_for_timeout(120)
+    return r
 async def _menu(pg, k):
     if await pg.locator("#sidenav .sn").count() == 0: await pg.click("#acct-btn"); await pg.wait_for_timeout(280)
     await pg.click(f"#sidenav [data-menu={k}] >> nth=-1"); await pg.wait_for_timeout(280)
@@ -6542,7 +6548,7 @@ async def banks_keeps_cards_with_limits_and_reminders(ctx):
 @test
 async def the_owl_adds_by_icon_to_misc_or_toward_a_bill(ctx):
     pg = await open_app(ctx, month_tabs=True)
-    await owl(pg); await pg.wait_for_timeout(200)
+    await owl(pg); await pg.wait_for_timeout(200); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(200)
     assert await pg.locator("[data-quick-env=misc][aria-pressed=true]").count() == 1, "Misc first"
     n = await pg.locator(".quick-ic:not(.quick-more)").count(); assert n == 14, n   # three tidy rows, then More
     await pg.click("[data-quick-more]"); await pg.wait_for_timeout(150); n = await pg.locator(".quick-ic:not(.quick-more)").count(); assert n >= 20, n
@@ -6563,7 +6569,7 @@ async def the_owl_adds_by_icon_to_misc_or_toward_a_bill(ctx):
     r = await _ask(pg, "car petrol 30"); assert "Miscellaneous" in r, ("a word that only sounds like a bill stays a one-off", r)
     await pg.evaluate("(() => { const c = document.querySelector('.ask-panel [data-ask-close]'); if (c) c.click(); })()")
     # a bill you don't have yet is added as one
-    await owl(pg); await pg.wait_for_timeout(150); await pg.click("[data-quick-env=exp]"); await pg.click("[data-quick-ic=kid]"); await pg.wait_for_timeout(100)
+    await owl(pg); await pg.wait_for_timeout(150); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(150); await pg.click("[data-quick-env=exp]"); await pg.click("[data-quick-ic=kid]"); await pg.wait_for_timeout(100)
     assert "Add bill" in await text(pg, "[data-form=quick]")
     await pg.fill("[data-form=quick] [name=amount]", "90"); await pg.click("[data-form=quick] [type=submit]"); await pg.wait_for_timeout(200)
     assert any(e["name"] == "Childcare" and e["amount"] == 90 and e["env"] == "needs" for e in (await state(pg))["expenses"])
@@ -7106,7 +7112,7 @@ async def owl_sheet_repeats_favourites_and_shows_history(ctx):
     await seed(pg, "s.spends = []")
     for q in ("food delivered 4.32", "food delivered 4.32", "cigarettes 4.19"): await _ask(pg, q)
     await pg.evaluate("(() => { const c = document.querySelector('#asksheet [data-ask-close]'); if (c) c.click(); })()"); await pg.wait_for_timeout(150)
-    await owl(pg); await pg.wait_for_timeout(200)
+    await owl(pg); await pg.wait_for_timeout(200); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(200)
     chips = pg.locator("#asksheet .rep-chip"); assert await chips.count() == 2 and "Food delivered" in await chips.first.inner_text() and "$4.32" in await chips.first.inner_text(), "most logged first"
     n0 = len((await state(pg))["spends"]); await chips.first.click(); await pg.wait_for_timeout(200)
     assert len((await state(pg))["spends"]) == n0 + 1 and "Logged $4.32 for Food delivered" in await pg.inner_text("#toast") and await pg.locator("#asksheet [data-quick]").count() == 1, "logged, and the sheet stays open"

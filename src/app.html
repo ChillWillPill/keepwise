@@ -2,7 +2,56 @@
 <script>/* the website covers the app at mykeepwise.com: keep the app hidden from the first frame so it never flashes */
 try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "") || "/";
   if (!window.Capacitor && !(window.matchMedia && matchMedia("(display-mode: standalone)").matches) && !/[?&#]app\b/.test(location.href) && (kp === "/" || /^\/(features|how-it-works|android|plus)$/.test(kp) || /[?&]site\b/.test(location.search))) document.documentElement.classList.add("kw-site-boot"); } catch(e){}</script>
-<style>html.kw-site-boot .app,html.kw-site-boot #wise,html.kw-site-boot .wise-fab{visibility:hidden}</style>
+<style>html.kw-site-boot .app,html.kw-site-boot #wise,html.kw-site-boot .wise-fab{visibility:hidden}
+/* Owl chat */
+.ask-sheet:has(.kchat){padding:0!important;justify-content:flex-end}
+.ask-sheet .ask-panel.kchat{max-width:560px;height:min(100%,var(--vv-h,100%));max-height:100%;overflow:hidden;display:flex;flex-direction:column;padding:0;border-radius:0;border:0;background:var(--bg);box-shadow:none}
+@media (min-width:600px){.ask-sheet .ask-panel.kchat{height:min(860px,calc(100% - 40px));border-radius:24px;margin-bottom:20px;border:1px solid var(--line)}}
+.kc-head{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;background:var(--card);border-bottom:1px solid var(--line)}
+.kc-av,.kc-hav{width:42px;height:42px;border-radius:50%;background:var(--chip);display:grid;place-items:center;overflow:hidden;flex:none}.kc-av img{width:36px;height:36px}
+.kc-nm{flex:1;min-width:0;display:flex;flex-direction:column}.kc-nm h2{margin:0;font-size:1.08rem;line-height:1.2}.kc-nm small{display:flex;align-items:center;gap:4px;color:var(--green);font-weight:600;font-size:.78rem}
+.kc-close{border:0;background:transparent}
+.kc-clear{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:600;font-size:.88rem;padding:10px 6px;cursor:pointer}
+.kchat-feed{flex:1;min-height:0;overflow-y:auto;padding:14px 12px 10px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
+.kchat-feed>:first-child{margin-top:auto}
+.kc-day{align-self:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px 12px;font-size:.75rem;font-weight:600;color:var(--muted)}
+.kc-me,.kc-bot{max-width:84%;padding:9px 13px 6px;font-size:.98rem;line-height:1.42;display:flex;flex-direction:column;gap:3px;word-break:break-word}
+.kc-me{align-self:flex-end;background:var(--green);color:#fff;border-radius:18px 18px 5px 18px}
+.kc-bot{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-radius:18px 18px 18px 5px}
+.kc-tx{white-space:pre-line}
+.kc-me time,.kc-bot time{align-self:flex-end;font-size:.68rem;opacity:.7}
+.kc-vn{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;opacity:.9}.kc-vn svg{width:15px;height:15px}.kc-vn i{font-style:normal}
+.kc-voice .kc-tx{font-style:italic}
+.kc-ok{display:inline-flex;align-items:center;gap:5px;color:var(--green);font-size:.88rem}
+.kc-un{color:var(--muted);font-weight:600}
+.kc-acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.kc-b{min-height:38px;padding:0 15px;border-radius:19px;border:1px solid var(--line);background:var(--bg);color:var(--green);font:inherit;font-weight:700;font-size:.9rem;cursor:pointer}
+.kc-hello{display:flex;flex-direction:column;align-items:center;gap:8px;margin:6px 0 10px}.kc-hav{width:76px;height:76px}.kc-hav img{width:64px;height:64px}.kc-hello b{font-size:1.3rem}
+.kc-card{margin-top:6px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:7px}
+.kc-card>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:.93rem}.kc-card b{white-space:nowrap}.kc-card b.pos{color:var(--green)}.kc-card b.neg{color:var(--rust)}
+.kc-chips{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;padding:4px 12px 6px;gap:8px;overflow-x:auto;scrollbar-width:none;flex:none}.kc-chips .chip{white-space:nowrap}
+.kc-bar{display:flex;align-items:center;gap:8px;padding:6px 10px calc(10px + env(safe-area-inset-bottom,0px))}
+.kc-plus,.kc-mic{width:46px;height:46px;border-radius:50%;border:0;display:grid;place-items:center;flex:none;cursor:pointer}
+.kc-plus{background:var(--card);color:var(--green);box-shadow:0 0 0 1px var(--line)}.kc-plus[aria-expanded="true"] svg{transform:rotate(45deg)}
+.kc-mic{background:var(--green);color:#fff}.kc-mic[aria-pressed="true"]{background:var(--rust)}
+.kc-form{flex:1;min-width:0;display:flex;align-items:center;background:var(--card);border-radius:23px;box-shadow:0 0 0 1px var(--line);padding-left:16px}
+.kc-form input{flex:1;min-width:0;border:0!important;background:transparent!important;height:46px;font:inherit;font-size:1rem;color:var(--ink);outline:none;box-shadow:none!important;padding:0}
+.kc-cam{width:38px;height:42px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer}.kc-help{margin:8px 12px 0;max-height:40vh;overflow-y:auto}
+.kc-send{width:42px;height:42px;border:0;background:transparent;color:var(--green);display:grid;place-items:center;cursor:pointer}
+.kc-plusbox{position:absolute;left:0;right:0;bottom:0;max-height:82%;overflow-y:auto;background:var(--card);border-radius:24px 24px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.25);padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));z-index:5}
+.kc-ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.kc-ph b{font-size:1.25rem}
+.kc-top4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kc-tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:14px;border-radius:18px;border:0;background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+.kc-tile b{font-size:.96rem;margin-top:6px}.kc-tile small{color:var(--muted);font-size:.8rem}
+.kc-ti{width:40px;height:40px;border-radius:12px;background:var(--card);color:var(--green);display:grid;place-items:center;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.kc-list{margin-top:6px}
+.kc-row{display:flex;align-items:center;gap:12px;width:100%;padding:13px 2px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;font-weight:600;cursor:pointer;text-align:left}.kc-row span{flex:1}.kc-chev{color:var(--muted)}
+.kc-lab{margin:14px 0 8px;font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kc-plusbox .quick-grid{display:flex!important;flex-wrap:wrap;gap:8px}
+.kc-plusbox .quick-ic{flex-direction:row;height:40px;padding:0 14px 0 11px;border-radius:20px;gap:7px;color:var(--ink)}
+.kc-plusbox .quick-ic span{color:var(--green);display:grid}.kc-plusbox .quick-ic svg{width:17px;height:17px}.kc-plusbox .quick-ic small{font-size:.9rem;font-weight:600}
+.kc-plusbox .quick-ic[aria-pressed="true"]{border-color:var(--green);background:var(--chip)}
+</style>
 <meta name="theme-color" content="#f2faf6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap">
@@ -1806,6 +1855,7 @@ function fmt(v){
 const fmtBar = v => { const f = fmt(v); if (f.length <= 8) return f; const a = Math.abs(v), sg = v < 0 ? "-" : ""; return sg + (a >= 1e6 ? (a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "") + "M" : a >= 1e4 ? Math.round(a / 1e3) + "k" : Math.round(a).toLocaleString("en-US")); };
 const sym = () => { try { return new Intl.NumberFormat("en-US",{style:"currency",currency:S.cur,maximumFractionDigits:0}).formatToParts(0).find(p=>p.type==="currency").value; } catch(e){ return S.cur || "$"; } };
 function toast(msg, undo){
+  if (undo && UI.askOpen && chatOn()){ chatPush({w: "bot", t: String(msg), ch: true}, undo); if (!UI.chatPlus) return; }   // from the + panel: it stays open, the toast confirms
   const t = $("toast"); t.textContent = ""; delete t.dataset.full;
   const owl = document.createElement("img"); owl.className = "toast-owl"; owl.alt = ""; owl.src = (document.querySelector(".logo") || {}).src || ""; const m = document.createElement("span"); m.className = "toast-msg" + (String(msg).length > 44 ? " long" : ""); m.textContent = msg; t.append(owl, m);
   if (undo){ const b = document.createElement("button"); b.type = "button"; b.className = "toast-undo"; b.textContent = "Undo";
@@ -4311,7 +4361,7 @@ function quickPick(){
 const ADDX = [["trip", "Trip"], ["event", "Event"], ["loan", "Loan"], ["receipt", "Receipt"], ["bill", "Bill"], ["sub", "Sub"], ["split", "Split"], ["income", "Income"]];
 const ADDX_IC = {"trip": "<path d=\"M3 15l18-7-6 12-3-5-5-1z\"/>", "event": "<path d=\"M4 20l5-14 9 9z\"/><path d=\"M14 4l1 2M19 6l-2 1M18 10h2\"/>", "loan": "<path d=\"M3 9l9-5 9 5M5 9v8M10 9v8M14 9v8M19 9v8M3 20h18\"/>", "receipt": "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 8h6M9 12h6\"/>", "bill": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"15\" rx=\"3\"/><path d=\"M4 10h16M9 3v4M15 3v4\"/>", "sub": "<rect x=\"3\" y=\"7\" width=\"15\" height=\"12\" rx=\"3\"/><path d=\"M7 4h11a3 3 0 0 1 3 3v9\"/><path d=\"M8 13l2 2 3-4\"/>", "split": "<circle cx=\"8\" cy=\"9\" r=\"3\"/><circle cx=\"17\" cy=\"10\" r=\"2.5\"/><path d=\"M3 19c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5M14 18.5c.4-2 1.6-3 3-3s2.6 1 3 3\"/>", "income": "<rect x=\"3\" y=\"6\" width=\"18\" height=\"12\" rx=\"3\"/><circle cx=\"12\" cy=\"12\" r=\"2.6\"/><path d=\"M6 9v.01M18 15v.01\"/>"};
 const addAnything = () => `<div class="addx addx-tray" role="group" aria-label="Add something">${ADDX.map(([k, n]) => `<button type="button" class="addx-t addx-${k}" data-addx="${k}"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ADDX_IC[k]}</svg></span>${n}</button>`).join("")}</div>`;
-function askCard(sheet){ return `<section class="card${sheet ? " ask-panel" : ""}" aria-labelledby="askh"${sheet ? ' role="dialog" aria-modal="true"' : ""}>
+function askCard(sheet){ if (sheet && !bizOwl()) return chatCard(); return `<section class="card${sheet ? " ask-panel" : ""}" aria-labelledby="askh"${sheet ? ' role="dialog" aria-modal="true"' : ""}>
     <div class="inline ask-top" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><h2 id="askh" class="h-info">${bizOwl() ? "Ask about your business" : "Ask KeepWise"}${infoBtn("ask", "About Ask KeepWise")}</h2>${sheet ? `<button class="icon-btn" type="button" data-ask-close aria-label="Close Ask KeepWise"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>` : ""}</div>
     ${UI.info === "ask" ? `<div class="info-tip ask-words" role="note" data-info-tip="ask"><p>Type or say it as a sentence. These words decide where it goes:</p><ul>
       <li><b>Money in:</b> say <i>received</i>, <i>got paid</i>, <i>salary</i> or <i>bonus</i>. “Received 300 from Mike”</li>
@@ -4325,6 +4375,67 @@ function askCard(sheet){ return `<section class="card${sheet ? " ask-panel" : ""
     ${sheet && !bizOwl() ? `<p class="ow-h">Log spending</p>${quickPick()}<p class="ow-h">Add something</p>${addAnything()}` : ""}
     <div class="chips ask-chips" data-scroll-x>${bizOwl() ? "" : `<button class="chip" type="button" data-plain style="font-weight:700">Say it plainly</button>`}${(bizOwl() ? ["How is the business doing?", "How much tax to put aside?", "Who hasn’t paid?", "What do I spend most on?", "How much can I pay myself?", "How many sales this month?"] : ["How much will I save?","What should I cancel?",`Can I afford ${fmt(300)}?`,"What do I spend most on?","Who owes me?","When is my emergency fund full?"]).map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
   </section>`; }
+
+// The owl as a chat. KeepWise's own brain answers: the same commands and numbers as everywhere else in the app,
+// worked out on this phone. Nothing is sent anywhere. Every change it makes can be taken back from the chat.
+const CHAT_KEY = "keepwise-chat-v1", CHAT_UNDO = {}, CHAT_AFTER = {}, CHAT_PRE = {};
+let CHAT = (() => { try { const c = JSON.parse(localStorage.getItem(CHAT_KEY) || "[]"); return Array.isArray(c) ? c.slice(-60) : []; } catch(e){ return []; } })();
+const chatSave = () => { try { localStorage.setItem(CHAT_KEY, JSON.stringify(CHAT.slice(-60))); } catch(e){} };
+const chatOn = () => !!document.querySelector("[data-ask-sheet] .kchat");
+const chatBottom = () => requestAnimationFrame(() => { const f = document.querySelector(".kchat-feed"); if (f) f.scrollTop = f.scrollHeight; });
+function chatPush(m, u){ m.id = uid(); m.at = Date.now(); if (u){ CHAT_UNDO[m.id] = u; CHAT_AFTER[m.id] = JSON.stringify(S); } CHAT.push(m); if (CHAT.length > 60) CHAT = CHAT.slice(-60); chatSave();
+  const sh = $("asksheet"); if (sh && UI.askOpen){ askRedraw(sh); chatBottom(); } return m.id; }
+const chatTime = x => { try { return new Date(x).toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"}); } catch(e){ return ""; } };
+async function chatAsk(q){
+  const voice = !!ASK.voice; ASK.voice = false; UI.chatPlus = false; UI.quick = null;
+  chatPush({w: "me", t: q, v: voice}); const i = $("ask-in"); if (i) i.value = "";
+  const before = JSON.stringify(S), u = undoable(); ASK.go = null; let said = "";
+  try {
+    if (CHANGE_VERB.test(q) || (REMOVE_VERB.test(q) && !/\?/.test(q) && !/\bshould\b/i.test(q))) said = await logChange(q);
+    else if ((TRIP_CMD.test(q) || EVENT_CMD.test(q)) && !/\?/.test(q) && !/^\s*(how|what|when|is|are|did|do|does)\b/i.test(q) && !activeTrip()) said = await startTrip(q);
+    else {
+      if (/\d/.test(q) && INCOME_ANY(q) && !/\?/.test(q) && !/^\s*(how|what|when|who|which|is|are|do|does|did|should|can)\b/i.test(q)) said = await logIncome(q);
+      const wantsAdd = /^\s*(please\s+)?(add|spent|paid|log|put)\b/i.test(q), asking = /\?|^\s*(is|are|do|does|should|can)\b|\b(afford|how|what|when|who|which|can i|should i)\b/i.test(q);
+      if (!said && /\d/.test(q) && (wantsAdd || !asking)) said = await logSpend(q);
+    }
+    if (!said) said = answer(q);
+  } catch(e){ said = "Sorry, I couldn't do that. Try saying it another way, like “coffee 5” or “how much will I save?”"; }
+  const changed = JSON.stringify(S) !== before, go = ASK.go; ASK.go = null; ASK.last = said;
+  if (changed){ save(); refreshOuts(); renderBell(); }
+  const m = {w: "bot", t: String(said || ""), ch: changed, go: go && go.tab ? {tab: go.tab, sel: go.sel || ""} : null}; if (go && go.pre) CHAT_PRE.next = go.pre;
+  const id = chatPush(m, changed ? u : null); if (CHAT_PRE.next){ CHAT_PRE[id] = CHAT_PRE.next; delete CHAT_PRE.next; }
+  if (!UI.askOpen){ render(true); toast(String(said || ""), changed ? u : undefined); }   // the action opened its own screen (a new trip): say it there
+}
+function chatCard(){
+  const C = compute(), lg = (document.querySelector(".logo") || {}).src || "", nm = "";
+  const lastUndo = [...CHAT].reverse().find(m => m.w === "bot" && CHAT_UNDO[m.id] && !m.undone);
+  const day = new Date().toLocaleDateString("en-US", {weekday: "long"}), soon = (() => { try { return billsSoon(7); } catch(e){ return []; } })(), soonT = r2(soon.reduce((t, v) => t + (+v.e.amount || 0), 0));
+  const hello = `<div class="kc-hello"><span class="kc-hav"><img src="${lg}" alt=""></span><b>Hi${nm ? " " + esc(nm) : ""}</b></div>
+    <div class="kc-bot"><span>Here’s your ${day}:</span><div class="kc-card"><div><span>You’ll keep in ${esc(C.planMonth || "this month")}</span><b class="${C.savings < 0 ? "neg" : "pos"} tnum">${fmt(C.savings)}</b></div><div><span>Bills in the next 7 days</span><b class="tnum">${soon.length ? `${soon.length} · ${fmt(soonT)}` : "None"}</b></div></div></div>
+    <div class="kc-bot"><span>Ask me anything about your money, or tell me what you spent. Type it${voiceCan() ? ", or tap the mic and talk" : ""}. Everything stays on this phone.</span></div>`;
+  const msgs = CHAT.map(m => m.w === "me"
+    ? `<div class="kc-me${m.v ? " kc-voice" : ""}">${m.v ? `<span class="kc-vn">${MIC}<i>Voice note</i></span>` : ""}<span class="kc-tx">${esc(m.t)}</span><time>${chatTime(m.at)}</time></div>`
+    : `<div class="kc-bot">${m.ch && !m.undone ? `<b class="kc-ok"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>Done</b>` : ""}<span class="kc-tx">${esc(m.t)}</span>${m.undone ? `<small class="kc-un">Undone</small>` : ""}${!m.undone && (lastUndo === m || m.go) ? `<div class="kc-acts">${lastUndo === m ? `<button type="button" class="kc-b" data-chat-undo="${m.id}">Undo</button>` : ""}${m.go ? `<button type="button" class="kc-b" data-chat-go="${m.id}">See it</button>` : ""}</div>` : ""}<time>${chatTime(m.at)}</time></div>`).join("");
+  const chips = ["How much will I save?", "What’s coming up?", `Can I afford ${fmt(300)}?`, "What should I cancel?", "Who owes me?", "What do I spend most on?"];
+  const tile = (k, n, d, attr, path) => `<button type="button" class="kc-tile" ${attr}><span class="kc-ti"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span><b>${n}</b><small>${d}</small></button>`;
+  const row = k => { const n = (ADDX.find(([x]) => x === k) || [k, k])[1]; return `<button type="button" class="kc-row" data-addx="${k}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ADDX_IC[k]}</svg><span>${{sub: "Subscription", loan: "Loan or card"}[k] || n}</span><svg class="kc-chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>`; };
+  const plus = UI.chatPlus ? `<div class="kc-plusbox" role="dialog" aria-label="Add">
+      <div class="kc-ph"><b>Add</b><button type="button" class="icon-btn" data-chat-plus aria-label="Close Add"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="kc-top4">${tile("receipt", "Scan receipt", "Photo to expense", "data-rcpt-snap", '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>')}${tile("bill", "Bill", "Rent, phone, utilities", 'data-addx="bill"', ADDX_IC.bill)}${tile("income", "Income", "Paycheck or extra", 'data-addx="income"', ADDX_IC.income)}${tile("split", "Split", "Share with friends", 'data-addx="split"', ADDX_IC.split)}</div>
+      <div class="kc-list">${["sub", "loan", "trip", "event"].map(row).join("")}</div>
+      <p class="kc-lab">Log a spend</p>${quickPick()}</div>` : "";
+  return `<section class="card ask-panel kchat" aria-labelledby="askh" role="dialog" aria-modal="true">
+    <div class="kc-head"><button class="icon-btn kc-close" type="button" data-ask-close aria-label="Close chat"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="kc-av"><img src="${lg}" alt=""></span><div class="kc-nm"><h2 id="askh">KeepWise</h2><small><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>On this phone · private</small></div>${infoBtn("ask", "About Ask KeepWise")}${CHAT.length ? `<button type="button" class="kc-clear" data-chat-clear>Clear</button>` : ""}</div>
+    ${UI.info === "ask" ? `<div class="info-tip ask-words kc-help" role="note" data-info-tip="ask"><p>Type or say it as a sentence. These words decide where it goes:</p><ul><li><b>Money in:</b> say <i>received</i>, <i>got paid</i>, <i>salary</i> or <i>bonus</i>. “Received 300 from Mike”</li><li><b>Subscription:</b> say <i>sub</i> or <i>subscription</i>. “Netflix sub 15”</li><li><b>Expenditure</b>, a bill every month: say <i>monthly</i>, <i>every month</i> or <i>bill</i>. “Rent 1200 monthly”</li><li><b>Misc:</b> anything else with an amount. “Coffee 4”</li><li><b>A question:</b> “Can I afford 300?” Answers use the numbers in your app.</li></ul><div class="ask-howto"><p class="label">How to use it</p><div data-out="howto">${OUT.howto()}</div></div></div>` : ""}
+    <div class="kchat-feed" aria-live="polite">${CHAT.length ? `<div class="kc-day">Recent</div>` + msgs : hello}</div>
+    <div class="chips kc-chips" data-scroll-x>${chips.map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+    <div class="kc-bar"><button type="button" class="kc-plus" data-chat-plus aria-label="Add something" aria-expanded="${!!UI.chatPlus}"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      <form class="kc-form" data-form="ask"><input id="ask-in" type="text" enterkeyhint="send" autocomplete="off" placeholder="Ask or add anything…" aria-label="Ask KeepWise or add spending"><button class="kc-cam" type="button" data-rcpt-snap aria-label="Add spending from a receipt photo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button><button class="kc-send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2-6z"/></svg></button></form>
+      ${voiceCan() ? `<button class="kc-mic" type="button" id="ask-mic" data-ask-mic aria-label="Talk instead of typing" aria-pressed="false">${MIC}</button>` : ""}</div>
+    <div id="ask-out" class="ask-out" hidden>${esc(ASK.last)}</div>
+    ${plus}
+  </section>`;
+}
 // Redraw the open sheet in place: no entrance fade, and it stays scrolled where it was.
 function askRedraw(sh){ const q = e => `[class="${String(e.getAttribute("class") || "").replace(/"/g, '\\"')}"]`, keep = [...sh.querySelectorAll("[class]")].filter(e => e.scrollTop > 0 || e.scrollLeft > 0).map(e => [q(e), [...sh.querySelectorAll(q(e))].indexOf(e), e.scrollTop, e.scrollLeft]);
   sh.innerHTML = askSheet(); sh.querySelectorAll(".ask-panel").forEach(e => { e.style.animation = "none"; }); keep.forEach(([sel, i, t, l]) => { const el = sh.querySelectorAll(sel)[i]; if (el){ el.scrollTop = t; el.scrollLeft = l; } }); }
@@ -4855,7 +4966,7 @@ function voiceFinish(send){
   clearTimeout(VOICE.quiet); clearTimeout(VOICE.max); VOICE.rec = null; const b = $("ask-mic"); if (b) b.classList.remove("quiet");
   try { rec.onresult = rec.onend = rec.onerror = null; rec.stop(); } catch(e){}
   const said = VOICE.text.trim(), o = $("ask-out"), i = $("ask-in"); voicePaint();
-  if (send && said && i){ i.value = said; if (i.form) i.form.dispatchEvent(new Event("submit", {bubbles: true, cancelable: true})); return; }
+  if (send && said && i){ i.value = said; ASK.voice = true; if (i.form) i.form.dispatchEvent(new Event("submit", {bubbles: true, cancelable: true})); return; }
   if (o){ o.textContent = ASK.last || ""; o.hidden = !ASK.last; }
   if (send && !said) toast("Nothing was heard. Tap the microphone and try again.");
 }
@@ -6955,7 +7066,7 @@ function coach(k, title){ if (!coachOn(k)) return ""; const d = COACH_DEMO[k] ||
     <div class="coach-cards" data-scroll-x>${d.map(([step, l, v, sub], i) => `<div class="coach-card"><span class="coach-n"><i>${i + 1}</i>${step}</span><div class="coach-demo"><span>${l}</span><b>${v}<small>${sub}</small></b></div></div>`).join("")}${E ? `<div class="coach-card coach-end"><span class="coach-n"><i>★</i>What you get</span><div class="coach-res"><span>${E[0]}</span><b>${E[1]}</b><small>${E[2]}</small><div class="coach-bar">${E[3].map(([n, w, c]) => `<i style="width:${w}%;background:${c}" title="${n}"></i>`).join("")}</div></div></div>` : ""}</div></div>`; }
 // Anywhere in the app the keyboard takes the bottom half: the field being typed in is brought up into the space left (above Next on a step screen).
 document.addEventListener("focusin", e => { const t = e.target; if (!t || !t.matches || !t.matches("input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea")) return;
-  const w = t.closest(".wiz") || t.closest(".ask-panel"); if (!w) return;   // the rest of the app already keeps its fields above the keyboard
+  const w = t.closest(".wiz") || t.closest(".kc-plusbox") || t.closest(".ask-panel"); if (!w) return;   // the rest of the app already keeps its fields above the keyboard
   let s0 = w.scrollTop;   // once the person (or anything else) scrolls the screen themselves, stop pulling the field back
   // a field at the very end of a sheet (the amount box under the icons) has nothing below it to scroll with: while the
   // keyboard is up, the sheet gets that much room at its foot so the field can always sit just above the keyboard
@@ -9855,6 +9966,12 @@ view.addEventListener("click", async e => {
   if (b.dataset.subCycle){ UI.subCycle = b.dataset.subCycle; refreshOuts(); return; }
   if (b.dataset.trendBy){ UI.trendBy = b.dataset.trendBy; UI.trendPick = null; refreshOuts(); return; }
   if (b.dataset.trendKind){ UI.trendKind = b.dataset.trendKind; refreshOuts(); return; }
+  if (b.hasAttribute("data-chat-plus")){ UI.chatPlus = !UI.chatPlus; UI.quick = null; const sh = $("asksheet"); if (sh) askRedraw(sh); if (!UI.chatPlus) chatBottom(); return; }
+  if (b.hasAttribute("data-chat-clear")){ CHAT = []; chatSave(); Object.keys(CHAT_UNDO).forEach(k => delete CHAT_UNDO[k]); const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
+  if (b.dataset.chatUndo){ const id = b.dataset.chatUndo, m = CHAT.find(x => x.id === id), f = CHAT_UNDO[id]; if (!m || !f) return;
+    if (JSON.stringify(S) !== CHAT_AFTER[id]){ delete CHAT_UNDO[id]; chatPush({w: "bot", t: "I can’t undo that one now, because something changed after it. You can fix it where it lives, or tell me what to change."}); return; }
+    delete CHAT_UNDO[id]; m.undone = true; chatSave(); f(); chatBottom(); return; }
+  if (b.dataset.chatGo){ const m = CHAT.find(x => x.id === b.dataset.chatGo); if (!m || !m.go) return; const pre = CHAT_PRE[m.id]; UI.askOpen = false; UI.chatPlus = false; if (pre) pre(); goTo(m.go.tab, m.go.sel); return; }
   if (b.dataset.quickView){ UI.quickView = b.dataset.quickView; UI.quick = null; const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
   if (b.dataset.rep != null && b.closest("[data-quick]")){ const g = quickRepeat().find(x => x.key === b.dataset.rep); if (!g) return; const last = g.items[0], u = undoable();
     S.spends.push({id: uid(), date: isoDaysAgo(0), at: Date.now(), k: compute().planKey, name: last.name, amount: Math.abs(last.amount)}); save(); refreshOuts(); const sh = $("asksheet"); if (sh) askRedraw(sh); toast(`Logged ${fmt(Math.abs(last.amount))} for ${last.name}.`, u); return; }
@@ -10658,6 +10775,7 @@ view.addEventListener("submit", async e => {
     const asking = /\?|^\s*(how|what|when|who|which|is|are|do|does|did|should|can)\b/i.test(q);
     if (/\d/.test(q) && !asking){ const u = undoable(), r = bizLog(q); if (r){ save(); UI.askOpen = false; UI.bseg = "money"; UI.bizAll = true; render(false); const row = view.querySelector(`[data-biz-entry="${r.e.id}"]`); if (row){ cardInView(row.closest(".card") || row); row.classList.add("flash"); } toast(r.said, u); return; } }
     ASK.last = bizAnswer(q); const o = $("ask-out"); if (o){ o.hidden = false; o.textContent = ASK.last; } $("ask-in").value = ""; $("ask-in").blur(); return; }
+  if (kind === "ask" && chatOn()){ const q = tidySaid($("ask-in").value); if (!q) return; await chatAsk(q); return; }
   if (kind === "ask"){ const q = tidySaid($("ask-in").value); if (!q) return; ASK.go = null;
     // After a command changes something, go to it: the panel closes, the right tab opens, the item is brought into view
     // and marked for a moment, and what was done stays on screen with Undo.
