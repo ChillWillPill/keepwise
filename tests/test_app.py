@@ -2060,7 +2060,7 @@ async def changing_or_removing_by_command_never_adds_anything(ctx):
     assert "Updated Personal loan amount: it is now PKR 29,500 ($106.20 at today’s rate), it was $88.20." in r, r
     st = await state(pg); assert counts(st) == c0 and pl(st) == 106.2, "changed in place, nothing added"
     # Undo puts it back
-    await pg.click("#toast .toast-undo"); await pg.wait_for_timeout(200); assert pl(await state(pg)) == 88.2
+    u = pg.locator("[data-chat-undo]"); await (u.last.click() if await u.count() else pg.click("#toast .toast-undo")); await pg.wait_for_timeout(200); assert pl(await state(pg)) == 88.2   # in the chat, Undo is on its answer
     # typed, by name, in your own currency
     sub = (await state(pg))["subs"][0]
     r = await say(f"update {sub['name']} to 12.50"); assert f"Updated {sub['name']}: it is now $12.50" in r, r

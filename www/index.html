@@ -49,6 +49,7 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
 .mc-res{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;font-weight:600}.mc-res b{font-family:var(--display);font-size:1.7rem}.mc-res b.pos{color:var(--green)}.mc-res b.neg{color:var(--rust)}
 .mc-sum{margin:0 0 12px}
 /* Home: three answers */
+[data-out="home"]{display:flex;flex-direction:column;gap:14px}
 .card.home-left{background:var(--green);color:#fff;border:0;border-radius:24px;padding:22px 22px 18px;display:flex;flex-direction:column;gap:6px}
 .card.home-left.over{background:var(--rust)}
 .hl-lab{font-weight:600;font-size:.92rem;color:rgba(255,255,255,.86)}
@@ -59,8 +60,8 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
 .hl-why{border:0;background:rgba(255,255,255,.16);color:#fff;font:inherit;font-weight:700;font-size:.88rem;border-radius:16px;min-height:36px;padding:0 14px;cursor:pointer}
 .home-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .home-tile{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:15px;color:var(--ink);font:inherit;cursor:pointer;position:relative;min-width:0}
-.home-tile small{color:var(--muted);font-weight:600;font-size:.82rem}.home-tile b{font-size:1.15rem;font-family:var(--display)}.home-tile b.neg{color:var(--rust)}.home-tile em{font-style:normal;color:var(--muted);font-size:.84rem;font-weight:600}
-.ht-ring{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:conic-gradient(var(--green) calc(var(--p)*1%),var(--chip) 0)}.ht-ring:after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--card)}
+.home-tile small{color:var(--muted);font-weight:600;font-size:.82rem;padding-right:28px}.home-tile b{font-size:1.15rem;font-family:var(--display)}.home-tile b.neg{color:var(--rust)}.home-tile em{font-style:normal;color:var(--muted);font-size:.84rem;font-weight:600}
+.ht-ring{position:absolute;top:14px;right:14px;width:24px;height:24px;border-radius:50%;background:conic-gradient(var(--green) calc(var(--p)*1%),var(--chip) 0)}.ht-ring:after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--card)}
 .why-wrap{position:fixed;inset:0;z-index:45;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
 .why-back{position:absolute;inset:0;border:0;background:rgba(10,20,16,.45);cursor:pointer}
 .why-sheet{position:relative;width:100%;max-width:560px;max-height:88%;overflow-y:auto;background:var(--sheet,var(--card));border-radius:26px 26px 0 0;padding:10px 20px calc(22px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:2px;animation:viewin .18s ease-out both}
@@ -2138,21 +2139,23 @@ function billWkSync(){ let k; try { k = planPeriodNow().key; } catch(e){ return;
 function compute(){
   billWkSync();
   const flags = subFlags();
-  let needs = 0, misc = 0;
-  S.expenses.forEach(e => { const w = swapFor("expense", e.id), a = w ? +w.altCost : +e.amount || 0; if (e.env === "needs") needs += a; else misc += a; });
+  let needs = 0, misc = 0; const mp = {bills: 0, subs: 0, spends: 0, trips: 0, giving: 0};   // what makes up Miscellaneous, for "Why?"
+  S.expenses.forEach(e => { const w = swapFor("expense", e.id), a = w ? +w.altCost : +e.amount || 0; if (e.env === "needs") needs += a; else { misc += a; mp.bills += a; } });
   const liveSubs = S.subs.filter(s => s.keep !== "drop");
   const pk = planPeriodNow().key;
-  liveSubs.forEach(s => { const a = subCostIn(s, pk); if (s.env === "needs") needs += a; else misc += a; });
-  const trips = tripsCounted(planPeriodNow().key), spends = spendsTotal(planPeriodNow().key); misc += trips + spends;  // a finished trip you chose to count is a one-off in that month
-  const giving = givingIn(pk); misc += giving;  // what you give regularly counts under Miscellaneous
+  liveSubs.forEach(s => { const a = subCostIn(s, pk); if (s.env === "needs") needs += a; else { misc += a; mp.subs += a; } });
+  const trips = tripsCounted(planPeriodNow().key), spends = spendsTotal(planPeriodNow().key); misc += trips + spends; mp.trips = trips; mp.spends = spends;  // a finished trip you chose to count is a one-off in that month
+  const giving = givingIn(pk); misc += giving; mp.giving = giving;  // what you give regularly counts under Miscellaneous
   const loans = loansMonthly(); needs += loans; needs += cardFeesMonthly(); needs += billOver(pk);   // spending past a bill's plan   // a debit card's own charges count with Expenditures  // debt payments are part of what must go out; Month shows them on their own row
   const bonus = payBonus(planPeriodNow());
   const income = (+S.income || 0) + extraExpected() + bonus.extra + insTotal(planPeriodNow().key);  // one-off money in counts in the month it arrived
-  const savings = income - needs - misc;
   const flagged = liveSubs.filter(s => flags[s.id].length && s.keep !== "keep");
   const flaggedSave = r2(flagged.reduce((a, s) => a + subCostIn(s, pk), 0));   // what dropping them keeps in this month
   if (S.env.needs + S.env.misc + S.env.save !== 100) envFix();   // a plan restored from elsewhere is held to the same rule
   const flat = envFlatOn(), envNeeds = flat ? +S.envFlat.needs || 0 : income * S.env.needs / 100, envMisc = flat ? +S.envFlat.misc || 0 : income * S.env.misc / 100, envSave = flat ? r2(income - envNeeds - envMisc) : income * S.env.save / 100;
+  // What you'll keep counts your everyday budget as spent: spending inside it doesn't change the number, and every
+  // dollar of it you don't use is extra kept when the month ends. Only going past the budget lowers it.
+  const miscHeld = Math.max(misc, +envMisc || 0), savings = income - needs - miscHeld, miscLeft = r2((+envMisc || 0) - misc);
   const efTarget = S.efMonths * needs;
   const efGap = Math.max(0, efTarget - S.efSaved);
   let toEF = 0, toGoal = 0;
@@ -2175,7 +2178,7 @@ function compute(){
   const setAside = (S.deposits || []).filter(x => x.month === planKey).reduce((a,x) => a + x.amount, 0);
   const endSaved = S.efSaved + savings - setAside;
   const toSetAside = Math.max(0, r2(savings - setAside));
-  return {flags, needs, loans, trips, spends, misc, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: P.name, planPeriod: P, payBonus: bonus, planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
+  return {flags, needs, loans, trips, spends, misc, miscHeld, miscLeft, miscParts: mp, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: P.name, planPeriod: P, payBonus: bonus, planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
 }
 function linkedItem(w){
   const [type, id] = w.link.split(":");
@@ -4598,20 +4601,21 @@ ${progress}`;
 const billsTally = C => { const items = [...S.expenses.filter(e => e.env === "needs" && !expEveryday(e, C.planKey)).map(e => { const w = swapFor("expense", e.id); return {id: "e:" + e.id, a: +(w ? w.altCost : e.amount) || 0}; }),
     ...(S.loans || []).filter(l => !loanDone(l)).map(l => ({id: "l:" + l.id, a: loanMonthly(l)}))].filter(x => x.a > 0.004);
   const left = items.filter(x => !paidOn(x.id, C.planKey)); return {n: items.length, paid: items.length - left.length, leftAmt: r2(left.reduce((t, x) => t + x.a, 0))}; };
-OUT.home = () => { const C = compute(), M = moneyNow(C), bud = r2(+C.envMisc || 0), left = r2(bud - M.miscSpent), over = left < -0.004;
+OUT.home = () => { const C = compute(), M = moneyNow(C), bud = r2(+C.envMisc || 0), left = r2(C.miscLeft), over = left < -0.004;
   const P = C.planPeriod || {}, st = P.start ? new Date(P.start) : null, en = P.end ? new Date(P.end) : null;
   const tot = st && en ? Math.max(1, Math.round((en - st) / 864e5) + 1) : 30, done = Math.min(100, Math.max(0, Math.round((tot - M.daysLeft) / tot * 100)));
   const B = billsTally(C), keep = C.savings;
-  const why = UI.why ? (() => { const lines = M.outs.filter(x => x.env === "misc");
-      const all = r2(lines.reduce((t, x) => t + x.a, 0)), row = (n, sub, v, cls) => `<div class="why-row"><div><b>${esc(n)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div><span class="tnum ${cls || ""}">${v}</span></div>`;
+  const why = UI.why ? (() => { const P2 = C.miscParts || {}, n = spendsIn(C.planKey).length;
+      const lines = [["Subscriptions this month", "Everyday ones, charged or still to come", P2.subs], ["Everyday bills", "Monthly ones that come out of everyday money", P2.bills], ["Spending you logged", `${n === 1 ? "1 purchase" : `${n} purchases`} so far`, P2.spends], ["Trips you counted", "", P2.trips], ["Giving", "", P2.giving]].filter(x => +x[2] > 0.004);
+      const all = r2(lines.reduce((t, x) => t + x[2], 0)), row = (n, sub, v, cls) => `<div class="why-row"><div><b>${esc(n)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div><span class="tnum ${cls || ""}">${v}</span></div>`;
       return `<div class="why-wrap" data-why-sheet><button type="button" class="why-back" data-why aria-label="Close"></button><section class="why-sheet" role="dialog" aria-modal="true" aria-labelledby="why-h">
         <div class="why-grab" aria-hidden="true"></div><div class="why-top"><h2 id="why-h">How we got ${fmt(Math.abs(left))}${over ? " over" : ""}</h2><button type="button" class="icon-btn" data-why aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-        <p class="muted small">${esc(C.planMonth)} · everyday spending</p>
+        <p class="muted small">${esc(C.planMonth)} · everyday money</p>
         ${row("Everyday budget", "Your Miscellaneous budget for the month", fmt(bud), "pos")}
-        ${lines.length ? lines.map(x => row(x.n, x.note || "", "−" + fmt(x.a))).join("") : row("Nothing spent yet", "", fmt(0))}
+        ${lines.length ? lines.map(x => row(x[0], x[1], "−" + fmt(r2(x[2])))).join("") : row("Nothing spent yet", "", fmt(0))}
         <div class="why-total"><b>${over ? "Over budget by" : "Left to spend"}</b><b class="tnum ${over ? "neg" : "pos"}">${fmt(Math.abs(left))}</b></div>
         <p class="why-sum muted small tnum">${fmt(bud)} − ${fmt(all)} = ${over ? "−" : ""}${fmt(Math.abs(left))}</p>
-        <div class="why-month"><p class="label">Your whole ${esc(C.planMonth)}</p>${row("Coming in", "Pay and other income you planned", fmt(C.income), "pos")}${row("Going out", "Bills, cards and loans, subscriptions, everyday", "−" + fmt(r2(C.income - keep)))}<div class="why-total"><b>${keep < 0 ? "Short by" : "You’ll keep"}</b><b class="tnum ${keep < 0 ? "neg" : "pos"}">${fmt(Math.abs(keep))}</b></div></div>
+        <div class="why-month"><p class="label">Your whole ${esc(C.planMonth)}</p>${row("Coming in", "Pay and other income you planned", fmt(C.income), "pos")}${row("Bills, cards and loans", "Expenditures for the month", "−" + fmt(r2(C.needs)))}${row(over ? "Everyday spending" : "Everyday budget", over ? "Past your budget, so all of it counts" : "Counted as spent, so this never drops while you stay inside it", "−" + fmt(r2(C.miscHeld)))}<div class="why-total"><b>${keep < 0 ? "Short by" : "You’ll keep"}</b><b class="tnum ${keep < 0 ? "neg" : "pos"}">${fmt(Math.abs(keep))}</b></div><p class="muted small" style="margin:0 0 6px">Anything left of your everyday budget at the end of the month is kept too.</p></div>
         <button type="button" class="btn" data-why-budget>Change my everyday budget</button></section></div>`; })() : "";
   return `<section class="card home-left${over ? " over" : ""}" data-home>
     <span class="hl-lab">${over ? "Over your everyday budget" : "Left to spend"} in ${esc(C.planMonth)}</span>
@@ -4664,7 +4668,7 @@ function moneyNow(C){ const k = C.planKey, ins = [], outs = [];
   const miscSpent = r2(outs.filter(x => x.env === "misc").reduce((a, x) => a + x.a, 0));   // everything that came out of the everyday budget: spends, everyday bills and subscriptions, trips
   const end = C.planPeriod && C.planPeriod.end ? new Date(C.planPeriod.end) : null, daysLeft = end ? Math.max(1, Math.round((end - todayMid()) / 864e5) + 1) : 1;
   const got = r2(ins.filter(x => !x.miss).reduce((a, x) => a + x.a, 0)), out = r2(outs.reduce((a, x) => a + x.a, 0));
-  return {got, out, left: r2(got - out), ins, outs, daysLeft, miscSpent, miscLeft: r2(Math.max(0, (+C.envMisc || 0) - miscSpent)), safe: r2(Math.max(0, ((+C.envMisc || 0) - miscSpent) / daysLeft))}; }
+  return {got, out, left: r2(got - out), ins, outs, daysLeft, miscSpent, miscLeft: r2(Math.max(0, C.miscLeft)), safe: r2(Math.max(0, C.miscLeft / daysLeft))}; }
 const heroTiles = C => { const m = moneyNow(C), outPlan = r2((C.needs || 0) + (C.misc || 0));
   // The month in two numbers: what comes in and what goes out (their difference is the big number above),
   // each with what has really happened so far. Tap either for every item.
