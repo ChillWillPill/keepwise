@@ -4786,8 +4786,8 @@ function donutItems(all){
   return items.sort((a, b) => b.amount - a.amount);
 }
 function donutParts(all){
-  const C = compute(), items = donutItems(all);
-  const N = all ? 9 : monthTabs() ? 4 : 6;   // the small chart on a phone's Overview names fewer slices
+  const C = compute(), items = donutItems(all), evOn = (C.miscLeft || 0) > 0.005;
+  const N = (all ? 9 : monthTabs() ? 4 : 6) - (evOn && !all ? 1 : 0);   // room for the Left to spend slice   // the small chart on a phone's Overview names fewer slices
   const top = items.slice(0, N).map((x, i) => ({...x, color: DONUT_COLORS[i % DONUT_COLORS.length]})), rest = items.slice(N).reduce((t, x) => t + x.amount, 0);
   if (all) items.slice(N).forEach(x => top.push({...x, color: "#8d968f"}));
   if (!all && rest > 0.005) top.push({name: `Other (${items.length - N})`, amount: rest, color: "#8d968f"});
@@ -4810,7 +4810,7 @@ function dnBars(D){
 }
 const dnStrip = D => `<div class="dn-strip" aria-hidden="true">${D.parts.map(x => `<span style="flex:${Math.max(x.pct, 0.6).toFixed(2)} 1 0;background:${x.color}">${x.pct >= 9 ? `<b>${Math.round(x.pct)}%</b>` : ""}</span>`).join("")}</div>`;
 OUT.donut = () => {
-  const open = !!UI.dnOpen, D = donutParts(open); if (D.out <= 0.005 || D.parts.length < 2) return "";
+  const open = !!UI.dnOpen, D = donutParts(open); if (!donutItems(open).length || D.out <= 0.005 || D.parts.length < 2) return "";   // nothing planned yet: nothing to draw
   const kind = dnKind(), lbl = esc(D.parts.map(x => `${x.name} ${Math.round(x.pct)} percent`).join(", "));
   const R = 42, CIRC = 2 * Math.PI * R; let at = 0;
   const ring = D.parts.map(x => { const len = x.pct / 100 * CIRC, start = at, mid = (start + len / 2) / CIRC * 2 * Math.PI - Math.PI / 2; at += len;
@@ -5200,7 +5200,7 @@ function answer(q){
     const o = C.needs - C.envNeeds, m = C.misc - C.envMisc;
     return `Needs: ${fmt(C.needs)} of ${fmt(C.envNeeds)}${o > 0 ? ` (${fmt(o)} over)` : ""}.\nMisc: ${fmt(C.misc)} of ${fmt(C.envMisc)}${m > 0 ? ` (${fmt(m)} over)` : ""}.\nSavings: ${fmt(C.savings)} against a ${fmt(C.envSave)} envelope.`;
   }
-  if (/save|keep|left|end/.test(t)) return `${C.planMonth}: ${fmt(C.income)} in, ${fmt(C.needs + C.miscHeld)} out (your everyday budget counted in full), ${fmt(C.savings)} kept. Drop what your rules flag and leave it unspent, and you end at ${fmt(C.savings + C.flaggedSave)}.`;
+  if (/save|keep|left|end/.test(t)) return `${C.planMonth}: ${fmt(C.income)} in, ${fmt(C.needs + C.miscHeld)} out, ${fmt(C.savings)} kept (your everyday budget counted in full). Drop what your rules flag and leave it unspent, and you end at ${fmt(C.savings + C.flaggedSave)}.`;
   return "I can answer from your numbers: what you’ll save, what to cancel, whether you can afford something, who owes you, your trips, loans, payday, income, charges coming up, and when your emergency fund is full. I can also log spending: try “coffee 4” or “add rent 1200 as a bill”.";
 }
 
