@@ -75,7 +75,7 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
 .why-sheet .btn{margin-top:14px}
 /* Owl chat */
 .ask-sheet:has(.kchat){padding:0!important;justify-content:flex-end}
-.ask-sheet .ask-panel.kchat{max-width:560px;height:min(100%,var(--vv-h,100%));max-height:100%;overflow:hidden;display:flex;flex-direction:column;padding:0;border-radius:0;border:0;background:var(--bg);box-shadow:none}
+.ask-sheet .ask-panel.kchat{max-width:560px;height:min(100%,var(--vv-h,100%));max-height:100%;overflow:hidden;display:flex;flex-direction:column;padding:0;border-radius:0;border:0;background:var(--sheet,var(--card));box-shadow:none}
 @media (min-width:600px){.ask-sheet .ask-panel.kchat{height:min(860px,calc(100% - 40px));border-radius:24px;margin-bottom:20px;border:1px solid var(--line)}}
 .kc-head{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;background:var(--card);border-bottom:1px solid var(--line)}
 .kc-av,.kc-hav{width:42px;height:42px;border-radius:50%;background:var(--chip);display:grid;place-items:center;overflow:hidden;flex:none}.kc-av img{width:36px;height:36px}
@@ -2156,7 +2156,8 @@ function compute(){
   const flat = envFlatOn(), envNeeds = flat ? +S.envFlat.needs || 0 : income * S.env.needs / 100, envMisc = flat ? +S.envFlat.misc || 0 : income * S.env.misc / 100, envSave = flat ? r2(income - envNeeds - envMisc) : income * S.env.save / 100;
   // What you'll keep counts your everyday budget as spent: spending inside it doesn't change the number, and every
   // dollar of it you don't use is extra kept when the month ends. Only going past the budget lowers it.
-  const miscHeld = Math.max(misc, +envMisc || 0), savings = income - needs - miscHeld, miscLeft = r2((+envMisc || 0) - misc);
+  const envMiscBase = flat ? +S.envFlat.misc || 0 : (+S.income || 0) * S.env.misc / 100;   // from regular pay only: a bonus or one-off money in is all kept
+  const miscHeld = Math.max(misc, envMiscBase), savings = income - needs - miscHeld, miscLeft = r2(envMiscBase - misc);
   const efTarget = S.efMonths * needs;
   const efGap = Math.max(0, efTarget - S.efSaved);
   let toEF = 0, toGoal = 0;
@@ -2179,7 +2180,7 @@ function compute(){
   const setAside = (S.deposits || []).filter(x => x.month === planKey).reduce((a,x) => a + x.amount, 0);
   const endSaved = S.efSaved + savings - setAside;
   const toSetAside = Math.max(0, r2(savings - setAside));
-  return {flags, needs, loans, trips, spends, misc, miscHeld, miscLeft, miscParts: mp, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: P.name, planPeriod: P, payBonus: bonus, planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
+  return {flags, needs, loans, trips, spends, misc, miscHeld, miscLeft, envMiscBase, miscParts: mp, income, savings, flagged, flaggedSave, envNeeds, envMisc, envSave, efTarget, efGap, toEF, toGoal, efMonthsLeft, inactiveSwaps, planMonth: P.name, planPeriod: P, payBonus: bonus, planNote, liveSubs, planKey, setAside, endSaved, toSetAside};
 }
 function linkedItem(w){
   const [type, id] = w.link.split(":");
@@ -4602,7 +4603,7 @@ ${progress}`;
 const billsTally = C => { const items = [...S.expenses.filter(e => e.env === "needs" && !expEveryday(e, C.planKey)).map(e => { const w = swapFor("expense", e.id); return {id: "e:" + e.id, a: +(w ? w.altCost : e.amount) || 0}; }),
     ...(S.loans || []).filter(l => !loanDone(l)).map(l => ({id: "l:" + l.id, a: loanMonthly(l)}))].filter(x => x.a > 0.004);
   const left = items.filter(x => !paidOn(x.id, C.planKey)); return {n: items.length, paid: items.length - left.length, leftAmt: r2(left.reduce((t, x) => t + x.a, 0))}; };
-OUT.home = () => { const C = compute(), M = moneyNow(C), bud = r2(+C.envMisc || 0), left = r2(C.miscLeft), over = left < -0.004;
+OUT.home = () => { const C = compute(), M = moneyNow(C), bud = r2(+C.envMiscBase || 0), left = r2(C.miscLeft), over = left < -0.004;
   const P = C.planPeriod || {}, st = P.start ? new Date(P.start) : null, en = P.end ? new Date(P.end) : null;
   const tot = st && en ? Math.max(1, Math.round((en - st) / 864e5) + 1) : 30, done = Math.min(100, Math.max(0, Math.round((tot - M.daysLeft) / tot * 100)));
   const B = billsTally(C), keep = C.savings;
@@ -4670,7 +4671,7 @@ function moneyNow(C){ const k = C.planKey, ins = [], outs = [];
   const end = C.planPeriod && C.planPeriod.end ? new Date(C.planPeriod.end) : null, daysLeft = end ? Math.max(1, Math.round((end - todayMid()) / 864e5) + 1) : 1;
   const got = r2(ins.filter(x => !x.miss).reduce((a, x) => a + x.a, 0)), out = r2(outs.reduce((a, x) => a + x.a, 0));
   return {got, out, left: r2(got - out), ins, outs, daysLeft, miscSpent, miscLeft: r2(Math.max(0, C.miscLeft)), safe: r2(Math.max(0, C.miscLeft / daysLeft))}; }
-const heroTiles = C => { const m = moneyNow(C), outPlan = r2((C.needs || 0) + (C.misc || 0));
+const heroTiles = C => { const m = moneyNow(C), outPlan = r2((C.needs || 0) + (C.miscHeld || 0));
   // The month in two numbers: what comes in and what goes out (their difference is the big number above),
   // each with what has really happened so far. Tap either for every item.
   const tile = (lab, amt, sub) => `<button type="button" class="ht-btn" data-io-open aria-label="${lab}: ${fmt(amt)}. ${sub}. Tap for every item"><small>${lab}</small><b class="tnum">${fmt(amt)}</b><span class="ht-io tnum">${sub}</span></button>`;
@@ -4763,7 +4764,7 @@ OUT.headline = () => {
 const budTotal = C => r2((+C.envNeeds || 0) + (+C.envMisc || 0) + (+C.loans || 0));
 OUT.stack = () => { const C = compute(), M = moneyNow(C), budget = budTotal(C), spent = M.out, left = r2(budget - spent);
   const pct = budget > 0 ? Math.round(spent / budget * 100) : 0;
-  const ex = r2(C.needs - C.loans), parts = [["Expenditures", ex], ...(C.loans > 0 ? [["Loans", C.loans]] : []), ["Misc", C.misc], ["Savings", Math.max(0, C.savings)]];
+  const ex = r2(C.needs - C.loans), parts = [["Expenditures", ex], ...(C.loans > 0 ? [["Loans", C.loans]] : []), ["Misc", C.miscHeld], ["Savings", Math.max(0, C.savings)]];
   return `<section class="card bud-top" data-plan-card><p class="sr-only legend">${parts.map(([n, v]) => `<span>${n} <b>${fmt(v)}</b></span>`).join(" ")}</p><span class="label">${esc(C.planMonth)} budget</span><b class="bud-big tnum">${fmt(budget)}</b>
   <div class="bud-tiles"><button type="button" class="bud-tile" data-io-open><small>Spent so far</small><b class="tnum">${fmt(spent)}</b><span>${pct}% used</span></button>
   <div class="bud-tile"><small>${left < 0 ? "Over budget" : "Left to spend"}</small><b class="tnum${left < 0 ? " neg" : ""}">${fmt(Math.abs(left))}</b><span>${left < 0 ? "this month" : `for ${M.daysLeft} day${M.daysLeft === 1 ? "" : "s"}`}</span></div></div></section>`; };
@@ -4790,7 +4791,9 @@ function donutParts(all){
   const top = items.slice(0, N).map((x, i) => ({...x, color: DONUT_COLORS[i % DONUT_COLORS.length]})), rest = items.slice(N).reduce((t, x) => t + x.amount, 0);
   if (all) items.slice(N).forEach(x => top.push({...x, color: "#8d968f"}));
   if (!all && rest > 0.005) top.push({name: `Other (${items.length - N})`, amount: rest, color: "#8d968f"});
-  const out = items.reduce((t, x) => t + x.amount, 0), keep = Math.max(0, C.savings);
+  const ev = Math.max(0, r2(C.miscLeft || 0));   // the everyday budget not used yet: held for spending, so the ring adds up to what comes in
+  if (ev > 0.005) top.push({name: "Left to spend", amount: ev, color: "#c9d6cf", left: true});
+  const out = items.reduce((t, x) => t + x.amount, 0) + ev, keep = Math.max(0, C.savings);
   if (keep > 0.005) top.push({name: "What you keep", amount: keep, color: "var(--green)", keep: true});
   const total = out + keep; top.forEach(x => { x.pct = total > 0 ? x.amount / total * 100 : 0; });
   return {parts: top, out, total};
@@ -4853,7 +4856,7 @@ OUT.dropCard = () => {
       ${toggle}${true ? compareChart(now, now + swapSave, "With swaps") + `<button class="link" data-go="cheaper" type="button">See the swaps</button>` : ""}${shareRow()}</section>`;
   }
   const nF = C.flagged.length;
-  return `<section class="card drop-card"><h2>What you’d keep</h2><p class="muted">Cancel the ${nF === 1 ? "subscription" : `${nF} subscriptions`} you barely use and ${esc(C.planMonth)} ends with</p>
+  return `<section class="card drop-card"><h2>What you’d keep</h2><p class="muted">Cancel the ${nF === 1 ? "subscription" : `${nF} subscriptions`} you barely use, leave that money unspent, and ${esc(C.planMonth)} ends with</p>
     <div style="font:600 1.875rem/1.1 var(--display);letter-spacing:-.025em;${fitSize(fmt(now + C.flaggedSave), 1.875, 110)}" class="tnum bigsoft">${fmt(now + C.flaggedSave)}</div>
     ${UI.tab === "subs" ? `<div class="linkrow"><button class="link" type="button" data-drop-flag>Show the ${nF === 1 ? "one" : nF} to cancel</button></div>` : `<div class="linkrow"><button class="link" data-go="subs" type="button">Review subscriptions</button></div>`}
     ${toggle}${compareChart(now, now + C.flaggedSave, "After cuts")}${shareRow()}</section>`;
@@ -5014,7 +5017,7 @@ OUT.howto = () => {
   const names = C.flagged.map(s => s.name);
   const list = names.length > 4 ? names.slice(0,4).join(", ") + ` and ${names.length-4} more` : names.join(", ");
   return `<ol class="steps">
-    <li><div><h3>Where ${C.planMonth} ends</h3><p class="muted">Money coming in is ${fmt(C.income)}. Needs take ${fmt(C.needs)} and misc ${fmt(C.misc)}, so ${fmt(C.savings)} is left.${C.savings > 0 ? (S.priority === "ef" ? ` It goes to your emergency fund first: ${fmt(S.efSaved)} of ${fmt(C.efTarget)} so far.` : S.priority === "goal" ? ` It goes to ${esc(S.goalName || "your goal")} first.` : " Half goes to your emergency fund, half to your goal.") : ""}${C.misc < C.envMisc && C.savings > 0 ? ` Miscellaneous still has ${fmt(C.envMisc - C.misc)} of room if you choose to use it. That comes out of savings.` : ""}</p></div></li>
+    <li><div><h3>Where ${C.planMonth} ends</h3><p class="muted">Money coming in is ${fmt(C.income)}. Needs take ${fmt(C.needs)} and everyday money ${fmt(C.miscHeld)}, so ${fmt(C.savings)} is left.${C.savings > 0 ? (S.priority === "ef" ? ` It goes to your emergency fund first: ${fmt(S.efSaved)} of ${fmt(C.efTarget)} so far.` : S.priority === "goal" ? ` It goes to ${esc(S.goalName || "your goal")} first.` : " Half goes to your emergency fund, half to your goal.") : ""}${C.misc < C.envMisc && C.savings > 0 ? ` Miscellaneous still has ${fmt(C.envMisc - C.misc)} of room if you choose to use it. That comes out of savings.` : ""}</p></div></li>
     <li><div><h3>Drop what you don’t use</h3><p class="muted">${names.length ? `${esc(list)}. Rule: unused after ${S.ruleDays} days, or a duplicate of something you used more recently. Dropping them keeps ${subsKeep(C.flagged)}. After the drop, savings can finish at ${fmt(C.endSaved + C.flaggedSave)}.` : (C.liveSubs.length ? `Nothing flagged. The rule is unused after ${S.ruleDays} days, or a duplicate of something you used more recently.` : "No subscriptions yet. Once you add some, anything unused goes here.")}</p></div></li>
     <li><div><h3>${best && ownSwap(best.w) ? "Your own swap" : "The cheapest real swap"}</h3><p class="muted">${best ? `${esc(best.w.title)} → ${esc(best.w.alt)} keeps about ${fmt(best.save)} a month.` : (S.swaps.length ? "You’re already using every swap on the Cheaper tab." : "No swaps yet. Add a cheaper option for something you pay for on the Cheaper tab.")}</p></div></li>
     <li><div><h3>On payday</h3><p class="muted">${C.savings > 0 ? `${paydayLine(C)} Do not borrow it back.${S.priority !== "goal" && C.efGap > 0 ? ` Target: ${S.efMonths} months of needs (${fmt(C.efTarget)})${C.efMonthsLeft ? `, reached in about ${C.efMonthsLeft} month${C.efMonthsLeft>1?"s":""}` : ""}.` : ""} You have ${fmt(S.efSaved)} now; this month lands at ${fmt(C.endSaved)}.` : (C.savings < 0 ? "Fix the shortfall first: nothing is left to move this month." : "Nothing is left over yet. Add the money coming in and your costs, and this shows what to move.")}</p></div></li>
@@ -5028,11 +5031,11 @@ function plainly(){
   const net = b.reduce((a, x) => a + x.net, 0);
   const lines = [];
   lines.push(C.savings >= 0
-    ? `In ${C.planMonth} you bring in ${fmt(C.income)} and spend ${fmt(C.needs + C.misc)}, so ${fmt(C.savings)} is yours to keep.`
-    : `In ${C.planMonth} you spend ${fmt(C.needs + C.misc - C.income)} more than you bring in. Fix that before anything else.`);
+    ? `In ${C.planMonth} you bring in ${fmt(C.income)} and spend ${fmt(C.needs + C.miscHeld)}, so ${fmt(C.savings)} is yours to keep.`
+    : `In ${C.planMonth} you spend ${fmt(C.needs + C.miscHeld - C.income)} more than you bring in. Fix that before anything else.`);
   if (C.savings > 0) lines.push(`Move it to savings on payday. That takes you from ${fmt(S.efSaved)} to ${fmt(now)}.`);
   if (C.needs > C.envNeeds) lines.push(`Bills and food are ${fmt(C.needs - C.envNeeds)} over what you planned for them.`);
-  if (C.flagged.length) lines.push(`You pay ${subsSay(C.flagged)} for ${C.flagged.length} thing${C.flagged.length > 1 ? "s" : ""} you barely use. Dropping them gets you to ${fmt(now + C.flaggedSave)}.`);
+  if (C.flagged.length) lines.push(`You pay ${subsSay(C.flagged)} for ${C.flagged.length} thing${C.flagged.length > 1 ? "s" : ""} you barely use. Drop them and leave it unspent, and you end at ${fmt(now + C.flaggedSave)}.`);
   if (best) lines.push(`${ownSwap(best.w) ? "Your own swap" : "The biggest easy win"}: ${best.w.title.toLowerCase()} → ${best.w.alt.toLowerCase()}, about ${fmt(best.save)} a month.`);
   if (Math.abs(net) >= 0.01) lines.push(net > 0 ? `Friends and family owe you ${fmt(net)} overall.` : `You owe friends and family ${fmt(-net)} overall.`);
   return lines.join("\n");
@@ -5147,7 +5150,7 @@ function answerMore(t, C){
   if (/\b(codes?|promo)\b/.test(t)) return S.codes.length ? `You have ${S.codes.length} code${S.codes.length === 1 ? "" : "s"} saved: ${S.codes.slice(0, 5).map(c => c.store).join(", ")}.` : "You have no codes saved yet.";
   if (/last month|previous month|statement/.test(t)){ const keys = statementKeys().filter(k => k !== C.planKey); return keys.length ? `${keyLabel(keys[0])}: ${fmt(keptOf(S.statements[keys[0]]))} kept. See every month under Monthly statements.` : "Your first monthly statement is still in progress."; }
   const sp0 = spendAnswer(t, C, true); if (sp0) return sp0;
-  if (/\b(spend|spending|going out|goes out|expenses|bills|outgoings)\b/.test(t) && !/\d/.test(t)) return `${C.planMonth}: ${fmt(C.needs + C.misc)} goes out. Bills and living ${fmt(r2(C.needs - C.loans))}${C.loans > 0 ? `, loans and debts ${fmt(C.loans)}` : ""}, everything else ${fmt(C.misc)}.`;
+  if (/\b(spend|spending|going out|goes out|expenses|bills|outgoings)\b/.test(t) && !/\d/.test(t)) return `${C.planMonth}: ${fmt(C.needs + C.miscHeld)} goes out. Bills and living ${fmt(r2(C.needs - C.loans))}${C.loans > 0 ? `, loans and debts ${fmt(C.loans)}` : ""}, everyday money ${fmt(C.miscHeld)}.`;
   return null;
 }
 // "When is rent due?", "Did I pay Verizon?", "When does Netflix renew?": find it by name in bills, loans and subscriptions.
@@ -5174,8 +5177,10 @@ function answer(q){
   const more = answerMore(t, C); if (more) return more;
   const amt = (t.match(/(\d[\d,]*(?:\.\d+)?)/) || [])[1];
   if (/afford|buy|spend|purchase/.test(t) && amt){
-    const a = +amt.replace(/,/g,""), left = C.savings - a;
-    return left >= 0 ? `Yes. Spending ${fmt(a)} still leaves ${fmt(left)} saved in ${C.planMonth}.${C.toEF > 0 ? ` Your emergency fund gets ${fmt(Math.min(left, C.efGap))} instead of ${fmt(C.toEF)} this month.` : ""}` : `Not without going short. ${fmt(a)} is ${fmt(-left)} more than ${C.planMonth} leaves. Dropping flagged subscriptions frees ${fmt(C.flaggedSave)} a month.`;
+    const a = +amt.replace(/,/g,""), room = Math.max(0, r2(C.miscLeft || 0));
+    if (a <= room + 0.004) return `Yes. ${fmt(a)} fits in your everyday budget: ${fmt(r2(room - a))} would still be left to spend in ${C.planMonth}, and what you keep stays ${fmt(C.savings)}.`;
+    const left = C.savings - (a - room);   // past the everyday budget, the rest comes out of what you keep
+    return left >= 0 ? `Yes. It uses the ${fmt(room)} left in your everyday budget and ${fmt(r2(a - room))} of what you keep, so ${fmt(left)} is still saved in ${C.planMonth}.${C.toEF > 0 ? ` Your emergency fund gets ${fmt(Math.min(left, C.efGap))} instead of ${fmt(C.toEF)} this month.` : ""}` : `Not without going short. ${fmt(a)} is ${fmt(-left)} more than your everyday budget and what you keep in ${C.planMonth} together. Dropping flagged subscriptions frees ${fmt(C.flaggedSave)} a month.`;
   }
   if (/owe|owed|split|debt/.test(t)){
     const b = myBalances(); if (!b.length) return "Everyone is square. No one owes you and you owe no one.";
@@ -5195,7 +5200,7 @@ function answer(q){
     const o = C.needs - C.envNeeds, m = C.misc - C.envMisc;
     return `Needs: ${fmt(C.needs)} of ${fmt(C.envNeeds)}${o > 0 ? ` (${fmt(o)} over)` : ""}.\nMisc: ${fmt(C.misc)} of ${fmt(C.envMisc)}${m > 0 ? ` (${fmt(m)} over)` : ""}.\nSavings: ${fmt(C.savings)} against a ${fmt(C.envSave)} envelope.`;
   }
-  if (/save|keep|left|end/.test(t)) return `${C.planMonth}: ${fmt(C.income)} in, ${fmt(C.needs + C.misc)} out, ${fmt(C.savings)} kept. Drop what your rules flag and it’s ${fmt(C.savings + C.flaggedSave)}.`;
+  if (/save|keep|left|end/.test(t)) return `${C.planMonth}: ${fmt(C.income)} in, ${fmt(C.needs + C.miscHeld)} out (your everyday budget counted in full), ${fmt(C.savings)} kept. Drop what your rules flag and leave it unspent, and you end at ${fmt(C.savings + C.flaggedSave)}.`;
   return "I can answer from your numbers: what you’ll save, what to cancel, whether you can afford something, who owes you, your trips, loans, payday, income, charges coming up, and when your emergency fund is full. I can also log spending: try “coffee 4” or “add rent 1200 as a bill”.";
 }
 
