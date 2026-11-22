@@ -4,6 +4,20 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
   if (!window.Capacitor && !(window.matchMedia && matchMedia("(display-mode: standalone)").matches) && !/[?&#]app\b/.test(location.href) && (kp === "/" || /^\/(features|how-it-works|android|plus)$/.test(kp) || /[?&]site\b/.test(location.search))) document.documentElement.classList.add("kw-site-boot"); } catch(e){}</script>
 <style>html.kw-site-boot .app,html.kw-site-boot #wise,html.kw-site-boot .wise-fab{visibility:hidden}
 
+
+/* Month-end check */
+.mc-card h3{margin:2px 0 2px}
+.mc-lab{margin:14px 0 2px;font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mc-row{display:flex;align-items:center;gap:12px;width:100%;padding:11px 0;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.mc-row.mc-static{cursor:default}
+.mc-dot{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;border:2px solid var(--line);box-sizing:border-box}.mc-dot.bad{border-color:var(--rust)}.mc-dot.on{background:var(--green);border-color:var(--green);color:#fff}.mc-dot svg{width:15px;height:15px}
+.mc-t{flex:1;min-width:0;display:flex;flex-direction:column}.mc-t small{color:var(--muted);font-size:.82rem}.mc-t small.bad{color:var(--rust);font-weight:600}
+.mc-a{font-weight:700;white-space:nowrap}.mc-a.pos{color:var(--green)}.mc-a.off{color:var(--muted);text-decoration:line-through}
+.mc-note{margin:6px 0 0}
+.mc-forgot{margin:12px 0 4px;width:100%;min-height:44px;border-radius:12px;border:1px dashed var(--green);background:transparent;color:var(--green);font:inherit;font-weight:600;cursor:pointer}
+.mc-add{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}.mc-add>input{flex:1 1 140px}.mc-add .money-in{flex:1 1 100px}
+.mc-res{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;font-weight:600}.mc-res b{font-family:var(--display);font-size:1.7rem}.mc-res b.pos{color:var(--green)}.mc-res b.neg{color:var(--rust)}
+.mc-sum{margin:0 0 12px}
 /* Home: three answers */
 .card.home-left{background:var(--green);color:#fff;border:0;border-radius:24px;padding:22px 22px 18px;display:flex;flex-direction:column;gap:6px}
 .card.home-left.over{background:var(--rust)}
@@ -7397,8 +7411,29 @@ function monthToClose(){
 }
 // What to set aside: the money actually left from the month, less anything set aside during it.
 const closeRest = s => r2(Math.max(0, (+s.kept || 0) - (+s.setAside || 0)));
+// Before a month is closed: one quick look at what really happened. Each paycheck and bill is shown as it was marked;
+// tapping fixes it (a paycheck that didn't come comes off what was kept, a bill can be ticked paid). Spending
+// forgotten in that month can still be added to it. Then the month is closed and stays as it is.
+function monthCheck(s){
+  const k = s.key, name = keyLabel(k).split(" ")[0], pays = paysIn(k);
+  const bills = [...S.expenses.filter(e => e.env === "needs" && !expEveryday(e, k) && +e.amount > 0).map(e => ({id: "e:" + e.id, n: e.name, a: +e.amount})),
+    ...(S.loans || []).filter(l => !loanDone(l)).map(l => ({id: "l:" + l.id, n: l.name || loanKind(l.kind), a: loanMonthly(l)}))].filter(x => x.a > 0.004);
+  const spent = spendsTotal(k), dot = (on, bad) => `<span class="mc-dot${on ? " on" : bad ? " bad" : ""}" aria-hidden="true">${on ? TICK_SVG : ""}</span>`;
+  const payRow = x => `<button type="button" class="mc-row" data-mc-pay="${x.iso}" aria-pressed="${!x.miss}">${dot(!x.miss, true)}<span class="mc-t"><b>Paycheck</b><small class="${x.miss ? "bad" : ""}">${x.miss ? "Didn’t come" : `${dayMonth(x.d)} · came in`}</small></span><span class="tnum mc-a${x.miss ? " off" : " pos"}">+${fmt(x.a)}</span></button>`;
+  const billRow = x => { const on = !!paidOn(x.id, k); return `<button type="button" class="mc-row" data-mc-bill="${x.id}" aria-pressed="${on}">${dot(on)}<span class="mc-t"><b>${esc(x.n)}</b><small>${on ? `Paid ${shortDate(paidOn(x.id, k))}` : "Not ticked paid · tap if you paid it"}</small></span><span class="tnum mc-a">${fmt(x.a)}</span></button>`; };
+  const kept = +s.kept || 0;
+  return `<section class="card close-card mc-card" data-close="${k}" data-month-check><p class="close-k">${esc(name)} is over</p><h3>Did this all happen?</h3><p class="muted small">Tap anything that didn’t. It takes a few seconds and keeps every number right.</p>
+    ${pays.length ? `<p class="mc-lab">Came in</p>${pays.map(payRow).join("")}` : `<div class="mc-row mc-static"><span class="mc-t"><b>Income</b><small>As planned</small></span><span class="tnum mc-a pos">+${fmt(+s.income || 0)}</span></div>`}
+    ${bills.length ? `<p class="mc-lab">Bills, cards and loans</p>${bills.map(billRow).join("")}<p class="muted small mc-note">Bills count in full either way, so nothing is ever counted twice.</p>` : ""}
+    <div class="mc-row mc-static"><span class="mc-t"><b>Everyday spending</b><small>${spendsIn(k).length === 1 ? "1 purchase" : `${spendsIn(k).length} purchases`} you logged</small></span><span class="tnum mc-a">${fmt(spent)}</span></div>
+    ${UI.mcAdd ? `<form class="mc-add" data-form="mcAdd"><input name="name" placeholder="What was it?" aria-label="What it was" autocomplete="off"><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" placeholder="0" aria-label="Amount"></span><button class="btn primary" type="submit">Add to ${esc(name)}</button></form>` : `<button type="button" class="mc-forgot" data-mc-add>+ Something I forgot to log in ${esc(name)}</button>`}
+    <div class="mc-res"><span>${esc(name)}, you ${kept < 0 ? "were short" : "kept"}</span><b class="tnum ${kept < 0 ? "neg" : "pos"}">${fmt(Math.abs(kept))}</b></div>
+    <p class="muted small tnum mc-sum">${fmt(+s.income || 0)} came in − ${fmt(r2((+s.income || 0) - kept))} went out</p>
+    <button class="btn primary" type="button" data-mc-ok>Looks right</button></section>`;
+}
 OUT.monthClose = () => {
   const s = monthToClose(); if (!s) return "";
+  if (!s.checked && !s.example) return monthCheck(s);
   const name = keyLabel(s.key).split(" ")[0], rest = closeRest(s), inc = r2(+s.income || 0), out = r2(inc - (+s.kept || 0)), short = (+s.kept || 0) <= 0;
   const today = todayMid(), payday = payOn() && paydaysBetween(today, today).length > 0;
   const when = `${payday ? "Payday" : "New month"} · ${dayMonth(today)}`;
@@ -10026,6 +10061,13 @@ view.addEventListener("click", async e => {
   if (b.dataset.subCycle){ UI.subCycle = b.dataset.subCycle; refreshOuts(); return; }
   if (b.dataset.trendBy){ UI.trendBy = b.dataset.trendBy; UI.trendPick = null; refreshOuts(); return; }
   if (b.dataset.trendKind){ UI.trendKind = b.dataset.trendKind; refreshOuts(); return; }
+  if (b.dataset.mcPay){ S.payMiss = S.payMiss || {}; const iso = b.dataset.mcPay; if (S.payMiss[iso]) delete S.payMiss[iso]; else S.payMiss[iso] = 1; save(); render(false); return; }
+  if (b.dataset.mcBill){ const s0 = monthToClose(); if (!s0) return; const k = s0.key, id = b.dataset.mcBill;
+    if (S.paid && S.paid.key === k){ S.paid.on = S.paid.on || {}; if (S.paid.on[id]) delete S.paid.on[id]; else S.paid.on[id] = isoOf(keyRange(k).end); }
+    else { S.paidHist = S.paidHist || {}; const h = S.paidHist[k] = S.paidHist[k] || {on: {}, amt: {}}; if (h.on[id]) delete h.on[id]; else h.on[id] = isoOf(keyRange(k).end); }
+    save(); render(false); return; }
+  if (b.hasAttribute("data-mc-add")){ UI.mcAdd = true; render(false); const i = document.querySelector("[data-form=mcAdd] [name=name]"); if (i) i.focus(); return; }
+  if (b.hasAttribute("data-mc-ok")){ const s0 = monthToClose(); if (!s0) return; s0.checked = true; UI.mcAdd = false; save(); render(false); return; }
   if (b.hasAttribute("data-why")){ UI.why = !UI.why; render(false); return; }
   if (b.hasAttribute("data-why-budget")){ UI.why = false; UI.mseg = "budget"; UI.openEnv = "misc"; render(true); goTo("month", "[data-env-open=misc]"); return; }
   if (b.hasAttribute("data-home-bills")){ UI.why = false; goTo("month", "[data-bills-card]"); return; }
@@ -10839,6 +10881,10 @@ view.addEventListener("submit", async e => {
     const asking = /\?|^\s*(how|what|when|who|which|is|are|do|does|did|should|can)\b/i.test(q);
     if (/\d/.test(q) && !asking){ const u = undoable(), r = bizLog(q); if (r){ save(); UI.askOpen = false; UI.bseg = "money"; UI.bizAll = true; render(false); const row = view.querySelector(`[data-biz-entry="${r.e.id}"]`); if (row){ cardInView(row.closest(".card") || row); row.classList.add("flash"); } toast(r.said, u); return; } }
     ASK.last = bizAnswer(q); const o = $("ask-out"); if (o){ o.hidden = false; o.textContent = ASK.last; } $("ask-in").value = ""; $("ask-in").blur(); return; }
+  if (kind === "mcAdd"){ const s0 = monthToClose(); if (!s0) return; const nm = String(fd.get("name") || "").trim().slice(0, 60), a = numv(fd.get("amount"));
+    if (!nm){ toast("Say what it was."); return; } if (!(a > 0)){ toast("Enter the amount."); return; }
+    const u = undoable(), k = s0.key; S.spends = S.spends || []; S.spends.push({id: uid(), date: isoOf(keyRange(k).end), k, name: nm, amount: r2(a)}); UI.mcAdd = false;
+    save(); if (isField(document.activeElement)) document.activeElement.blur(); render(true); toast(`Added ${nm}, ${fmt(a)}, to ${keyLabel(k).split(" ")[0]}.`, u); return; }
   if (kind === "ask" && chatOn()){ const q = tidySaid($("ask-in").value); if (!q) return; await chatAsk(q); return; }
   if (kind === "ask"){ const q = tidySaid($("ask-in").value); if (!q) return; ASK.go = null;
     // After a command changes something, go to it: the panel closes, the right tab opens, the item is brought into view
