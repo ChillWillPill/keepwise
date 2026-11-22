@@ -143,6 +143,9 @@ async def wiz(pg, vals, submit=True):
             return
 async def text(pg, sel): return (await pg.inner_text(sel)).replace("\n", " ")
 async def owl(pg):
+    # a message on screen hides the owl until it goes, as it does for a person
+    try: await pg.wait_for_function("!document.body.classList.contains('toasting')", timeout=20000)
+    except Exception: pass
     # at the very bottom of a long screen the owl steps aside; a person scrolls up a little to bring it back
     if await pg.evaluate("document.body.classList.contains('at-end')"):
         await pg.evaluate("document.getElementById('main').scrollTop -= 120"); await pg.wait_for_timeout(250)
