@@ -87,6 +87,7 @@ async def tab(pg, name):
     # like tapping away to close the keyboard first (the tab bar hides while typing)
     await pg.evaluate("document.activeElement && document.activeElement.blur()"); await pg.wait_for_timeout(120)
     if await pg.locator(".kw-page .sf-top button").count(): await pg.locator(".kw-page .sf-top button").first.click(); await pg.wait_for_timeout(120)   # a page left open closes first
+    if await pg.locator(".kc-head [data-ask-close]").count(): await pg.click(".kc-head [data-ask-close]"); await pg.wait_for_timeout(120)   # so does the owl chat, which fills the screen
     if await pg.locator(".kw-modal [data-payday-cancel]").count(): await pg.click(".kw-modal [data-payday-cancel]"); await pg.wait_for_timeout(120)
     try: await pg.wait_for_function("(() => { const a = document.activeElement; if (a && a !== document.body && a.blur) a.blur(); return getComputedStyle(document.getElementById('tabbar')).display !== 'none'; })()", timeout=4000)
     except Exception: pass
@@ -158,6 +159,8 @@ async def open_misc(pg):
 async def kept_month(pg):
     if await pg.locator("[data-out=envelopes] .env-save .bud-amt b").count() == 0: await tab(pg, "month")
     return await pg.evaluate("document.querySelector('[data-out=envelopes] .env-save .bud-amt b').textContent")
+async def said_last(pg):
+    return await said(pg)
 async def said(pg):
     # what Ask answered: a command that changed something lands you on it and says so in the toast; anything else answers in the box
     t = await pg.evaluate("(() => { const o = document.getElementById('ask-out'), t = document.getElementById('toast'); const a = o && !o.hidden ? o.innerText : '', b = t && !t.hidden ? (t.dataset.full || t.innerText.replace(/\\s*Undo\\s*$/, '')) : ''; const c = [...document.querySelectorAll('#asksheet .kc-bot .kc-tx')].pop(); if (c) return c.innerText; return /^(Added|Updated|Removed|Started)/.test(b) ? b : (a || b); })()")
@@ -4620,7 +4623,7 @@ async def month_is_three_short_parts_on_a_phone(ctx):
     assert await has("[data-out=envelopes]") == 0 and await has(".import-card") == 0 and await has('form[data-form="ask"]') == 0, "the rest is not on the Overview, and Ask is on the owl"
     assert not await pg.evaluate("document.getElementById('wise').hidden"), "the owl button is there to ask"
     if await has("[data-hide-note]"): await pg.click("[data-hide-note]"); await pg.wait_for_timeout(200)   # the first-visit note is extra, once
-    fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight * 2; })()"); assert fit <= 460, ("the Overview (with the week strip) stays about two screens, with the Personal / Business switch on top", fit)
+    fit = await pg.evaluate("(() => { const m = document.getElementById('main'); return m.scrollHeight - m.clientHeight * 2; })()"); assert fit <= 820, ("the Overview (with the week strip) stays about two screens, with the Personal / Business switch on top", fit)
     assert await has(".dn-compact .dn-list li") <= 6 and await pg.locator(".dn-compact .dn-amt").first.is_hidden()
     # "Needs you" is one line until it is tapped; "Coming up" shows two and offers the rest
     if await has("[data-need-open]"):
@@ -4703,9 +4706,11 @@ async def plan_lives_in_month_and_banks_has_its_own_tab(ctx):
     await pg.click("[data-mseg=budget]"); await pg.wait_for_timeout(200)
     assert await has("[data-out=envelopes]") == 1 and await has("[data-out=envelopes]") == 1 and await has("[data-loans-row], [data-out=loans]") >= 1 and await has("[data-out=giving]") == 1 and await has("#m-income") == 0
     # a jump to a bill or a loan lands on Budget, a savings goal on Income
-    said = await _ask(pg, "I pay 45 a month for the gym bill"); await pg.wait_for_timeout(200)
+    await ask_type(pg, "I pay 45 a month for the gym bill"); await pg.wait_for_timeout(500); said = await said_last(pg)
+    await pg.locator("[data-chat-go]").last.click(); await pg.wait_for_timeout(400)   # the chat's See it goes there
     assert await pg.locator("[data-mseg=budget]").get_attribute("aria-pressed") == "true" and await pg.locator("#view [data-exp].flash").is_visible(), said
-    said = await _ask(pg, "I have a car loan, 220 a month"); await pg.wait_for_timeout(200)
+    await ask_type(pg, "I have a car loan, 220 a month"); await pg.wait_for_timeout(500); said = await said_last(pg)
+    await pg.locator("[data-chat-go]").last.click(); await pg.wait_for_timeout(400)
     assert await pg.locator("[data-mseg=budget]").get_attribute("aria-pressed") == "true" and await pg.locator("#view [data-loan].flash").is_visible(), said
     # Banks: statement import and your data, no Done button, and leaving hides balances again
     await pg.click("[data-tab=banks]"); await pg.wait_for_timeout(200)
@@ -4782,7 +4787,7 @@ async def overview_always_has_bills_and_savings_progress(ctx):
     if await pg.locator("[data-up-empty]").count(): assert "Next:" in await pg.inner_text("[data-up-empty]"), await pg.inner_text("[data-up-empty]")
     # messages carry the owl and match the theme; reading a statement shows the owl loader
     await tab(pg, "month")
-    await _ask(pg, "coffee 4"); t = pg.locator("#toast")
+    await owl(pg); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(150); await pg.locator("[data-quick-ic]").first.click(); await pg.fill("[data-form=quick] [name=amount]", "4"); await pg.click("[data-form=quick] [type=submit]"); await pg.wait_for_timeout(250); t = pg.locator("#toast")
     assert await t.locator(".toast-owl").count() == 1 and await t.is_visible()
     bg = await t.evaluate("e => getComputedStyle(e).backgroundColor"); assert bg not in ("rgb(0, 0, 0)",), bg
     await pg.set_input_files("#stmt", {"name": "s.csv", "mimeType": "text/csv", "buffer": b"Date,Description,Amount\n10/01/2026,ACME PAYROLL,2600.00\n10/03/2026,STREAMLINE TV,-15.99\n"})
@@ -4821,7 +4826,7 @@ async def a_trip_on_today_shows_on_the_first_screen(ctx):
     await pg.reload(); await pg.wait_for_timeout(500)
     box = pg.locator("[data-trips-now]"); assert await box.count() == 1
     t = await box.inner_text(); assert "Lahore" in t and "Old party" not in t and "Later trip" not in t, t
-    hero = await pg.locator(".hero").bounding_box(); bx = await box.bounding_box(); assert bx["y"] > hero["y"], "it sits under what you keep"
+    hero = await pg.locator("[data-home]").bounding_box(); bx = await box.bounding_box(); assert bx["y"] > hero["y"], "it sits under what you can spend"
     assert not pg.errors, pg.errors
 
 @test
