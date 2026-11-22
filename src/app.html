@@ -4463,7 +4463,7 @@ function chatCard(){
       <div class="kc-list">${["sub", "loan", "trip", "event"].map(row).join("")}</div>
       <p class="kc-lab">Log a spend</p>${quickPick()}</div>` : "";
   return `<section class="card ask-panel kchat" aria-labelledby="askh" role="dialog" aria-modal="true">
-    <div class="kc-head"><button class="icon-btn kc-close" type="button" data-ask-close aria-label="Close chat"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="kc-av"><img src="${lg}" alt=""></span><div class="kc-nm"><h2 id="askh">KeepWise</h2><small><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>On this phone · private</small></div>${infoBtn("ask", "About Ask KeepWise")}${CHAT.length ? `<button type="button" class="kc-clear" data-chat-clear>Clear</button>` : ""}</div>
+    <div class="kc-head"><button class="icon-btn kc-close" type="button" data-ask-close aria-label="Close chat"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="kc-av"><img src="${lg}" alt=""></span><div class="kc-nm"><h2 id="askh">KeepWise</h2><small><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>On this phone</small></div>${infoBtn("ask", "About Ask KeepWise")}${CHAT.length ? `<button type="button" class="kc-clear" data-chat-clear>Clear</button>` : ""}</div>
     ${UI.info === "ask" ? `<div class="info-tip ask-words kc-help" role="note" data-info-tip="ask"><p>Type or say it as a sentence. These words decide where it goes:</p><ul><li><b>Money in:</b> say <i>received</i>, <i>got paid</i>, <i>salary</i> or <i>bonus</i>. “Received 300 from Mike”</li><li><b>Subscription:</b> say <i>sub</i> or <i>subscription</i>. “Netflix sub 15”</li><li><b>Expenditure</b>, a bill every month: say <i>monthly</i>, <i>every month</i> or <i>bill</i>. “Rent 1200 monthly”</li><li><b>Misc:</b> anything else with an amount. “Coffee 4”</li><li><b>A question:</b> “Can I afford 300?” Answers use the numbers in your app.</li></ul><div class="ask-howto"><p class="label">How to use it</p><div data-out="howto">${OUT.howto()}</div></div></div>` : ""}
     <div class="kchat-feed" aria-live="polite">${CHAT.length ? `<div class="kc-day">Recent</div>` + msgs : hello}</div>
     <div class="chips kc-chips" data-scroll-x>${chips.map(q => `<button class="chip" type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>
@@ -5115,8 +5115,27 @@ function answerMore(t, C){
   if (/\b(spend|spending|going out|goes out|expenses|bills|outgoings)\b/.test(t) && !/\d/.test(t)) return `${C.planMonth}: ${fmt(C.needs + C.misc)} goes out. Bills and living ${fmt(r2(C.needs - C.loans))}${C.loans > 0 ? `, loans and debts ${fmt(C.loans)}` : ""}, everything else ${fmt(C.misc)}.`;
   return null;
 }
+// "When is rent due?", "Did I pay Verizon?", "When does Netflix renew?": find it by name in bills, loans and subscriptions.
+function answerDue(t, C){
+  const asksWhen = /\b(when|what day|due|renew|charge[sd]?|next)\b/.test(t), asksPaid = /\b(did i|have i|is|was)\b.*\bpa(id|y)\b|\bpaid\b/.test(t);
+  if (!asksWhen && !asksPaid) return "";
+  const words = t.replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(w => w.length > 2 && !/^(when|what|day|due|did|pay|paid|have|was|the|this|month|next|does|renew|charge|charged|charges|bill|is|my|for|yet)$/.test(w));
+  if (!words.length) return "";
+  const score = n => { const x = String(n || "").toLowerCase(); return words.filter(w => x.includes(w)).length; };   // the best match wins: "car loan" is the loan, not car insurance
+  const cands = [...S.expenses.map(x => ({k: "e", x, n: score(x.name)})), ...(S.loans || []).map(x => ({k: "l", x, n: Math.max(score(x.name), score(loanKind(x.kind) + " loan"))})), ...S.subs.filter(x => x.keep !== "drop").map(x => ({k: "s", x, n: score(x.name)}))].filter(c => c.n > 0).sort((a, b) => b.n - a.n);
+  if (/\b(loan|mortgage|card)\b/.test(t)){ const ls = cands.filter(c => c.k === "l"); if (!ls.length) return `I don’t see that in your loans and cards. Add it from the + button and I’ll keep track of it.`; cands.splice(0, cands.length, ...ls); }
+  const top = cands[0] || {}, e = top.k === "e" && top.x, l = top.k === "l" && top.x, sb = top.k === "s" && top.x;
+  if (e){ const id = "e:" + e.id, pd = paidOn(id, C.planKey), d = e.due ? billNextDue(e) : null, amt = fmt(+e.amount || 0);
+    if (asksPaid && !asksWhen || (asksPaid && pd)) return pd ? `Yes. ${e.name} (${amt}) was marked paid on ${shortDate(pd)}.` : `Not yet. ${e.name} (${amt}) isn’t marked paid this month.${d ? ` It’s due ${dayMonth(d)}, ${whenLabel(daysUntil(d)).toLowerCase()}.` : ""}`;
+    return d ? `${e.name} (${amt}) is due ${dayMonth(d)}, ${whenLabel(daysUntil(d)).toLowerCase()}.${pd ? ` This month’s is already paid (${shortDate(pd)}).` : ""}` : `${e.name} is ${amt} a month. It has no due day yet; add one in Budget and I’ll remind you.`; }
+  if (l){ const id = "l:" + l.id, pd = paidOn(id, C.planKey), nm = l.name || loanKind(l.kind);
+    return pd ? `Yes. This month’s ${nm} payment (${fmt(loanMonthly(l))}) was paid on ${shortDate(pd)}.` : `This month’s ${nm} payment (${fmt(loanMonthly(l))}) isn’t marked paid yet.`; }
+  if (sb){ const d = nextRenewal(sb); return d ? `${sb.name} charges ${fmt(+sb.price || 0)} next on ${dayMonth(d)}, ${whenLabel(daysUntil(d)).toLowerCase()}.` : `${sb.name} is ${fmt(+sb.price || 0)}. Add its renew day in Subscriptions and I’ll tell you when it charges.`; }
+  return "";
+}
 function answer(q){
   const C = compute(), t = q.toLowerCase();
+  const due = answerDue(t, C); if (due) return due;
   const more = answerMore(t, C); if (more) return more;
   const amt = (t.match(/(\d[\d,]*(?:\.\d+)?)/) || [])[1];
   if (/afford|buy|spend|purchase/.test(t) && amt){

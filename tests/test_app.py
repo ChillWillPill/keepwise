@@ -5512,6 +5512,7 @@ async def month_start_check_in(ctx):
         p2 = await ctx.new_page(); p2.errors = []
         await p2.clock.install(time=datetime.datetime.now() + datetime.timedelta(days=40))
         await p2.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;"); await p2.set_viewport_size({"width": 390, "height": 844}); await p2.goto(URL); await p2.wait_for_timeout(400)
+        if await p2.locator("[data-mc-ok]").count(): await p2.click("[data-mc-ok]"); await p2.wait_for_timeout(200)   # the quick "did this all happen?" look comes first
         return p2
     p2 = await later()
     card = await text(p2, "[data-out=monthClose]"); assert "is done" in card and "left over" in card and "Came in" in card, card
@@ -5817,6 +5818,7 @@ async def open_at(ctx, when):
     pg.on("pageerror", lambda e: pg.errors.append("pageerror: " + str(e)))
     await pg.clock.install(time=datetime.datetime(*when))
     await pg.add_init_script("window.KEEPWISE_FIREBASE = null; window.KEEPWISE_NO_SETUP = true;"); await pg.set_viewport_size({"width": 390, "height": 844}); await pg.goto(URL); await pg.wait_for_timeout(400)
+    if await pg.locator("[data-mc-ok]").count(): await pg.click("[data-mc-ok]"); await pg.wait_for_timeout(200)   # pass the month-end look
     return pg
 
 @test
