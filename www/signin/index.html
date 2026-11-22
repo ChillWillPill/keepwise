@@ -4588,12 +4588,14 @@ ${envSplitCard()}
 ${income}
 ${savingsCard()}`;   // what comes in: pay, other income, and a statement to read it from
   const note = top.slice(spaceSwitch().length, top.indexOf('<section class="hero hero-keep">')), rest = top.slice(top.indexOf('<section class="hero hero-keep">'));
+  const wk = '  <div data-out="week">' + OUT.week() + '</div>', restNoWeek = rest.replace(wk, "");   // This week sits right under the home answers
   return `${spaceSwitch()}${sw}${note}
   <div data-out="home">${OUT.home()}</div>
+${restNoWeek === rest ? "" : wk}
 ${now}
 ${coming}
   <div data-out="tripsNow">${OUT.tripsNow()}</div>
-${rest.replace('<section class="hero hero-keep">', '<section class="hero hero-keep hero-month">')}
+${restNoWeek.replace('<section class="hero hero-keep">', '<section class="hero hero-keep hero-month">')}
 ${donut}
 ${progress}`;
 };
