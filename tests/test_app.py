@@ -4473,12 +4473,13 @@ async def the_owl_panel_stands_out_in_the_dark(ctx):
 async def the_amount_box_stays_above_the_keyboard(ctx):
     # iPhone: picking an icon in the owl opens the amount box at the foot of the sheet; with the keyboard up it must still show
     pg = await open_app(ctx, w=390, h=844); await owl(pg); await pg.wait_for_timeout(300); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(200)
-    await pg.locator("[data-quick-ic]").first.click(); await pg.wait_for_timeout(300)
+    await pg.locator("[data-cl]").first.click(); await pg.wait_for_timeout(300)
     h = await pg.evaluate("document.querySelector('.ask-panel .kc-chips').getBoundingClientRect().height"); assert h > 30, f"the question chips at the foot of the owl are squashed ({h}px)"
     await pg.evaluate("Object.defineProperty(window, 'visualViewport', {configurable: true, get: () => ({height: 420, offsetTop: 0, addEventListener(){}})})")   # the keyboard takes the bottom half
-    inp = pg.locator("form[data-form=quick] [name=amount]"); await inp.evaluate("e => { e.blur(); e.focus(); }"); await pg.wait_for_timeout(900)
+    inp = pg.locator("[data-cl-amt]"); assert await inp.get_attribute("inputmode") == "none", "the keypad types it, so the phone keyboard stays down"
+    await inp.evaluate("e => { e.blur(); e.focus(); }"); await pg.wait_for_timeout(900)
     r = await inp.evaluate("e => [e.getBoundingClientRect().top, e.getBoundingClientRect().bottom]")
-    assert r[0] > 60 and r[1] <= 420, f"the amount box is under the keyboard: {r}"
+    assert r[0] > 60 and r[1] <= 844, f"the amount box is off screen: {r}"
 
 @test
 async def business_and_personal_notifications_are_separate(ctx):
@@ -4804,9 +4805,11 @@ async def overview_always_has_bills_and_savings_progress(ctx):
     if await pg.locator("[data-up-empty]").count(): assert "Next:" in await pg.inner_text("[data-up-empty]"), await pg.inner_text("[data-up-empty]")
     # messages carry the owl and match the theme; reading a statement shows the owl loader
     await tab(pg, "month")
-    await owl(pg); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(150); await pg.locator("[data-quick-ic]").first.click(); await pg.fill("[data-form=quick] [name=amount]", "4"); await pg.click("[data-form=quick] [type=submit]"); await pg.wait_for_timeout(250); t = pg.locator("#toast")
+    await owl(pg); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(150); await pg.locator("[data-cl]").first.click(); await pg.click("[data-cl-next]"); await pg.wait_for_timeout(250); t = pg.locator("#toast")
+    assert "Enter the amount" in await t.inner_text()
     assert await t.locator(".toast-owl").count() == 1 and await t.is_visible()
     bg = await t.evaluate("e => getComputedStyle(e).backgroundColor"); assert bg not in ("rgb(0, 0, 0)",), bg
+    await pg.click(".ask-panel [data-ask-close]"); await pg.wait_for_timeout(200)
     await pg.set_input_files("#stmt", {"name": "s.csv", "mimeType": "text/csv", "buffer": b"Date,Description,Amount\n10/01/2026,ACME PAYROLL,2600.00\n10/03/2026,STREAMLINE TV,-15.99\n"})
     await pg.wait_for_timeout(60)
     await pg.wait_for_timeout(1200); assert not await pg.locator("#busy").is_visible(), "the owl loader goes away when reading is done"
@@ -6573,30 +6576,41 @@ async def banks_keeps_cards_with_limits_and_reminders(ctx):
 async def the_owl_adds_by_icon_to_misc_or_toward_a_bill(ctx):
     pg = await open_app(ctx, month_tabs=True)
     await owl(pg); await pg.wait_for_timeout(200); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(200)
-    assert await pg.locator("[data-quick-env=misc][aria-pressed=true]").count() == 1, "Misc first"
-    n = await pg.locator(".quick-ic:not(.quick-more)").count(); assert n == 14, n   # three tidy rows, then More
-    await pg.click("[data-quick-more]"); await pg.wait_for_timeout(150); n = await pg.locator(".quick-ic:not(.quick-more)").count(); assert n >= 20, n
-    assert await pg.locator("[data-quick-ic=bolt]").count() == 0 and await pg.locator("[data-quick-ic=cart]").count() == 0, "bills are not one-offs"
-    await pg.click("[data-quick-ic=coffee]"); await pg.fill("[data-form=quick] [name=amount]", "4.5"); await pg.click("[data-form=quick] [type=submit]"); await pg.wait_for_timeout(200)
-    sp = (await state(pg))["spends"]; assert any(x["name"] == "Coffee or tea" and x["amount"] == 4.5 for x in sp), sp
+    # Log a spend: tidy icons, then More; tap one, type the amount, say where it goes, Save
+    n = await pg.locator(".cl-c[data-cl]").count(); assert n == 7, n
+    await pg.click(".kc-plusbox [data-quick-more]"); await pg.wait_for_timeout(150); n = await pg.locator(".cl-c[data-cl]").count(); assert n >= 20, n
+    await pg.click("[data-cl=coffee]"); await pg.wait_for_timeout(100)
+    for k in "4.5": await pg.click(f'[data-cl-key="{k}"]')
+    await pg.click("[data-cl-next]"); await pg.wait_for_timeout(100)
+    assert await pg.locator("[data-cl-env=misc][aria-pressed=true]").count() == 1, "everyday first"
+    await pg.click("[data-cl-save]"); await pg.wait_for_timeout(250)
+    sp = (await state(pg))["spends"]; assert any(x["name"] == "Coffee" and x["amount"] == 4.5 for x in sp), sp
+    assert "left to spend" in await said_last(pg)
     # Expenditures: counted toward the plan, so what you keep stays the same until it goes over
-    await pg.click("[data-quick-env=exp]"); await pg.click("[data-quick-ic=cart]"); await pg.wait_for_timeout(150)
-    assert "used this month" in await text(pg, ".quick-note")
-    head = "(() => { const h = document.querySelector('[data-out=headline]'); if (!h) return ''; const c = h.cloneNode(true); c.querySelectorAll('[data-hero-tiles]').forEach(x => x.remove()); return c.innerText; })()"
+    head = "(() => { const h = document.querySelector('[data-out=headline]'); if (!h) return ''; const c = h.cloneNode(true); c.querySelectorAll('[data-hero-tiles],.hero-why').forEach(x => x.remove()); return c.innerText; })()"
     before = await pg.evaluate(head)
-    await pg.fill("[data-form=quick] [name=amount]", "62"); await pg.click("[data-form=quick] [type=submit]"); await pg.wait_for_timeout(250)
-    assert "Counted toward Groceries" in await pg.inner_text("#toast")
+    await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(150); await pg.click("[data-cl=cart]")
+    for k in "62": await pg.click(f'[data-cl-key="{k}"]')
+    await pg.click("[data-cl-next]"); await pg.click("[data-cl-env=exp]"); await pg.wait_for_timeout(100)
+    assert "used" in await text(pg, "[data-cl-env=exp]")
+    await pg.click("[data-cl-save]"); await pg.wait_for_timeout(250)
+    assert "Counted toward Groceries" in await said_last(pg)
     assert before == await pg.evaluate(head)
+    assert (await state(pg))["qKind"]["cart"] == "exp", "remembered for next time"
+    await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(150); await pg.click("[data-cl=cart]"); await pg.click('[data-cl-key="1"]'); await pg.click("[data-cl-next]")
+    assert await pg.locator("[data-cl-env=exp][aria-pressed=true]").count() == 1
+    await pg.click("[data-cl-back]"); await pg.click("[data-cl-back]"); await pg.click(".kc-ph [data-chat-plus]"); await pg.wait_for_timeout(100)
     await pg.click(".ask-panel [data-ask-close]"); await pg.click("[data-mseg=budget]"); await pg.click("[data-env-open=needs]"); await pg.wait_for_timeout(200)
     assert "$62 of" in await text(pg, "[data-out=envelopes]")
     r = await _ask(pg, "groceries 10"); assert "Counted toward Groceries" in r, repr(r) + repr(await pg.inner_text("#view"))[:300]
     r = await _ask(pg, "car petrol 30"); assert "Miscellaneous" in r, ("a word that only sounds like a bill stays a one-off", r)
     await pg.evaluate("(() => { const c = document.querySelector('.ask-panel [data-ask-close]'); if (c) c.click(); })()")
     # a bill you don't have yet is added as one
-    await owl(pg); await pg.wait_for_timeout(150); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(150); await pg.click("[data-quick-env=exp]"); await pg.click("[data-quick-ic=kid]"); await pg.wait_for_timeout(100)
-    assert "Add bill" in await text(pg, "[data-form=quick]")
-    await pg.fill("[data-form=quick] [name=amount]", "90"); await pg.click("[data-form=quick] [type=submit]"); await pg.wait_for_timeout(200)
-    assert any(e["name"] == "Childcare" and e["amount"] == 90 and e["env"] == "needs" for e in (await state(pg))["expenses"])
+    await owl(pg); await pg.wait_for_timeout(150); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(150); await pg.click(".kc-plusbox [data-quick-more]"); await pg.click("[data-cl=kid]"); await pg.wait_for_timeout(100)
+    for k in "90": await pg.click(f'[data-cl-key="{k}"]')
+    await pg.click("[data-cl-next]"); await pg.click("[data-cl-env=exp]"); assert "as a bill" in await text(pg, "[data-cl-env=exp]")
+    await pg.click("[data-cl-save]"); await pg.wait_for_timeout(200)
+    assert any(e["name"] == "Kids" and e["amount"] == 90 and e["env"] == "needs" for e in (await state(pg))["expenses"])
     assert not pg.errors, pg.errors
 
 @test
@@ -6982,8 +6996,8 @@ async def loans_log_payments_and_trips_carry_flights(ctx):
 async def the_owl_has_a_fuel_icon_in_misc(ctx):
     pg = await open_app(ctx, month_tabs=True)
     await owl(pg); await pg.wait_for_timeout(300); await pg.click("[data-chat-plus]"); await pg.wait_for_timeout(200)
-    labels = [x.strip() for x in await pg.locator(".quick-grid button").all_inner_texts()]
-    assert "Fuel" in labels and labels.index("Fuel") == labels.index("Car") + 1, labels[:8]
+    labels = [x.strip() for x in await pg.locator(".cl-grid button").all_inner_texts()]
+    assert "Fuel" in labels and "Car" in labels and labels.index("Fuel") < 4, labels[:8]
     assert not pg.errors, pg.errors
 
 @test
@@ -7377,14 +7391,14 @@ async def home_answers_add_up_and_spending_moves_left_not_keep(ctx):
     # Why? shows both sums, and they add up to the cent. Spending inside the budget moves Left, never Keep.
     pg = await open_app(ctx, w=390, h=844, month_tabs=True)
     num = lambda s: float(re.sub(r"[^0-9.]", "", s))
-    left0 = num(await text(pg, "[data-home] .hl-big")); keep0 = await _keep(pg)
+    left0 = num(await text(pg, "[data-home] .home-left-t b")); keep0 = await _keep(pg)
     await pg.click("[data-home] [data-why]"); await pg.wait_for_timeout(250)
     sh = await text(pg, ".why-sheet"); vals = [num(v) for v in re.findall(r"\$[\d,]+(?:\.\d+)?", sh)]
     assert f"Left to spend" in sh and "You’ll keep" in sh, sh
     m = re.search(r"\$([\d,.]+) − \$([\d,.]+) = \$([\d,.]+)", sh); assert m and abs(num(m.group(1)) - num(m.group(2)) - num(m.group(3))) < 0.006 and abs(num(m.group(3)) - left0) < 0.006, sh
     await pg.click(".why-top [data-why]"); await pg.wait_for_timeout(150)
     await ask_type(pg, "lunch 12"); await pg.wait_for_timeout(400); await tab(pg, "month"); await pg.wait_for_timeout(200)
-    assert abs(num(await text(pg, "[data-home] .hl-big")) - (left0 - 12)) < 0.01, "Left to spend takes the spend"
+    assert abs(num(await text(pg, "[data-home] .home-left-t b")) - (left0 - 12)) < 0.01, "Left to spend takes the spend"
     assert abs(await _keep(pg) - keep0) < 0.01, "what you keep holds inside the budget"
 
 async def main():

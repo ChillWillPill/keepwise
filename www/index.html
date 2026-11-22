@@ -48,6 +48,8 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
 .mc-add{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}.mc-add>input{flex:1 1 140px}.mc-add .money-in{flex:1 1 100px}
 .mc-res{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;font-weight:600}.mc-res b{font-family:var(--display);font-size:1.7rem}.mc-res b.pos{color:var(--green)}.mc-res b.neg{color:var(--rust)}
 .mc-sum{margin:0 0 12px}
+.dn-io{display:flex;gap:18px;margin:2px 0 12px}.dn-io button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px}.dn-io small{font-size:.8rem;color:var(--muted)}.dn-io b{font-size:1.05rem}
+.dn-warn{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:12px;padding:9px 12px;border-radius:12px;background:color-mix(in srgb,var(--rust) 11%,transparent);color:var(--rust);font-weight:600;font-size:.86rem}
 /* Home: three answers */
 [data-out="home"]{display:flex;flex-direction:column;gap:14px}
 .card.home-left{background:var(--green);color:#fff;border:0;border-radius:24px;padding:22px 22px 18px;display:flex;flex-direction:column;gap:6px}
@@ -58,6 +60,7 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
 .hl-bar{display:block;height:8px;border-radius:4px;background:rgba(255,255,255,.22);overflow:hidden;margin-top:10px}.hl-bar i{display:block;height:100%;background:#fff;border-radius:4px}
 .hl-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.84rem;color:rgba(255,255,255,.86)}
 .hl-why{border:0;background:rgba(255,255,255,.16);color:#fff;font:inherit;font-weight:700;font-size:.88rem;border-radius:16px;min-height:36px;padding:0 14px;cursor:pointer}
+.hero .hero-why{position:absolute;top:50px;right:16px;margin:0;min-height:32px;font-size:.84rem;z-index:1;color:inherit;background:color-mix(in srgb,currentColor 14%,transparent)}
 .home-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .home-tile{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:15px;color:var(--ink);font:inherit;cursor:pointer;position:relative;min-width:0}
 .home-tile small{color:var(--muted);font-weight:600;font-size:.82rem;padding-right:28px}.home-tile b{font-size:1.15rem;font-family:var(--display)}.home-tile b.neg{color:var(--rust)}.home-tile em{font-style:normal;color:var(--muted);font-size:.84rem;font-weight:600}
@@ -120,6 +123,23 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
 .kc-plusbox .quick-ic{flex-direction:row;height:40px;padding:0 14px 0 11px;border-radius:20px;gap:7px;color:var(--ink)}
 .kc-plusbox .quick-ic span{color:var(--green);display:grid}.kc-plusbox .quick-ic svg{width:17px;height:17px}.kc-plusbox .quick-ic small{font-size:.9rem;font-weight:600}
 .kc-plusbox .quick-ic[aria-pressed="true"]{border-color:var(--green);background:var(--chip)}
+.cl-h{display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 10px}.cl-h .kc-lab{margin:0}.cl-h button{all:unset;cursor:pointer;color:var(--green);font-weight:600;font-size:.86rem}
+.cl-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 8px}
+.cl-c{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.cl-c>span{width:54px;height:54px;border-radius:17px;background:var(--bg);color:var(--green);display:grid;place-items:center}.cl-c>span svg{width:24px;height:24px}
+.cl-c small{font-size:.78rem;font-weight:600;color:var(--ink);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-again{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}.cl-again .chip{flex:none}
+.cl-step{display:flex;flex-direction:column;gap:12px}
+.cl-top{display:flex;align-items:center;gap:12px}.cl-top .cl-c>span{width:46px;height:46px}.cl-top b{font-size:1.15rem;display:block}.cl-top small{color:var(--muted);font-size:.8rem}
+.cl-back{all:unset;cursor:pointer;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--ink);background:var(--bg)}
+.cl-amt{all:unset;box-sizing:border-box;background:transparent!important;border:0!important;box-shadow:none!important;width:100%;text-align:center;font:800 2.6rem/1.1 var(--display,inherit);color:var(--ink);padding:8px 0;caret-color:var(--green)}
+.cl-amt::placeholder{color:var(--muted);opacity:.5}
+.cl-days{display:flex;gap:8px;justify-content:center}.cl-days button{all:unset;cursor:pointer;padding:7px 14px;border-radius:16px;background:var(--bg);font-size:.86rem;font-weight:600;color:var(--muted)}.cl-days button[aria-pressed="true"]{background:var(--chip);color:var(--green);box-shadow:inset 0 0 0 1.5px var(--green)}
+.cl-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.cl-keys button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:13px 0;border-radius:14px;background:var(--bg);font-size:1.3rem;font-weight:600;color:var(--ink)}.cl-keys button:active{background:var(--chip)}
+.cl-go{width:100%;justify-content:center}
+.cl-opt{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:16px;background:var(--bg);border:2px solid transparent}.cl-opt[aria-pressed="true"]{border-color:var(--green);background:var(--chip)}
+.cl-opt i{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);margin-top:2px}.cl-opt[aria-pressed="true"] i{border:6px solid var(--green)}
+.cl-opt b{display:block;color:var(--ink)}.cl-opt small{color:var(--muted);font-size:.82rem}
 </style>
 <meta name="theme-color" content="#f2faf6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4429,6 +4449,45 @@ function quickPick(){
     ${on ? `${exp ? `<p class="small muted quick-note">${line ? `${esc(line.name)}: ${fmt(billSpendIn(line.id, compute().planKey))} of ${fmt(+line.amount || 0)} used this month` : `No ${esc(on[1].toLowerCase())} bill yet. This adds one, a month.`}</p>` : ""}
       <form class="inline quick-add" data-form="quick"><span class="money-in"><em>${esc(sym())}</em><input name="amount" inputmode="decimal" enterkeyhint="done" placeholder="${exp ? (line ? `${esc(on[1].split(" ")[0])} spent` : `${esc(on[1].split(" ")[0])} a month`) : `${esc(on[1].split(" ")[0])} amount`}" aria-label="${esc(on[1])} amount"></span><button class="btn primary" type="submit">${exp && !line ? "Add bill" : "Add"}</button></form>` : ""}</div>`}`;
 }
+// Log a spend, in the chat's + panel: tap a category, type the amount (and the day), then say where it goes.
+// The answer is remembered for that category, so next time it is already picked.
+const CL_TOP = ["food", "coffee", "cart", "fuel", "bag", "car", "fun"];
+const clName = k => ({coffee: "Coffee", car: "Car", receipt: "Other", family: "Family", phone: "Phone", book: "Books", gym: "Gym", cash: "Cash", film: "Movies", pill: "Pharmacy"})[k] || ((SPEND_ICONS.find(x => x[0] === k) || [k, k])[1]).split(" ")[0];
+const clLine = k => { const q = EXP_QUICK.find(x => x[0] === k), n = clName(k).toLowerCase(), ex = S.expenses.filter(e => e.env === "needs");
+  return ex.find(e => e.name.toLowerCase() === n) || (q ? expFor(q) : null); };
+const clIc = k => `<span aria-hidden="true">${I[k] || I.receipt}</span>`;
+function chatLog(){ const L = UI.cl;
+  if (!L){ const rep = quickRepeat(), all = UI.quickAll, list = all ? SPEND_ICONS.map(x => x[0]) : CL_TOP;
+    if (UI.quickView === "hist") return `<div class="cl-h"><p class="kc-lab">This month</p><button type="button" data-quick-view="add">Back</button></div><div data-quick>${quickHistory(false)}</div>`;
+    return `<div class="cl-h"><p class="kc-lab">Log a spend</p><button type="button" data-quick-view="hist">History</button></div>
+      <div class="cl-grid" role="group" aria-label="Log a spend by category">${list.map(k => `<button type="button" class="cl-c" data-cl="${k}" aria-label="${esc(clName(k))}">${clIc(k)}<small>${esc(clName(k))}</small></button>`).join("")}<button type="button" class="cl-c" data-quick-more aria-expanded="${!!all}"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${all ? '<path d="M6 15l6-6 6 6"/>' : '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'}</svg></span><small>${all ? "Less" : "More"}</small></button></div>
+      ${rep.length ? `<p class="kc-lab">Again</p><div class="cl-again" data-quick data-scroll-x aria-label="Log again">${rep.map(g => `<button class="chip rep-chip" type="button" data-rep="${esc(g.key)}"><span aria-hidden="true">${emoFor(g.items[0].name)}</span> ${esc(g.items[0].name)} <b class="tnum">${fmt(g.items[0].amount)}</b></button>`).join("")}</div>` : ""}`; }
+  const top = (sub) => `<div class="cl-top"><button type="button" class="cl-back" data-cl-back aria-label="Back"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="cl-c">${clIc(L.k)}</span><div><b>${esc(clName(L.k))}</b><small>${sub}</small></div></div>`;
+  if (L.step === 1) return `<div class="cl-step" data-cl-step="1">${top("Step 1 of 2 · How much?")}
+    <input class="cl-amt tnum" id="cl-amt" data-cl-amt inputmode="none" autocomplete="off" placeholder="${esc(sym())}0" value="${L.amt ? esc(sym() + L.amt) : ""}" aria-label="${esc(clName(L.k))} amount">
+    <div class="cl-days" role="group" aria-label="Which day">${["Today", "Yesterday"].map((n, i) => `<button type="button" data-cl-day="${i}" aria-pressed="${(L.day || 0) === i}">${n}</button>`).join("")}</div>
+    <div class="cl-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "del"].map(k => `<button type="button" data-cl-key="${k}" aria-label="${k === "del" ? "Delete" : k}">${k === "del" ? "⌫" : k}</button>`).join("")}</div>
+    <button type="button" class="btn primary cl-go" data-cl-next>Next</button></div>`;
+  const line = clLine(L.k), amt = fmt(+L.amt || 0), exp = L.env === "exp";
+  return `<div class="cl-step" data-cl-step="2">${top(`Step 2 of 2 · ${amt}${L.day ? " · yesterday" : ""}`)}
+    <p style="font-weight:700;font-size:1.05rem;margin:4px 0 0">Where does it go?</p>
+    <button type="button" class="cl-opt" data-cl-env="misc" aria-pressed="${!exp}"><i></i><span><b>Everyday spending</b><small>Comes out of what you have left to spend this month.</small></span></button>
+    <button type="button" class="cl-opt" data-cl-env="exp" aria-pressed="${exp}"><i></i><span><b>Part of a monthly expenditure</b><small>${line ? `Counts toward ${esc(line.name)}: ${fmt(billSpendIn(line.id, compute().planKey))} of ${fmt(+line.amount || 0)} used.` : `Adds ${esc(clName(L.k))} as a bill, ${amt} a month.`}</small></span></button>
+    <p class="muted small" style="text-align:center;margin:0">We’ll remember this for ${esc(clName(L.k))} next time.</p>
+    <button type="button" class="btn primary cl-go" data-cl-save>Save ${amt}</button></div>`;
+}
+function clSave(){ const L = UI.cl, amt = r2(+L.amt || 0); if (!(amt > 0)) return;
+  const u = undoable(), date = isoDaysAgo(L.day ? 1 : 0), k = L.day ? periodKeyOfIso(date) : compute().planKey, nm = clName(L.k); let said;
+  S.qKind = S.qKind || {}; S.qKind[L.k] = L.env;
+  if (L.env === "exp"){ const line = clLine(L.k);
+    if (line){ S.billSpends = S.billSpends || []; S.billSpends.push({id: uid(), e: line.id, amount: amt, date, k});
+      const used = billSpendIn(line.id, k), plan = +line.amount || 0; said = used > plan ? `${fmt(r2(used - plan))} over your ${line.name} plan.` : `Counted toward ${line.name}: ${fmt(used)} of ${fmt(plan)}.`; }
+    else { S.expenses.push({id: uid(), name: nm, amount: amt, env: "needs"}); said = `Added ${nm}, ${fmt(amt)} a month, to your monthly expenditures.`; } }
+  else { S.spends = S.spends || []; S.spendIcons = S.spendIcons || {}; S.spendIcons[nm.toLowerCase()] = L.k;
+    S.spends.push({id: uid(), date, at: Date.now(), k, name: nm, amount: amt}); }
+  UI.cl = null; UI.chatPlus = false; save(); refreshOuts();
+  if (L.env !== "exp"){ const C = compute(), left = r2(C.miscLeft); said = `Added ${nm}, ${fmt(amt)}${L.day ? " yesterday" : ""}, to everyday spending. ${left < 0 ? `You’re ${fmt(-left)} over your everyday budget.` : `${fmt(left)} left to spend.`}`; }
+  const sh = $("asksheet"); toast(said, u); if (sh) askRedraw(sh); chatBottom(); }
 // Add anything from the owl: each tile opens the same form the app already has, on its own screen.
 const ADDX = [["trip", "Trip"], ["event", "Event"], ["loan", "Loan"], ["receipt", "Receipt"], ["bill", "Bill"], ["sub", "Sub"], ["split", "Split"], ["income", "Income"]];
 const ADDX_IC = {"trip": "<path d=\"M3 15l18-7-6 12-3-5-5-1z\"/>", "event": "<path d=\"M4 20l5-14 9 9z\"/><path d=\"M14 4l1 2M19 6l-2 1M18 10h2\"/>", "loan": "<path d=\"M3 9l9-5 9 5M5 9v8M10 9v8M14 9v8M19 9v8M3 20h18\"/>", "receipt": "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 8h6M9 12h6\"/>", "bill": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"15\" rx=\"3\"/><path d=\"M4 10h16M9 3v4M15 3v4\"/>", "sub": "<rect x=\"3\" y=\"7\" width=\"15\" height=\"12\" rx=\"3\"/><path d=\"M7 4h11a3 3 0 0 1 3 3v9\"/><path d=\"M8 13l2 2 3-4\"/>", "split": "<circle cx=\"8\" cy=\"9\" r=\"3\"/><circle cx=\"17\" cy=\"10\" r=\"2.5\"/><path d=\"M3 19c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5M14 18.5c.4-2 1.6-3 3-3s2.6 1 3 3\"/>", "income": "<rect x=\"3\" y=\"6\" width=\"18\" height=\"12\" rx=\"3\"/><circle cx=\"12\" cy=\"12\" r=\"2.6\"/><path d=\"M6 9v.01M18 15v.01\"/>"};
@@ -4491,11 +4550,11 @@ function chatCard(){
   const chips = ["How much will I save?", "What’s coming up?", `Can I afford ${fmt(300)}?`, "What should I cancel?", "Who owes me?", "What do I spend most on?"];
   const tile = (k, n, d, attr, path) => `<button type="button" class="kc-tile" ${attr}><span class="kc-ti"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span><b>${n}</b><small>${d}</small></button>`;
   const row = k => { const n = (ADDX.find(([x]) => x === k) || [k, k])[1]; return `<button type="button" class="kc-row" data-addx="${k}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ADDX_IC[k]}</svg><span>${{sub: "Subscription", loan: "Loan or card"}[k] || n}</span><svg class="kc-chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>`; };
-  const plus = UI.chatPlus ? `<div class="kc-plusbox" role="dialog" aria-label="Add">
+  const plus = UI.chatPlus && UI.cl ? `<div class="kc-plusbox" role="dialog" aria-label="Log a spend">${chatLog()}</div>` : UI.chatPlus ? `<div class="kc-plusbox" role="dialog" aria-label="Add">
       <div class="kc-ph"><b>Add</b><button type="button" class="icon-btn" data-chat-plus aria-label="Close Add"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       <div class="kc-top4">${tile("receipt", "Scan receipt", "Photo to expense", "data-rcpt-snap", '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>')}${tile("bill", "Bill", "Rent, phone, utilities", 'data-addx="bill"', ADDX_IC.bill)}${tile("income", "Income", "Paycheck or extra", 'data-addx="income"', ADDX_IC.income)}${tile("split", "Split", "Share with friends", 'data-addx="split"', ADDX_IC.split)}</div>
       <div class="kc-list">${["sub", "loan", "trip", "event"].map(row).join("")}</div>
-      <p class="kc-lab">Log a spend</p>${quickPick()}</div>` : "";
+      ${chatLog()}</div>` : "";
   return `<section class="card ask-panel kchat" aria-labelledby="askh" role="dialog" aria-modal="true">
     <div class="kc-head"><button class="icon-btn kc-close" type="button" data-ask-close aria-label="Close chat"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="kc-av"><img src="${lg}" alt=""></span><div class="kc-nm"><h2 id="askh">KeepWise</h2><small><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>On this phone</small></div>${infoBtn("ask", "About Ask KeepWise")}${CHAT.length ? `<button type="button" class="kc-clear" data-chat-clear>Clear</button>` : ""}</div>
     ${UI.info === "ask" ? `<div class="info-tip ask-words kc-help" role="note" data-info-tip="ask"><p>Type or say it as a sentence. These words decide where it goes:</p><ul><li><b>Money in:</b> say <i>received</i>, <i>got paid</i>, <i>salary</i> or <i>bonus</i>. “Received 300 from Mike”</li><li><b>Subscription:</b> say <i>sub</i> or <i>subscription</i>. “Netflix sub 15”</li><li><b>Expenditure</b>, a bill every month: say <i>monthly</i>, <i>every month</i> or <i>bill</i>. “Rent 1200 monthly”</li><li><b>Misc:</b> anything else with an amount. “Coffee 4”</li><li><b>A question:</b> “Can I afford 300?” Answers use the numbers in your app.</li></ul><div class="ask-howto"><p class="label">How to use it</p><div data-out="howto">${OUT.howto()}</div></div></div>` : ""}
@@ -4589,12 +4648,12 @@ ${savingsCard()}`;   // what comes in: pay, other income, and a statement to rea
   const note = top.slice(spaceSwitch().length, top.indexOf('<section class="hero hero-keep">')), rest = top.slice(top.indexOf('<section class="hero hero-keep">'));
   const wk = '  <div data-out="week">' + OUT.week() + '</div>', restNoWeek = rest.replace(wk, "");   // This week sits right under the home answers
   return `${spaceSwitch()}${sw}${note}
+${restNoWeek.replace('<section class="hero hero-keep">', '<section class="hero hero-keep hero-month">')}
   <div data-out="home">${OUT.home()}</div>
 ${restNoWeek === rest ? "" : wk}
 ${now}
 ${coming}
   <div data-out="tripsNow">${OUT.tripsNow()}</div>
-${restNoWeek.replace('<section class="hero hero-keep">', '<section class="hero hero-keep hero-month">')}
 ${donut}
 ${progress}`;
 };
@@ -4612,24 +4671,22 @@ OUT.home = () => { const C = compute(), M = moneyNow(C), bud = r2(+C.envMiscBase
       const lines = [["Subscriptions this month", "Everyday ones, charged or still to come", P2.subs], ["Everyday bills", "Monthly ones that come out of everyday money", P2.bills], ["Spending you logged", `${n === 1 ? "1 purchase" : `${n} purchases`} so far`, P2.spends], ["Trips you counted", "", P2.trips], ["Giving", "", P2.giving]].filter(x => +x[2] > 0.004);
       const all = r2(lines.reduce((t, x) => t + x[2], 0)), row = (n, sub, v, cls) => `<div class="why-row"><div><b>${esc(n)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div><span class="tnum ${cls || ""}">${v}</span></div>`;
       return `<div class="why-wrap" data-why-sheet><button type="button" class="why-back" data-why aria-label="Close"></button><section class="why-sheet" role="dialog" aria-modal="true" aria-labelledby="why-h">
-        <div class="why-grab" aria-hidden="true"></div><div class="why-top"><h2 id="why-h">How we got ${fmt(Math.abs(left))}${over ? " over" : ""}</h2><button type="button" class="icon-btn" data-why aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-        <p class="muted small">${esc(C.planMonth)} · everyday money</p>
+        <div class="why-grab" aria-hidden="true"></div><div class="why-top"><h2 id="why-h">How we got ${UI.why === "keep" ? fmt(Math.abs(keep)) : fmt(Math.abs(left)) + (over ? " over" : "")}</h2><button type="button" class="icon-btn" data-why aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        ${UI.why === "keep" ? `<div class="why-month"><p class="label">Your whole ${esc(C.planMonth)}</p>${row("Coming in", "Pay and other income you planned", fmt(C.income), "pos")}${row("Bills, cards and loans", "Expenditures for the month", "−" + fmt(r2(C.needs)))}${row(over ? "Everyday spending" : "Everyday budget", over ? "Past your budget, so all of it counts" : "Counted as spent, so this never drops while you stay inside it", "−" + fmt(r2(C.miscHeld)))}<div class="why-total"><b>${keep < 0 ? "Short by" : "You’ll keep"}</b><b class="tnum ${keep < 0 ? "neg" : "pos"}">${fmt(Math.abs(keep))}</b></div><p class="muted small" style="margin:0 0 6px">Anything left of your everyday budget at the end of the month is kept too.</p></div>
+<p class="muted small">${esc(C.planMonth)} · everyday money</p>
+        ${row("Everyday budget", "Your Miscellaneous budget for the month", fmt(bud), "pos")}
+        ${lines.length ? lines.map(x => row(x[0], x[1], "−" + fmt(r2(x[2])))).join("") : row("Nothing spent yet", "", fmt(0))}
+        <div class="why-total"><b>${over ? "Over budget by" : "Left to spend"}</b><b class="tnum ${over ? "neg" : "pos"}">${fmt(Math.abs(left))}</b></div>
+        <p class="why-sum muted small tnum">${fmt(bud)} − ${fmt(all)} = ${over ? "−" : ""}${fmt(Math.abs(left))}</p>` : `<p class="muted small">${esc(C.planMonth)} · everyday money</p>
         ${row("Everyday budget", "Your Miscellaneous budget for the month", fmt(bud), "pos")}
         ${lines.length ? lines.map(x => row(x[0], x[1], "−" + fmt(r2(x[2])))).join("") : row("Nothing spent yet", "", fmt(0))}
         <div class="why-total"><b>${over ? "Over budget by" : "Left to spend"}</b><b class="tnum ${over ? "neg" : "pos"}">${fmt(Math.abs(left))}</b></div>
         <p class="why-sum muted small tnum">${fmt(bud)} − ${fmt(all)} = ${over ? "−" : ""}${fmt(Math.abs(left))}</p>
-        <div class="why-month"><p class="label">Your whole ${esc(C.planMonth)}</p>${row("Coming in", "Pay and other income you planned", fmt(C.income), "pos")}${row("Bills, cards and loans", "Expenditures for the month", "−" + fmt(r2(C.needs)))}${row(over ? "Everyday spending" : "Everyday budget", over ? "Past your budget, so all of it counts" : "Counted as spent, so this never drops while you stay inside it", "−" + fmt(r2(C.miscHeld)))}<div class="why-total"><b>${keep < 0 ? "Short by" : "You’ll keep"}</b><b class="tnum ${keep < 0 ? "neg" : "pos"}">${fmt(Math.abs(keep))}</b></div><p class="muted small" style="margin:0 0 6px">Anything left of your everyday budget at the end of the month is kept too.</p></div>
+<div class="why-month"><p class="label">Your whole ${esc(C.planMonth)}</p>${row("Coming in", "Pay and other income you planned", fmt(C.income), "pos")}${row("Bills, cards and loans", "Expenditures for the month", "−" + fmt(r2(C.needs)))}${row(over ? "Everyday spending" : "Everyday budget", over ? "Past your budget, so all of it counts" : "Counted as spent, so this never drops while you stay inside it", "−" + fmt(r2(C.miscHeld)))}<div class="why-total"><b>${keep < 0 ? "Short by" : "You’ll keep"}</b><b class="tnum ${keep < 0 ? "neg" : "pos"}">${fmt(Math.abs(keep))}</b></div><p class="muted small" style="margin:0 0 6px">Anything left of your everyday budget at the end of the month is kept too.</p></div>`}
         <button type="button" class="btn" data-why-budget>Change my everyday budget</button></section></div>`; })() : "";
-  return `<section class="card home-left${over ? " over" : ""}" data-home>
-    <span class="hl-lab">${over ? "Over your everyday budget" : "Left to spend"} in ${esc(C.planMonth)}</span>
-    <b class="hl-big tnum" style="${fitSize(fmt(Math.abs(left)), 3.2, 92)}">${fmt(Math.abs(left))}</b>
-    <span class="hl-sub">${over ? `Spending now comes out of what you keep.` : `About <b class="tnum">${fmt(M.safe)}</b> a day for the next ${M.daysLeft} day${M.daysLeft === 1 ? "" : "s"}`}</span>
-    <span class="hl-bar" aria-hidden="true"><i style="width:${done}%"></i></span>
-    <span class="hl-foot"><span>${done}% of the month done</span><button type="button" class="hl-why" data-why>Why?</button></span>
-  </section>
-  <div class="home-tiles">
+  return `<div class="home-tiles" data-home>
     <button type="button" class="home-tile" data-home-bills><small>Bills this month</small>${B.n ? `<span class="ht-ring" style="--p:${Math.round(B.paid / B.n * 100)}" aria-hidden="true"></span><b>${B.paid} of ${B.n} paid</b><em class="tnum">${B.leftAmt > 0 ? `${fmt(B.leftAmt)} to go` : "All paid"}</em>` : `<b>No bills yet</b><em>Add one with the owl</em>`}</button>
-    <button type="button" class="home-tile" data-home-keep><small>${keep < 0 ? "Short by" : "You’ll keep"}</small><b class="tnum ${keep < 0 ? "neg" : ""}">${fmt(Math.abs(keep))}</b><em>by ${esc(dayMonth(en || new Date()))}</em></button>
+    <button type="button" class="home-tile home-left-t${over ? " over" : ""}" data-why data-why-at="left"><small>${over ? "Over everyday budget" : "Left to spend"}</small><b class="tnum ${over ? "neg" : ""}">${fmt(Math.abs(left))}</b><em class="tnum">${over ? "Comes out of what you keep" : `${fmt(M.safe)} a day`}</em></button>
   </div>${why}`; };
 // Two cards that always have something to say, so the first screen is never bare once the week's charges have passed:
 // how far the month's bills have got, and how the savings are building.
@@ -4755,6 +4812,7 @@ OUT.headline = () => {
   return `${eye}<h1>${C.savings >= 0 ? "You’ll have saved" : "You’ll be short"} <span class="hero-by">by ${dayMonth(P.end)}</span></h1>
   <div class="big ${C.savings < 0 ? "neg" : ""}" style="margin-top:8px;${fitSize(fmt(Math.abs(C.savings)), 3, 88)}">${fmt(Math.abs(C.savings))}</div>
   ${heroTiles(C)}
+  <button type="button" class="hl-why hero-why" data-why data-why-at="keep">Why?</button>
   ${C.savings < 0 || over > 0.005 ? `<button type="button" class="hero-warn" data-hero-warn data-hero-over>${C.savings < 0 ? `${C.planMonth} spends more than comes in. Drop a flagged subscription or use a cheaper swap to close it.` : ""}${over > 0.005 ? ` Expenditures are ${fmt(over)} over your budget ›` : ""}</button>` : ""}
   ${cum[today - 1] > 0 && today > 2 ? spark : ""}
   ${C.savings >= 0 || C.payBonus.extra > 0 ? `<p class="muted" style="margin-top:10px">${C.savings >= 0 ? `${C.planMonth} ends with ${fmt(C.endSaved)} saved ${tail}.` : ""}${C.payBonus.extra > 0 ? ` ${C.planMonth} has ${C.payBonus.count} paydays, so an extra ${fmt(C.payBonus.extra)} is counted.` : ""}</p>` : ""}`;
@@ -8454,6 +8512,10 @@ const loanRateNote = l => { const r = loanRate(l); return !r ? "Fill in the paym
 const loanRateText = l => { const r = loanRate(l); return !r ? "" : r.short ? "Check the numbers" : `${r.apr}% a year`; };
 const monthYear = d => d.toLocaleDateString("en-US", {month: "short", year: "numeric"});
 document.addEventListener("input", e => { const t = e.target; if (t && t.name === "amount" && t.form && /^(loanPay|cardPay)$/.test(t.form.dataset.form || "")) payAfter(t.form); });
+// Log a spend: the amount can also be typed on a keyboard; Enter moves on
+document.addEventListener("input", e => { const t = e.target; if (!t || !t.matches || !t.matches("[data-cl-amt]") || !UI.cl) return;
+  UI.cl.amt = t.value.replace(/[^\d.]/g, "").replace(/^(\d*\.\d{0,2}).*$/, "$1").slice(0, 10); });
+document.addEventListener("keydown", e => { const t = e.target; if (e.key === "Enter" && t && t.matches && t.matches("[data-cl-amt]")){ e.preventDefault(); const n = document.querySelector("[data-cl-next]"); if (n) n.click(); } });
 // A tap that opens a new card (Add a line, Add giving, New split…) takes you to it when it opened out of sight.
 // The forms already there before the tap are noted, so only the new one is scrolled to, and nothing is focused.
 const NEW_CARD_BTNS = "[data-new-split],[data-add-exp],[data-give-add],[data-inc-add],[data-card-add],[data-inv-add],[data-biz-add],[data-add-person-open],[data-miles-add],[data-sales-add],[data-idea-add]";
@@ -10130,11 +10192,20 @@ view.addEventListener("click", async e => {
     save(); render(false); return; }
   if (b.hasAttribute("data-mc-add")){ UI.mcAdd = true; render(false); const i = document.querySelector("[data-form=mcAdd] [name=name]"); if (i) i.focus(); return; }
   if (b.hasAttribute("data-mc-ok")){ const s0 = monthToClose(); if (!s0) return; s0.checked = true; UI.mcAdd = false; save(); render(false); return; }
-  if (b.hasAttribute("data-why")){ UI.why = !UI.why; render(false); return; }
+  if (b.hasAttribute("data-why")){ UI.why = UI.why ? false : (b.dataset.whyAt || "left"); render(false); return; }
   if (b.hasAttribute("data-why-budget")){ UI.why = false; UI.mseg = "budget"; UI.openEnv = "misc"; render(true); goTo("month", "[data-env-open=misc]"); return; }
   if (b.hasAttribute("data-home-bills")){ UI.why = false; goTo("month", "[data-bills-card]"); return; }
   if (b.hasAttribute("data-home-keep")){ UI.why = false; goTo("month", ".hero-month"); return; }
-  if (b.hasAttribute("data-chat-plus")){ UI.chatPlus = !UI.chatPlus; UI.quick = null; const sh = $("asksheet"); if (sh) askRedraw(sh); if (!UI.chatPlus) chatBottom(); return; }
+  if (b.closest(".kc-plusbox") && (b.dataset.cl || b.dataset.clKey || b.dataset.clDay || b.dataset.clEnv || b.hasAttribute("data-cl-back") || b.hasAttribute("data-cl-next") || b.hasAttribute("data-cl-save"))){ const sh = $("asksheet");
+    if (b.dataset.cl){ UI.cl = {k: b.dataset.cl, amt: "", day: 0, step: 1, env: (S.qKind || {})[b.dataset.cl] || "misc"}; }
+    else if (b.hasAttribute("data-cl-back")){ if (UI.cl.step === 2) UI.cl.step = 1; else UI.cl = null; }
+    else if (b.dataset.clKey){ const a = UI.cl.amt, k = b.dataset.clKey; UI.cl.amt = k === "del" ? a.slice(0, -1) : k === "." ? (a.includes(".") ? a : (a || "0") + ".") : /\.\d\d$/.test(a) || a.replace(".", "").length >= 7 ? a : (a === "0" ? k : a + k); }
+    else if (b.dataset.clDay) UI.cl.day = +b.dataset.clDay;
+    else if (b.hasAttribute("data-cl-next")){ if (!(+UI.cl.amt > 0)){ toast("Enter the amount."); return; } UI.cl.step = 2; }
+    else if (b.dataset.clEnv) UI.cl.env = b.dataset.clEnv;
+    else if (b.hasAttribute("data-cl-save")){ clSave(); return; }
+    if (sh) askRedraw(sh); return; }
+  if (b.hasAttribute("data-chat-plus")){ UI.chatPlus = !UI.chatPlus; UI.quick = null; UI.cl = null; UI.quickView = "add"; UI.quickAll = false; const sh = $("asksheet"); if (sh) askRedraw(sh); if (!UI.chatPlus) chatBottom(); return; }
   if (b.hasAttribute("data-chat-clear")){ CHAT = []; chatSave(); Object.keys(CHAT_UNDO).forEach(k => delete CHAT_UNDO[k]); const sh = $("asksheet"); if (sh) askRedraw(sh); return; }
   if (b.dataset.chatUndo){ const id = b.dataset.chatUndo, m = CHAT.find(x => x.id === id), f = CHAT_UNDO[id]; if (!m || !f) return;
     if (JSON.stringify(S) !== CHAT_AFTER[id]){ delete CHAT_UNDO[id]; chatPush({w: "bot", t: "I can’t undo that one now, because something changed after it. You can fix it where it lives, or tell me what to change."}); return; }
