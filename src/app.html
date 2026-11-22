@@ -4736,7 +4736,7 @@ OUT.stack = () => { const C = compute(), M = moneyNow(C), budget = budTotal(C), 
   const ex = r2(C.needs - C.loans), parts = [["Expenditures", ex], ...(C.loans > 0 ? [["Loans", C.loans]] : []), ["Misc", C.miscHeld], ["Savings", Math.max(0, C.savings)]];
   return `<section class="card bud-top" data-plan-card><p class="sr-only legend">${parts.map(([n, v]) => `<span>${n} <b>${fmt(v)}</b></span>`).join(" ")}</p><span class="label">${esc(C.planMonth)} budget</span><b class="bud-big tnum">${fmt(budget)}</b>
   <div class="bud-tiles"><button type="button" class="bud-tile" data-io-open><small>Spent so far</small><b class="tnum">${fmt(spent)}</b><span>${pct}% used</span></button>
-  <div class="bud-tile"><small>${left < 0 ? "Over budget" : "Left to spend"}</small><b class="tnum${left < 0 ? " neg" : ""}">${fmt(Math.abs(left))}</b><span>${left < 0 ? "this month" : `for ${M.daysLeft} day${M.daysLeft === 1 ? "" : "s"}`}</span></div></div></section>`; };
+  <div class="bud-tile"><small>${left < 0 ? "Over budget" : "Left in budget"}</small><b class="tnum${left < 0 ? " neg" : ""}">${fmt(Math.abs(left))}</b><span>${left < 0 ? "this month" : `for ${M.daysLeft} day${M.daysLeft === 1 ? "" : "s"}`}</span></div></div></section>`; };
 // Where the month goes, as a ring: the biggest lines each get a slice with its share, the rest are gathered as Other,
 // and what you keep is the green slice. Drawn on the device from the same numbers as the rest of Month.
 const DONUT_COLORS = ["#2f7fb8", "#c9a13a", "#b5523a", "#7a5aa6", "#2a9d8f", "#d77a3d", "#5b8c3a", "#c2568a", "#4f6fae"];
@@ -5119,6 +5119,8 @@ function answerMore(t, C){
   if (/\b(codes?|promo)\b/.test(t)) return S.codes.length ? `You have ${S.codes.length} code${S.codes.length === 1 ? "" : "s"} saved: ${S.codes.slice(0, 5).map(c => c.store).join(", ")}.` : "You have no codes saved yet.";
   if (/last month|previous month|statement/.test(t)){ const keys = statementKeys().filter(k => k !== C.planKey); return keys.length ? `${keyLabel(keys[0])}: ${fmt(keptOf(S.statements[keys[0]]))} kept. See every month under Monthly statements.` : "Your first monthly statement is still in progress."; }
   const sp0 = spendAnswer(t, C, true); if (sp0) return sp0;
+  if (/\b(spend|spending|left)\b/.test(t) && /\b(today|a day|per day|daily|each day|right now|left to spend|can i spend)\b/.test(t) && !/\d/.test(t)){ const M = moneyNow(C), L = r2(C.miscLeft || 0);
+    return L > 0.004 ? `About ${fmt(M.safe)} a day. You have ${fmt(L)} left to spend in ${C.planMonth} for the next ${M.daysLeft} day${M.daysLeft === 1 ? "" : "s"}, and what you keep stays ${fmt(C.savings)}.` : `Your everyday budget for ${C.planMonth} is used up${L < -0.004 ? ` (${fmt(-L)} over)` : ""}. Anything more comes out of what you keep, now ${fmt(C.savings)}.`; }
   if (/\b(spend|spending|going out|goes out|expenses|bills|outgoings)\b/.test(t) && !/\d/.test(t)) return `${C.planMonth}: ${fmt(C.needs + C.miscHeld)} goes out. Bills and living ${fmt(r2(C.needs - C.loans))}${C.loans > 0 ? `, loans and debts ${fmt(C.loans)}` : ""}, everyday money ${fmt(C.miscHeld)}.`;
   return null;
 }
@@ -11289,9 +11291,9 @@ initShared();
     <article class="kws-card"><h3>Right on your home screen</h3><p>Add spending from a widget, see your week at a glance, get a nudge before each bill.</p>
       <div class="kws-w kws-ask"><span>Widget · “coffee 4”</span><b>Logged. $41.20 safe to spend today.</b></div></article>
     <article class="kws-card kws-wide"><h3>Chat with your money</h3><button type="button" class="kws-see" data-kws-feat="owl">See it in the app →</button><p>Open the owl like a chat. Type it or send a voice note: "coffee 5", "did I pay rent?", "how much can I spend today?". Answers come from your own numbers, on your phone, and every change has Undo.</p>
-      <div class="kws-w kws-ask"><span>"How much can I spend today?"</span><b>About $102 a day for the next 10 days.</b></div></article>
+      <div class="kws-w kws-ask"><span>"How much can I spend today?"</span><b>About $71 a day for the next 9 days.</b></div></article>
     <article class="kws-card"><h3>Why this number?</h3><p>Tap what's left to spend and see every dollar behind it, adding up to the cent.</p>
-      <div class="kws-w"><div class="kws-row">Everyday budget<em>$1,040</em></div><div class="kws-row">Audible<em class="bad">−$14.95</em></div><div class="kws-row"><b>Left to spend</b><em><b>$1,025.05</b></em></div></div></article>
+      <div class="kws-w"><div class="kws-row">Everyday budget<em>$1,040</em></div><div class="kws-row">Subscriptions<em class="bad">−$142.87</em></div><div class="kws-row">Everyday bills<em class="bad">−$254</em></div><div class="kws-row"><b>Left to spend</b><em><b>$643.13</b></em></div></div></article>
     <article class="kws-card"><h3>A month that stays right</h3><p>When a month ends, a 20-second check: did your pay come, were bills paid, anything you forgot? Then it's closed and never drifts.</p>
       <div class="kws-w kws-ask"><span>October is over</span><b>Did this all happen? ✓</b></div></article>
   </div>
