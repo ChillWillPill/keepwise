@@ -146,6 +146,7 @@ async def owl(pg):
     # at the very bottom of a long screen the owl steps aside; a person scrolls up a little to bring it back
     if await pg.evaluate("document.body.classList.contains('at-end')"):
         await pg.evaluate("document.getElementById('main').scrollTop -= 120"); await pg.wait_for_timeout(250)
+        if await pg.evaluate("document.body.classList.contains('at-end')"): await pg.evaluate("document.getElementById('main').scrollTop = 0"); await pg.wait_for_timeout(250)
     await pg.click("#wise")
 async def ask_type(pg, q):
     # type into Ask wherever you are: the card at the foot of Month, or the owl button on any other tab
@@ -170,6 +171,7 @@ async def ask_go(pg, q):
     await ask_type(pg, q); await pg.wait_for_timeout(500); r = await said(pg)
     g = pg.locator("[data-chat-go]")
     if await g.count(): await g.last.click(); await pg.wait_for_timeout(300)
+    if await pg.locator(".kc-head [data-ask-close]").count(): await pg.click(".kc-head [data-ask-close]"); await pg.wait_for_timeout(150)   # no See it: close the chat
     return r
 async def said_last(pg):
     return await said(pg)
