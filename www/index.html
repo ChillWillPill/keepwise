@@ -50,6 +50,24 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
 .mc-sum{margin:0 0 12px}
 .dn-io{display:flex;gap:18px;margin:2px 0 12px}.dn-io button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px}.dn-io small{font-size:.8rem;color:var(--muted)}.dn-io b{font-size:1.05rem}
 .dn-warn{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:12px;padding:9px 12px;border-radius:12px;background:color-mix(in srgb,var(--rust) 11%,transparent);color:var(--rust);font-weight:600;font-size:.86rem}
+
+/* Subs: one calm purple card on top, tidy one-line rows */
+.subs-hero{--sh1:#3b2a6e;--sh2:#24194a;background:linear-gradient(160deg,var(--sh1),var(--sh2))!important;color:#fff!important;border:0!important;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:6px}
+:root[data-theme="dark"] .subs-hero{--sh1:#4a3787;--sh2:#2a1d57}
+.subs-hero .label{color:rgba(255,255,255,.78)!important;margin:0}
+.sh-big{font:800 clamp(2rem,10vw,2.6rem)/1.1 var(--display);color:#fff}.sh-big small{font-size:1rem;font-weight:600;opacity:.75;margin-left:4px}
+.sh-yr{margin:0;font-size:.88rem;color:rgba(255,255,255,.85)}.sh-yr b{color:#fff}
+.subs-hero .ss-bar{height:8px;margin:8px 0 4px;background:rgba(255,255,255,.12)}
+.sh-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px}
+.sh-tiles>*{all:unset;box-sizing:border-box;background:rgba(255,255,255,.12);border-radius:14px;padding:9px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.sh-tiles button{cursor:pointer}.sh-tiles small{font-size:.76rem;color:rgba(255,255,255,.8)}.sh-tiles b{font-size:1.02rem;color:#fff;white-space:nowrap}
+.sh-save{all:unset;box-sizing:border-box;cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:6px;background:#fff;color:#4b2fa0;border-radius:14px;padding:11px 14px;font-weight:700;font-size:.9rem}
+.sh-ctl{margin:4px 0 2px}.ss-div{flex:none;width:1px;align-self:stretch;margin:4px 2px;background:var(--line,rgba(127,127,127,.3))}
+:root[data-skin="glass"] .card.subs-hero{background:linear-gradient(160deg,rgba(59,42,110,.94),rgba(36,25,74,.93))!important;color:#fff!important;border-color:rgba(255,255,255,.2)!important}
+:root[data-skin="glass"] .subs-hero :is(b,small,span,p){color:inherit}
+.sub-sub{display:block;font-size:.8rem;line-height:1.35;color:var(--muted)}.sub-t .sub-flags{margin-left:0}.sub-sub>*{display:inline}.sub-sub>*+*::before{content:" · ";color:var(--muted)}
+.sub-sub .renew-btn{font-size:.8rem}.sub-sub .renew-btn.add{color:var(--muted)}
+.sub-flags .sub-tag{display:inline-block;white-space:nowrap;margin-top:3px;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--rust-soft);color:var(--rust)}.sub-tag.grey{background:var(--chip);color:var(--muted)}
 /* Home: three answers */
 [data-out="home"]{display:flex;flex-direction:column;gap:14px}
 .card.home-left{background:var(--green);color:#fff;border:0;border-radius:24px;padding:22px 22px 18px;display:flex;flex-direction:column;gap:6px}
@@ -5283,10 +5301,11 @@ function answer(q){
 V.subs = () => `
   ${subSeg()}${coach("subs", "Pay less for subscriptions")}
   <div class="subs-head"><h1>Subscriptions</h1><button class="icon-btn" type="button" data-import-open aria-label="Find subscriptions in a bank statement" title="Find subscriptions in a bank statement">${STMT_IC}</button></div>
-  <div data-out="reviewCard">${OUT.reviewCard()}</div>
   <div data-out="subsSummary">${OUT.subsSummary()}</div>
+  <div data-out="reviewCard">${OUT.reviewCard()}</div>
   <div data-out="remindBox">${OUT.remindBox()}</div>
   <div data-out="subsList">${OUT.subsList()}</div>
+  <div data-out="subsRule">${OUT.subsRule()}</div>
   <div data-out="dropCard">${OUT.dropCard()}</div>
   <button class="link small subs-import" type="button" data-import-open>${STMT_IC}Find subscriptions in a bank statement</button>
   <button class="btn subs-add" type="button" data-sub-new>${I.plus}Add a subscription</button>${UI.subAdd ? subAddWiz() : ""}`;
@@ -5312,26 +5331,25 @@ const subInCycle = s => ((UI.subCycle || "all") === "all" || subCycleOf(s) === U
 OUT.subsSummary = () => {
   const C = compute(), cyc = UI.subCycle || "all", live = C.liveSubs.filter(subInCycle), flagged = C.flagged.filter(subInCycle), dropped = S.subs.filter(s => s.keep === "drop" && subInCycle(s));
   const now = r2(live.reduce((a,s) => a + subCostIn(s, C.planKey), 0)), n = c => S.subs.filter(s => c === "all" || subCycleOf(s) === c).length;
-  // Just what the headline above doesn't already say: what comes out this month, and the next renewal. One line each,
-  // label on the left and the amount on the right, so it reads the same on a 320px phone with big text as on a tablet.
+  // One calm card: the monthly total, the year, what renews next, what's charged so far and what you'd save on the ones you don't use.
   const next = live.map(s => ({s, d: nextRenewal(s)})).filter(x => x.d).sort((a, b) => a.d - b.d)[0] || null;
-  const moTotal = r2(live.reduce((a, s) => a + subMonthly(s), 0));
-  const rows = [...(cyc === "yr" || (cyc === "mo" && Math.abs(now - moTotal) < 0.01) ? [] : [["Comes out this month", fmt(now), "data-subs-now"]]),
-    next ? ["Next renewal", `${dayMonth(next.d)} · ${next.s.name}`, "data-subs-next"] : (cyc === "yr" ? ["Next renewal", "Add a renewal date below", "data-subs-next"] : null)].filter(Boolean);
-  return `<div class="card subs-sum"><div class="seg sub-cycle" role="group" aria-label="Show subscriptions">${SUB_CYCLES.map(([k, t]) => `<button type="button" data-sub-cycle="${k}" aria-pressed="${cyc === k}">${t}<small>${n(k)}</small></button>`).join("")}</div>
-    ${(() => { const mo = r2(live.reduce((a, s) => a + subMonthly(s), 0)); if (!live.length) return "";
-      const bg = n => { const b = BRANDS.find(x => x[0].test(n)); return b ? b[1] : `hsl(${avatarHue(n)} 50% 60%)`; };
-      return `<div class="ss-top"><div><span class="label">Every month</span><b class="ss-big tnum">${fmt(mo)}</b></div><span class="ss-yr tnum"><b data-subs-year>${fmt(subPer(live).year)}</b> a year</span></div>
-      <div class="ss-bar" aria-hidden="true">${live.slice().sort((a, b) => subMonthly(b) - subMonthly(a)).map(x => `<i style="flex:${subMonthly(x).toFixed(2)};background:${bg(x.name)}" title="${esc(x.name)}"></i>`).join("")}</div>
-      ${flagged.length ? `<button type="button" class="ss-waste" data-sub-kind="flag"><span class="ss-w-ic" aria-hidden="true">⚠</span><span><b>${flagged.length} you don’t use</b><small>${fmt(subPer(flagged).year)} a year</small></span><span class="ss-stack" aria-hidden="true">${flagged.slice(0, 4).map(x => brandTile(x.name, 28)).join("")}</span></button>` : ""}`; })()}
-    ${(() => { const all = C.liveSubs, kinds = SUB_KINDS.map(([k, t]) => [k, t, all.filter(x => subKindOf(x) === k).length]).filter(x => x[2]); if (!kinds.length && !C.flagged.length) return "";
-      return `<div class="ss-chips" data-scroll-x role="group" aria-label="Show a kind">${[["", "All", all.length], ...kinds, ...(C.flagged.length ? [["flag", "⚠ Unused", C.flagged.length]] : [])].map(([k, t, n]) => `<button type="button" class="ss-chip${(UI.subKind || "") === k ? " on" : ""}${k === "flag" ? " bad" : ""}" data-sub-kind="${k}">${t} <small>${n}</small></button>`).join("")}</div>`; })()}
-    ${rows.length ? `<div class="ss-facts">${rows.map(([l, v, attr]) => `<div><span>${l}</span><b ${attr} class="tnum">${esc(v)}</b></div>`).join("")}</div>` : ""}
-    ${(() => { const P = periodOf(new Date()), from = isoOf(P.start), to = isoOf(P.end), m = S.subs.filter(x => x.keep !== "drop" && x.cycle !== "yr" && x.renewDay), n = m.filter(x => (x.paidOn || "") >= from && (x.paidOn || "") <= to).length;
-      return m.length && cyc !== "yr" ? `<p class="small muted" data-subs-charged style="margin:0">${n} of ${m.length} monthly ${m.length === 1 ? "subscription" : "subscriptions"} charged this month</p>` : ""; })()}
-    <label class="sub-rule"><span>Flag if unused for</span><input id="rule-days" data-bind="ruleDays" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.ruleDays}" aria-label="Days unused before a subscription is flagged"><span>days, or a duplicate</span></label>
-    ${dropped.length ? `<p class="small good">Dropping ${dropped.length} keeps ${subsKeep(dropped)}.</p>` : ""}</div>`;
+  const mo = r2(live.reduce((a, s) => a + subMonthly(s), 0));
+  const nd = next ? daysUntil(next.d) : null, when = next ? (nd === 0 ? "today" : nd === 1 ? "tomorrow" : dayMonth(next.d)) : "";
+  const P = periodOf(new Date()), from = isoOf(P.start), to = isoOf(P.end), ms = S.subs.filter(x => x.keep !== "drop" && x.cycle !== "yr" && x.renewDay && subInCycle(x)), charged = ms.filter(x => (x.paidOn || "") >= from && (x.paidOn || "") <= to).length;
+  const bg = n => { const b = BRANDS.find(x => x[0].test(n)); return b ? b[1] : `hsl(${avatarHue(n)} 50% 60%)`; };
+  const kinds = SUB_KINDS.map(([k, t]) => [k, t, C.liveSubs.filter(x => subKindOf(x) === k).length]).filter(x => x[2]);
+  if (!S.subs.length) return "";
+  const hero = !live.length ? `<div class="card subs-hero subs-hero-empty"><span class="label">Subscriptions</span><b class="sh-big">${fmt(0)}<small>/mo</small></b><p class="sh-yr">Nothing ${cyc === "yr" ? "yearly" : cyc === "mo" ? "monthly" : ""} here yet.</p></div>` : `<section class="card subs-hero">
+    <span class="label">Subscriptions · ${cyc === "yr" ? "yearly ones, per month" : "every month"}</span>
+    <b class="sh-big tnum">${fmt(mo)}<small>/mo</small></b>
+    <p class="sh-yr"><b data-subs-year class="tnum">${fmt(subPer(live).year)}</b> a year${next ? ` · next: <span data-subs-next>${esc(next.s.name)} ${when}</span>` : ""}</p>
+    <div class="ss-bar" aria-hidden="true">${live.slice().sort((a, b) => subMonthly(b) - subMonthly(a)).map(x => `<i style="flex:${subMonthly(x).toFixed(2)};background:${bg(x.name)}" title="${esc(x.name)}"></i>`).join("")}</div>
+    <div class="sh-tiles">${ms.length && cyc !== "yr" ? `<div data-subs-charged><small>Charged so far</small><b class="tnum">${charged} of ${ms.length}</b></div>` : ""}${cyc === "yr" || Math.abs(now - mo) < 0.01 ? "" : `<div><small>Comes out this month</small><b data-subs-now class="tnum">${fmt(now)}</b></div>`}<button type="button" data-sub-kind="${flagged.length ? "flag" : ""}"><small>Barely used</small><b>${flagged.length} ${flagged.length === 1 ? "sub" : "subs"}</b></button></div>
+    ${flagged.length ? `<button type="button" class="sh-save" data-sub-kind="flag"><span>Save ${fmt(subPer(flagged).year)} a year on unused subs</span><span aria-hidden="true">›</span></button>` : dropped.length ? `<p class="sh-yr">Dropping ${dropped.length} keeps ${subsKeep(dropped)}.</p>` : ""}</section>`;
+  const chips = `<div class="ss-chips sh-ctl" data-scroll-x role="group" aria-label="Show">${[["", "All", C.liveSubs.length], ...kinds, ...(C.flagged.length ? [["flag", "Unused", C.flagged.length]] : [])].map(([k, t, n]) => `<button type="button" class="ss-chip${(UI.subKind || "") === k && (k || cyc === "all") ? " on" : ""}${k === "flag" ? " bad" : ""}" data-sub-kind="${k}"${k ? "" : ' data-sub-cycle="all"'}>${t} <small>${n}</small></button>`).join("")}<i class="ss-div" aria-hidden="true"></i>${SUB_CYCLES.slice(1).map(([k, t]) => `<button type="button" class="ss-chip${cyc === k ? " on" : ""}" data-sub-cycle="${cyc === k ? "all" : k}" aria-pressed="${cyc === k}">${t} <small>${n(k)}</small></button>`).join("")}</div>`;
+  return hero + (S.subs.length ? chips : "");
 };
+OUT.subsRule = () => S.subs.length ? `<label class="sub-rule"><span>Flag if unused for</span><input id="rule-days" data-bind="ruleDays" data-num type="text" inputmode="numeric" enterkeyhint="done" value="${S.ruleDays}" aria-label="Days unused before a subscription is flagged"><span>days, or a duplicate</span></label>` : "";
 OUT.subsList = () => {
   const C = compute();
   if (!S.subs.length) return (esCard("es-subs", "data-subs-empty", `<span class="es-cloud">${["Netflix", "Spotify", "Hulu", "YouTube TV", "Disney+", "Prime Video", "Apple Music", "Max"].map(n => `<button type="button" class="es-logo" data-sub-pick="${esc(n)}" aria-label="Add ${esc(n)}">${brandTile(n, 44)}</button>`).join("")}</span>`, "What are you paying for?", "Tap a logo to start, or find them all at once in a bank statement.", `<button class="btn primary" type="button" data-sub-pick="">${I.plus}Add a subscription</button><button class="link" type="button" data-import-open style="align-self:center">Find them in a statement</button>`)).replace('class="es-stage" aria-hidden="true"><span class="es-ex">Example</span>', 'class="es-stage"><span class="es-ex">Tap one to add</span>');
@@ -5343,7 +5361,7 @@ OUT.subsList = () => {
     const editing = UI.renewEdit === s.id;
     const renewEditor = !editing ? "" : `<div class="renew-set"><span class="small muted">Renews on</span>${s.cycle === "yr" || SUB_WK(s.cycle) ? `<input type="date" data-renew-date${dFrom(s.renewDate && isoOf(nextRenewal(s)))} value="${esc(s.renewDate ? isoOf(nextRenewal(s)) : "")}" aria-label="Next renewal date for ${esc(s.name)}">` : `<select data-renew-day aria-label="Renewal day for ${esc(s.name)}">${dayOptions(s.renewDay)}</select>`}<button class="link plain small" type="button" data-renew-cancel>Done</button></div>`;
     const renew = editing ? "" : nr ? `<button class="link plain small renew-btn" type="button" data-renew-open aria-label="Change renewal date for ${esc(s.name)}">Renews ${nd === 0 ? "today" : nd === 1 ? "tomorrow" : dateWithYear(nr, s.cycle === "yr")}</button>`
-      : `<button class="link plain small renew-btn add" type="button" data-renew-open aria-label="Add renewal date for ${esc(s.name)}">+ Renewal date</button>`;
+      : `<button class="link plain small renew-btn add" type="button" data-renew-open aria-label="Add renewal date for ${esc(s.name)}">+ Date</button>`;
     if (UI.subEdit === s.id) return `<div class="row" data-sub="${s.id}"><form class="inc-form" data-form="subEdit">
       <label class="field"><span>Name</span><input name="name" value="${esc(s.name)}" enterkeyhint="next" autocomplete="off"></label>
       <div class="grid2"><label class="field"><span>Price</span><span class="money-in"><em>${esc(sym())}</em><input name="price" inputmode="decimal" enterkeyhint="next" value="${s.price}"></span></label>
@@ -5355,11 +5373,12 @@ OUT.subsList = () => {
     const open = UI.subOpen === s.id || k === "drop", unused = f.some(r => /^Unused for/.test(r));
     const usage = !s.last ? "Usage not checked yet" : unused ? "" : d === 0 ? "Last used today" : d === 1 ? "Last used yesterday" : `Last used ${d} days ago`;
     return `<div class="row sub-row${open ? " open" : ""}${UI.flashSub === s.id ? " flash" : ""}" data-sub="${s.id}"><div class="sub-top" data-sub-toggle>${hasBrand(s.name) ? brandTile(s.name, 40) : `<span class="sub-ic emo" aria-hidden="true">${subEmo(s)}</span>`}<div class="sub-t"><div class="name">${esc(s.name)}</div>
-      ${usage ? `<div class="muted small">${usage}</div>` : ""}${s.since ? `<div class="muted small">${esc(paidFor(s))}</div>` : ""}<div>${renew}</div></div>
-      <div class="sub-v"><div class="name tnum">${fmt(s.price)}<span class="muted small">/${subUnit(s)}</span></div>${s.cycle === "yr" ? `<div class="muted small" data-sub-yearly>Once a year</div>` : SUB_WK(s.cycle) ? `<div class="muted small" data-sub-weekly>${fmt(subPerMo(s))} a month</div>` : ""}</div>
+      <div class="sub-sub">${renew}${usage ? `<span class="muted small">${usage}</span>` : ""}${s.since ? `<span class="muted small">${esc(paidFor(s))}</span>` : ""}</div>
+      ${f.length ? `<div class="sub-flags"><span class="sub-tag${k === "keep" ? " grey" : ""}" title="${esc(f.join("; "))}">${esc(f[0])}${f.length > 1 ? ` +${f.length - 1}` : ""}</span></div>` : ""}</div>
+      <div class="sub-v"><div class="name tnum">${fmt(s.price)}</div><div class="muted small">/${subUnit(s)}</div>${s.cycle === "yr" ? `<div class="muted small" data-sub-yearly>Once a year</div>` : SUB_WK(s.cycle) ? `<div class="muted small" data-sub-weekly>${fmt(subPerMo(s))} a month</div>` : ""}</div>
       <button class="sub-chev" type="button" data-sub-open aria-expanded="${open}" aria-label="${open ? "Hide" : "Show"} choices for ${esc(s.name)}">${KW_CH}</button></div>
       ${renewEditor}
-      ${f.length ? `<div class="inline sub-flags">${f.map(r => `<span class="pill ${k === "keep" ? "grey" : "flag"}">${esc(r)}</span>`).join("")}</div>` : ""}
+      ${open && f.length > 1 ? `<div class="inline sub-flags">${f.map(r => `<span class="pill ${k === "keep" ? "grey" : "flag"}">${esc(r)}</span>`).join("")}</div>` : ""}
       ${open ? `<div class="inline sub-acts">
         <div class="seg" role="group" aria-label="${esc(s.name)}"><button type="button" data-keep="keep" aria-pressed="${k === "keep"}">Keep</button><button type="button" data-keep="auto" aria-pressed="${k === "auto"}" title="Let your rules decide">Auto</button><button type="button" class="drop" data-keep="drop" aria-pressed="${k === "drop"}">Drop</button></div>
         <span class="inline">${d === 0 ? `<button class="btn small done" type="button" data-used disabled aria-label="${esc(s.name)} is marked as used today">${I.check}Used today</button>` : `<button class="btn small" type="button" data-used aria-label="Mark ${esc(s.name)} as used today">I used it today</button>`}<button class="link plain small" type="button" data-sub-edit aria-label="Edit ${esc(s.name)}">Edit</button></span></div>` : ""}
@@ -10154,7 +10173,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-plus-activate")){ plusActivate(); return; }
   if (b.hasAttribute("data-plus-limit-banks")){ UI.plus = false; UI.plusLimit = false; S.tab = "banks"; UI.bankSeg = "accounts"; render(false); return; }
   if (b.dataset.plusBuy){ plusBuy(b.dataset.plusBuy); return; }
-  if (b.dataset.subKind != null){ UI.subKind = b.dataset.subKind || null; refreshOuts(); return; }
+  if (b.dataset.subKind != null){ UI.subKind = b.dataset.subKind || null; if (b.dataset.subCycle) UI.subCycle = b.dataset.subCycle; refreshOuts(); return; }
   if (b.dataset.weekDay != null){ const c = view.querySelector("[data-out=comingUp] .card"), m = $("main"); if (c && m){ const seg = m.querySelector(".view>.seg.sub-seg"), under = seg ? 8 + seg.offsetHeight + 8 : 0;
       m.scrollTo({top: m.scrollTop + c.getBoundingClientRect().top - m.getBoundingClientRect().top - under - 12, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); } return; }
   if (b.hasAttribute("data-addx")){ const k = b.getAttribute("data-addx"); if (VOICE.rec) voiceFinish(false); UI.askOpen = false;

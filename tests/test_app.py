@@ -7020,7 +7020,7 @@ async def subs_switch_between_all_monthly_and_yearly(ctx):
     pg = await open_app(ctx)
     await tab(pg, "subs")
     assert await pg.locator(".subs-head [data-import-open]").count() == 1 and await pg.locator("#view .subs-import[data-import-open]").count() == 1
-    sw = [x.strip().split("\n")[0] for x in await pg.locator("[data-sub-cycle]").all_inner_texts()]; assert sw == ["All", "Monthly", "Yearly"], sw
+    sw = [x.strip().split()[0] for x in await pg.locator("[data-sub-cycle]").all_inner_texts()]; assert sw == ["All", "Monthly", "Yearly"], sw
     n_all = await pg.locator("[data-out=subsList] [data-sub]").count()
     await pg.click("[data-sub-cycle=yr]"); await pg.wait_for_timeout(150)
     yr = await pg.locator("[data-out=subsList] [data-sub]").count(); st = await state(pg)
@@ -7028,7 +7028,8 @@ async def subs_switch_between_all_monthly_and_yearly(ctx):
     sm = (await text(pg, "[data-out=subsSummary]")).lower(); assert "a year" in sm and "this month" not in sm, sm
     await pg.click("[data-sub-cycle=mo]"); await pg.wait_for_timeout(150)
     assert await pg.locator("[data-out=subsList] [data-sub]").count() == n_all - yr and "every month" in (await text(pg, "[data-out=subsSummary]")).lower(), await text(pg, "[data-out=subsSummary]")
-    assert await pg.locator("[data-out=subsSummary] #rule-days").count() == 1, "the flag rule sits in the totals card"
+    assert await pg.locator("[data-out=subsRule] #rule-days").count() == 1, "the flag rule sits under the list"
+    await pg.click("[data-sub-cycle=all]"); await pg.wait_for_timeout(150); assert await pg.locator("[data-out=subsList] [data-sub]").count() == n_all
     assert not pg.errors, pg.errors
 
 @test
