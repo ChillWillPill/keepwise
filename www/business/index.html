@@ -89,7 +89,7 @@ try { var kp = location.pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "
 .kchat-feed>:first-child{margin-top:auto}
 .kc-day{align-self:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px 12px;font-size:.75rem;font-weight:600;color:var(--muted)}
 .kc-me,.kc-bot{max-width:84%;padding:9px 13px 6px;font-size:.98rem;line-height:1.42;display:flex;flex-direction:column;gap:3px;word-break:break-word}
-.kc-me{align-self:flex-end;background:var(--green);color:#fff;border-radius:18px 18px 5px 18px}
+.kc-me{align-self:flex-end;background:var(--green);color:var(--on-green,#fff);border-radius:18px 18px 5px 18px}
 .kc-bot{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-radius:18px 18px 18px 5px}
 .kc-tx{white-space:pre-line}
 .kc-me time,.kc-bot time{align-self:flex-end;font-size:.68rem;opacity:.7}
@@ -1579,6 +1579,8 @@ input.calc{background:var(--chip);border-style:dashed;color:var(--ink);font-weig
 :root[data-skin="glass"] .view>.seg.sub-seg,:root[data-skin="glass"] .bz-filt,:root[data-skin="glass"] .rep-tabs,:root[data-skin="glass"] .st-wiz .sf-top{background:color-mix(in srgb,var(--bg) 94%,transparent)!important;-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);box-shadow:0 0 0 8px color-mix(in srgb,var(--bg) 94%,transparent)!important}
 :root[data-skin="glass"] .st-hero{background:linear-gradient(150deg,rgba(18,122,87,.92),rgba(10,70,52,.9))!important;color:#f3faf6!important;border-color:rgba(255,255,255,.25)!important}
 :root[data-skin="glass"] .st-hero *{color:inherit}
+:root[data-skin="glass"] .bud-top{background:linear-gradient(150deg,rgba(168,58,44,.93),rgba(112,32,24,.92))!important;color:#fff8f5!important;border-color:rgba(255,255,255,.25)!important}
+:root[data-skin="glass"] .bud-top :is(.label,small,b,span,em,.bud-big){color:inherit}
 :root[data-skin="glass"]:not([data-theme="dark"]){--muted:#3d4a44;--green:#0b6346}
 :root[data-skin="glass"][data-theme="dark"]{--rust:#ff9a80;--rust-soft:rgba(255,154,128,.16);--bad:#ff9a80;--muted:#b9c7c0}
 @media (prefers-color-scheme: dark){:root[data-skin="glass"]:not([data-theme="light"]){--rust:#ff9a80;--rust-soft:rgba(255,154,128,.16);--bad:#ff9a80;--muted:#b9c7c0;--green:#6fd3a8}}
@@ -1844,7 +1846,8 @@ h2.hint-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 /* green is money you keep (Overview); the theme's own red is money going out (Budget) */
 :root{--bud-bg:color-mix(in srgb,var(--rust) 72%,#1c0f10);--bud-ink:#fff;--bud-sub:color-mix(in srgb,var(--rust) 25%,#ffffff);--bud-tile:rgba(255,255,255,.12)}
 .card.bud-top{background:var(--bud-bg)!important;color:var(--bud-ink);border:0;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:4px}
-.bud-top .label{color:var(--bud-sub)!important}.bud-big{font:800 clamp(2.1rem,11vw,2.6rem)/1.1 var(--display);color:var(--bud-ink)}
+.bud-top .label{color:var(--bud-sub)!important}
+:root[data-theme="dark"] .card.bud-top{background:color-mix(in srgb,var(--rust) 48%,#1c0f10)!important}.bud-big{font:800 clamp(2.1rem,11vw,2.6rem)/1.1 var(--display);color:var(--bud-ink)}
 .bud-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
 .bud-tile{all:unset;box-sizing:border-box;background:var(--bud-tile);border-radius:16px;padding:10px 12px;min-width:0;cursor:default;color:var(--bud-ink)}button.bud-tile{cursor:pointer}
 .bud-tile small{display:block;color:var(--bud-sub);font-size:.78rem}.bud-tile b{display:block;font:800 clamp(1rem,5.2vw,1.2rem)/1.25 var(--display);white-space:nowrap}.bud-tile b.neg{color:#ffe08a}.bud-tile span{font-size:.75rem;font-weight:600;opacity:.92}
@@ -5238,6 +5241,17 @@ function answer(q){
   const due = answerDue(t, C); if (due) return due;
   const more = answerMore(t, C); if (more) return more;
   const amt = (t.match(/(\d[\d,]*(?:\.\d+)?)/) || [])[1];
+  // "What's the coffee bill so far?" / "how much on groceries this month": the everyday spending logged under that name
+  if (!amt && /so far|this month|spent|spend|bill|total|how much/.test(t)){
+    const rx = w => new RegExp(`\\b${w.replace(/[^a-z0-9]/g, "")}`, "i"), sp = (S.spends || []).filter(x => x.k === C.planKey);
+    const hit = [...new Set(sp.map(x => x.name))].filter(n => { const w = n.toLowerCase().split(/\s+/)[0]; return w.length > 2 && rx(w).test(t); });
+    if (hit.length){ const it = sp.filter(x => hit.includes(x.name)), sum = r2(it.reduce((a, x) => a + (+x.amount || 0), 0));
+      return `${hit.join(", ")}: ${fmt(sum)} so far in ${C.planMonth}, ${it.length} time${it.length === 1 ? "" : "s"}. ${fmt(r2(C.miscLeft))} is still left to spend.`; }
+    const ln = S.expenses.find(e => { const w = String(e.name || "").toLowerCase().split(/\s+/)[0]; return w.length > 2 && rx(w).test(t); });
+    if (ln){ const used = billSpendIn(ln.id, C.planKey), plan = +ln.amount || 0; return `${ln.name}: ${fmt(used)} of ${fmt(plan)} used in ${C.planMonth}${used > plan ? `, ${fmt(r2(used - plan))} over` : `, ${fmt(r2(plan - used))} left`}.`; }
+    const cat = SPEND_ICONS.map(x => [x[0], x[1].toLowerCase().split(" ")[0]]).find(([k, w]) => w.length > 2 && rx(w).test(t));
+    if (cat && /so far|this month|spent|bill|how much/.test(t)) return `Nothing logged for ${cat[1]} in ${C.planMonth} yet. Tap + and pick it, or say “${cat[1]} 5”.`;
+  }
   if (/afford|buy|spend|purchase/.test(t) && amt){
     const a = +amt.replace(/,/g,""), room = Math.max(0, r2(C.miscLeft || 0));
     if (a <= room + 0.004) return `Yes. ${fmt(a)} fits in your everyday budget: ${fmt(r2(room - a))} would still be left to spend in ${C.planMonth}, and what you keep stays ${fmt(C.savings)}.`;
@@ -10520,6 +10534,7 @@ view.addEventListener("click", async e => {
   if (b.hasAttribute("data-compare")){ UI.compare = !UI.compare; refreshOuts(); return; }
   if (b.classList.contains("cmp-col")){ const was = b.classList.contains("on"); b.parentElement.querySelectorAll(".cmp-col").forEach(c => c.classList.remove("on")); if (!was) b.classList.add("on"); return; }
   if (b.hasAttribute("data-plain")){ $("toast").hidden = true; ASK.last = plainly(); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; return; }
+  if (b.dataset.ask && b.closest(".kchat")){ $("toast").hidden = true; chatAsk(b.dataset.ask); return; }
   if (b.dataset.ask){ $("toast").hidden = true; const q = b.dataset.ask; $("ask-in").value = q; ASK.last = bizOwl() ? bizAnswer(q) : answer(q); const o = $("ask-out"); o.hidden = false; o.textContent = ASK.last; return; }
   const subRow = b.closest("[data-sub]");
   if (subRow){ const s = S.subs.find(x => x.id === subRow.dataset.sub); if (!s) return;
