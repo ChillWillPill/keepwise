@@ -5766,7 +5766,7 @@ async def business_split_pay_rules_and_profit_report(ctx):
 @test
 async def keepwise_never_flags_itself(ctx):
     pg = await open_app(ctx); await tab(pg, "subs")
-    flagged = lambda s: re.search(r"you don.t use\s*\$[\d,.]+", s).group(0)
+    flagged = lambda s: re.search(r"Save \$[\d,.]+ a year on unused", s).group(0)
     flag0 = flagged(await text(pg, "[data-out=subsSummary]"))
     await pg.click("text=Add a subscription"); f = pg.locator("form[data-form=addSub]")
     await f.locator("[name=name]").fill("KeepWise Plus"); await f.locator("[name=price]").fill("15"); await f.locator("[name=last]").fill("2025-01-01"); await f.locator("[name=group]").fill("Video")
